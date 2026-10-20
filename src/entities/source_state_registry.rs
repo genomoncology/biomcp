@@ -289,7 +289,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "protein",
         "structures",
         "Structures",
-        &["PDBe"],
+        &["UniProt"],
         Aggregation::Additive,
     ),
     state(

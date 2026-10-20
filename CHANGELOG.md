@@ -16,6 +16,8 @@
 
 ### Fixes
 
+- Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
+
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)

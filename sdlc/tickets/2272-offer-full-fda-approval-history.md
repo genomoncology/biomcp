@@ -12,7 +12,7 @@ Milestone: 0.9.5
 
 `get drug ... approval-history` shows the application's full provider-returned Drugs@FDA submission history with source class, date and document links. The opt-in section reuses the existing section registry; approvals, regulatory and all retain compact output, and all does not include full history.
 
-Changes: `src/sources/openfda.rs`, `src/entities/source_state_registry.rs`, `src/render/provenance.rs`, `src/render/markdown/drug.rs`, `src/transform/drug.rs`, `src/entities/drug/get/tests.rs`, `testdata/sources/capture-receipts.json`, `src/entities/drug/mod.rs`, `src/entities/drug/get.rs`, `src/entities/drug/approvals.rs`, `src/entities/drug/metadata.rs`, `src/entities/drug/metadata/tests.rs`, `src/render/markdown/drug_regulatory.rs`, `src/cli/list/clinical.rs`, `src/cli/commands/selectors.rs`, `docs/reference/drug-approvals-and-ae-summary.md`, `spec/entity/drug.md`, `tests/test_drug_regulatory_replay.py`, `testdata/sources/openfda/*`, `CHANGELOG.md`.
+Changes: `src/sources/openfda.rs`, `architecture/technical/source-integration.md`, `src/entities/source_state_registry.rs`, `src/render/provenance.rs`, `src/render/markdown/drug.rs`, `src/transform/drug.rs`, `src/entities/drug/get/tests.rs`, `testdata/sources/capture-receipts.json`, `src/entities/drug/mod.rs`, `src/entities/drug/get.rs`, `src/entities/drug/approvals.rs`, `src/entities/drug/metadata.rs`, `src/entities/drug/metadata/tests.rs`, `src/render/markdown/drug_regulatory.rs`, `src/cli/list/clinical.rs`, `src/cli/commands/selectors.rs`, `docs/reference/drug-approvals-and-ae-summary.md`, `spec/entity/drug.md`, `tests/test_drug_regulatory_replay.py`, `testdata/sources/openfda/*`, `CHANGELOG.md`.
 
 ## Evidence
 
@@ -45,3 +45,7 @@ Before product edits, M5 job 2272/1792505332201-43094 ran `pm job run --machine 
 ## Reviewed representation
 
 The new opt-in section uses the existing approvals JSON payload with every provider-returned row, source class and document data. It does not add a second top-level history field or change compact projections. Registry and provenance additions remain isolated on this branch while release repair 2287 changes the protein credit contract; this feature will be rebased and reviewed after that repair and cannot land before the tag. The approved successful FDA capture uses the existing shared capture-receipts format rather than a parallel request-metadata mechanism.
+
+## Ready review evidence
+
+Implementation 4213dd380f4eaccc5f25fd524e158f26eb9be61e passed full mechanical lint, 218 focused Rust cases and all thirteen regulatory CLI replays. Final focused replay log is 2272/1792506264770-34203. The developer disclosed two local shortage-fixture routing/envelope failures, corrected only those fixture details, and reused the unchanged product source Rust proof. No second provider request occurred. After the developer stopped, the coordinator merged main 6e664cfa20164b58339882d92e2a13c752d222fa and preserved both the accepted protein UniProt table correction and this new history row. Fresh review covers that integration; no landing before the tag.
