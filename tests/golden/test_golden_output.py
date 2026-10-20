@@ -46,6 +46,14 @@ class Case:
 
 CASES = (
     Case(
+        "get-pgx-cyp2d6-frequencies",
+        ("get", "pgx", "CYP2D6", "frequencies"),
+    ),
+    Case(
+        "get-pgx-cyp2d6-guidelines",
+        ("get", "pgx", "CYP2D6", "guidelines"),
+    ),
+    Case(
         "get-article-23056577-fulltext",
         ("--disable-sources", "semantic-scholar,figshare", "get", "article", "23056577", "fulltext"),
     ),

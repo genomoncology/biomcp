@@ -26,6 +26,8 @@ Additional third-batch Changes: `tests/golden/cases/get-cell-line-*`, `tests/gol
 
 Final OA batch Changes: `tests/golden/replay_env.py`, `tests/golden/test_golden_output.py`, `tests/golden/cases/get-article-23056577-fulltext.*`, `tests/golden/cases/get-article-23056577-assets.json`, `testdata/replay/manifest.json`, `testdata/replay/responses/pmc-oa/*`, `testdata/replay/responses/pmc-html/*`, `testdata/replay/responses/pubtator/*`, `testdata/replay/responses/europepmc/*`, `testdata/replay/responses/pubmed/*`, `testdata/replay/responses/mydisease/*`, the existing command-golden record, and `CHANGELOG.md`.
 
+Remaining finite-boundary Changes: `tests/golden/cases/get-pgx-cyp2d6-frequencies.*`, `tests/golden/cases/get-pgx-cyp2d6-guidelines.*`, `tests/golden/cases/get-disease-melanoma-default.*`, and existing declared replay response prefixes for CPIC, MyDisease, MyChem, Open Targets and CTGov. The default melanoma case omits all optional sections and retains only the PM-approved public aggregate projection.
+
 ## Inventory
 
 The completed coverage includes search all, gene, trial and pathway, and get gene, variant, trial and pathway. The remaining search selectors are author, disease, diagnostic, pgx, phenotype, gwas, article, variant, drug, cell-line, protein and adverse-event. Remaining get selectors are author, article, disease, diagnostic, pgx, drug, cell-line, protein and adverse-event. Also inventory traversal commands and local-data outputs; distinguish byte or JSON-only outputs from commands with both JSON and Markdown forms.
