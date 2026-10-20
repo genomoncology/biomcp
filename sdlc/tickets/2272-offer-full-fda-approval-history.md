@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 287285f, accept
 
+Reviews: revision 91f8e94, accept
+
 ## Outcome
 
 `get drug ... approval-history` shows the application's full provider-returned Drugs@FDA submission history with source class, date and document links. The opt-in section reuses the existing section registry; approvals, regulatory and all retain compact output, and all does not include full history.
