@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2233, 2234
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234
 
 ## Outcome
 
@@ -43,7 +43,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 
 Static preparation on 40c730fbe identified stable-version edits in Cargo.toml, Cargo.lock, pyproject.toml, uv.lock, manifest.json, server.json and CITATION.cff, plus the dated CHANGELOG section and current-candidate wording in docs/reference/release-process.md. Formula placeholders remain unchanged. No source edits or checks ran during preparation.
 
-The active changelog lacks citations for landed 2191, 2202, 2203, 2204, 2205, 2210, 2211, 2213, 2214, 2228, 2231 and 2232. Describe each actual outcome, including retained profiles, rejected TOML trial, retained linking and metadata-recovery behavior; do not imply rejected alternatives shipped. Recompute final coverage after source and qualification records land.
+Preparation found missing changelog citations for landed 2191, 2202, 2203, 2204, 2205, 2210, 2211, 2213, 2214, 2228, 2231 and 2232. Ticket 2262 supplied the reviewed citations and actual outcomes, including retained profiles, rejected TOML trial, retained linking and metadata-recovery behavior. Final coverage is checked again after qualification records land.
 
 Issue dispositions need finding-specific landing references for GTR encoding, transcript numbering, AlphaGenome CA bundles, trial-alias caching, CAID pagination, stale get JSON notes, removed lifecycle tests, aspirin identity, MCP probe counters, diagnostic synonym coverage, deadline joins and the single-CPU readiness handshake. The two October 7 omnibus reviews require individual historical dispositions; no blanket closure or new clinical judgment. The coordinator asked the PM to identify any still-material findings or approved deferrals.
 
@@ -63,7 +63,7 @@ Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the pri
 
 ## Observed live collection scope
 
-Changes: `testdata/replay/manifest.json`, `sdlc/records/2258-replay-live-collection.md`.
+Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `CHANGELOG.md`.
 
 After stable metadata lands, recompute the actual recording inventory. Use observed credential-free primary replies to refresh historical missing response content types and the stale dbSNP request declaration, retaining original recording provenance and dates. Retain raw replies privately with exact request settings, status, case-insensitive Content-Type, observation time, bytes and SHA256. Final coverage uses tools/check-replay-live --live on the final candidate and records every entry and complete counts. No hardcoded historical inventory count.
 
@@ -73,7 +73,7 @@ No checker/runtime/code changes in this collection. Do not publish broad or lice
 
 ## Final qualification authority
 
-The source and fixture batch is frozen at pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8, shared gate 2277/1792450592155-61493 passed with tree 90d9f94dfa5541a135bc728d88f849e595537d15. The actual-main full check is running before further ordinary landing. Use the accepted current checker for one final complete live inventory on this revision. Disable commercial-restricted sources and semantic-scholar explicitly. The three KEGG rows remain not checked live: commercial-restricted source. The PM approved Semantic Scholar as not checked live: rate limited after the one later 429 diagnostic; its five rows remain unverified, and no further requests to that source are authorized. Do not count any disabled entry as checked or passed. No credentials except an existing NCI_API_KEY may be inherited; never inspect, log, hash or store credentials. No new keys, proxies, authentication, paid access or provider contact.
+The accepted runtime and recording batch was published at main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8, shared gate 2277/1792450592155-61493 passed with tree 90d9f94dfa5541a135bc728d88f849e595537d15. Its actual-main full check passed before the later test-only corrections. Use the accepted current checker for one final complete live inventory on this revision. Disable commercial-restricted sources and semantic-scholar explicitly. The three KEGG rows remain not checked live: commercial-restricted source. The PM approved Semantic Scholar as not checked live: rate limited after the one later 429 diagnostic; its five rows remain unverified, and no further requests to that source are authorized. Do not count any disabled entry as checked or passed. No credentials except an existing NCI_API_KEY may be inherited; never inspect, log, hash or store credentials. No new keys, proxies, authentication, paid access or provider contact.
 
 The full untagged release rehearsal already includes MCP contract conformance; the PM withdrew its mistaken request for an additional separate conformance run. The existing checklist remains the release scope.
 
@@ -104,7 +104,7 @@ Keep: experiments/2102-biomcp-2258-final-live-replay — retain complete final p
 
 ## Frozen-source gate evidence
 
-Standalone checker gate 2281/1792449822402-39931 passed source tree 0229a6eb09dcfe6e84d16d5d44b54543cc8b9f68 and landed 6ddaed41268bfa49e992948673b8907de6798a33. Its actual-main full check 2156/1792450232278-98788 passed with the required all-feature and image proofs. The reviewed fixture batch then passed shared gate 2277/1792450592155-61493 at tree 90d9f94dfa5541a135bc728d88f849e595537d15 and landed frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8. Actual-main full check 2156/1792450891631-7897 passed in 405.149 seconds, including routine Rust, 1,575 Python cases, specifications, repository audit, all-feature checks and PNG/SVG/terminal output. Durable raw output remains in experiment 2101-biomcp-2282-pathway-recording-fidelity/main-checks.iFaHnu; shared gate raw remains in experiment 2097-biomcp-2277-canonical-disease-pages/batch-gate. Later commits are records only and receive their own review.
+Standalone checker gate 2281/1792449822402-39931 passed source tree 0229a6eb09dcfe6e84d16d5d44b54543cc8b9f68 and landed 6ddaed41268bfa49e992948673b8907de6798a33. Its actual-main full check 2156/1792450232278-98788 passed with the required all-feature and image proofs. The reviewed fixture batch then passed shared gate 2277/1792450592155-61493 at tree 90d9f94dfa5541a135bc728d88f849e595537d15 and landed frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8. Actual-main full check 2156/1792450891631-7897 passed in 405.149 seconds, including routine Rust, 1,575 Python cases, specifications, repository audit, all-feature checks and PNG/SVG/terminal output. Durable raw output remains in experiment 2101-biomcp-2282-pathway-recording-fidelity/main-checks.iFaHnu; shared gate raw remains in experiment 2097-biomcp-2277-canonical-disease-pages/batch-gate. Test-only corrections 2283 and 2285 followed. Product Rust, Cargo files, replay recordings, the live checker and release workflow remain unchanged. Later record commits receive their own review.
 
 ## Admission review scope
 
@@ -115,3 +115,9 @@ The reviewed source terms include ORCID API/data distinctions, restricted identi
 ## Cleanup evidence
 
 The coordinator ran pm sweep --dry-run and removed only its fifteen explicitly abandoned empty reservation markers: 2064, 2069, 2070, 2075, 2083, 2085, 2086, 2108, 2118, 2119, 2121, 2123, 2135, 2153 and 2212. The push confirmed all fifteen deletions. Active release reservations, record-owned reservations, paused branches and unmerged historical work were retained. Current release worktrees and build output are removed after their consumers finish.
+
+## Test-only qualification binding
+
+Repair 2283 landed at 4c582db4186837893e4839f6d47e5e60a129aae7 and passed full actual-main job 2283/1792454758788-87321. Repair 2285 landed at 40eac3b38cf7d1f333f6bd34ee6119859547d500 after gate 2285/1792458419485-80284 passed. Its exact diff from 4c582db contains only tests/test_http_cache_fail_soft.py, CHANGELOG.md and the owned ticket/record Markdown. The coordinator independently verified that list and final test hash 2033f3ed0f93dba131fbd3630c55def78425fc53f00a8e97a88bc179449ef0de.
+
+The PM approved reuse of the unchanged Rust routine/long/inventory proof while fresh Linux qualification rebuilds the exact CLI/example and reruns full Python, strict docs and shipped-feature checks under isolation. A Rust, Cargo, build, script or fixture-file change would require the whole Linux suite. Both failed final Linux attempts remain failed. The unchanged runtime measurement source remains 51f5e03 under the explicit reuse ruling; the live checker and recording inputs also remain identical to their 39-passed proof. These component bindings do not substitute for the required final rehearsal.
