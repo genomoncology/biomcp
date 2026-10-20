@@ -627,7 +627,7 @@ def test_local_lint_rejects_tracked_scratch(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "failure", ["ready", "missing", "wrong-version", "version-command", "missing-pin", "duplicate-pin"]
+    "failure", ["ready", "missing", "wrong-version", "version-command", "failed-version-output", "missing-pin", "duplicate-pin"]
 )
 def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
     tmp_path: Path, failure: str
@@ -635,13 +635,19 @@ def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(repo_root, {"scripts/probe.py": "print(1)\n"})
     local_python = repo_root / ".venv/bin/python"
+    ruff_version = next(pin.removeprefix("ruff==") for pin in tomllib.loads(
+        PYPROJECT_FILE.read_text())["project"]["optional-dependencies"]["dev"]
+        if pin.startswith("ruff=="))
     if failure == "missing":
         local_python.unlink()
-    elif failure in {"wrong-version", "version-command"}:
+    elif failure in {"wrong-version", "version-command", "failed-version-output"}:
         _write_executable(
             local_python,
             "#!/bin/sh\n"
-            + ("echo 'ruff 999.0.0'\n" if failure == "wrong-version" else "exit 19\n"),
+            + ("echo 'ruff 999.0.0'\n" if failure == "wrong-version"
+               else 'if [ "$3" = "--version" ]; then\n'
+                    f'  echo "ruff {ruff_version}"\n  exit 19\nfi\nexit 0\n'
+               if failure == "failed-version-output" else "exit 19\n"),
         )
     if failure in {"missing-pin", "duplicate-pin"}:
         manifest = repo_root / "pyproject.toml"
