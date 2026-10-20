@@ -34,3 +34,11 @@ Restate the outcome, exact old failure and intended files before code. Exercise 
 Keep: experiments/2102-biomcp-2258-final-live-replay — retain real-format-qualification/2293 raw preimage/corrected job evidence while final release admission consumes it.
 
 Landing alone: this changes the release qualification checker implementation and must pass its own permitted landing gate.
+
+## Pre-code restatement and request plan
+
+Handle observed real formats without overstating structural verification. The initial entrypoint reproduction is `uv run --no-sync pytest -q tests/test_replay_live_drift.py -k 'real_formats or doctype or entity'` with new outside-in controls against the unchanged published checker implementation: benign DOCTYPE and the named non-JSON/XML formats are blocked before correction. Run it only through pm job, record the actual baseline source and harness identity, then retain exact output before format changes. Existing unsafe entity controls must continue failing safely.
+
+The intended format implementation preserves MIME classification as served. Limited checks use the recognized file signatures for JPEG, OLE DOC, ZIP and HTML; generic octet-stream compares a recorded bounded leading byte signature without parsing it as JSON or relabeling the MIME. The output names the limited scope explicitly. These are observed transport/signature checks, not document validity guarantees.
+
+A small shared recording_provider helper in the existing replay_drift module also lets the checker and recorded server derive root object provider identity from canonical provenance and exact configured upstream origin/base/path/query. Ordinary declared prefixes remain unchanged. Ticket2236 owns the server caller and routing controls; this ticket owns the shared helper. Neither caller duplicates a PMC regex/map, rewrites request URLs or forwards missing records live. Ticket2236 takes the accepted helper dependency before its final integration checks.
