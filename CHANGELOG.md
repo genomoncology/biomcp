@@ -97,6 +97,7 @@
 
 ### Internal
 
+- Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
