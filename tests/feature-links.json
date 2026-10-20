@@ -33,10 +33,10 @@
     "tests/surface/test_trial_help_contract.py": {
       "tests": {
         "test_get_trial_help_examples_reference_only_declared_options": "trial",
-        "test_get_trial_help_examples_place_options_before_sections": "trial"
+        "test_get_trial_help_examples_place_options_before_sections": "trial",
+        "test_trial_capability_declarations_match_cli_and_typed_mcp": "trial"
       },
       "internal": {
-        "test_trial_capability_declarations_match_cli_and_typed_mcp": "Source/documentation or harness contract, not an outside product invocation.",
         "test_trial_capability_inventory_references_existing_contracts": "Source/documentation or harness contract, not an outside product invocation."
       }
     },
@@ -136,7 +136,8 @@
       "feature": "drug",
       "tests": {
         "test_discovery_preserves_exact_variant_before_fuzzy_chemical_and_vaccine": "variant",
-        "test_discovery_requires_structured_drug_identity": "drug"
+        "test_discovery_requires_structured_drug_identity": "drug",
+        "test_diagnostic_synonym_and_literal_matching_explain_missing_resolution": "diagnostic"
       }
     },
     "tests/test_mcp_2026_protocol.py": {
@@ -150,7 +151,6 @@
     },
     "tests/test_mcp_tool_catalog.py": {
       "tests": {
-        "test_public_inventory_matches_typed_catalog": "mcp-catalog",
         "test_every_tool_schema_is_a_flat_object_root": "mcp-catalog",
         "test_installed_binary_prints_the_complete_mcp_catalog": "mcp-catalog",
         "test_real_tools_list_stays_within_context_budget": "mcp-catalog"
@@ -159,7 +159,8 @@
         "test_rust_mcp_contract_uses_python_tools_list_byte_ceiling": "Source/documentation or harness contract, not an outside product invocation.",
         "test_mcp_measurement_fails_closed_without_valid_committed_tokenizer_cache": "Source/documentation or harness contract, not an outside product invocation.",
         "test_measurement_reads_catalog_from_a_direct_binary_command": "Source/documentation or harness contract, not an outside product invocation.",
-        "test_measurement_reports_actionable_context_budget_failure": "Source/documentation or harness contract, not an outside product invocation."
+        "test_measurement_reports_actionable_context_budget_failure": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_public_inventory_matches_typed_catalog": "Compares source/manifest/docs without invoking the product."
       }
     },
     "tests/test_nci_filter_transport.py": {
@@ -235,6 +236,53 @@
     },
     "tests/test_variant_transcript_lookup.py": {
       "feature": "variant"
+    },
+    "tests/surface/test_article_graph_empty_contract.py": {
+      "feature": "article"
+    },
+    "tests/surface/test_public_entity_contract_docs.py": {
+      "tests": {
+        "test_public_docs_label_search_only_entities": "cli-reference"
+      },
+      "internal": {
+        "test_public_docs_do_not_imply_get_gwas_or_get_phenotype": "Tooling or source/documentation contract, not a product invocation.",
+        "test_spec_architecture_routes_public_search_only_surfaces": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
+    "tests/test_output_footprint_benchmark.py": {
+      "tests": {
+        "test_offline_corpus_is_deterministic_and_reports_real_token_counts": "output-safety"
+      },
+      "internal": {
+        "test_compact_ratchet_rejects_first_byte_above_each_ceiling": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tokenizer_vocabulary_is_available_offline": "Tooling or source/documentation contract, not a product invocation.",
+        "test_benchmark_env_points_every_provider_base_at_the_replay_server": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
+    "tests/test_python_lane_cache_isolation.py": {
+      "feature": "cache"
+    },
+    "tests/test_release_package.py": {
+      "tests": {
+        "test_wheel_installs_skills_without_network": "skills"
+      },
+      "internal": {
+        "test_native_archive_is_deterministic_minimal_and_executable": "Tooling or source/documentation contract, not a product invocation.",
+        "test_native_archives_carry_the_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_contains_binaries_and_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
+        "test_packaged_agent_index_maps_local_and_live_topics": "Tooling or source/documentation contract, not a product invocation.",
+        "test_development_wheel_uses_exact_pep440_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_artifact_record_binds_bytes_and_candidate_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_identity_metadata_and_record_are_fully_validated": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_duplicate_member_is_rejected": "Tooling or source/documentation contract, not a product invocation.",
+        "test_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_installed_command_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_final_inspector_owns_complete_wheel_evidence": "Tooling or source/documentation contract, not a product invocation.",
+        "test_failed_final_inspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tampered_sbom_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_failed_platform_reinspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tampered_signing_evidence_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation."
+      }
     }
   },
   "rust": {
@@ -266,13 +314,29 @@
       "feature": "cache"
     },
     "tests/rmcp_client_contract.rs": {
-      "feature": "mcp-parity"
+      "feature": "mcp-parity",
+      "tests": {
+        "mcp_health_names_local_datasets_without_local_paths": "health",
+        "request_counter_waits_for_complete_request_headers": null,
+        "openfda_fixture_waits_for_complete_request_headers": null
+      },
+      "internal": {
+        "request_counter_waits_for_complete_request_headers": "Readiness of the test fixture alone does not exercise the product.",
+        "openfda_fixture_waits_for_complete_request_headers": "Readiness of the test fixture alone does not exercise the product."
+      }
     },
     "tests/tls_ca_bundle_contract.rs": {
       "feature": "operator-tls"
     },
     "tests/windows_stdio_contract.rs": {
       "feature": "cache"
+    },
+    "tests/live_smoke.rs": {
+      "tests": {
+        "live_cli_smoke_get_gene_braf_returns_gene_information": "gene",
+        "live_cli_smoke_get_variant_braf_v600e_returns_variant_information": "variant",
+        "live_cli_smoke_get_article_returns_article_information": "article"
+      }
     }
   },
   "spec": {
@@ -435,12 +499,10 @@
   },
   "internal": {
     "tests/surface/test_architecture_docs_parity_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/surface/test_article_graph_empty_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_biomcp_ci_path_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_biomcp_verify_live.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_complexportal_fixture_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_mcp_live_gate_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/surface/test_public_entity_contract_docs.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_search_all_cli_structure.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_source_configuration_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/surface/test_ticket_401_surface_ratchets.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
@@ -482,7 +544,6 @@
     "tests/test_merge_conflict_markers.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_no_climb_tracked_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_offline_gate_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_output_footprint_benchmark.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_png_artifact_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_prepare_spec_artifacts.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_provider_contract_fixture.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
@@ -493,7 +554,6 @@
     "tests/test_public_search_all_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_public_skill_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_python_contract_parallelism.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_python_lane_cache_isolation.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_quality_ratchet_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_candidate.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_container.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
@@ -502,7 +562,6 @@
     "tests/test_release_mcpb.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_metadata_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_notes.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_release_package.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_promotion.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_signing.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_smoke_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
@@ -537,7 +596,6 @@
     "tests/health_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/legacy_cache_helper_cleanup.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/list_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
-    "tests/live_smoke.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/package_build_identity.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/pgx_get_paging.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/plugin_manifest.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",

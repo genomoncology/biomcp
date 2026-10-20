@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shlex
 import subprocess
 from pathlib import Path
@@ -23,6 +24,7 @@ def collect(root: Path, baseline: bool) -> int:
         raise ValueError("configure the PM-approved outside-in coverage floor first")
     output = root / ".cache/feature-coverage"
     output.mkdir(parents=True, exist_ok=True)
+    (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "reason": "collection has not finished"}) + "\n")
     ordinary = os.environ.copy()
     statuses = {}
 
@@ -55,13 +57,17 @@ def collect(root: Path, baseline: bool) -> int:
     rust_args = [arg for path in sorted(config["rust"]) for arg in ("--test", Path(path).stem)]
     if run("product-build", ["cargo", "build", "--locked", "--all-features", "--bins", "--examples"], instrumented):
         return 1
-    statuses["rust"] = run("rust", ["tools/run-offline", "--", "cargo", "nextest", "run", "--locked", "--all-features", *rust_args], instrumented)
+    internal = [name for declaration in config["rust"].values()
+                for name in declaration.get("internal", {})]
+    rust_filter = ["-E", "not test(/^(" + "|".join(re.escape(name) for name in internal) + ")$/)"] if internal else []
+    statuses["rust"] = run("rust", ["tools/run-offline", "--", "cargo", "nextest", "run", "--locked", "--all-features", *rust_args, *rust_filter], instrumented)
     consumers = ordinary | {
         "LLVM_PROFILE_FILE": instrumented["LLVM_PROFILE_FILE"],
         "BIOMCP_BIN": str(target / "debug/biomcp"),
         "BIOMCP_ROUTINE_TEST_LANE": "1",
     }
-    selected = sorted({link["test"].split("[")[0] for link in links if link["kind"] == "python"})
+    selected = sorted({link["test"].split("[")[0] for link in links if link["kind"] == "python"
+                       and "/live/" not in link["test"]})
     statuses["python"] = run("python", ["tools/run-offline", "--", "uv", "run", "--no-sync", "pytest", *selected,
                                          "-m", "not release_gate and not repo_audit and not long", "--junitxml", str(output / "python.xml")], consumers)
     # The spec runner consumes these artifacts directly and cannot replace the
@@ -113,7 +119,7 @@ def collect(root: Path, baseline: bool) -> int:
         result.pop("floor")
         result["initial_floor_input"] = result["outside_in_percent"]
     (output / "coverage.json").write_text(json.dumps(result, indent=2) + "\n")
-    print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "collection"}}, indent=2))
+    print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "unobserved_files", "collection"}}, indent=2))
     print(f"Unreached product lines and exact collection selection: {output / 'coverage.json'}")
     return int(result["status"] != "pass")
 

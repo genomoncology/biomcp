@@ -40,7 +40,7 @@ def main() -> int:
             for path in sorted(config["rust"]):
                 print(Path(path).stem)
         else:
-            print(f"Feature links pass: {len(links)} outside-in tests")
+            print(f"Feature links pass: {len(links)} outside-in declarations")
         return 0
     except (OSError, ValueError, KeyError, StopIteration, SyntaxError) as error:
         print(f"feature coverage: {error}", file=sys.stderr)

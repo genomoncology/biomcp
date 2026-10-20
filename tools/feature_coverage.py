@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
+from functools import lru_cache
 import re
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
                 tests = [f"block-{i}" for i, _ in enumerate(
                     re.finditer(r"^```(?:bash|sh)\b", path.read_text(), re.M), 1)]
             overrides = declaration.get("tests", {})
-            if kind == "python":
+            if kind != "spec":
                 for missing in overrides.keys() - set(tests):
                     errors.append(f"missing test {relative}::{missing}")
             if not tests:
@@ -113,7 +114,8 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     return links, config, errors
 
 
-def inline_tests(root: Path, source: Path) -> set[int]:
+@lru_cache
+def rust_lexer(root: Path):
     # Reuse the repository's Rust lexer; comments, raw strings and nested block
     # comments cannot change the extent of a cfg(test) item.
     tool = root / "tools/check-quality-ratchet.py"
@@ -123,8 +125,12 @@ def inline_tests(root: Path, source: Path) -> set[int]:
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module._mask_rust_non_code
+
+
+def inline_tests(root: Path, source: Path) -> set[int]:
     text = source.read_text()
-    masked = module._mask_rust_non_code(text)
+    masked = rust_lexer(root)(text)
     excluded = set()
     for match in re.finditer(r"#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]", masked):
         start = match.start()
@@ -185,5 +191,9 @@ def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dic
             "denominator": "instrumented src/**/*.rs product lines; excludes test files, inline cfg(test) items, test_support and generated code",
             "product_lines": total, "reached_lines": reached,
             "outside_in_percent": percentage,
+            "unobserved_files": sorted(str(p.relative_to(root)) for p in (root / "src").rglob("*.rs")
+                                       if str(p.relative_to(root)) not in product
+                                       and not any(part in {"tests", "test_support", "generated"} for part in p.relative_to(root).parts)
+                                       and not re.search(r"(^test[s]?_|_test[s]?\.rs$|^test[s]?\.rs$)", p.name)),
             "unreached": {path: [number for number, hits in lines.items() if hits == 0]
                           for path, lines in product.items() if any(h == 0 for h in lines.values())}}

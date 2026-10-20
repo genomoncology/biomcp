@@ -86,3 +86,22 @@ def test_failed_or_missing_collections_never_report_a_percentage(tmp_path: Path)
     data = json.loads(result.stdout)
     assert data["status"] == "incomplete"
     assert "outside_in_percent" not in data
+
+
+def test_golden_links_follow_existing_command_metadata(tmp_path: Path) -> None:
+    root = tree(tmp_path)
+    golden = root / "tests/golden/test_golden_output.py"
+    golden.parent.mkdir()
+    golden.write_text(
+        'CASES = (Case("lookup", ("get", "gene", "BRAF")),)\n'
+        'def test_golden_output(): pass\n'
+    )
+    path = root / "tests/feature-links.json"
+    config = json.loads(path.read_text())
+    config["python"]["tests/golden/test_golden_output.py"] = {"feature": "@golden"}
+    path.write_text(json.dumps(config))
+    assert run(root, "links").returncode == 0
+    golden.write_text(golden.read_text().replace('"gene"', '"drug"'))
+    rejected = run(root, "links")
+    assert rejected.returncode != 0
+    assert "unknown feature drug" in rejected.stderr
