@@ -6,7 +6,7 @@ priority: 4
 
 Status: OPEN.
 
-Milestone: 0.9.5
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -26,4 +26,4 @@ Preserve existing complete or explicitly minimized source captures and their rec
 
 Each cohesive batch adds executed output goldens that reject changed output and passes the affected recorded consumer checks without missing requests. Keep original reader claims and unique request/refusal assertions. Reuse existing replay lifecycle, runner and measurement tools; add no framework. Record exactly which command selectors and traversal outputs are covered, then close this follow-up only at its approved finite boundary.
 
-PM decision: 2026-10-19. This follow-up is outside 0.9.4. That release ends replay work after the accepted gene and pathway goldens and supported pathway reader migration; authored fault controls and excluded local datasets remain in their helpers.
+PM decision: 2026-10-20. Ian moved this coverage into 0.9.4; it already found the protein structures JSON panic (2287). Land it after the release-blocking repairs, in cohesive batches.
