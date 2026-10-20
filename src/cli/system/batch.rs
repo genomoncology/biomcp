@@ -693,7 +693,7 @@ mod tests {
         assert_eq!(cancelled.load(Ordering::SeqCst), 10);
     }
 
-    #[tokio::test(start_paused = true)]
+    #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn dropping_settlement_cancels_cacheable_article_provider_retry_and_admission() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -766,19 +766,10 @@ mod tests {
             }
         };
         let mut settlement = Box::pin(settle_ordered([item]));
-        loop {
-            tokio::select! {
-                biased;
-                () = first_response.notified() => break,
-                result = &mut settlement => panic!("retrying item settled early: {result:?}"),
-                // Keep paused time from advancing request timeouts while real
-                // socket readiness is pending. Cancel as soon as the fixture
-                // signals its response, before polling more provider work.
-                _ = tokio::task::yield_now() => {}
-            }
-        }
-        for _ in 0..10 {
-            tokio::task::yield_now().await;
+        tokio::select! {
+            biased;
+            () = first_response.notified() => {},
+            result = &mut settlement => panic!("retrying item settled early: {result:?}"),
         }
         assert_eq!(admitted.load(Ordering::SeqCst), 1);
         assert_eq!(active.load(Ordering::SeqCst), 1);
@@ -787,6 +778,14 @@ mod tests {
         drop(settlement);
         assert_eq!(active.load(Ordering::SeqCst), 0);
         assert_eq!(cancelled.load(Ordering::SeqCst), 1);
+        server.abort();
+        assert!(
+            server
+                .await
+                .expect_err("cancel fixture server")
+                .is_cancelled()
+        );
+        tokio::time::pause();
         tokio::time::advance(std::time::Duration::from_secs(10)).await;
         for _ in 0..10 {
             tokio::task::yield_now().await;
@@ -795,6 +794,5 @@ mod tests {
         assert_eq!(requests.load(Ordering::SeqCst), 1);
         assert_eq!(cache_gets.load(Ordering::SeqCst), 1);
         assert_eq!(cache_puts.load(Ordering::SeqCst), 0);
-        server.abort();
     }
 }

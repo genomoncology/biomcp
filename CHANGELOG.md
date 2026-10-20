@@ -93,6 +93,8 @@
 
 ### Internal
 
+- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
+
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 

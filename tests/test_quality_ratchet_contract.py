@@ -1733,3 +1733,42 @@ def test_profile_independence_audit_reads_the_dual_lane_list_from_the_runner(
     # Live pages run only against the release binary, so they are single-lane and
     # legitimately may assert release-only behavior.
     assert paths == ["spec/entity/one.md", "spec/surface/two.md"]
+
+
+@pytest.mark.parametrize(("settings", "body", "unsafe"), [
+    ("start_paused = true", "let listener = TcpListener::bind(addr).await;", True),
+    ("start_paused = true", "let server = MockServer::start().await;", True),
+    ("start_paused = true", "let fixture = TestHttpFixture::spawn(handler).await;", True),
+    ("", "let server = MockServer::start().await; time::pause(); client.get(url).send().await;", True),
+    ("", "let listener = TcpListener::bind(addr).await; time::pause(); listener.accept().await;", True),
+    ("", "let listener = TcpListener::bind(addr).await; let server = tokio::spawn(async move { listener.accept().await; }); time::pause();", True),
+    ("", "let listener = TcpListener::bind(addr).await; let (mut stream, _) = listener.accept().await; stream.read(&mut request).await; drop(stream); drop(listener); time::pause(); time::advance(duration).await;", False),
+    ("", "let listener = TcpListener::bind(addr).await; let server = tokio::spawn(async move { listener.accept().await; }); server.abort(); server.await.unwrap_err(); time::pause(); time::advance(duration).await;", False),
+    ("", "let listener = TcpListener::bind(addr).await; let (mut stream, _) = listener.accept().await; stream.read(&mut request).await; time::pause();", True),
+    ("", "let listener = TcpListener::bind(addr).await; let (mut stream, _) = listener.accept().await; drop(listener); time::pause();", True),
+    ("start_paused = true", "time::advance(duration).await;", False),
+])
+def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
+    tmp_path: Path, settings: str, body: str, unsafe: bool,
+) -> None:
+    fixture = tmp_path / "clock-fixture"
+    _write_dead_code_fixture(
+        fixture, f"#[tokio::test({settings})]\nasync fn socket_case() {{ {body} }}\n",
+    )
+    output = tmp_path / "audit-output"
+    result = _run_python_script(
+        RATCHET_TOOL, "--root-dir", str(fixture), "--output-dir", str(output),
+        "--audit", "paused_clock_io",
+        "--spec-glob", str(fixture / "spec/**/*.md"),
+        "--cli-file", str(fixture / "src/cli/mod.rs"),
+        "--shell-file", str(fixture / "src/mcp/shell.rs"),
+        "--catalog-file", str(fixture / "src/mcp/catalog.rs"),
+        "--sources-dir", str(fixture / "src/sources"),
+        "--sources-mod", str(fixture / "src/sources/mod.rs"),
+        "--health-file", str(fixture / "src/cli/health/catalog.rs"),
+    )
+    assert result.returncode == int(unsafe), result.stdout + result.stderr
+    payload = json.loads((output / "quality-ratchet-paused-clock-io.json").read_text())
+    assert payload["status"] == ("fail" if unsafe else "pass")
+    if unsafe:
+        assert payload["findings"][0]["test"] == "socket_case"
