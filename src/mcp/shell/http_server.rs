@@ -11,6 +11,7 @@ use rmcp::transport::streamable_http_server::{
     StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
 };
 use serde_json::{Value, json};
+use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 use super::{BioMcpServer, pre_session::modern};
@@ -426,6 +427,32 @@ fn modern_json_response(status: StatusCode, payload: Value) -> Response {
     (status, Json(payload)).into_response()
 }
 
+fn http_router(
+    allowed_hosts: HostPolicy,
+    shutdown: &CancellationToken,
+    session_manager: Arc<LocalSessionManager>,
+) -> Router {
+    #[allow(clippy::field_reassign_with_default)]
+    let http_config = {
+        let mut http_config = StreamableHttpServerConfig::default();
+        http_config.stateful_mode = true;
+        http_config.cancellation_token = shutdown.child_token();
+        http_config.allowed_hosts = allowed_hosts.transport_hosts();
+        http_config
+    };
+
+    let service: StreamableHttpService<BioMcpServer, LocalSessionManager> =
+        StreamableHttpService::new(|| Ok(BioMcpServer::new()), session_manager, http_config);
+
+    Router::new()
+        .route_service("/mcp", service)
+        .route("/health", get(health_handler))
+        .route("/readyz", get(health_handler))
+        .route("/", get(index_handler))
+        .layer(from_fn_with_state(allowed_hosts, enforce_host_policy))
+
+}
+
 pub(in crate::mcp) async fn run_http(
     host: &str,
     port: u16,
@@ -440,24 +467,7 @@ pub(in crate::mcp) async fn run_http(
     let allowed_hosts = http_allowed_hosts(ip, allowed_hosts, unsafe_allow_any_host)?;
     let shutdown = CancellationToken::new();
 
-    #[allow(clippy::field_reassign_with_default)]
-    let http_config = {
-        let mut http_config = StreamableHttpServerConfig::default();
-        http_config.stateful_mode = true;
-        http_config.cancellation_token = shutdown.child_token();
-        http_config.allowed_hosts = allowed_hosts.transport_hosts();
-        http_config
-    };
-
-    let service: StreamableHttpService<BioMcpServer, LocalSessionManager> =
-        StreamableHttpService::new(|| Ok(BioMcpServer::new()), Default::default(), http_config);
-
-    let router = Router::new()
-        .route_service("/mcp", service)
-        .route("/health", get(health_handler))
-        .route("/readyz", get(health_handler))
-        .route("/", get(index_handler))
-        .layer(from_fn_with_state(allowed_hosts, enforce_host_policy));
+    let router = http_router(allowed_hosts, &shutdown, Default::default());
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to bind HTTP server: {e}"))?;
@@ -612,3 +622,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "http_server_security_tests.rs"]
+mod security_tests;
