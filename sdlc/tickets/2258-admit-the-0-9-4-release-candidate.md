@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293, 2294, 2295, 2296
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293, 2294, 2295, 2296, 2297
 
 Reviews: revision 1b8e728, accept
 
@@ -168,3 +168,5 @@ PM decision: the rebuild comparison uses Gator for both arms after the PM relays
 The bounded checker repair2295 resolves five existing canonical provider-policy lookup gaps without changing source permissions. Its inventory proof is required after integration; the prior232 recorded-command checks remain retained at their tested source.
 
 PM decision: 2296 is a required release repair. Report stated licenses from fetched fulltext metadata and structured JATS without changing reuse policy or the recorded coverage scope. The isolated rebuild experiment uses approved published baseline 3d9472ecc2b4db2d68eee81d54c65453a9804806 on Gator. Relative before/after pairs need not use final main; only changes to Cargo, profiles or prototype code invalidate that comparison. Narrow license work proceeds independently.
+
+PM decision: required repair2297 gives every installed-wheel run its own clean temporary build target after the unchanged-main recovery. This addresses the transient retained-build failure without changing the pinned toolchain, dependencies or installation smoke. Main remains held until reviewed recovery passes qualification.
