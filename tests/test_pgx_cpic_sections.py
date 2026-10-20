@@ -79,7 +79,7 @@ def test_pgx_sections_use_supported_columns_for_pages_and_report_provider_errors
         failed = run(0)
         assert failed.returncode != 0
         assert "CPIC" in failed.stdout + failed.stderr
-        assert "400" in failed.stdout + failed.stderr
+        assert json.loads(failed.stdout)["error"]["code"] == "api"
         assert len(requests) == 3
     finally:
         server.shutdown()
