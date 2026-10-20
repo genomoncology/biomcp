@@ -14,6 +14,8 @@ Reviews: revision 24ff8e9, accept
 
 Reviews: revision 52cce26, accept
 
+Reviews: revision ea5ce68, accept
+
 ## Outcome
 
 When a fetched fulltext source’s own metadata states a license, get article fulltext reports that license with truthful source attribution. Unknown is allowed only when no fetched source states one. Reuse the existing license classification and restrictions rather than adding a new licensing policy.
