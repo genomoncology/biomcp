@@ -95,7 +95,7 @@
 
 ### Internal
 
-- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards instead of short elapsed-time acceptance deadlines. (2302)
+- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 

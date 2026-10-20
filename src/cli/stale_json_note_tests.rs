@@ -5,7 +5,8 @@
 //! serve's note to the markdown card and CLI/MCP get JSON. Day-cached GWAS replies remain
 //! free of stale notes inside the day window even when the provider's
 //! shorter freshness window has expired.
-//! Fixtures answer with a one-second freshness window, then stop.
+//! Fixtures keep real HTTP and disk I/O; stored response times place replies
+//! beyond provider freshness before the servers stop.
 
 /// Answer every request with `body` as JSON, fresh-cacheable for one
 /// second: after the window, with the server gone, the cache serves
@@ -203,6 +204,56 @@ impl StaleNoteEnv {
     }
 }
 
+/// Backdate real cached policies without waiting for provider freshness.
+/// Leave retention timestamps and response contents intact; SQLite triggers
+/// account for the changed metadata length.
+fn age_cached_provider_responses() {
+    use std::time::{Duration, SystemTime};
+
+    let now = SystemTime::now();
+    let response_time = now
+        .checked_sub(Duration::from_secs(60))
+        .expect("fixture age");
+    let config = crate::cache::resolve_cache_config().expect("fixture cache config");
+    let mut connection =
+        rusqlite::Connection::open(config.cache_root.join(crate::cache::sqlite::DATABASE_NAME))
+            .expect("open fixture cache");
+    let transaction = connection.transaction().expect("fixture age transaction");
+    let rows = {
+        let mut statement = transaction
+            .prepare("SELECT key, metadata FROM entries WHERE namespace = 'http'")
+            .expect("select cached policies");
+        statement
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Vec<u8>>(1)?))
+            })
+            .expect("read cached policies")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("cached policy rows")
+    };
+    assert!(!rows.is_empty(), "warm command persisted HTTP responses");
+    let mut expired = 0;
+    for (key, original) in rows {
+        let mut stored: serde_json::Value =
+            serde_json::from_slice(&original).expect("stored response metadata");
+        stored["policy"]["response_time"] =
+            serde_json::to_value(response_time).expect("serialize fixture response time");
+        let policy: http_cache_semantics::CachePolicy =
+            serde_json::from_value(stored["policy"].clone()).expect("stored cache policy");
+        expired += usize::from(policy.is_stale(now));
+        let metadata = serde_json::to_vec(&stored).expect("serialize aged response metadata");
+        let delta = metadata.len() as i64 - original.len() as i64;
+        transaction
+            .execute(
+                "UPDATE entries SET metadata = ?1, bytes = bytes + ?2 WHERE namespace = 'http' AND key = ?3",
+                rusqlite::params![metadata, delta, key],
+            )
+            .expect("persist fixture response age");
+    }
+    assert!(expired > 0, "fixture includes an expired provider policy");
+    transaction.commit().expect("commit fixture response age");
+}
+
 const EPMC_BODY: &str = r#"{"hitCount":1,"resultList":{"result":[{"id":"32794606","source":"MED","title":"Aspirin","firstPublicationDate":"1990-01-01"}]}}"#;
 
 /// Parse a command's stdout as JSON and return the `_meta.notes`
@@ -242,7 +293,7 @@ async fn a_stale_article_search_json_states_the_cache_age_in_meta_notes() {
         "fresh serve carries no note: {fresh}"
     );
 
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    age_cached_provider_responses();
     server.abort();
 
     let stale = run(&args).await;
@@ -264,7 +315,7 @@ async fn a_day_cached_gwas_search_inside_the_day_window_has_no_cache_note() {
     let args = ["--json", "search", "gwas", "-g", "BRAF"];
     let fresh = run(&args).await;
     assert!(meta_notes(&fresh).is_empty(), "{fresh}");
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: provider freshness wait
+    age_cached_provider_responses();
     server.abort();
     let cached = run(&args).await;
     assert!(
@@ -312,7 +363,7 @@ async fn a_stale_search_all_json_states_the_cache_age_in_meta_notes() {
         "the article section ran: {fresh}"
     );
 
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    age_cached_provider_responses();
     epmc_server.abort();
 
     let stale = run(&args).await;
@@ -368,7 +419,7 @@ async fn a_stale_clingen_prefetch_note_reaches_the_gene_card() {
         "the clingen section rendered: {fresh}"
     );
 
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    age_cached_provider_responses();
     server.abort();
 
     let stale = run(&["get", "gene", "BRAF", "clingen"]).await;
@@ -495,7 +546,7 @@ async fn stale_get_json_reports_cache_notes_without_changing_the_fresh_card() {
         "fresh cache preserves the JSON bytes"
     );
 
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: bounded freshness-window wait
+    age_cached_provider_responses();
     server.abort();
     let stale = run(&args).await;
     assert!(
