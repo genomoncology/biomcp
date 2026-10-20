@@ -8,7 +8,9 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Changes: `src/entities/article/assets.rs`, `tests/article_asset_terminal.rs`, `tests/article_asset_terminal/primary_archive.rs`, `sdlc/records/2294-primary-article-asset-resolution.md`, `CHANGELOG.md`.
+Depends on: 2236
+
+Changes: `tests/golden/cases/*`, `src/entities/article/assets.rs`, `tests/article_asset_terminal.rs`, `tests/article_asset_terminal/primary_archive.rs`, `sdlc/records/2294-primary-article-asset-resolution.md`, `CHANGELOG.md`.
 
 ## Outcome
 
