@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 Every BioMCP job script, smoke and diagnostic helper that runs product commands exits nonzero when any product command fails, and prints that command's captured error. A job exit of 0 always means every command it ran passed.
 
-Changes: `scripts/release-smoke.sh`, `tests/test_release_smoke_script.py`, `scripts/geneagent-demo.sh`, `scripts/genegpt-demo.sh`, `tests/test_demo_scripts.py`, `scripts/measure-mcp-tools.py`, `tests/test_measure_mcp_tools.py`, `tools/measure-0-9-3-baseline`, `tests/test_measurement_summary_contract.py`, `tools/check-png-artifact`, `tests/test_png_artifact_contract.py`, `CHANGELOG.md`.
+Changes: `scripts/release-smoke.sh`, `tests/test_release_smoke_script.py`, `scripts/geneagent-demo.sh`, `scripts/genegpt-demo.sh`, `tests/test_demo_scripts.py`, `scripts/measure-mcp-tools.py`, `tests/test_measure_mcp_tools.py`, `tools/measure-0-9-3-baseline`, `tests/test_measurement_summary_contract.py`, `tools/check-png-artifact`, `tests/test_png_artifact_contract.py`, `sdlc/records/2289-command-failure-propagation.md`, `CHANGELOG.md`.
 
 - Proof: A deliberately failing command in each fixed helper makes its job exit nonzero and print the error.
 
@@ -29,3 +29,5 @@ Inventory found swallowed MCP helper exits, hidden captured errors in demos and 
 ## Reproduction on current main
 
 Before product edits, focused M5 job 2289/1792506036351-91894 on e0d84c429 ran the five owning regression files with fake executables: release smoke, demo scripts, MCP measurement, measurement summary and PNG artifact contracts. Nine cases failed and fifteen passed. Failures demonstrate hidden command streams, ignored MCP helper failure, coverage status 100 returning 0, runtime exit 7 returning 0 and census exit 42 returning 0. The earlier attempt stopped on a regression-test quoting error before product checks; its evidence remains separate. No provider requests or production mutation.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain failure-propagation/2289 raw preimage and corrected job evidence while release admission consumes this batch.

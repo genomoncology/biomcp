@@ -1,0 +1,9 @@
+# Preserve command failures and their diagnostics
+
+Smoke, demo, MCP-measurement and PNG helpers preserve captured stdout/stderr on unexpected product failure. Measurement helpers retain samples and summaries, then return nonzero when runtime, timed build/test, census or coverage commands fail. A failing coverage report no longer becomes successful because tail succeeded. Explicit expected-negative assertions remain valid; no provider behavior or new runner framework was added.
+
+On main e0d84c429, M5 preimage job 2289/1792506036351-91894 produced nine failing and fifteen passing entrypoint controls using fake commands. An earlier test-collection quoting error is retained separately. Corrected source f71e80af3186777d2207dc7a80f601909a090882 passed job 1792507089146-89730: all 24 controls, Ruff, changed-shell ShellCheck, tracked-text and the existing quality ratchet. Tests retain samples while asserting nonzero status for runtime exit 7, census exit 42 and coverage status 100; they also require visible captured command streams.
+
+The original private 2236 diagnostic printed product exit 1 but completed its loop with job exit 0. Its immutable state/log remain unchanged. A corrected sibling command under experiment 2102/failure-propagation/protein-diagnostic.sh accumulates product failures. The green proof ran it against the identified retained old-main binary, required exit 1 and the specific structures JSON panic, and preserved its output. This corrects the owning command without inventing a generic tracked helper.
+
+The release workflow shared helper belongs to 2288 and is not duplicated here. Raw preimages and green output remain under experiment 2102-biomcp-2258-final-live-replay/failure-propagation/2289. The coordinator merged accepted main 6e664cfa after the developer stopped and retained both changelog bullets. Fresh review and ordinary gates remain.
