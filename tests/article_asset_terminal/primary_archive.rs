@@ -73,6 +73,8 @@ impl HangingZip {
                         let failure_nanos = failure_nanos.clone();
                         failures.push(thread::spawn(move || {
                             let started = std::time::Instant::now();
+                            // sleep reason: inject the fixed 200-millisecond primary failure delay
+                            #[allow(clippy::disallowed_methods)]
                             thread::sleep(Duration::from_millis(200));
                             let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\nContent-Length: 9\r\nConnection: close\r\n\r\n<records>");
                             failure_nanos.store(started.elapsed().as_nanos() as u64, Ordering::SeqCst);
@@ -138,6 +140,8 @@ impl HangingZip {
                     let _ = stream.write_all(header.as_bytes());
                     let _ = stream.write_all(body);
                 } else {
+                    // sleep reason: poll the nonblocking fixture listener with a 2-millisecond stop-check interval
+                    #[allow(clippy::disallowed_methods)]
                     thread::sleep(Duration::from_millis(2));
                 }
             }
