@@ -49,7 +49,7 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     )
     _write_executable(
         fixture_root / "tools/osv-scanner",
-        '#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
     )
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
