@@ -185,3 +185,9 @@ Actual main a5314c569719e0336f5ace6c83134dd9afbd6982 passed full job 2299/179253
 Read-only GitHub observations now show all six assigned Dependabot alerts fixed: 80, 87, 88, 89, 91 and 93, with fixed_at values 21:45:37Z through 21:45:39Z. Canonical security-pins/2308/post-landing-alerts-first.json retains the API response. No alert was manually closed and no workflow was triggered to obtain this observation.
 
 Final admission also requires 2310 ownership prevention and 2311 shared Python-tool bootstrap. Both are explicit PM-approved 0.9.4 process repairs; neither changes the historical measurement ruling. Schema-title preservation in 2309 is a fresh-review compatibility fix, so pre-review wheel observations retain their earlier source binding and final packaged qualification must cover the repaired source.
+
+## Landed MCP security repair
+
+Repair 2309 landed as 39425d8fce157f9aa1a92310af9da60983d2dae6 after candidate gate 2309/1792533958407-52190 passed in 433352 ms. Fresh integration review accepted 415376235e4fc4c9a734a89927f2d9935ede59b1 after the actual changelog conflict, preserving both security bullets and the accepted SDK/schema changes. The continuing admission reviewer accepted the actual published prefix through this landing.
+
+Actual-main full job 2309/1792534415712-7306 passed in 1011661 ms. The coordinator independently read both terminal results. The full check includes the repaired-source installed Linux wheel; the earlier Gator wrapper remains failed on its historical cleanup step. Canonical mcp-security/2309 retains the owning evidence and post-landing GitHub response. All fourteen alerts 80 through 93 are now fixed, including the eight assigned SDK alerts fixed at 22:13:23Z through 22:13:26Z. No alert was manually closed. Fresh-clone Linux qualification and the full untagged rehearsal still await the remaining source landings.
