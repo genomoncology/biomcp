@@ -90,20 +90,20 @@ test-long: prepare-test
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
-		PATH="$$tool_dir:$$PATH" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
+		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh
 
 # Keep commands in recipes so even make -j preserves the landing order.
 # The existing landing gate runs on the merge candidate; main adds the
 # shipped-feature build and behavior checks before the next landing.
 landing-gate:
-	$(MAKE) lint
+	$(MAKE) lint BIOMCP_ADVISORY_SCOPE="$(if $(filter always,$(BIOMCP_ADVISORY_SCOPE)),always,landing)"
 	uv run --no-project python tools/check-replay-live --disable-sources commercial-restricted,semantic-scholar,kegg
 	$(MAKE) test
 	$(MAKE) spec
 
 main-gate:
-	$(MAKE) landing-gate
+	$(MAKE) landing-gate BIOMCP_ADVISORY_SCOPE=always
 	$(MAKE) repo-audit
 	$(MAKE) full-feature-check
 	$(MAKE) installed-wheel-smoke
@@ -141,6 +141,9 @@ release-gate: lint
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
+
+# Release lint remains unconditional even when a caller carries landing scope.
+release-gate: override BIOMCP_ADVISORY_SCOPE = always
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh

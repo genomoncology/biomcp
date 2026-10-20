@@ -20,6 +20,10 @@ install_archive_binary() {
     printf 'checksum mismatch for %s: expected %s, got %s\n' "$name" "$expected" "$actual" >&2
     return 1
   }
+  if [ "$member" = - ]; then
+    install -m 0755 "$archive" "$tool_dir/$name"
+    return
+  fi
   case "$url" in
     *.tar.xz) tar -xJf "$archive" -C "$temp_dir" "$member" ;;
     *.tar.gz) tar -xzf "$archive" -C "$temp_dir" "$member" ;;
@@ -27,6 +31,25 @@ install_archive_binary() {
   esac
   install -m 0755 "$temp_dir/$member" "$tool_dir/$name"
 }
+
+# Official release assets and SHA-256 values:
+# https://github.com/google/osv-scanner/releases/tag/v2.7.0
+# OSV includes GitHub Security Advisories, RustSec and PyPA data.
+# https://google.github.io/osv-scanner/supported-languages-and-lockfiles/
+if [ "${1:-}" = --advisories ]; then
+  case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64) platform=linux_amd64; digest=160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b ;;
+    Linux-aarch64|Linux-arm64) platform=linux_arm64; digest=4061ef4c021ed3c47f203b818f337e351336cc5cd67c0274fc36bd1dfc728dd7 ;;
+    Darwin-arm64) platform=darwin_arm64; digest=d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b ;;
+    Darwin-x86_64) platform=darwin_amd64; digest=e82c5df7ab0a42dff29a1cd0660711447b56b4c0483ff66ad8634df10fd81a45 ;;
+    *) printf 'No pinned advisory scanner for %s\n' "$(uname -s)-$(uname -m)" >&2; exit 1 ;;
+  esac
+  osv_version=2.7.0
+  install_archive_binary osv-scanner "$osv_version" \
+    "https://github.com/google/osv-scanner/releases/download/v$osv_version/osv-scanner_$platform" "$digest" -
+  printf '%s\n' "$tool_dir"
+  exit
+fi
 
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64)
