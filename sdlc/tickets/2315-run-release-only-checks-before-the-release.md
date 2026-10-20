@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Depends on: 2316, 2319
+
 ## Outcome
 
 Checks that today run first at release rehearsal run earlier: the stress lane, the optimized panic-recovery test, protobuf generation and the long suites run nightly on main through pm job, and the Windows checks run once per milestone. A test fails when a release.yml step has no local or nightly counterpart, so a check that stops running is noticed.
