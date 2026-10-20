@@ -45,6 +45,15 @@ class Case:
 
 CASES = (
     Case("get-gene-braf", ("get", "gene", "BRAF")),
+    Case("get-protein-p15056", ("get", "protein", "P15056")),
+    Case(
+        "get-protein-p15056-structures",
+        ("get", "protein", "P15056", "structures"),
+    ),
+    Case(
+        "protein-structures-p15056-limit1-offset1",
+        ("protein", "structures", "P15056", "--limit", "1", "--offset", "1"),
+    ),
     Case("search-gene-braf", ("search", "gene", "BRAF", "--limit", "3")),
     Case("get-variant-braf-v600e", ("get", "variant", "BRAF V600E")),
     Case(
