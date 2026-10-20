@@ -1,0 +1,32 @@
+<entry>
+  <tissueExpression source="HPA" technology="IHC" assayType="tissue">
+    <summary type="tissue">Ubiquitous cytoplasmic expression.</summary>
+    <verification type="reliability" description="Medium consistency between antibody staining and RNA expression data. ">supported</verification>
+    <data>
+      <tissue organ="Connective &amp; soft tissue" ontologyTerms="UBERON:0001013">Adipose tissue</tissue>
+      <level type="expression">low</level>
+      <tissueCell>
+        <cellType>Adipocytes</cellType>
+        <level type="expression">low</level>
+      </tissueCell>
+    </data>
+  </tissueExpression>
+  <cellExpression source="HPA" technology="ICC/IF">
+    <verification type="reliability">supported</verification>
+    <data>
+      <location status="additional" GOId="GO:0036064">basal body</location>
+      <location status="additional" GOId="GO:0034451">centriolar satellite</location>
+      <location status="main" GOId="GO:0005829">cytosol</location>
+      <location status="additional" GOId="GO:0097229">end piece</location>
+      <location status="additional" GOId="GO:0097225">mid piece</location>
+      <location status="additional" GOId="GO:0005886">plasma membrane</location>
+      <location status="additional" GOId="GO:0005929">primary cilium</location>
+      <location status="additional" GOId="GO:0097228">principal piece</location>
+      <location status="main" GOId="GO:0043231">vesicles</location>
+    </data>
+  </cellExpression>
+  <rnaExpression source="HPA" technology="RNAseq" assayType="consensusTissue">
+    <rnaSpecificity description="nTPM &gt;= 1 in at least one tissue but not elevated in any tissue" specificity="Low tissue specificity" />
+    <rnaDistribution description="n=all">Detected in all</rnaDistribution>
+  </rnaExpression>
+</entry>

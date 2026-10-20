@@ -184,11 +184,11 @@ jobs:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             artifact: biomcp-linux-x86_64.tar.gz
-            container: quay.io/pypa/manylinux_2_28_x86_64
+            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             artifact: biomcp-linux-arm64.tar.gz
-            container: quay.io/pypa/manylinux_2_28_aarch64
+            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e
           - os: macos-14
             target: aarch64-apple-darwin
             artifact: biomcp-darwin-arm64.tar.gz
@@ -327,10 +327,10 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-            container: quay.io/pypa/manylinux_2_28_x86_64
+            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            container: quay.io/pypa/manylinux_2_28_aarch64
+            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e
           - os: macos-14
             target: aarch64-apple-darwin
           - os: macos-15
@@ -416,12 +416,11 @@ jobs:
 
   wheel-smoke:
     env:
-      BIOMCP_DISABLE_SOURCES: commercial-restricted,kegg,semantic-scholar
       # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-    needs: [pypi-build]
+    needs: [version-check, pypi-build]
     if: github.event_name == 'push' || inputs.candidate_sha != ''
     strategy:
       fail-fast: false
@@ -431,12 +430,12 @@ jobs:
             artifact: wheel-x86_64-unknown-linux-gnu
             executable: bin/biomcp
             python: bin/python
-            container: quay.io/pypa/manylinux_2_28_x86_64
+            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8
           - os: ubuntu-24.04-arm
             artifact: wheel-aarch64-unknown-linux-gnu
             executable: bin/biomcp
             python: bin/python
-            container: quay.io/pypa/manylinux_2_28_aarch64
+            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e
           - os: macos-14
             artifact: wheel-aarch64-apple-darwin
             executable: bin/biomcp
@@ -457,6 +456,10 @@ jobs:
             python: Scripts/python.exe
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ needs.version-check.outputs.source_sha }}
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
@@ -484,126 +487,16 @@ jobs:
       - name: Run the wheel inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          # The tag rides in with -e (ticket 2046): docker passes no
-          # job environment into the container, and the script reads
-          # ${TAG#v} under `set -u`. Only double quotes live inside
-          # the single-quoted script, so nothing closes it early.
-          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -e BIOMCP_DISABLE_SOURCES -e TAG "${{ matrix.container }}" bash -euo pipefail -c '
+          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -v "$PWD/scripts:/scripts:ro" -e TAG "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
-            printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
-            printf "%s\n" "$printed"
-            expected="${TAG#v}"
-            actual="$(printf "%s" "$printed" | tr -d "\015\012")"
-            if [ "$actual" != "biomcp $expected" ]; then
-              echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
-            fi
-            stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)" || {
-              printf "%s\n" "$stats" >&2
-              echo "installed wheel cache stats failed" >&2
-              exit 1
-            }
-            case "$stats" in
-              "{"*) ;;
-              *) echo "cache stats must print a JSON object, got: $stats" >&2; exit 1 ;;
-            esac
+            bash /scripts/installed-wheel-smoke.sh /opt/python/cp312-cp312/bin/biomcp "${TAG#v}"
           '
 
       - name: Smoke the installed wheel on every shipped platform
+        if: runner.os != 'Linux'
         shell: bash
         run: |
-          BIOMCP="$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}"
-
-          require_exit() {
-            expected="$1"; shift
-            status=0
-            output="$("$BIOMCP" "$@" 2>&1)" || status=$?
-            printf '%s\n' "$output" | head -n 20
-            if [ "$status" -eq 101 ] || [ "$status" -ge 128 ]; then
-              echo "panic or crash (exit $status) from: biomcp $*" >&2
-              return 1
-            fi
-            if printf '%s\n' "$output" | grep -q "has overflowed its stack"; then
-              echo "stack overflow from: biomcp $*" >&2
-              return 1
-            fi
-            if [ "$status" -ne "$expected" ]; then
-              echo "expected exit $expected, got $status from: biomcp $*" >&2
-              return 1
-            fi
-          }
-
-          require_json() {
-            status=0
-            output="$("$BIOMCP" "$@" 2>/dev/null)" || status=$?
-            if [ "$status" -ne 0 ]; then
-              echo "json mode must exit 0 from: biomcp $* (exit $status)" >&2
-              return 1
-            fi
-            case "$output" in
-              "{"*) ;;
-              *) echo "json mode must print an object from: biomcp $*" >&2; return 1 ;;
-            esac
-            if printf '%s\n' "$output" | grep -q "skill asset"; then
-              echo "skill asset error from: biomcp $*" >&2
-              return 1
-            fi
-          }
-
-          require_ddinter_disabled() {
-            require_exit 1 "$@" || return 1
-            if ! printf '%s\n' "$output" | grep -Fq "DDInter is disabled by the commercial-restricted group"; then
-              echo "expected the commercial-restricted DDInter disable message from: biomcp $*" >&2
-              return 1
-            fi
-          }
-
-          require_exit 0 search trial --condition diabetes --limit 1
-          require_exit 0 search trial --criteria "anti-PD-1 therapy" --limit 3
-          # This public smoke excludes restricted sources. Live DDInter
-          # sync and interaction data behavior remains unverified.
-          require_ddinter_disabled ddinter sync
-          require_ddinter_disabled drug interactions apixaban
-          require_exit 0 drug trials imatinib
-
-          status=0
-          output="$("$BIOMCP" drug adverse-events qwertyzzznonexistent999 2>&1)" || status=$?
-          printf '%s\n' "$output" | head -n 20
-          [ "$status" -eq 0 ]
-          printf '%s\n' "$output" | grep -q "Drug not found in FAERS"
-
-          require_json get drug --region us aspirin regulatory -j
-          require_json search trial --condition diabetes --limit 1 -j
-
-          # GitHub #287: the 0.9.0 debug-profile wheel embedded no
-          # assets, so skill, chart, and --json ladders failed on
-          # every PyPI install. Exercise those paths positively:
-          # each must succeed AND name real content, not an empty
-          # or missing-asset answer.
-          status=0
-          output="$("$BIOMCP" skill list 2>&1)" || status=$?
-          printf '%s\n' "$output" | head -n 20
-          if [ "$status" -ne 0 ] || printf '%s\n' "$output" | grep -q "No skills found"; then
-            echo "skill list must name skills (exit $status): #287 regression" >&2
-            exit 1
-          fi
-          # Ticket 1266: exit codes alone let the 0.9.0 debug-wheel
-          # failure through (errors exited 0), so assert known
-          # content from the embedded assets too — no network.
-          status=0
-          output="$("$BIOMCP" skill article-follow-up 2>&1)" || status=$?
-          printf '%s\n' "$output" | head -n 20
-          if [ "$status" -ne 0 ] || ! printf '%s\n' "$output" | grep -q "Article follow-up via citations and recommendations"; then
-            echo "skill article-follow-up must show its content (exit $status): #287 regression" >&2
-            exit 1
-          fi
-          status=0
-          output="$("$BIOMCP" chart bar 2>&1)" || status=$?
-          printf '%s\n' "$output" | head -n 20
-          if [ "$status" -ne 0 ] || ! printf '%s\n' "$output" | grep -q "Bar Chart"; then
-            echo "chart bar must show the Bar Chart heading (exit $status): #287 regression" >&2
-            exit 1
-          fi
-          require_json --json get article 32794606
+          bash scripts/installed-wheel-smoke.sh "$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" "${TAG#v}"
 
   docs-publish:
     needs: [version-check, qualification]

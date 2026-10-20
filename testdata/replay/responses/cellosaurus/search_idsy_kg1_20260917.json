@@ -1,0 +1,133 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3VV"
+          }
+        ],
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C21790",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C21790",
+            "label": "Mouse melanoma",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C21790"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "F10.9.KG1"
+          },
+          {
+            "type": "synonym",
+            "value": "KG1"
+          },
+          {
+            "type": "identifier",
+            "value": "B16-F10.9.KG1"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "10090",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_10090",
+            "label": "Mus musculus (Mouse)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10090&lvl=3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0374"
+          }
+        ],
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C3249",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C3249",
+            "label": "Acute myeloid leukemia without maturation",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C3249"
+          },
+          {
+            "accession": "C9154",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C9154",
+            "label": "Adult acute myeloid leukemia",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C9154"
+          },
+          {
+            "accession": "Orphanet_519",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_519",
+            "label": "Acute myeloid leukemia",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_519"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "KG1"
+          },
+          {
+            "type": "identifier",
+            "value": "KG-1"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UD72"
+          }
+        ],
+        "category": "Conditionally immortalized cell line",
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "Kidney-Gli1"
+          },
+          {
+            "type": "identifier",
+            "value": "KG1"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "10090",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_10090",
+            "label": "Mus musculus (Mouse)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10090&lvl=3"
+          }
+        ]
+      }
+    ]
+  }
+}

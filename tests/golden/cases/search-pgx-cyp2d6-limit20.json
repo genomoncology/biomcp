@@ -1,0 +1,147 @@
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "returned": 20,
+    "total": null,
+    "has_more": true,
+    "next_page_token": null
+  },
+  "count": 20,
+  "results": [
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "amitriptyline",
+      "cpiclevel": "A",
+      "pgxtesting": "Informative PGx",
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "atomoxetine",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx",
+      "guidelinename": "CYP2D6 and Atomoxetine"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "codeine",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx",
+      "guidelinename": "CYP2D6, OPRM1, COMT, and Opioids"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "eliglustat",
+      "cpiclevel": "A/B",
+      "pgxtesting": "Testing Required"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "nortriptyline",
+      "cpiclevel": "A",
+      "pgxtesting": "Informative PGx",
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "oliceridine",
+      "cpiclevel": "A/B",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "ondansetron",
+      "cpiclevel": "A",
+      "pgxtesting": "No Clinical PGx",
+      "guidelinename": "CYP2D6 and Ondansetron and Tropisetron"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "paroxetine",
+      "cpiclevel": "A",
+      "guidelinename": "CYP2D6, CYP2C19, CYP2B6, SLC6A4, HTR2A and Serotonin Reuptake Inhibitor Antidepressants"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "pimozide",
+      "cpiclevel": "A/B",
+      "pgxtesting": "Testing Required"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "pitolisant",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "tamoxifen",
+      "cpiclevel": "A",
+      "pgxtesting": "Informative PGx",
+      "guidelinename": "CYP2D6 and Tamoxifen"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "tetrabenazine",
+      "cpiclevel": "A/B",
+      "pgxtesting": "Testing Required"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "tramadol",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx",
+      "guidelinename": "CYP2D6, OPRM1, COMT, and Opioids"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "tropisetron",
+      "cpiclevel": "A",
+      "guidelinename": "CYP2D6 and Ondansetron and Tropisetron"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "vortioxetine",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx",
+      "guidelinename": "CYP2D6, CYP2C19, CYP2B6, SLC6A4, HTR2A and Serotonin Reuptake Inhibitor Antidepressants"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "amoxapine",
+      "cpiclevel": "B/C",
+      "pgxtesting": "Informative PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "amphetamine",
+      "cpiclevel": "B/C",
+      "pgxtesting": "Informative PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "aripiprazole",
+      "cpiclevel": "B",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "aripiprazole lauroxil",
+      "cpiclevel": "B/C",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "genesymbol": "CYP2D6",
+      "drugname": "brexpiprazole",
+      "cpiclevel": "B/C",
+      "pgxtesting": "Actionable PGx"
+    }
+  ],
+  "_meta": {
+    "next_commands": [
+      "biomcp get pgx CYP2D6",
+      "biomcp list pgx"
+    ]
+  }
+}

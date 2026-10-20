@@ -1,5 +1,286 @@
 {
   "routes": {
+    "GET /PMC3467229.1/PMC3467229.1.json": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+      "status": 200,
+      "file": "responses/pmc-oa/pmc3467229.1.json",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "captured_at": "2026-10-20T15:38:07.384063+00:00",
+        "sha256": "4240e488862f7ed12db13a2a12c162102dd54e54f18df9e156436bc3779acb6b",
+        "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-825d31a1bed9.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571",
+        "captured_at": "2026-10-20T16:12:04.651755+00:00",
+        "sha256": "a792b383180062bcdd20c690480a8e288a77e036a82713b8a2758d065831704f",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-40a8e385d245.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761",
+        "captured_at": "2026-10-20T16:12:06.873634+00:00",
+        "sha256": "5d7caf8d5f3996c8326422f823fc9829aabc60507c32ca0fb721bca59bb6d4d9",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-070a3fd81158.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c",
+        "captured_at": "2026-10-20T16:12:09.061753+00:00",
+        "sha256": "eae3f8d3639846fa6ac4d3f7f5c08decad11d466c8e06627b2a9b3f4e8b9cdd0",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-c3b64f0b6793.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9",
+        "captured_at": "2026-10-20T16:12:11.383349+00:00",
+        "sha256": "edb2115cdff0837bf4be21b68d6933349161ebd2be6fccae21dd5ea15fd31b04",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-a374311bac5d.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b",
+        "captured_at": "2026-10-20T16:12:13.595923+00:00",
+        "sha256": "aab8c23f416463e92a79779c288ea6597fcb31da0a98e00e3fccf80d7de54d40",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24",
+      "status": 200,
+      "file": "responses/pmc-oa/pmc3467229-s002.doc.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24",
+        "captured_at": "2026-10-20T16:12:15.834943+00:00",
+        "sha256": "45f315e02432c0ef3714434fe5709a22958377e1bbb2c727c4f5e71c8615312f",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-541cf1b69c2b.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b",
+        "captured_at": "2026-10-20T16:12:18.116639+00:00",
+        "sha256": "bc2ad2efa4f5cc9ad25debc6d05ea7b8f579e327bcfb49de802f8ad5bfd55011",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-d3a1d44e4455.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829",
+        "captured_at": "2026-10-20T16:12:20.327204+00:00",
+        "sha256": "6706bf630abd4a3401a421573e2c087c6431f26e43c64a88a3a6fbd7e3ab79db",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /cellosaurus/cell-line/CVCL_0005?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_0005_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "924eacf6cf358a4b9f46a2cd45451f5f5e97965e831d6bbbf12b2c49cb81398f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. Recorded with the card projection plus dr and without var."
+      }
+    },
+    "GET /cellosaurus/cell-line/CVCL_0064?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0064?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_0064_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0064?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "7763e4192d58c82d8de46eadd0409d8c7d0645d3724dc7212bbf5617285f012a",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/cell-line/CVCL_1844?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_1844?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_1844_var_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_1844?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "0c7126fee37146b353c92c8bc6219a5ae935c2b614fbb140104faee62b8cf4fa",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/release-info?format=json": {
+      "upstream": "https://api.cellosaurus.org/release-info?format=json",
+      "status": 200,
+      "file": "responses/cellosaurus/release_info_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/release-info?format=json",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "91b0cf0539b7e22f3bad72480f5e89ce2513cae8eaafcc4ebc6875bba02a148c",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/search/cell-line?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&format=json&q=idsy%3A%22KG1%22&rows=1000": {
+      "upstream": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+      "status": 200,
+      "file": "responses/cellosaurus/search_idsy_kg1_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "820f745be6426b4a12c38885a8c4510a246b496f6ae763e6f6d061c88e51d30f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cpic/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&limit=11&offset=0&order=guideline_name.asc&select=%2A": {
+      "file": "responses/cpic/cpic-guideline-summary-view-a40f0c0dcd01.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "attempt": 0,
+        "bytes": 2995,
+        "method": "GET",
+        "observed_at": "2026-10-20T15:17:00.948410+00:00",
+        "proxy": false,
+        "redirects": false,
+        "request_headers": {
+          "accept": "*/*",
+          "accept-encoding": "identity",
+          "cache-control": "no-store",
+          "user-agent": "biomcp-cli/0.9.4"
+        },
+        "response_headers": {
+          "Cache-Control": "no-cache",
+          "Connection": "close",
+          "Content-Location": "/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&limit=11&offset=0&order=guideline_name.asc&select=%2A",
+          "Content-Range": "0-6/*",
+          "Content-Security-Policy": "upgrade-insecure-requests; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Tue, 20 Oct 2026 15:17:01 GMT",
+          "Expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+          "Server": "nginx",
+          "Strict-Transport-Security": "max-age=16070400; includeSubDomains",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Content-Type-Options": "nosniff"
+        },
+        "sha256": "8ad47f79a591100835f819004c5052135d97b940a9f940ffcbac4f74494f5f1c",
+        "source_revision": "edc97ec1462a696c0f340f7cbb939c83c87cf3ea",
+        "status": 200,
+        "url": "https://api.cpicpgx.org/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&select=%2A&limit=11&offset=0&order=guideline_name.asc"
+      },
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&select=%2A&limit=11&offset=0&order=guideline_name.asc"
+    },
+    "GET /cpic/pair_view?drugname=ilike.%2Aclopidogrel%2A&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-942b0d0d43eb.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "0b35b4e8d788eb9cd464662dbe407dc4d79d41a3e6deab175f4752c56aa9f751",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
     "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
       "file": "responses/cpic/cpic-pair-view-a004e3956d1f.bin",
       "headers": {
@@ -33,6 +314,117 @@
       },
       "status": 200,
       "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
+    },
+    "GET /cpic/pair_view?genesymbol=eq.CYP2D6&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-cc07ebeadbe2.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "e2408ec6d131107a0279a47e2a310b2a18ee40da3a4e55a671c685903d751e9e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    "GET /cpic/pair_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-c6c3eede717e.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:36.050019+00:00",
+        "sha256": "1bf179afedd63415255836b97fa1ea3c9487c8ab55a44ce23a942e1bc822c533",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /cpic/population_frequency_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc&select=%2A": {
+      "file": "responses/cpic/cpic-population-frequency-view-771961fe0f99.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "attempt": 0,
+        "bytes": 2131,
+        "method": "GET",
+        "observed_at": "2026-10-20T15:16:58.608466+00:00",
+        "proxy": false,
+        "redirects": false,
+        "request_headers": {
+          "accept": "*/*",
+          "accept-encoding": "identity",
+          "cache-control": "no-store",
+          "user-agent": "biomcp-cli/0.9.4"
+        },
+        "response_headers": {
+          "Cache-Control": "no-cache",
+          "Connection": "close",
+          "Content-Location": "/v1/population_frequency_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc&select=%2A",
+          "Content-Range": "0-10/*",
+          "Content-Security-Policy": "upgrade-insecure-requests; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Tue, 20 Oct 2026 15:16:58 GMT",
+          "Expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+          "Server": "nginx",
+          "Strict-Transport-Security": "max-age=16070400; includeSubDomains",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Content-Type-Options": "nosniff"
+        },
+        "sha256": "1f81667236268dc97dfe2ef947e128ca699282cff745daf7260a1abb8f916497",
+        "source_revision": "edc97ec1462a696c0f340f7cbb939c83c87cf3ea",
+        "status": 200,
+        "url": "https://api.cpicpgx.org/v1/population_frequency_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc"
+      },
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/population_frequency_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc"
+    },
+    "GET /cpic/recommendation_view?limit=11&lookupkey-%3E%3ECYP2D6=not.is.null&offset=0&order=drugname.asc%2Crecommendationid.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/recommendation_view?lookupkey-%3E%3ECYP2D6=not.is.null&select=%2A&limit=11&offset=0&order=drugname.asc%2Crecommendationid.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-recommendation-view-7c37a430b055.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:38.480691+00:00",
+        "sha256": "7f67fa1a914245942fe3eb2756a0df019c0f531b01045d8c52eec910beaaacec",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /cpic/recommendation_view?limit=200&lookupkey-%3E%3ECYP2D6=not.is.null&select=drugname": {
+      "upstream": "https://api.cpicpgx.org/v1/recommendation_view?lookupkey-%3E%3ECYP2D6=not.is.null&select=drugname&limit=200",
+      "status": 200,
+      "file": "responses/cpic/cpic-recommendation-view-ffb594e0fb34.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:40.882449+00:00",
+        "sha256": "44a3551410b505010e5d8f765712de14264c7a11a86daed45bb14ce3ad604f03",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
     },
     "GET /ctgov/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
       "file": "responses/ctgov/ctgov-studies-nct02576665-references.json",
@@ -128,6 +520,27 @@
       "status": 200,
       "upstream": "https://clinicaltrials.gov/api/v2/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=3&query.cond=melanoma"
     },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=5&query.cond=melanoma": {
+      "status": 200,
+      "file": "responses/ctgov/melanoma-default-55b650b18997.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING&countTotal=true&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+      "recording_provenance": {
+        "provider": "ctgov",
+        "request": {
+          "method": "GET",
+          "url": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING&countTotal=true&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:30:01.730067+00:00",
+        "sha256": "b7f0a428dd0b2b6d20db7cc79d3275e38d363ad034ccfee5dcb4222c00fdd5d3",
+        "observed_response_sha256": "7d6c64bed3712c9388bcb88c33485f2cac229802d7cf0ed3bc270ee6ea1688ae",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
     "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
       "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
       "headers": {
@@ -165,6 +578,70 @@
       },
       "status": 200,
       "upstream": "https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/113488022"
+    },
+    "GET /europepmc/PMC3467229/fullTextXML": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3467229/fullTextXML",
+      "status": 200,
+      "file": "responses/europepmc/oa23056577-da5c07b59dc6.bin",
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3467229/fullTextXML",
+        "captured_at": "2026-10-20T16:12:23.552508+00:00",
+        "sha256": "7d40038dbf616090981cdc71eea819e5008356cf3ad6d8d5ea4e5701812e9d0e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/europepmc-current-3.json",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:28:13.720448+00:00",
+        "sha256": "16b56e8553a13b8696ee8252a2e9b3fcd40c5245e1a0bb1a522ef0528f081c9e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/oa23056577-42bd2437194c.bin",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:57:33.189907+00:00",
+        "sha256": "85660ada5b28040b78439e290a25e705e17054679d8fd1ceb72000d7eab68d78",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/europepmc-current-5.json",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:28:18.430026+00:00",
+        "sha256": "02b276b5005e5a97890e914cb37b4d97c414e96218bbbfcc2f4a37099746bdec",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
     },
     "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42875213+AND+SRC%3AMED": {
       "file": "responses/europepmc/europepmc-search-a1b3c35e3557.bin",
@@ -234,6 +711,58 @@
       "status": 200,
       "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&mapped_gene=BRAF"
     },
+    "GET /hpa/ENSG00000157764.xml": {
+      "upstream": "https://www.proteinatlas.org/ENSG00000157764.xml",
+      "status": 200,
+      "file": "responses/hpa/braf_20260811.xml",
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "recording_provenance": {
+        "provider": "Human Protein Atlas",
+        "request": "https://www.proteinatlas.org/ENSG00000157764.xml",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "c82c1d85b5c6d9f6acb886cd2b78ef71d3424d00a54782c62ed6cb59a33897ec",
+        "minimization_or_redaction": "Reduced to one real tissue row and the consumed reliability, subcellular-location, and RNA-summary elements.",
+        "provider_origin_statement": "Bytes were recorded from the public Human Protein Atlas response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    "GET /hpo/terms/HP:0001250": {
+      "upstream": "https://ontology.jax.org/api/hp/terms/HP:0001250",
+      "status": 200,
+      "file": "responses/hpo/hpo-terms-hp-0001250-e9a34a041c96.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:50.651958+00:00",
+        "sha256": "12795d85eed56e806e80b0fcd903e2501f9283de541d933cf921ca3ea59c67db",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /hpo/terms/HP:0001263": {
+      "upstream": "https://ontology.jax.org/api/hp/terms/HP:0001263",
+      "status": 200,
+      "file": "responses/hpo/hpo-terms-hp-0001263-a17e69acc5b6.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:52.981405+00:00",
+        "sha256": "89d0aa3399d26eb26043402622c4976610fb25d03b0407133a4cf4732a11002e",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
     "GET /kegg/find/pathway/BRAF": {
       "file": "responses/kegg/kegg-find-pathway-braf-ed8e51ae50dc.bin",
       "live_check_note": "not checked live: commercial-restricted source",
@@ -258,6 +787,63 @@
       "status": 200,
       "upstream": "https://rest.kegg.jp/get/hsa05200"
     },
+    "GET /monarch/v3/api/association?category=biolink%3ADiseaseToPhenotypicFeatureAssociation&direct=true&limit=500&object=HP%3A0001250&object=HP%3A0001263&object_category=biolink%3APhenotypicFeature&offset=0&predicate=biolink%3Ahas_phenotype&subject=MONDO%3A0010450": {
+      "upstream": "https://api-v3.monarchinitiative.org/v3/api/association?subject=MONDO%3A0010450&object=HP%3A0001250&object=HP%3A0001263&category=biolink%3ADiseaseToPhenotypicFeatureAssociation&predicate=biolink%3Ahas_phenotype&object_category=biolink%3APhenotypicFeature&direct=true&limit=500&offset=0",
+      "status": 200,
+      "file": "responses/monarch/monarch-v3-api-association-b1298efbdc14.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:10:00.092641+00:00",
+        "sha256": "3a3087675b0bc884e585a79bb757395023a283393839e24cb4e69eb071f93cbe",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=50": {
+      "upstream": "https://api-v3.monarchinitiative.org/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=50",
+      "status": 200,
+      "file": "responses/monarch/monarch-v3-api-semsim-search-hp-0001250--c2596cb50b19.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:55.270476+00:00",
+        "sha256": "d56c61edb6cc6918f88a4d2e74f54c61de6aa0ebd51e59f35803d909defeec42",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10": {
+      "status": 200,
+      "file": "responses/mychem/melanoma-default-2f53d7c95d4d.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mychem.info/v1/query?q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+      "recording_provenance": {
+        "provider": "mychem",
+        "request": {
+          "method": "GET",
+          "url": "https://mychem.info/v1/query?q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:29:36.496752+00:00",
+        "sha256": "92f69bcbc2fb3267499cf040d0686448072c87d69322713d87cef80a3bfa2a25",
+        "observed_response_sha256": "5288162c90cac62680649e91fa486b9bfeeb988a376279dd9ee7344ea6beeba8",
+        "minimization_or_redaction": "Retain query metadata and command-read public DrugCentral/ChEMBL/GtoPdb/UNII/NDC/ChEBI/OpenFDA fields; remove DrugBank and every other hit block. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
     "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
       "file": "responses/mychem/mychem-query-212dd06e4cf8.bin",
       "headers": {
@@ -275,41 +861,46 @@
       "status": 200,
       "upstream": "https://mychem.info/v1/query?q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A*melanoma*&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name"
     },
-    "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
-      "file": "responses/mydisease/melanoma-detail.json",
-      "note": "Ontology identity fields from recorded melanoma query hit.",
+    "GET /mydisease/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
       "status": 200,
-      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "file": "responses/mydisease/melanoma-default-d3fe9c0bcc46.json",
       "headers": {
         "content-type": "application/json; charset=UTF-8"
       },
+      "upstream": "https://mydisease.info/v1/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
       "recording_provenance": {
-        "original_sha256": "2ba1b70a2a5136815fd826e5335c91d47dc378e3e53607bccfa0c5fb769489ed",
-        "observed_at": "2026-10-19T22:22:03.000063+00:00",
-        "observed_status": 200,
-        "observed_content_type": "application/json; charset=UTF-8",
-        "source_revision": "5c3d7794febb31612e628d2e9caa2688c9a4ebfd",
-        "collection_settings": {
-          "proxy": false,
-          "redirects": false,
-          "retries": 0,
-          "deadline_seconds": 90,
-          "max_response_bytes": 33554432
+        "provider": "mydisease",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "body": null
         },
-        "observed_response_sha256": "783e1b57a05aa8fa6f0bcf226fcb5666fd948165e576389f269eaef66d6d9394",
-        "sha256": "a746d0129eb9e602c62200343c64c52836f41965203817b5619e481fbc2e33f8",
+        "captured_at": "2026-10-20T16:29:02.568092+00:00",
+        "sha256": "86c16c21f2740808dd74ed724b37ad4298bb33940f3ec88fbaf8720e4ba3920c",
+        "observed_response_sha256": "4401f85dfebae89d7af1197b3d1679064cbeded7c14038fc5c0cc3cf39bbf91e",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
+    "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "status": 200,
+      "file": "responses/mydisease/melanoma-default-653b6c2dad5f.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "recording_provenance": {
+        "provider": "mydisease",
         "request": {
           "method": "GET",
           "url": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
-          "headers": {
-            "Accept-Encoding": "identity",
-            "User-Agent": "biomcp-cli/0.9.4",
-            "Cache-Control": "no-store",
-            "Accept": "*/*"
-          },
           "body": null
         },
-        "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+        "captured_at": "2026-10-20T16:28:57.686618+00:00",
+        "sha256": "e973ac41aed7af1cc51ebb2a564651336a3b8d785cbb6fd1a9134a75fea51720",
+        "observed_response_sha256": "783e1b57a05aa8fa6f0bcf226fcb5666fd948165e576389f269eaef66d6d9394",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
       }
     },
     "GET /mydisease/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
@@ -346,6 +937,27 @@
           "body": null
         },
         "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+      }
+    },
+    "GET /mydisease/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "status": 200,
+      "file": "responses/mydisease/melanoma-default-6eee0a495dcf.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "recording_provenance": {
+        "provider": "mydisease",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:29:00.307580+00:00",
+        "sha256": "00a2d73258741ee8a7e9da28b5b01aa55b653c7d579dfcf0e5a4c1e818e4f53c",
+        "observed_response_sha256": "02cd0ff55e80a69df998c6f2121e301c55c3d0feb1ea343d35498ab9d2ea0625",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
       }
     },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15": {
@@ -399,6 +1011,38 @@
       "status": 200,
       "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
     },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5": {
+      "upstream": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+      "status": 200,
+      "file": "responses/mydisease/query_xref_mesh_d002289.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "d89e8b86829e9af87a1df20971991251b32765c5fdc3a624828d2188a19d2efe",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5": {
+      "upstream": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+      "status": 200,
+      "file": "responses/mydisease/query_xref_mesh_d009369.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "257e8756d958485f986a76899b8db08681bd90b45113c267438f6fd0f491758d",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=50&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50": {
       "file": "responses/mydisease/melanoma-page-two.json",
       "headers": {
@@ -450,6 +1094,38 @@
       "status": 200,
       "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1"
     },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human",
+      "status": 200,
+      "file": "responses/mygene/mygene-current-1.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "mygene",
+        "request": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human",
+        "captured_at": "2026-10-20T15:28:09.022859+00:00",
+        "sha256": "312c983ad4711f0c67a492fe1714c0f92012e884351dd5579556138c97ee34f4",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human",
+      "status": 200,
+      "file": "responses/mygene/mygene-current-2.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "mygene",
+        "request": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human",
+        "captured_at": "2026-10-20T15:28:11.303298+00:00",
+        "sha256": "3b15a9c661d112842448771b398328ee03c47c7c53487f10a4a17fe01255edc7",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
     "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
       "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin",
       "headers": {
@@ -483,6 +1159,134 @@
       },
       "status": 200,
       "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp*.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence"
+    },
+    "GET /orcid/0000-0002-4299-3018/person": {
+      "upstream": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/person",
+      "status": 200,
+      "file": "responses/orcid/orcid-0000-0002-4299-3018-person-136eeda9ae98.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/person",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "f344c8f20a9ebda2b29cbcefa80ad62e178472eee07a8ac6b224bbdfe06f26fa",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 person response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
+    "GET /orcid/0000-0002-4299-3018/works": {
+      "upstream": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/works",
+      "status": 200,
+      "file": "responses/orcid/orcid-0000-0002-4299-3018-works-cab5148f3bce.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/works",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "278059c2159eb3cffa6e0925703c79184fe01ab2e8aa3bebc8ea63c27f8afc9a",
+        "minimization_or_redaction": "none; the full 380-group reply is committed byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 works response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
+    "GET /pmc-html/articles/PMC3467229/": {
+      "upstream": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3467229/",
+      "status": 200,
+      "file": "responses/pmc-html/oa23056577-80a046ad3335.bin",
+      "headers": {
+        "content-type": "text/html; charset=utf-8"
+      },
+      "recording_provenance": {
+        "provider": "pmc-html",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3467229/",
+        "captured_at": "2026-10-20T16:26:26.980538+00:00",
+        "sha256": "dc232abb05ab33634d50cd9f6a20c24684158aca0cffa9a5e8a39eeb8647fb5e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from public keyless normal route. Article PMC3467229 own metadata states CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pmc-oa/?delimiter=%2F&list-type=2&prefix=PMC3467229.": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC3467229.&delimiter=%2F",
+      "status": 200,
+      "file": "responses/pmc-oa/pmc3467229-versions.xml",
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "recording_provenance": {
+        "provider": "PMC OA",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC3467229.&delimiter=%2F",
+        "captured_at": "2026-10-20T15:38:05.282548+00:00",
+        "sha256": "d977e2d8059ad86853f61830b2e3750f811c2b0aa34f40163867a57fd3f20399",
+        "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pmc&id=3467229&rettype=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3467229&rettype=xml",
+      "status": 200,
+      "file": "responses/pubmed/oa23056577-419a824dfd90.bin",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3467229&rettype=xml",
+        "captured_at": "2026-10-20T16:26:29.273022+00:00",
+        "sha256": "79c096c824afa3d9ee163860888efed6861f03ed98aaa297210c91dea051e86c",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from public keyless normal route. Article PMC3467229 own metadata states CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=20516115&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20516115&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/pubmed-current-4.xml",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20516115&retmode=xml",
+        "captured_at": "2026-10-20T15:28:15.951561+00:00",
+        "sha256": "4ef64ce301f022a0c85e5ad1b39810d2cc2d3debf88c8e626bd1ea31cd23d571",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=23056577&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=23056577&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/oa23056577-cf694ce8e88c.bin",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=23056577&retmode=xml",
+        "captured_at": "2026-10-20T15:57:35.403424+00:00",
+        "sha256": "ab6076fda874b9046f4702897de03dc0ba0b2027986a1e5b3ef1bf2ebaf696d5",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=30738221&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30738221&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/pubmed-current-6.xml",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30738221&retmode=xml",
+        "captured_at": "2026-10-20T15:28:20.622363+00:00",
+        "sha256": "cfec75d989e5f98c8babdd8da999277e7f3682a4e8c21d90727b49790505cda9",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
     },
     "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D": {
       "file": "responses/pubmed/pubmed-esearch-fcgi-43c7b53a5cd6.bin",
@@ -578,6 +1382,54 @@
       "status": 200,
       "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=melanoma"
     },
+    "GET /pubtator/publications/export/biocjson?pmids=20516115": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=20516115",
+      "status": 200,
+      "file": "responses/pubtator/export_20516115.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=20516115",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "df4b97b3a5dbcf7ba359261ff2f97d1d0746eda021370772f7c8d9d2cc2a52d4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    "GET /pubtator/publications/export/biocjson?pmids=23056577": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=23056577",
+      "status": 200,
+      "file": "responses/pubtator/oa23056577-b112657fce51.bin",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "pubtator",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=23056577",
+        "captured_at": "2026-10-20T15:57:29.237608+00:00",
+        "sha256": "b47024794fb35ad089a510e7efea3c0bdf19dbcfc43b87d3baaaef478d15e8ef",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pubtator/publications/export/biocjson?pmids=30738221": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=30738221",
+      "status": 200,
+      "file": "responses/pubtator/export_30738221.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=30738221",
+        "captured_at": "2026-10-05T00:00:00Z",
+        "sha256": "2c0a2ef332582bb305b015b0fdb0dd4af65950b0f659be22479e0b8cd1b9fc08",
+        "minimization_or_redaction": "none; the committed bytes retain the provider annotation identifiers, namespaces, and locations",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
     "GET /pubtator/publications/export/biocjson?pmids=42875213": {
       "file": "responses/pubtator/pubtator-publications-export-biocjson-d586620d07c5.bin",
       "headers": {
@@ -611,6 +1463,38 @@
       },
       "status": 200,
       "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+%40DISEASE_Melanoma&page=1&size=25"
+    },
+    "GET /quickgo/annotation/search?geneProductId=P15056&limit=20": {
+      "upstream": "https://www.ebi.ac.uk/QuickGO/services/annotation/search?geneProductId=P15056&limit=20",
+      "status": 200,
+      "file": "responses/quickgo/annotations_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/annotation/search?geneProductId=P15056&limit=20",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "b91715e9aca0f4f471539db6ff02d9d38785dfa592d07ca03aa84db4297e7a10",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    "GET /quickgo/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267": {
+      "upstream": "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267",
+      "status": 200,
+      "file": "responses/quickgo/terms_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "a4ea85061d60cdecdb4c91656f0cb82aa18b51c1bdbc14131bfa7f525807698e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
     },
     "GET /reactome/data/participants/R-HSA-5673001": {
       "file": "responses/reactome/participants_r_hsa_5673001_20260811.json",
@@ -682,6 +1566,22 @@
       "status": 429,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3"
     },
+    "GET /string/json/network?identifiers=BRAF&limit=15&species=9606": {
+      "upstream": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
+      "status": 200,
+      "file": "responses/string/network_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "STRING",
+        "request": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "3a7d5d22cc78750c0514dd5b321eb5c4ee94cd24a6b823121727817e92d02232",
+        "minimization_or_redaction": "Reduced to the first five real interaction rows consumed by the bounded renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public STRING response through BioMCP's production request path before any stated minimization."
+      }
+    },
     "GET /uniprot/uniprotkb/P15056.json": {
       "file": "responses/uniprot/uniprot-uniprotkb-p15056-json-877bdc7b8fe3.json",
       "headers": {
@@ -689,6 +1589,24 @@
       },
       "status": 200,
       "upstream": "https://rest.uniprot.org/uniprotkb/P15056.json"
+    },
+    "GET /uniprot/uniprotkb/search?fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Clength%2Ccc_function%2Cxref_pdb%2Cxref_alphafolddb&format=json&offset=0&query=%28BRAF%29+AND+organism_id%3A9606+AND+reviewed%3Atrue&size=25": {
+      "upstream": "https://rest.uniprot.org/uniprotkb/search?query=%28BRAF%29+AND+organism_id%3A9606+AND+reviewed%3Atrue&format=json&size=25&offset=0&fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Clength%2Ccc_function%2Cxref_pdb%2Cxref_alphafolddb",
+      "status": 200,
+      "file": "responses/uniprot/uniprot-uniprotkb-search-e63e2f22f62b.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:32.522761+00:00",
+        "sha256": "17cb3871c1c28dabb47f98dd5a24b8e28c5f4044937b5d8078788d0d204b699b",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
     },
     "GET /wikipathways/findPathwaysByText.json": {
       "file": "responses/wikipathways/wikipathways-findpathwaysbytext-json-ce9c5698da2d.bin",
@@ -699,6 +1617,127 @@
       },
       "status": 200,
       "upstream": "https://www.wikipathways.org/json/findPathwaysByText.json"
+    },
+    "POST /dgidb/graphql#c159fd178b8d29bd": {
+      "upstream": "https://dgidb.org/api/graphql",
+      "status": 200,
+      "file": "responses/dgidb/gene_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "DGIdb",
+        "request": "https://dgidb.org/api/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "388b392c03f3f28bc0e32d30d6daeb9a3299c22816ff7ae60a303a3331f7fb84",
+        "minimization_or_redaction": "Reduced to the real EGFR categories and three approved antibody interaction rows consumed by the renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public DGIdb response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery DgidbGeneDruggability($gene: String!, $first: Int!) {\\n  genes(names: [$gene], first: $first) {\\n    nodes {\\n      name\\n      geneCategories {\\n        name\\n      }\\n      interactions {\\n        drug {\\n          name\\n          approved\\n        }\\n        interactionScore\\n        interactionTypes {\\n          type\\n        }\\n        sources {\\n          sourceDbName\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"first\":1,\"gene\":\"EGFR\"}}"
+    },
+    "POST /nih-reporter/projects/search#01496fb4d08fc4c2": {
+      "upstream": "https://api.reporter.nih.gov/v2/projects/search",
+      "status": 200,
+      "file": "responses/nih-reporter/nih-reporter-current-body.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "provider": "nih",
+        "request": "https://api.reporter.nih.gov/v2/projects/search",
+        "captured_at": "2026-10-20T15:28:23.156871+00:00",
+        "sha256": "a6c7198d4e581c96c23f724f9febfb160589a30d81344d9ed6f17be0739dd64c",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint.",
+        "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
+      },
+      "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
+    },
+    "POST /opentargets/graphql#0c48cbd3393ce56a": {
+      "status": 200,
+      "file": "responses/opentargets/melanoma-default-871c9d3b41b6.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "recording_provenance": {
+        "provider": "opentargets",
+        "request": {
+          "method": "POST",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "body": "{\"query\":\"\\nquery SearchDisease($query: String!) {\\n  search(queryString: $query, entityNames: [\\\"disease\\\"], page: {index: 0, size: 5}) {\\n    hits {\\n      id\\n      name\\n      entity\\n    }\\n  }\\n}\\n\",\"variables\":{\"query\":\"melanoma\"}}"
+        },
+        "captured_at": "2026-10-20T16:29:34.203347+00:00",
+        "sha256": "7a50c52bb3de199cd72e6c2fba93052d1c6af44d52671d0be862774d9fb9a07f",
+        "observed_response_sha256": "56cbe7543520149af5b19adcbcff11bfcc384d2569cd9e369e5eb83ead780b5b",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      },
+      "request_body": "{\"query\":\"\\nquery SearchDisease($query: String!) {\\n  search(queryString: $query, entityNames: [\\\"disease\\\"], page: {index: 0, size: 5}) {\\n    hits {\\n      id\\n      name\\n      entity\\n    }\\n  }\\n}\\n\",\"variables\":{\"query\":\"melanoma\"}}",
+      "request_headers": {
+        "content-type": "application/json",
+        "accept": "application/json"
+      }
+    },
+    "POST /opentargets/graphql#30993b962d429334": {
+      "status": 200,
+      "file": "responses/opentargets/melanoma-default-471d10da535a.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "recording_provenance": {
+        "provider": "opentargets",
+        "request": {
+          "method": "POST",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "body": "{\"query\":\"\\nquery DiseaseGenes($efoId: String!, $size: Int!) {\\n  disease(efoId: $efoId) {\\n    id\\n    name\\n    associatedTargets(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        datatypeScores {\\n          id\\n          score\\n        }\\n        datasourceScores {\\n          id\\n          score\\n        }\\n        target {\\n          approvedSymbol\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"efoId\":\"MONDO_0005105\",\"size\":20}}"
+        },
+        "captured_at": "2026-10-20T16:29:38.997009+00:00",
+        "sha256": "c8083280fe1677814d5892e5a877eed30d7f54a4d8ab5f6aa71610b9eb9f8f73",
+        "observed_response_sha256": "1ba1e3e6a7b6f45c6d2c066d4ed90b74f2ff85d3a2567a0302276f815bc3d1ee",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card. Serialize retained JSON values with indentation; whitespace changes are reflected in the committed SHA256, while the separate observed-response SHA256 identifies the original private reply.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      },
+      "request_body": "{\"query\":\"\\nquery DiseaseGenes($efoId: String!, $size: Int!) {\\n  disease(efoId: $efoId) {\\n    id\\n    name\\n    associatedTargets(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        datatypeScores {\\n          id\\n          score\\n        }\\n        datasourceScores {\\n          id\\n          score\\n        }\\n        target {\\n          approvedSymbol\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"efoId\":\"MONDO_0005105\",\"size\":20}}",
+      "request_headers": {
+        "content-type": "application/json",
+        "accept": "application/json"
+      }
+    },
+    "POST /opentargets/graphql#34180b1b60125348": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/clinical_erbb2_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "796aa0ce178d1eaed8662132ca5bcf30dfa73e94c3a0991f0756523b1e54e6dc",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetClinicalContext($ensemblId: String!, $size: Int!) {\\n  target(ensemblId: $ensemblId) {\\n    associatedDiseases(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        disease {\\n          id\\n          name\\n        }\\n      }\\n    }\\n    drugAndClinicalCandidates {\\n      rows {\\n        drug {\\n          id\\n          name\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000141736\",\"size\":5}}"
+    },
+    "POST /opentargets/graphql#363262cece075dfb": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/druggability_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "82ff30aa7379fcb0f4ce12e846fc94240a982c2c0e138c8b6fb232b8a31286f1",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetDruggabilityContext($ensemblId: String!) {\\n  target(ensemblId: $ensemblId) {\\n    tractability {\\n      label\\n      modality\\n      value\\n    }\\n    safetyLiabilities {\\n      event\\n      datasource\\n      effects {\\n        direction\\n        dosing\\n      }\\n      biosamples {\\n        tissueLabel\\n        cellLabel\\n        cellFormat\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000146648\"}}"
     },
     "POST /opentargets/graphql#43750647d0c40094": {
       "file": "responses/opentargets/opentargets-graphql-43750647d0c40094-701220c8c35c.bin",
@@ -720,6 +1759,23 @@
       },
       "status": 200,
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql"
+    },
+    "POST /opentargets/graphql#b4c954a74eb6839b": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/clinical_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "db4efc2c98675b3ab03788a0254e51d790f8d9a2b3e123007afce9f1e114cd9c",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetClinicalContext($ensemblId: String!, $size: Int!) {\\n  target(ensemblId: $ensemblId) {\\n    associatedDiseases(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        disease {\\n          id\\n          name\\n        }\\n      }\\n    }\\n    drugAndClinicalCandidates {\\n      rows {\\n        drug {\\n          id\\n          name\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000146648\",\"size\":5}}"
     },
     "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#417154d125173f55": {
       "file": "responses/s2/s2-graph-v1-paper-batch-88bd002daeb4.bin",

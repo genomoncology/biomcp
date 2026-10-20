@@ -1,0 +1,1161 @@
+{
+  "numberOfHits": 7,
+  "results": [
+    {
+      "id": "GO:0004672",
+      "isObsolete": false,
+      "name": "protein kinase activity",
+      "definition": {
+        "text": "Catalysis of the phosphorylation of an amino acid residue in a protein, usually according to the reaction: a protein + ATP = a phosphoprotein + ADP.",
+        "xrefs": [
+          {
+            "dbCode": "PMID",
+            "dbId": "25399640"
+          }
+        ]
+      },
+      "comment": "Note that triphosphate is used as a phosphate donor by at least one kinase.",
+      "synonyms": [
+        {
+          "name": "protamine kinase activity",
+          "type": "narrow"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:0009927",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004712",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004713",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0035173",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045859",
+          "relation": "regulates"
+        },
+        {
+          "id": "GO:1990424",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004860",
+          "relation": "negatively_regulates"
+        },
+        {
+          "id": "GO:0019199",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0006469",
+          "relation": "negatively_regulates"
+        },
+        {
+          "id": "GO:0019887",
+          "relation": "regulates"
+        },
+        {
+          "id": "GO:1902911",
+          "relation": "capable_of"
+        },
+        {
+          "id": "GO:0097472",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0106264",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004674",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004673",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0106310",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045860",
+          "relation": "positively_regulates"
+        },
+        {
+          "id": "GO:0030295",
+          "relation": "positively_regulates"
+        },
+        {
+          "id": "GO:0047696",
+          "relation": "is_a"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0004674",
+      "isObsolete": false,
+      "name": "protein serine/threonine kinase activity",
+      "definition": {
+        "text": "Catalysis of the reactions: ATP + protein serine = ADP + protein serine phosphate, and ATP + protein threonine = ADP + protein threonine phosphate.",
+        "xrefs": [
+          {
+            "dbCode": "EC",
+            "dbId": "2.7.11.-"
+          },
+          {
+            "dbCode": "PMID",
+            "dbId": "2956925"
+          }
+        ]
+      },
+      "synonyms": [
+        {
+          "name": "serine kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "protein threonine kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "protein-serine kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "serine(threonine) protein kinase activity",
+          "type": "related"
+        },
+        {
+          "name": "threonine-specific protein kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "protein serine-threonine kinase activity",
+          "type": "related"
+        },
+        {
+          "name": "protein serine kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "serine protein kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "serine-specific protein kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "serine/threonine protein kinase activity",
+          "type": "related"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:1902554",
+          "relation": "capable_of"
+        },
+        {
+          "id": "GO:0004690",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004711",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0047322",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0047323",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004693",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140191",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004694",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0035175",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004697",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0033867",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0072518",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140197",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0035403",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140198",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0035402",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008349",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0050321",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043539",
+          "relation": "positively_regulates"
+        },
+        {
+          "id": "GO:0009931",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004687",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004683",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0071900",
+          "relation": "regulates"
+        },
+        {
+          "id": "GO:0030291",
+          "relation": "negatively_regulates"
+        },
+        {
+          "id": "GO:0071901",
+          "relation": "negatively_regulates"
+        },
+        {
+          "id": "GO:0035979",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004703",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008353",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044023",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044022",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044025",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004740",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044024",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140823",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140855",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990244",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004679",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0050369",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140857",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004677",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004676",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008384",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004675",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004707",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0071902",
+          "relation": "positively_regulates"
+        },
+        {
+          "id": "GO:0072354",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0004709",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0034211",
+          "relation": "is_a"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0005509",
+      "isObsolete": false,
+      "name": "calcium ion binding",
+      "definition": {
+        "text": "Binding to a calcium ion (Ca2+)."
+      },
+      "synonyms": [
+        {
+          "name": "calcium ion storage activity",
+          "type": "related"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:1990660",
+          "relation": "capable_of"
+        },
+        {
+          "id": "GO:0110158",
+          "relation": "capable_of"
+        },
+        {
+          "id": "GO:0099534",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1901876",
+          "relation": "regulates"
+        },
+        {
+          "id": "GO:0099567",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990662",
+          "relation": "capable_of"
+        },
+        {
+          "id": "GO:1990661",
+          "relation": "capable_of"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0005515",
+      "isObsolete": false,
+      "name": "protein binding",
+      "definition": {
+        "text": "Binding to a protein."
+      },
+      "synonyms": [
+        {
+          "name": "protein amino acid binding",
+          "type": "exact"
+        },
+        {
+          "name": "glycoprotein binding",
+          "type": "narrow"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:0019955",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0098770",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045504",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0050839",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045569",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0042988",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0051021",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0042393",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043393",
+          "relation": "regulates"
+        },
+        {
+          "id": "GO:0030742",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0001968",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043008",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0046983",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0046790",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140355",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0051959",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0089719",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031682",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0001918",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0071253",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0030881",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0032091",
+          "relation": "negatively_regulates"
+        },
+        {
+          "id": "GO:0051787",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0005522",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0030276",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097108",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0070097",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0042802",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0019899",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097371",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045294",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0019838",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045295",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045503",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0001848",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0032767",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0001965",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0046980",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140272",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0051087",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097110",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0032794",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0048306",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031720",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990405",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0046977",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008092",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0051018",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0089710",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0010313",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0030984",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031369",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140030",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0051219",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0071889",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990935",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990430",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031423",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0061770",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0002039",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097602",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0032182",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0070866",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0030492",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0070678",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0038100",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0000149",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0005516",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0070064",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043236",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043560",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008134",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043394",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097655",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0019904",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0002046",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0097678",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045152",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043221",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008013",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0005102",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0008267",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044548",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0061676",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0002162",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0034711",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0001846",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0045505",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:1990763",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0017147",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0030332",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043532",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0106151",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0032092",
+          "relation": "positively_regulates"
+        },
+        {
+          "id": "GO:0043559",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044325",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0039706",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0034185",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0034189",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0046332",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0140081",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031681",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0098769",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0031072",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0043548",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0005521",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0055100",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0044730",
+          "relation": "is_a"
+        },
+        {
+          "id": "GO:0061675",
+          "relation": "is_a"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0031267",
+      "isObsolete": false,
+      "name": "small GTPase binding",
+      "definition": {
+        "text": "Binding to a small monomeric GTPase.",
+        "xrefs": [
+          {
+            "dbCode": "PMID",
+            "dbId": "27218782"
+          }
+        ]
+      },
+      "synonyms": [
+        {
+          "name": "Rab escort protein activity",
+          "type": "narrow"
+        },
+        {
+          "name": "Ral GTPase binding",
+          "type": "narrow"
+        },
+        {
+          "name": "ARF binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Ras interactor activity",
+          "type": "narrow"
+        },
+        {
+          "name": "Ran GTPase binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Rab GTPase binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Rab interactor activity",
+          "type": "narrow"
+        },
+        {
+          "name": "Rho GTPase binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Ran protein binding",
+          "type": "narrow"
+        },
+        {
+          "name": "REP",
+          "type": "narrow"
+        },
+        {
+          "name": "ADP-ribosylation factor binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Ran-binding protein",
+          "type": "narrow"
+        },
+        {
+          "name": "GTP-Ral binding",
+          "type": "narrow"
+        },
+        {
+          "name": "GTP-Rho binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Rac GTPase binding",
+          "type": "narrow"
+        },
+        {
+          "name": "Ras GTPase binding",
+          "type": "narrow"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0004708",
+      "isObsolete": false,
+      "name": "MAP kinase kinase activity",
+      "definition": {
+        "text": "Catalysis of the concomitant phosphorylation of threonine (T) and tyrosine (Y) residues in a T-X-Y motif in the activation loop of a MAP kinase (MAPK) substrate.",
+        "xrefs": [
+          {
+            "dbCode": "PMID",
+            "dbId": "12623839"
+          },
+          {
+            "dbCode": "PMID",
+            "dbId": "38270553"
+          }
+        ]
+      },
+      "synonyms": [
+        {
+          "name": "ERK activator kinase activity",
+          "type": "exact"
+        },
+        {
+          "name": "MAPKK activity",
+          "type": "exact"
+        },
+        {
+          "name": "MEK activity",
+          "type": "broad"
+        },
+        {
+          "name": "MKK",
+          "type": "related"
+        },
+        {
+          "name": "MKK2",
+          "type": "related"
+        },
+        {
+          "name": "MKK4",
+          "type": "related"
+        },
+        {
+          "name": "MKK6",
+          "type": "related"
+        },
+        {
+          "name": "MKK7",
+          "type": "related"
+        },
+        {
+          "name": "STK27",
+          "type": "related"
+        },
+        {
+          "name": "MAP kinase kinase 4 activity",
+          "type": "narrow"
+        },
+        {
+          "name": "MAP kinase kinase 7 activity",
+          "type": "narrow"
+        },
+        {
+          "name": "MAP kinase or ERK kinase activity",
+          "type": "related"
+        },
+        {
+          "name": "MAP2K",
+          "type": "related"
+        },
+        {
+          "name": "mitogen-activated protein kinase kinase activity",
+          "type": "related"
+        },
+        {
+          "name": "MAPK activator activity",
+          "type": "exact"
+        },
+        {
+          "name": "ATP:protein phosphotransferase (MAPKKK-activated) activity",
+          "type": "related"
+        },
+        {
+          "name": "MAPKK",
+          "type": "related"
+        },
+        {
+          "name": "MAPKK1",
+          "type": "related"
+        },
+        {
+          "name": "MEK1",
+          "type": "related"
+        },
+        {
+          "name": "MEK2",
+          "type": "related"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:0008545",
+          "relation": "is_a"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    },
+    {
+      "id": "GO:0004709",
+      "isObsolete": false,
+      "name": "MAP kinase kinase kinase activity",
+      "definition": {
+        "text": "Catalysis of the phosphorylation and activation of a MAP kinase kinase; each MAP kinase kinase can be phosphorylated by any of several MAP kinase kinase kinases.",
+        "xrefs": [
+          {
+            "dbCode": "PMID",
+            "dbId": "9561267"
+          }
+        ]
+      },
+      "synonyms": [
+        {
+          "name": "ATP:protein phosphotransferase (MAPKKKK-activated) activity",
+          "type": "related"
+        },
+        {
+          "name": "cRaf",
+          "type": "related"
+        },
+        {
+          "name": "mitogen-activated protein kinase kinase kinase activity",
+          "type": "related"
+        },
+        {
+          "name": "MAPKKK activity",
+          "type": "related"
+        },
+        {
+          "name": "MEKK activity",
+          "type": "exact"
+        },
+        {
+          "name": "MAPK/ERK kinase kinase activity",
+          "type": "exact"
+        },
+        {
+          "name": "MAP3K",
+          "type": "related"
+        },
+        {
+          "name": "MEKK",
+          "type": "related"
+        },
+        {
+          "name": "MEKK1",
+          "type": "related"
+        },
+        {
+          "name": "MEKK2",
+          "type": "related"
+        },
+        {
+          "name": "MEKK3",
+          "type": "related"
+        },
+        {
+          "name": "MLK-like mitogen-activated protein triple kinase activity",
+          "type": "narrow"
+        },
+        {
+          "name": "MLTK",
+          "type": "related"
+        },
+        {
+          "name": "MLTKa",
+          "type": "related"
+        },
+        {
+          "name": "MLTKb",
+          "type": "related"
+        },
+        {
+          "name": "Mil/Raf",
+          "type": "related"
+        },
+        {
+          "name": "REKS",
+          "type": "related"
+        },
+        {
+          "name": "STK28",
+          "type": "related"
+        },
+        {
+          "name": "cMos",
+          "type": "related"
+        },
+        {
+          "name": "MEK kinase activity",
+          "type": "related"
+        }
+      ],
+      "children": [
+        {
+          "id": "GO:0004706",
+          "relation": "is_a"
+        }
+      ],
+      "aspect": "molecular_function",
+      "usage": "Unrestricted"
+    }
+  ],
+  "pageInfo": null
+}
