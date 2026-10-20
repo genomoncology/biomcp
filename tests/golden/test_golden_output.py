@@ -41,9 +41,19 @@ WALL_TIME_RE = re.compile(r'("wall_time_ms": )\d+')
 class Case:
     id: str
     argv: tuple[str, ...]
+    formats: tuple[str, ...] = ("json", "markdown")
 
 
 CASES = (
+    Case(
+        "get-article-23056577-fulltext",
+        ("--disable-sources", "semantic-scholar,figshare", "get", "article", "23056577", "fulltext"),
+    ),
+    Case(
+        "get-article-23056577-assets",
+        ("--disable-sources", "semantic-scholar,figshare", "get", "article", "23056577", "assets"),
+        formats=("json",),
+    ),
     Case(
         'get-gene-braf-go-interactions-hpa',
         (
@@ -301,6 +311,12 @@ def _run_case(
         f"{case.id} ({output_format}) exited {run.process.returncode}\n"
         f"stderr:\n{run.process.stderr}"
     )
+    # The CLI reports its managed download path. Only this run's private
+    # cache prefix varies; keep the basename and all output around it pinned.
+    cache = str(run.run_dir / "cache")
+    run.process.stdout = run.process.stdout.replace(
+        json.dumps(cache)[1:-1], "<CACHE_ROOT>"
+    ).replace(cache, "<CACHE_ROOT>")
     return run.process
 
 
@@ -317,8 +333,8 @@ def _diff(expected: str, actual: str, name: str) -> str:
 
 @pytest.mark.parametrize(
     "case, output_format",
-    [(case, fmt) for case in CASES for fmt in ("json", "markdown")],
-    ids=[f"{case.id}-{fmt}" for case in CASES for fmt in ("json", "markdown")],
+    [(case, fmt) for case in CASES for fmt in case.formats],
+    ids=[f"{case.id}-{fmt}" for case in CASES for fmt in case.formats],
 )
 def test_golden_output(
     case: Case,
@@ -351,3 +367,25 @@ def test_replay_env_covers_every_provider_override(
                 names.add(name)
     uncovered = sorted(names - NON_PROVIDER_OVERRIDES - set(replay.provider_env))
     assert not uncovered, f"provider overrides missing from the replay env: {uncovered}"
+
+
+def test_article_supplement_stdout_preserves_recorded_bytes(
+    replay: ReplayEnvironment,
+) -> None:
+    run = replay.run(
+        BINARY,
+        (
+            "--disable-sources",
+            "semantic-scholar,figshare",
+            "get",
+            "article",
+            "23056577",
+            "asset",
+            "pone.0047054.s002.doc",
+        ),
+        text=False,
+    )
+    assert not _failed_requests(run), run.request_log_lines
+    assert run.process.returncode == 0, run.process.stderr
+    recorded = REPO_ROOT / "testdata/replay/responses/pmc-oa/pmc3467229-s002.doc.bin"
+    assert run.process.stdout == recorded.read_bytes()
