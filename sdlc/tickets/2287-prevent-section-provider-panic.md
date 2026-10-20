@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 `biomcp get protein P15056 structures --json` succeeds against the existing exact recorded UniProt response instead of panicking on its credited provider. Audit the same mismatch class across every entity section and fix any others found in this lane. Preserve truthful source credits and existing successful behavior.
 
-Changes: `src/entities/source_state_registry.rs`, `architecture/technical/source-integration.md`, `tests/test_section_provider_credits.py`, `CHANGELOG.md`.
+Changes: `src/entities/source_state_registry.rs`, `architecture/technical/source-integration.md`, `tests/test_section_provider_credits.py`, `sdlc/records/2287-section-provider-panic.md`, `sdlc/tickets/2236-finish-the-remaining-replay-command-coverage.md`, `sdlc/tickets/2284-isolate-and-reduce-test-profile-rebuild-cost.md`, `sdlc/tickets/2288-*`, `sdlc/tickets/2289-*`, `sdlc/tickets/2290-*`, `sdlc/tickets/2291-*`, `CHANGELOG.md`.
 
 ## Evidence
 
@@ -37,3 +37,7 @@ Both the real CLI JSON regression and the bounded cross-section class check fail
 ## Bounded class prevention
 
 Reuse the existing quality-ratchet registry parser and shared replay environment. Derive sections from the authoritative registry and exercise entity sections through the actual CLI against existing recorded inputs. Compare successful emitted provider credits with that registry; keep the explicit protein-structures JSON regression. The finite entity identifier inputs do not duplicate the provider mapping. Report unavailable outcomes as gaps in successful-provider coverage, inspect every production SectionOutcome constructor for that class, and disclose remaining gaps. Do not add captures or invent provider inventories. Preserve strict validation and correct the credited-provider declaration itself.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain section-provider-repair/2287 raw preimage, corrected job output, exact commands and qualification identities until release admission closes.
+
+Landing alone: this is the release-blocking product panic. Other accepted process repairs do not exist yet, and gate-definition changes must land separately. The PM record-only changes ride this repair as directed.
