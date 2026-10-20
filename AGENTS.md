@@ -54,9 +54,9 @@ cargo nextest run --no-default-features -E 'test(...)'
 
 Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
 
-For focused Python checks in a build job, reuse the prepared Python environment or prepare it with `make sync-python-dev`. That target runs `uv sync --extra dev --no-install-project`. Then run the affected checks with `uv run --no-sync pytest tests/<affected-test>.py`, supplying the prepared `BIOMCP_BIN` when the checks need the CLI. Keep `--no-sync` on Python commands, as `test-contracts-prepared` does, so uv does not install the project and trigger an editable Rust package build.
+For focused Python checks in a build job, run `make sync-python-dev` in that job's checkout. This target runs `uv sync --extra dev --no-install-project` in the checkout's own `.venv` and supplies pytest and the Ruff pin declared in the development dependencies. Run affected checks with `.venv/bin/python -m pytest tests/<affected-test>.py` and `.venv/bin/python -m ruff check <changed-python-files>`. Supply the prepared `BIOMCP_BIN` when checks need the CLI. These commands use the same job environment without syncing or triggering an editable Rust package build. Never borrow another checkout's environment. Existing Makefile Python commands use `uv run --no-sync` with that same local environment.
 
-Run Ruff through the configured PATH, for example `ruff check <changed-python-files>`. `tools/bootstrap-lint-tools` installs only ShellCheck and actionlint; it does not provide Ruff.
+`make lint` prepares this environment before running Python lint. Direct `bin/lint` requires the prepared local environment and checks the declared Ruff version. `tools/bootstrap-lint-tools` supplies ShellCheck and actionlint.
 
 tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 

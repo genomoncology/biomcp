@@ -10,6 +10,7 @@ FULL_FEATURE_PROFILE ?= dev
 FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FULL_FEATURE_PROFILE))/biomcp
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
+export UV_PROJECT_ENVIRONMENT := $(CURDIR)/.venv
 PYTEST_WORKERS ?= 4
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 # Cargo maps the dev profile to target/debug; every other profile name is
@@ -96,7 +97,7 @@ test-long: prepare-test
 	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml" --profile long --no-tests=pass
 	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
-lint:
+lint: sync-python-dev
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh

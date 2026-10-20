@@ -67,6 +67,15 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     (fixture_root / "Cargo.lock").write_text(lock)
     (fixture_root / "uv.lock").write_text(lock)
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
+    # Project this test job's interpreter into the isolated fixture. Production
+    # lint uses only its own checkout's environment, never a PATH executable.
+    (fixture_root / ".git/info/exclude").write_text(".venv/\n", encoding="utf-8")
+    (fixture_root / ".venv/bin").mkdir(parents=True)
+    _write_executable(
+        fixture_root / ".venv/bin/python",
+        f'#!/bin/sh\nexec "{sys.executable}" "$@"\n',
+    )
+    shutil.copy2(PYPROJECT_FILE, fixture_root / "pyproject.toml")
     return fixture_root
 
 
@@ -99,10 +108,8 @@ def _run_lint(
 
 
 def _require_ruff() -> str:
-    ruff = shutil.which("ruff")
-    if ruff is None:
-        pytest.skip("ruff not installed")
-    return ruff
+    subprocess.run([sys.executable, "-m", "ruff", "--version"], check=True)
+    return sys.executable
 
 
 def test_lint_skips_source_fixture_contract_when_pair_is_absent(tmp_path: Path) -> None:
@@ -656,3 +663,55 @@ def test_local_lint_rejects_tracked_scratch(tmp_path: Path) -> None:
     assert result.returncode == 1, result.stdout + result.stderr
     assert "[FAIL] Tracked scratch check" in result.stdout
     assert ".climb/design.md" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "failure", ["ready", "missing", "wrong-version", "version-command", "failed-version-output", "missing-pin", "duplicate-pin"]
+)
+def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
+    tmp_path: Path, failure: str
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(repo_root, {"scripts/probe.py": "print(1)\n"})
+    local_python = repo_root / ".venv/bin/python"
+    ruff_version = next(pin.removeprefix("ruff==") for pin in tomllib.loads(
+        PYPROJECT_FILE.read_text())["project"]["optional-dependencies"]["dev"]
+        if pin.startswith("ruff=="))
+    if failure == "missing":
+        local_python.unlink()
+    elif failure in {"wrong-version", "version-command", "failed-version-output"}:
+        _write_executable(
+            local_python,
+            "#!/bin/sh\n"
+            + ("echo 'ruff 999.0.0'\n" if failure == "wrong-version"
+               else 'if [ "$3" = "--version" ]; then\n'
+                    f'  echo "ruff {ruff_version}"\n  exit 19\nfi\nexit 0\n'
+               if failure == "failed-version-output" else "exit 19\n"),
+        )
+    if failure in {"missing-pin", "duplicate-pin"}:
+        manifest = repo_root / "pyproject.toml"
+        text = manifest.read_text(encoding="utf-8")
+        pin = next(line for line in text.splitlines() if '"ruff==' in line)
+        text = text.replace(pin, "" if failure == "missing-pin" else f"{pin}\n{pin}")
+        manifest.write_text(text, encoding="utf-8")
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    marker = foreign / "used"
+    _write_executable(foreign / "ruff", f'#!/bin/sh\ntouch "{marker}"\nexit 0\n')
+
+    result = _run_lint(
+        repo_root,
+        env={
+            "PATH": f"{foreign}:{os.environ.get('PATH', '')}",
+            "VIRTUAL_ENV": str(foreign),
+            "UV_PROJECT_ENVIRONMENT": str(foreign),
+        },
+    )
+
+    if failure == "ready":
+        assert result.returncode == 0
+        assert "[PASS] Python lint (ruff check .)" in result.stdout
+    else:
+        assert result.returncode == 1
+        assert "run make sync-python-dev for the declared Ruff pin" in result.stdout
+    assert not marker.exists()
