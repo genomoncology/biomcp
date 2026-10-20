@@ -177,3 +177,11 @@ The official scanner in 2307 detects the ten unique GitHub advisory IDs behind 2
 The PM explicitly requires a final-source refresh of only the existing paired build and gate rows, version and binary size after source freeze, scheduled with final qualification. Historical runtime and storage rows and their accepted regressions remain as measured. No new runtime, provider or MCP timing is required, and prior measurements are not relabelled as final-source results.
 
 The PM subsequently withdrew the measurement-refresh request in answer 2 of the same clarification. The standing 2258 historical-context ruling governs: no measurement refresh, no new performance experiment and no final-source speed claim. The preceding refresh proposal is superseded; final functional qualification remains required.
+
+## Landed security lock repair
+
+Actual main a5314c569719e0336f5ace6c83134dd9afbd6982 passed full job 2299/1792530993968-62782 in 1004001 ms, including installed Linux wheel smoke. Accepted 2308 then landed as main 3c9ddc1510c0152a150f7bf86d7466d718c5d6d4 after gate 2308/1792532380663-49780 passed. Its actual-main full job 2308/1792532689278-14540 is submitted; the earlier main pass does not qualify its changed locks.
+
+Read-only GitHub observations now show all six assigned Dependabot alerts fixed: 80, 87, 88, 89, 91 and 93, with fixed_at values 21:45:37Z through 21:45:39Z. Canonical security-pins/2308/post-landing-alerts-first.json retains the API response. No alert was manually closed and no workflow was triggered to obtain this observation.
+
+Final admission also requires 2310 ownership prevention and 2311 shared Python-tool bootstrap. Both are explicit PM-approved 0.9.4 process repairs; neither changes the historical measurement ruling. Schema-title preservation in 2309 is a fresh-review compatibility fix, so pre-review wheel observations retain their earlier source binding and final packaged qualification must cover the repaired source.
