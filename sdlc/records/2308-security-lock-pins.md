@@ -11,3 +11,9 @@ Raw alert inputs, commands, before and after locks and job results belong under 
 Corrected M5 job 2308/1792530290770-80985 passed: current locks matched all six retained GitHub alerts (FLAGGED_LOCK_PINS=6, expected exit 1); the minimal four-package update matched none (FLAGGED_LOCK_PINS=0, exit 0). Candidate 4f0ef3031 changes only those four locked versions and associated artifacts; dependency edges and manifests remain unchanged. Its routine and Linux installed-wheel runs are still pending and cannot qualify subsequent quinn changes.
 
 The official OSV scan in 2307 additionally identified quinn-proto 0.11.15 under RUSTSEC-2026-0338 through 0342. The PM requires their minimal compatible update in this ticket: 0.11.18 clears all five. Split only if a direct dependency needs a major-version move. Preserve the vulnerable scanner JSON and bind the new green scan and qualification to the expanded candidate; no advisory suppression is authorized.
+
+## Expanded compatible lock candidate
+
+Quinn generation job 2308/1792530653783-9052 passed. Candidate d0b775be9 adds quinn-proto 0.11.18 while preserving both manifests and direct dependency requirements. Its resolver removes the unused rand 0.9 chain, adds rand_pcg 0.10.2 and moves JavaScript getrandom edges to the existing 0.4 package. The original four security pins remain at their minimum patched versions. The earlier dependency-edge equality statement applies only to 4f0ef3031, not this expanded lock.
+
+Superseded pre-quinn routine and wheel runs ended with exit 143 after deliberate cancellation, and their raw partial results remain retained. They are not product failures or final qualification. Expanded-source routine 2308/1792530688392-10588 and installed Linux wheel 2308/1792530689487-1311653 are running here; final results and actual live scanner findings remain pending.
