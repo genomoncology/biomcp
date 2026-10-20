@@ -493,19 +493,31 @@ def test_doctype_allows_declarations_but_refuses_entity_expansion(
     assert len(server.requests) == int(not (historical and refused))
 
 
-def test_real_formats_keep_root_object_provider_from_capture_provenance(tmp_path):
+@pytest.mark.parametrize(
+    ("source", "upstream"),
+    [
+        ("mygene", "https://mygene.info/v3/object?q=1"),
+        ("pmc-html", "https://pmc.ncbi.nlm.nih.gov/articles/instance/3467229/bin/supp.doc"),
+    ],
+)
+def test_real_formats_keep_root_object_provider_from_capture_provenance(
+    tmp_path, source, upstream
+):
     replay, routes = recording(tmp_path, "https://mygene.info/v3")
     entry = next(iter(routes.values()))
-    entry["recording_provenance"] = {"provider": "mygene"}
-    entry["upstream"] = "https://mygene.info/v3/object?q=1"
+    entry["recording_provenance"] = {"provider": source}
+    entry["upstream"] = upstream
+    from urllib.parse import urlsplit
+    parsed = urlsplit(upstream)
+    raw_path = parsed.path + ("?" + parsed.query if parsed.query else "")
     (replay / "manifest.json").write_text(
         json.dumps({
-            "schema_version": 1, "routes": {"GET /v3/object?q=1": entry}
+            "schema_version": 1, "routes": {f"GET {raw_path}": entry}
         })
     )
     process, results, summary = run_check(tmp_path, replay)
     assert process.returncode == 0
-    assert results[0]["provider"] == "mygene"
+    assert results[0]["provider"] == source
     assert summary["ready"] == 1
 
 

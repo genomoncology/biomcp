@@ -21,6 +21,8 @@ ID_ALIASES = {
     "mydisease": "mydisease-info",
     "gwas": "gwas-catalog",
     "europepmc": "europe-pmc",
+    # pmc_article uses provider_url_client("pmc-oa", policy).
+    "pmc-html": "pmc-oa",
 }
 
 
@@ -128,7 +130,8 @@ def file_signature(body: bytes, media_type: str) -> str:
     if media_type in {"application/octet-stream", "binary/octet-stream"}:
         if len(body) < OPAQUE_SIGNATURE_BYTES:
             raise ValueError("response is too short for its recorded file signature")
-        # Literal bytes as served: do not infer JSON or another media type.
+        # Literal prefix only: this cannot prove completeness or document validity.
+        # Do not infer JSON or another media type from octet-stream bytes.
         return body[:OPAQUE_SIGNATURE_BYTES].hex()
     raise ValueError(
         "unsupported response format; structure comparison supports JSON and XML only"
