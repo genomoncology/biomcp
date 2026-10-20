@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287
 
 Reviews: revision 1b8e728, accept
 
@@ -139,3 +139,7 @@ The PM approved reuse of the unchanged Rust routine/long/inventory proof while f
 Repair 2286 is accepted at source 2ca44d1bd1430d7af2bb01bf98bb82d88aa8415c (runtime 9ac7829038d77c54dd86c864000ac393f2edf05d), with final evidence record 78e678ac58b96b87562a37d8d40e4310f9ff9c31 and separately reviewed retention metadata 2b7f09031. Both installed Linux wheels passed the PM-approved public smoke profile; live DDInter remains unverified. The first rehearsal remains failed. Whole fresh Linux qualification 2258/1792502148739-726187 runs the reviewed 2ca source without Rust reuse. Actual-main full checks and a new full untagged rehearsal follow landing. The PM approved reuse of the existing paired measurements and live checker evidence with this missing-directory correction disclosed.
 
 Keep: experiments/493-biomcp-2258-repaired-linux — retain the exact runner, source identities, isolation verifier, full raw output, inventories and artifacts from repaired whole Linux qualification, including the prior attempt cancelled before any build or test. Regenerable clone and build copies may be removed after evidence is retained.
+
+## Protein section release hold
+
+Whole repaired Linux2258/1792502148739-726187 passed all stages on2ca, and actual repaired-main full2286/1792503071436-75490 passed on c937. Reviewed administrative partiallanding e0d and final metadata all88 citations passed. Before dispatch, 2236 reproduced a real protein-structures JSON panic on e0d. PM orders2287 release repair plus class prevention; no second rehearsal was dispatched. Refresh only qualification invalidated by the repair, then perform the full rehearsal. See the single admission record for all exact bindings and retained evidence.
