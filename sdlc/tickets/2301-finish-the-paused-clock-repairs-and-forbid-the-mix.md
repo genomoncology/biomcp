@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 5e8e6e4, accept
+
 ## Outcome
 
 Changes: `src/cli/system/tests/dev2_contracts.rs`, `src/entities/author/papers.rs`, `src/cli/system/batch.rs`, `src/entities/disease/resolution/paging_tests.rs`, `src/entities/article/search/tests/deadline.rs`, `src/entities/article/test_support.rs`, `tools/check-quality-ratchet.py`, `tests/test_quality_ratchet_contract.py`, `tests/test_provider_network_policy.py`, `CHANGELOG.md`, `sdlc/records/2301-paused-clock-io.md`.
