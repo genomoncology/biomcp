@@ -37,3 +37,5 @@ Inventory found swallowed MCP helper exits, hidden captured errors in demos and 
 Before product edits, focused M5 job 2289/1792506036351-91894 on e0d84c429 ran the five owning regression files with fake executables: release smoke, demo scripts, MCP measurement, measurement summary and PNG artifact contracts. Nine cases failed and fifteen passed. Failures demonstrate hidden command streams, ignored MCP helper failure, coverage status 100 returning 0, runtime exit 7 returning 0 and census exit 42 returning 0. The earlier attempt stopped on a regression-test quoting error before product checks; its evidence remains separate. No provider requests or production mutation.
 
 Keep: experiments/2102-biomcp-2258-final-live-replay — retain failure-propagation/2289 raw preimage and corrected job evidence while release admission consumes this batch.
+
+Landing alone: The batch classifier requires scripts/geneagent-demo.sh changes to land separately as a gate/toolchain dependency. Other accepted work lands through its own permitted gate.
