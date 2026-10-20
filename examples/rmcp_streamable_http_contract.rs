@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use rmcp::ServiceExt;
-use rmcp::model::{CallToolRequestParams, RawContent, Tool};
+use rmcp::model::{CallToolRequestParams, ContentBlock, Tool};
 use rmcp::transport::StreamableHttpClientTransport;
 use serde_json::json;
 
@@ -53,8 +53,8 @@ fn first_text(result: &rmcp::model::CallToolResult) -> anyhow::Result<&str> {
     result
         .content
         .iter()
-        .find_map(|content| match &content.raw {
-            RawContent::Text(text) => Some(text.text.as_str()),
+        .find_map(|content| match content {
+            ContentBlock::Text(text) => Some(text.text.as_str()),
             _ => None,
         })
         .ok_or_else(|| anyhow::anyhow!("tool call returned no text content"))
@@ -64,8 +64,8 @@ fn first_image_mime(result: &rmcp::model::CallToolResult) -> anyhow::Result<&str
     result
         .content
         .iter()
-        .find_map(|content| match &content.raw {
-            RawContent::Image(image) => Some(image.mime_type.as_str()),
+        .find_map(|content| match content {
+            ContentBlock::Image(image) => Some(image.mime_type.as_str()),
             _ => None,
         })
         .ok_or_else(|| anyhow::anyhow!("tool call returned no image content"))
