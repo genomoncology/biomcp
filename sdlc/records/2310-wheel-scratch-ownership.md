@@ -11,3 +11,11 @@ The red control, corrected focused checks, routine qualification and fresh revie
 ## PM source-prevention ruling
 
 The PM supersedes the proposed after-the-fact cleanup approach: run the wheel container as the host uid and gid, or restore ownership of its exact target before container exit, so root-owned files do not remain in host scratch. No additional cleanup container is authorized as the preventive fix. This is another environment-leak case under the 2299 root cause record. Keep real ownership and failure-preservation controls; choose the narrow compatible source fix after inspecting the pinned image.
+
+## Ownership controls and attribution
+
+Final direct preimage job 2310/1792531661790-1465829 reproduced PermissionError after successful bounded fixture stages with the real pinned container. Source 84cf211e8 passed Gator 2310/1792531879220-1469287: twelve runner controls include real container ownership after success, build and smoke failures, ownership-restoration failures and combined failures. The unrelated symlink target has a deliberately different owner; its content, mode, uid and gid remain unchanged. No cold wheel build was repeated. Earlier aggregate focused attempt passed nineteen cases but then lacked Ruff; that setup failure stays separate.
+
+The source fix uses an EXIT trap inside the existing build container, restoring only this run target and wheel output with physical chown behavior before container exit. The host finally preserves the primary exception if its ordinary cleanup also fails. No later cleanup container is the preventive implementation.
+
+The lander found the same recipe hardcodes ticket 2288 on containers serving later jobs. Correcting this ownership label is part of this ticket: the documented PM_JOB contract is NNNN SHA; validate and use its ticket token, with release for non-job use. The unstarted 84cf211e8 routine waiter was verified and canceled before any command ran so the next routine can qualify the final label-corrected source. The existing ownership-control proof remains bound to its exact tested bytes.
