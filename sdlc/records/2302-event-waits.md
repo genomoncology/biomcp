@@ -23,3 +23,9 @@ Complete commands, XML, process observations, overlay, logs, state and result re
 ## Expanded freshness scope
 
 The original eleven-module candidate f3f3ea9c131aecbf09bbec1115e6412d9330ad0b passed M5 routine job 2302/1792529348649-67720. That run does not qualify the subsequent Rust freshness changes. The PM requires the five 1.6-second sleeps in src/cli/stale_json_note_tests.rs to change for 0.9.4. The approved fixture update ages isolated stored HTTP response policy after fresh CLI assertions, preserving response data, accounting triggers, production policy and behavior assertions. The omitted-age control must establish its freshness premise deterministically; the GWAS case need not fail a behavior assertion while fresh. Focused Rust proof and a new routine run remain required.
+
+## Expanded routine and latest prerequisite composition
+
+M5 2302/1792530464291-70038 passed the focused seven-case Rust selection and full landing gate on 283637e006f033ac5473496ff69ebed14e4fb688. The retained future-policy negative control produced the intended four missing-stale-note behavior failures and the GWAS expired-provider-premise failure; two unchanged module cases passed. The original control run then stopped at a runner parsing error, not a product failure. The corrected runner reused the retained control log and ran restored-source focused and routine checks without repeating the negative build. Full raw remains under event-waits/2302/expanded-283637e00.
+
+Main advanced while the routine ran. Composition ac2d71712 merges the full accepted 2300 prerequisite tip 607f3470d, including actual main a5314c569 and its reviewed failure-retention change. Only the shared changelog needed conflict resolution; both ticket entries are preserved. The passing routine binds 283637e00, not the later integration tree. Fresh review and the required combined-candidate landing gate remain responsible for this composition.
