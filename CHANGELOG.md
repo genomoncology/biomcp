@@ -104,8 +104,9 @@
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
+- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
+- Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
-- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 
