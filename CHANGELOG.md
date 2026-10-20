@@ -90,6 +90,8 @@
 ### Internal
 
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
+- Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
+
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
 - Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)

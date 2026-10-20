@@ -11,19 +11,43 @@ from xml.parsers import expat
 
 OPAQUE_SIGNATURE_BYTES = 16
 
-ID_ALIASES = {
-    "ctgov": "clinicaltrials-gov",
-    "s2": "semantic-scholar",
-    "pubtator": "pubtator3",
-    "mygene": "mygene-info",
-    "mychem": "mychem-info",
-    "myvariant": "myvariant-info",
-    "mydisease": "mydisease-info",
-    "gwas": "gwas-catalog",
-    "europepmc": "europe-pmc",
-    # pmc_article uses provider_url_client("pmc-oa", policy).
-    "pmc-html": "pmc-oa",
-}
+
+def provider_policy_ids(
+    sources_dir: Path, overrides: dict[str, str], source_ids: set[str]
+) -> dict[str, str]:
+    """Derive replay identities from the runtime clients' canonical policy IDs.
+
+    An absent or ambiguous static identity stays unresolved. Access policy always
+    comes from the registry; this reads only the identity the client already uses.
+    """
+    candidates: dict[str, set[str]] = {}
+    client = re.compile(
+        r"(?:shared_client(?:_with_deadline)?|provider_url_client|"
+        r'semantic_scholar_provider_client)\(\s*"([^"\n]+)"'
+    )
+    for path in sorted(sources_dir.rglob("*.rs")):
+        if "tests" in path.relative_to(sources_dir).parts:
+            continue
+        text = path.read_text(encoding="utf-8")
+        identities = set(client.findall(text))
+        for override, prefix in overrides.items():
+            if f'"{override}"' in text:
+                candidates.setdefault(prefix, set()).update(identities)
+    # A provider that already uses its canonical registry ID needs no alias.
+    result = {prefix: prefix for prefix in overrides.values() if prefix in source_ids}
+    for prefix, identities in candidates.items():
+        if prefix in source_ids:
+            continue
+        if len(identities) == 1 and identities <= source_ids:
+            result[prefix] = next(iter(identities))
+    return result
+
+
+def provider_policy_id(provider: str, identities: dict[str, str]) -> str:
+    try:
+        return identities[provider]
+    except KeyError:
+        raise ValueError("unknown or ambiguous provider policy identity") from None
 
 
 def recording_provider(key: str, entry: dict, routes: dict[str, str]) -> str:
@@ -105,7 +129,9 @@ def json_shape(value: object) -> dict[str, set[str]]:
 def reply_qualification(content_type: str) -> str:
     media_type = content_type.split(";", 1)[0].strip().lower()
     if media_type in {
-        "application/json", "application/xml", "text/xml"
+        "application/json",
+        "application/xml",
+        "text/xml",
     } or media_type.endswith(("+json", "+xml")):
         return "structure"
     return "status/type/signature only"
@@ -124,7 +150,7 @@ def file_signature(body: bytes, media_type: str) -> str:
         raise ValueError("response does not match its file signature")
     if media_type == "text/html":
         prefix = body.removeprefix(b"\xef\xbb\xbf").lstrip()
-        if re.match(br"(?:<!doctype\s+html(?:\s|>)|<html(?:\s|>))", prefix, re.I):
+        if re.match(rb"(?:<!doctype\s+html(?:\s|>)|<html(?:\s|>))", prefix, re.I):
             return "html"
         raise ValueError("response does not match its file signature")
     if media_type in {"application/octet-stream", "binary/octet-stream"}:
@@ -174,7 +200,10 @@ def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
             walk(root, "$")
             return shape
         except (
-            ElementTree.ParseError, expat.ExpatError, LookupError, RecursionError
+            ElementTree.ParseError,
+            expat.ExpatError,
+            LookupError,
+            RecursionError,
         ) as error:
             raise ValueError("invalid XML response structure") from error
     return {"signature": {file_signature(body, media_type)}}

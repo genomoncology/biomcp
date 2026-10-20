@@ -106,6 +106,7 @@ lint:
 # shipped-feature build and behavior checks before the next landing.
 landing-gate:
 	$(MAKE) lint
+	uv run --no-project python tools/check-replay-live --disable-sources commercial-restricted,semantic-scholar,kegg
 	$(MAKE) test
 	$(MAKE) spec
 
