@@ -14,7 +14,7 @@ Reviews: revision 9da712f, accept
 
 The routine full main check builds the Linux wheel, installs it in the same manylinux container release.yml uses, and runs the release.yml installed-wheel smoke commands under a fresh HOME with no cache ancestors. It uses the same `BIOMCP_DISABLE_SOURCES` profile as release.yml. A fresh-root, packaging or installed-command failure fails the routine check, so the GitHub release rehearsal is never the first place one appears.
 
-Changes: `Makefile`, `.github/workflows/release.yml`, `scripts/installed-wheel-smoke.sh`, `scripts/check-linux-wheel.sh`, `tests/test_release_workflow_provenance.py`, `tests/test_installed_wheel_smoke.py`, `sdlc/records/2288-local-installed-wheel-check.md`, `CHANGELOG.md`.
+Changes: `Makefile`, `.github/workflows/release.yml`, `scripts/installed-wheel-smoke.sh`, `scripts/check-linux-wheel.sh`, `tests/test_release_workflow_provenance.py`, `tests/test_installed_wheel_smoke.py`, `sdlc/records/2288-local-installed-wheel-check.md`, `CHANGELOG.md`, `tests/test_routine_cargo_feature_contract.py`.
 
 - Proof: Breaking fresh-root directory creation on a branch fails the routine check. The routine check and the release rehearsal run the same smoke command list.
 
