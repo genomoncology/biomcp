@@ -1,0 +1,11 @@
+[{"genesymbol":"CYP2D6","name":"*1","population_group":"African American/Afro-Caribbean","subjectcount":12165,"freq_weighted_avg":0.21115738,"freq_avg":0.59977777777777777778,"freq_max":1,"freq_min":0.306}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"American","subjectcount":5036,"freq_weighted_avg":0.5164585,"freq_avg":0.68108484848484848485,"freq_max":0.994,"freq_min":0.3889}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"Central/South Asian","subjectcount":4208,"freq_weighted_avg":0.29324096,"freq_avg":0.60297142857142857143,"freq_max":0.96,"freq_min":0.354}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"East Asian","subjectcount":21185,"freq_weighted_avg":0.25353962,"freq_avg":0.44931369863013698630,"freq_max":0.9931,"freq_min":0.195}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"European","subjectcount":65090,"freq_weighted_avg":0.28500712,"freq_avg":0.56353010752688172043,"freq_max":1,"freq_min":0.244}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"Latino","subjectcount":9347,"freq_weighted_avg":0.36455274,"freq_avg":0.61209696969696969697,"freq_max":0.998,"freq_min":0.1229}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"Near Eastern","subjectcount":3254,"freq_weighted_avg":0.24876314,"freq_avg":0.61297222222222222222,"freq_max":0.9,"freq_min":0.286}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"Oceanian","subjectcount":999,"freq_weighted_avg":0.6170194,"freq_avg":0.72111250000000000000,"freq_max":0.8669,"freq_min":0.334}, 
+ {"genesymbol":"CYP2D6","name":"*1","population_group":"Sub-Saharan African","subjectcount":3209,"freq_weighted_avg":0.15676576,"freq_avg":0.47505400000000000000,"freq_max":0.96,"freq_min":0.0675}, 
+ {"genesymbol":"CYP2D6","name":"*10","population_group":"African American/Afro-Caribbean","subjectcount":12165,"freq_weighted_avg":0.038160447,"freq_avg":0.03848333333333333333,"freq_max":0.075,"freq_min":0.025}, 
+ {"genesymbol":"CYP2D6","name":"*10","population_group":"American","subjectcount":5036,"freq_weighted_avg":0.014500251,"freq_avg":0.01812413793103448276,"freq_max":0.08,"freq_min":0}]
