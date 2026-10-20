@@ -4,7 +4,7 @@ priority: 2
 
 # 2296 — Report fetched fulltext license metadata
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 

@@ -4,7 +4,7 @@ priority: 2
 
 # 2294 — Stop article assets waiting on the secondary ZIP
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 

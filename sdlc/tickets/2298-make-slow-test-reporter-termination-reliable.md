@@ -4,7 +4,7 @@ priority: 1
 
 # 2298 — Make slow-test reporter termination reliable
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 

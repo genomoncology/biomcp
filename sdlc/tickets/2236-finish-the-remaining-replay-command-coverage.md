@@ -4,7 +4,7 @@ priority: 4
 
 # 2236 — Finish the remaining replay command coverage
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
