@@ -156,6 +156,8 @@ def test_sdlc_program_or_configuration_push_runs_full_ci(
         "sdlc/issues/2026-10-16-issue.md",
         "sdlc/planning/2026-10-16-plan.md",
         "sdlc/plan.md",
+        "sdlc/archive/planning/old-plan.md",
+        "sdlc/archive/records/old-record.md",
     ],
 )
 def test_sdlc_record_text_push_stays_docs_only(scratch_repo: Path, path: str) -> None:
