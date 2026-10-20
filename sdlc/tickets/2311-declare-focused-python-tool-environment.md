@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Depends on: 2308
 
+Reviews: revision 6cbe728, accept
+
 ## Outcome
 
 One existing declared Python bootstrap supplies pinned Ruff beside pytest. Focused checks use one documented command convention and their own job environment; they never borrow another ticket environment. Keep the established Ruff version as one source of truth and preserve ordinary lint failures. Add no release gate or cleanup framework.
