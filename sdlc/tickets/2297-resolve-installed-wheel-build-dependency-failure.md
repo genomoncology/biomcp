@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 8a4970f, accept
+
 ## Outcome
 
 Restore the current main full check by identifying and correcting the installed Linux wheel build failure. Keep the production pinned toolchain, dependencies and wheel qualification intact. After the unchanged-main retry passes, apply the PM-directed prevention: each wheel build uses its own clean run directory, which the existing runner removes afterward. Keep any causal claim limited to transient retained-build state rather than corrupt dependency contents.
