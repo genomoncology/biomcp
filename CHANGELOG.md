@@ -84,6 +84,8 @@
 
 ### Internal
 
+- Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
+
 - Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
 
 - Qualify the final candidate from a fresh Linux clone under kernel network isolation, with complete Python, strict docs and shipped-feature checks plus approved reuse of unchanged Rust suite evidence. Preserve both failed qualification attempts and their evidence limits. (2233)

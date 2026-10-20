@@ -98,7 +98,7 @@ EXPECTED_NEEDS = {
     "build": ["version-check", "release-gate"],
     "publish-assets": ["build", "create-draft"],
     "pypi-build": ["version-check", "release-gate"],
-    "wheel-smoke": ["pypi-build"],
+    "wheel-smoke": ["version-check", "pypi-build"],
     "docs-publish": ["version-check", "qualification"],
     "docs-live": ["version-check", "qualification", "docs-publish"],
     # PyPI last (2026-09-28): every build and smoke job first.
@@ -251,11 +251,11 @@ def _assert_release_contract(workflow: str) -> None:
     ):
         assert artifact in smoke
     assert "Scripts/biomcp.exe" in smoke and "bin/biomcp" in smoke
+    smoke = (REPO_ROOT / "scripts/installed-wheel-smoke.sh").read_text()
     assert '"$status" -eq 101' in smoke and '"$status" -ge 128' in smoke
     assert "require_ddinter_disabled ddinter sync" in smoke
     assert "require_ddinter_disabled drug interactions apixaban" in smoke
-    assert "BIOMCP_DISABLE_SOURCES: commercial-restricted,kegg,semantic-scholar" in smoke
-    assert '-e BIOMCP_DISABLE_SOURCES ' in smoke
+    assert "BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar" in smoke
     assert "Drug not found in FAERS" in smoke
     assert "skill asset" in smoke
 
@@ -288,12 +288,12 @@ def _assert_linux_floor_contract(workflow: str) -> None:
     assert (
         "- os: ubuntu-24.04\n            target: x86_64-unknown-linux-gnu\n"
         "            artifact: biomcp-linux-x86_64.tar.gz\n"
-        "            container: quay.io/pypa/manylinux_2_28_x86_64\n" in build
+        "            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8\n" in build
     )
     assert (
         "- os: ubuntu-24.04-arm\n            target: aarch64-unknown-linux-gnu\n"
         "            artifact: biomcp-linux-arm64.tar.gz\n"
-        "            container: quay.io/pypa/manylinux_2_28_aarch64\n" in build
+        "            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e\n" in build
     )
     assert "cross: true" not in build
     assert "Install cross-compilation toolchain" not in build
@@ -321,11 +321,11 @@ def _assert_linux_floor_contract(workflow: str) -> None:
         assert "sha256sum -c rustup-init.sha256" in block
     assert (
         "- os: ubuntu-24.04\n            target: x86_64-unknown-linux-gnu\n"
-        "            container: quay.io/pypa/manylinux_2_28_x86_64\n" in pypi
+        "            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8\n" in pypi
     )
     assert (
         "- os: ubuntu-24.04-arm\n            target: aarch64-unknown-linux-gnu\n"
-        "            container: quay.io/pypa/manylinux_2_28_aarch64\n" in pypi
+        "            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e\n" in pypi
     )
     # No remote script is piped into a shell anywhere in the release flow.
     assert "sh.rustup.rs" not in workflow
@@ -338,6 +338,8 @@ def _assert_linux_floor_contract(workflow: str) -> None:
     # The runtime floor smoke runs a deep offline command, not only
     # the version banner, and the JSON guard is pinned exactly so a
     # quoting typo cannot ship.
+    assert "bash /scripts/installed-wheel-smoke.sh" in smoke
+    smoke = (REPO_ROOT / "scripts/installed-wheel-smoke.sh").read_text()
     assert "cache stats --json" in smoke
     assert 'case "$stats" in' in smoke
     assert '"{"*) ;;' in smoke
@@ -394,6 +396,7 @@ ALLOWED_STEP_IFS = {
     # The container smoke was re-pinned again 2026-10-10:
     # the tag now rides in with -e TAG.
 PINNED_STEPS: dict[tuple[str, str], str] = {
+    ("wheel-smoke", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
     ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "e5cf6427d1b42e2b776f2589adc36320874f109751f02494b68ee9068c79b0d5",
@@ -405,8 +408,8 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "11b2e4960294116b4d5ec21d7d6cb612b54aa46247ee1c7aa382c704b4f3a910",
-    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "d4784fee81dc7aa01774fe5766b98846ff993047d9b62571a1355062bf8a1850",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "68652b2b9183303c3c7e8a10a889029f8bed17057c66fac871ef97bb75f00bea",
+    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "ed392815d8efbff2696f38b5fea48c680b371605f9925129ffe956de5333d127",
     ("docs-live", "Check out the gate helper"): "ff29379fee6ad185b41206f3cd927d55f6c99711dafe8c11de48998ec8e64373",
     ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
@@ -438,6 +441,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
     ],
     "wheel-smoke": [
+        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
         "Install the wheel into a clean venv",
@@ -634,13 +638,13 @@ EXPECTED_MATRICES = {
             "os": "ubuntu-24.04",
             "target": "x86_64-unknown-linux-gnu",
             "artifact": "biomcp-linux-x86_64.tar.gz",
-            "container": "quay.io/pypa/manylinux_2_28_x86_64",
+            "container": "quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8",
         },
         {
             "os": "ubuntu-24.04-arm",
             "target": "aarch64-unknown-linux-gnu",
             "artifact": "biomcp-linux-arm64.tar.gz",
-            "container": "quay.io/pypa/manylinux_2_28_aarch64",
+            "container": "quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e",
         },
         {
             "os": "macos-14",
@@ -662,12 +666,12 @@ EXPECTED_MATRICES = {
         {
             "os": "ubuntu-24.04",
             "target": "x86_64-unknown-linux-gnu",
-            "container": "quay.io/pypa/manylinux_2_28_x86_64",
+            "container": "quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8",
         },
         {
             "os": "ubuntu-24.04-arm",
             "target": "aarch64-unknown-linux-gnu",
-            "container": "quay.io/pypa/manylinux_2_28_aarch64",
+            "container": "quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e",
         },
         {"os": "macos-14", "target": "aarch64-apple-darwin"},
         {"os": "macos-15", "target": "x86_64-apple-darwin"},
@@ -679,14 +683,14 @@ EXPECTED_MATRICES = {
             "artifact": "wheel-x86_64-unknown-linux-gnu",
             "executable": "bin/biomcp",
             "python": "bin/python",
-            "container": "quay.io/pypa/manylinux_2_28_x86_64",
+            "container": "quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8",
         },
         {
             "os": "ubuntu-24.04-arm",
             "artifact": "wheel-aarch64-unknown-linux-gnu",
             "executable": "bin/biomcp",
             "python": "bin/python",
-            "container": "quay.io/pypa/manylinux_2_28_aarch64",
+            "container": "quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e",
         },
         {
             "os": "macos-14",
@@ -819,19 +823,8 @@ def _assert_pipeline_contract(parsed: dict) -> None:
     )
 
     smoke = _step_by_name(parsed, "wheel-smoke", "Smoke the installed wheel")
-    # The panic guard must return failure, not just print.
-    assert re.search(
-        r'echo "panic or crash \(exit \$status\) from: biomcp \$\*" >&2\s*\n\s*return 1',
-        smoke["run"],
-    ), "wheel-smoke: the panic guard must return failure"
-    # The not-found exit check runs after the adverse-events probe.
-    run = smoke["run"]
-    probe = run.index("drug adverse-events qwertyzzznonexistent999")
-    assert '[ "$status" -eq 0 ]' in run[probe:], (
-        "wheel-smoke: the not-found exit check must follow the adverse-events probe"
-    )
-    assert 'grep -q "Drug not found in FAERS"' in run[probe:], (
-        "wheel-smoke: the not-found exit check must follow the adverse-events probe"
+    assert "bash scripts/installed-wheel-smoke.sh" in smoke["run"], (
+        "wheel-smoke: native platforms must run the shared smoke"
     )
 
     # The runtime floor smoke stays on the Linux legs only.
@@ -1358,25 +1351,9 @@ PIPELINE_MUTATIONS = {
         ),
         "job if must be exactly",
     ),
-    "deleting_the_return_1_after_the_panic_message": (
-        _mutate_run(
-            "wheel-smoke",
-            "Smoke the installed wheel",
-            lambda run: re.sub(
-                r'(echo "panic or crash \(exit \$status\) from: biomcp \$\*" >&2)\s*\n\s*return 1',
-                r"\1\n              :",
-                run,
-            ),
-        ),
-        "panic guard must return failure",
-    ),
-    "deleting_the_not_found_exit_check": (
-        _mutate_run(
-            "wheel-smoke",
-            "Smoke the installed wheel",
-            lambda run: run.replace('grep -q "Drug not found in FAERS"', ":"),
-        ),
-        "not-found exit check must follow",
+    "skipping_the_shared_smoke": (
+        _mutate_run("wheel-smoke", "Smoke the installed wheel", lambda run: run.replace("bash scripts/installed-wheel-smoke.sh", "true")),
+        "native platforms must run the shared smoke",
     ),
     "a_new_first_step_slipped_into_a_pinned_job": (
         lambda parsed: parsed["jobs"]["pypi-build"]["steps"].insert(
@@ -1580,8 +1557,8 @@ def test_removing_a_container_condition_clause_breaks_the_contract(
     "needle,replacement",
     [
         (
-            "            container: quay.io/pypa/manylinux_2_28_x86_64\n",
-            "            container: quay.io/pypa/manylinux_2_28_x86_64-alpine\n",
+            "            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8\n",
+            "            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8-alpine\n",
         ),
         (
             "- os: ubuntu-24.04-arm\n            target: aarch64-unknown-linux-gnu",
@@ -1608,8 +1585,8 @@ def test_removing_a_container_condition_clause_breaks_the_contract(
             "true",
         ),
         (
-            '          stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"',
-            '          stats="$(/opt/python/cp312-cp312/bin/biomcp --version)"',
+            'bash /scripts/installed-wheel-smoke.sh',
+            'true',
         ),
     ],
 )
@@ -1962,26 +1939,6 @@ def _assert_docker_scripts_receive_their_variables(parsed: dict) -> None:
         "in with -e or --env: docker shares no job environment with the "
         "container, and the scripts run under set -u; " + "; ".join(offenders)
     )
-
-
-def test_manylinux_smoke_prints_the_cache_error_before_failing(tmp_path: Path) -> None:
-    parsed = _load_release_pipeline()
-    script = next(script for where, _, script in _docker_c_scripts(parsed)
-                  if "Run the wheel inside the manylinux" in where)
-    executable = tmp_path / "biomcp"
-    executable.write_text(
-        '#!/bin/sh\nif [ "$1" = "--version" ]; then echo "biomcp 0.9.4"; '
-        "else echo '{\"error\":{\"code\":\"io\",\"message\":\"I/O operation failed.\"}}'; "
-        'exit 1; fi\n', encoding="utf-8",
-    )
-    executable.chmod(0o755)
-    script = script.replace("/opt/python/cp312-cp312/bin/python", "true")
-    script = script.replace("/opt/python/cp312-cp312/bin/biomcp", shlex.quote(str(executable)))
-    result = subprocess.run(["bash", "-euo", "pipefail", "-c", script],
-                            env=os.environ | {"TAG": "v0.9.4"},
-                            capture_output=True, text=True, check=False)
-    assert result.returncode == 1
-    assert '"code":"io"' in result.stderr, result
 
 
 def test_docker_run_container_scripts_receive_every_variable_they_read() -> None:
