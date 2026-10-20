@@ -14,12 +14,24 @@ if [[ ! -x "$BIN" ]]; then
   exit 1
 fi
 
+# Keep structured command errors visible when stdout feeds a JSON variable.
+command_json() {
+  local output status
+  if output=$("$BIN" "$@"); then
+    printf '%s\n' "$output"
+  else
+    status=$?
+    printf '%s\n' "$output" >&2
+    return "$status"
+  fi
+}
+
 echo "GeneGPT demo: BRAF V600E evidence walk"
 
-gene_json="$("$BIN" --json get gene BRAF)"
-variant_json="$("$BIN" --json get variant "BRAF V600E" population)"
-trial_json="$("$BIN" --json variant trials "BRAF V600E" --limit 3)"
-article_json="$("$BIN" --json search article -g BRAF -d melanoma --limit 3)"
+gene_json="$(command_json --json get gene BRAF)"
+variant_json="$(command_json --json get variant "BRAF V600E" population)"
+trial_json="$(command_json --json variant trials "BRAF V600E" --limit 3)"
+article_json="$(command_json --json search article -g BRAF -d melanoma --limit 3)"
 
 if ! grep -q '"symbol"' <<<"$gene_json"; then
   echo "Gene lookup failed to return symbol" >&2

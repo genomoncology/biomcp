@@ -1,0 +1,189 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/30738221/"
+      }
+    ],
+    "next_commands": [
+      "biomcp article entities 30738221",
+      "biomcp search gene -q KRAS",
+      "biomcp search gene -q PD-L1",
+      "biomcp search disease --query NSCLC",
+      "biomcp search disease --query \"Non-Small Cell Lung Cancer\"",
+      "biomcp article references 30738221 --limit 3",
+      "biomcp article citations 30738221 --limit 3",
+      "biomcp article recommendations 30738221 --limit 3"
+    ],
+    "section_sources": [
+      {
+        "key": "bibliography",
+        "label": "Bibliography",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "authors",
+        "label": "Authors",
+        "outcome": "data",
+        "sources": [
+          "PubTator3"
+        ]
+      },
+      {
+        "key": "abstract",
+        "label": "Abstract",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "annotations",
+        "label": "PubTator Annotations",
+        "outcome": "data",
+        "sources": [
+          "PubTator3"
+        ]
+      }
+    ],
+    "workflow": "article-follow-up",
+    "workflow_playbook": "biomcp skill article-follow-up",
+    "workflow_rationale": "Use article annotations first, then citation and recommendation graph pivots for efficient literature expansion."
+  },
+  "abstract_text": "KRAS mutation is the most frequent molecular alteration found in advanced NSCLC; it is associated with a poor prognosis without available targeted therapy. Treatment options for NSCLC have been recently enriched by the development of immune checkpoint inhibitors (ICIs), and data about its efficacy in patients with KRAS-mutant NSCLC are discordant. This study assessed the routine efficacy of ICIs in advanced KRAS-mutant NSCLC.\n\nIn this retrospective study, clinical data were extracted from the medical records of patients with advanced NSCLC treated with ICIs and with available molecular analysis between April 2013 and June 2017. Analysis of programmed death ligand 1 (PD-L1) expression was performed if exploitable tumor material was available.\n\nA total of 282 patients with ICI-treated (in the first line or more) advanced NSCLC (all histological subgroups) who were treated with ICIs (anti-programmed death 1, anti-PD-L1, or anti-cytotoxic T-lymphocyte associated protein 4 antibodies), including 162 (57.4%) with KRAS mutation, 27 (9.6%) with other mutations, and 93 (33%) with a wild-type phenotype, were identified. PD-L1 analysis was available for 128 patients (45.4%), of whom 45.3% and 19.5% had PD-L1 expression of 1% or more and 50%, respectively (49.5% and 21.2%, respectively, in the case of the 85 patients with KRAS-mutant NSCLC). No significant difference was seen in terms of objective response rates, progression-free survival, or overall survival between KRAS-mutant NSCLC and other NSCLC. No significant differences in overall survival or progression-free survival were observed between the major KRAS mutation subtypes (G12A, G12C, G12D, G12V, and G13C). In KRAS-mutant NSCLC, unlike in non-KRAS-mutant NSCLC, the efficacy of ICIs is consistently higher, even though not statistically significant, for patients with PD-L1 expression in 1% or more of tumor cells than for those with PD-L1 expression in less than 1% of tumor cells, and this finding is especially true when PD-L1 expression is high (PD-L1 expression ≥50%).\n\nFor patients with KRAS-mutant NSCLC (all mutational subtypes), the efficacy of ICI is similar to that for patients with other types of NSCLC. PD-L1 expression seems to be more relevant for predicting the efficacy of ICIs in KRAS-mutant NSCLC than it is in other types of NSCLC.",
+  "annotations": {
+    "diseases": [
+      {
+        "count": 16,
+        "identifier": "MESH:D002289",
+        "name": "Carcinoma Non-Small-Cell Lung",
+        "namespace": "MESH",
+        "text": "NSCLC"
+      },
+      {
+        "count": 3,
+        "identifier": "MESH:D009369",
+        "name": "Neoplasms",
+        "namespace": "MESH",
+        "text": "tumor"
+      },
+      {
+        "count": 1,
+        "identifier": "MESH:D002289",
+        "name": "Carcinoma Non-Small-Cell Lung",
+        "namespace": "MESH",
+        "text": "Non-Small Cell Lung Cancer"
+      }
+    ],
+    "genes": [
+      {
+        "count": 12,
+        "identifier": "3845",
+        "namespace": "NCBIGene",
+        "text": "KRAS"
+      },
+      {
+        "count": 9,
+        "identifier": "29126",
+        "namespace": "NCBIGene",
+        "text": "PD-L1"
+      },
+      {
+        "count": 1,
+        "identifier": "29126",
+        "namespace": "NCBIGene",
+        "text": "programmed death ligand 1"
+      },
+      {
+        "count": 1,
+        "identifier": "1493",
+        "namespace": "NCBIGene",
+        "text": "cytotoxic T-lymphocyte associated protein 4"
+      }
+    ],
+    "mutations": [
+      {
+        "count": 1,
+        "identifier": "KRAS p.G12A",
+        "namespace": "HGVS",
+        "text": "G12A"
+      },
+      {
+        "count": 1,
+        "identifier": "KRAS p.G12C",
+        "namespace": "HGVS",
+        "text": "G12C"
+      },
+      {
+        "count": 1,
+        "identifier": "KRAS p.G12D",
+        "namespace": "HGVS",
+        "text": "G12D"
+      },
+      {
+        "count": 1,
+        "identifier": "KRAS p.G12V",
+        "namespace": "HGVS",
+        "text": "G12V"
+      },
+      {
+        "count": 1,
+        "identifier": "KRAS p.G13C",
+        "namespace": "HGVS",
+        "text": "G13C"
+      }
+    ]
+  },
+  "author_completeness": "complete",
+  "author_count": 18,
+  "author_source": "pubtator",
+  "authors": [
+    "Jeanson A",
+    "Tomasini P",
+    "Souquet-Bressand M",
+    "Brandone N",
+    "Boucekine M",
+    "Grangeon M",
+    "Chaleat S",
+    "Khobta N",
+    "Milia J",
+    "Mhanna L",
+    "Greillier L",
+    "Biemar J",
+    "Nanni I",
+    "Ouafik L",
+    "Garcia S",
+    "Mazières J",
+    "Barlesi F",
+    "Mascaux C"
+  ],
+  "citation_count": 201,
+  "date": "2019-06-01",
+  "doi": "10.1016/j.jtho.2019.01.011",
+  "journal": "J Thorac Oncol",
+  "open_access": false,
+  "pmid": "30738221",
+  "publication_type": "research support, non-u.s. gov't",
+  "pubtator_fallback": false,
+  "section_outcomes": {
+    "fulltext": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "indexing": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "tldr": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "title": "Efficacy of Immune Checkpoint Inhibitors in KRAS-Mutant Non-Small Cell Lung Cancer (NSCLC)."
+}

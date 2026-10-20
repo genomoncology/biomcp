@@ -1,0 +1,158 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/23056577/"
+      },
+      {
+        "label": "PMC",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3467229/"
+      }
+    ],
+    "next_commands": [
+      "biomcp article references 23056577 --limit 3",
+      "biomcp article citations 23056577 --limit 3",
+      "biomcp article recommendations 23056577 --limit 3",
+      "biomcp --json get article 23056577 assets",
+      "biomcp get article 23056577 asset pone.0047054.s001.doc"
+    ],
+    "section_sources": [
+      {
+        "key": "bibliography",
+        "label": "Bibliography",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "authors",
+        "label": "Authors",
+        "outcome": "data",
+        "sources": [
+          "PubTator3"
+        ]
+      },
+      {
+        "key": "abstract",
+        "label": "Abstract",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "fulltext",
+        "label": "Full Text",
+        "outcome": "data",
+        "sources": [
+          "Europe PMC"
+        ]
+      }
+    ]
+  },
+  "abstract_text": "Mutation of BRAF is a predominant event in cancers with poor prognosis such as melanoma and colorectal cancer. BRAF mutation leads to a constitutive activation of mitogen activated protein kinase pathway which is essential for cell proliferation and tumor progression. Despite tremendous efforts made to target BRAF for cancer treatment, the correlation between BRAF mutation and patient survival is still a matter of controversy.\n\nClinical studies on the correlation between BRAF mutation and patient survival were retrieved from MEDLINE and EMBASE databases between June 2002 and December 2011. One hundred twenty relevant full text studies were categorized based on study design and cancer type. Publication bias was evaluated for each category and pooled hazard ratio (HR) with 95% confidence interval (CI) was calculated using random or fixed effect meta-analysis based on the percentage of heterogeneity. Twenty six studies on colorectal cancer (11,773 patients) and four studies on melanoma (674 patients) were included in our final meta-analysis. The average prevalence of BRAF mutation was 9.6% in colorectal cancer, and 47.8% in melanoma reports. We found that BRAF mutation increases the risk of mortality in colorectal cancer patients for more than two times; HR = 2.25 (95% CI, 1.82-2.83). In addition, we revealed that BRAF mutation also increases the risk of mortality in melanoma patients by 1.7 times (95% CI, 1.37-2.12).\n\nWe revealed that BRAF mutation is an absolute risk factor for patient survival in colorectal cancer and melanoma.",
+  "author_completeness": "complete",
+  "author_count": 5,
+  "author_source": "pubtator",
+  "authors": [
+    "Safaee Ardekani G",
+    "Jafarnejad SM",
+    "Tan L",
+    "Saeedi A",
+    "Li G"
+  ],
+  "citation_count": 175,
+  "date": "2012-01-01",
+  "doi": "10.1371/journal.pone.0047054",
+  "full_text_coverage": {
+    "attempts": [
+      {
+        "cache_state": "bypass",
+        "coverage": "full_text",
+        "outcome": "data",
+        "provider": {
+          "label": "Europe PMC XML",
+          "source": "Europe PMC"
+        },
+        "reason": "body_detected",
+        "source_kind": "jats_xml"
+      }
+    ],
+    "coverage": "full_text"
+  },
+  "full_text_manifest": {
+    "provenance": {
+      "open_access": true,
+      "retracted": false
+    },
+    "provider": {
+      "label": "Europe PMC XML",
+      "source": "Europe PMC"
+    },
+    "quality": {
+      "has_entity_annotations": false,
+      "has_fulltext_signal": true,
+      "has_references": true,
+      "has_sections": true,
+      "has_tables": true
+    },
+    "reuse": {
+      "license_present": false,
+      "reuse_warning": "License/reuse status is unknown; verify rights before reuse."
+    },
+    "source_identifier": "PMC3467229",
+    "source_kind": "jats_xml"
+  },
+  "full_text_path": "<CACHE_ROOT>/downloads/d6d9092dc5abeef3737d1cd2ddbfe51c.txt",
+  "full_text_source": {
+    "kind": "jats_xml",
+    "label": "Europe PMC XML",
+    "source": "Europe PMC"
+  },
+  "full_text_summary": {
+    "byte_size": 65460,
+    "section_count": 18,
+    "total_lines": 219
+  },
+  "journal": "PLoS One",
+  "not_included": {
+    "complex_tables": {
+      "count": 2,
+      "retrieve_with": "biomcp --json get article 23056577 assets"
+    },
+    "figure_images": {
+      "count": 5,
+      "retrieve_with": "biomcp --json get article 23056577 assets"
+    },
+    "supplementary_files": {
+      "count": 2,
+      "retrieve_with": "biomcp --json get article 23056577 assets"
+    }
+  },
+  "open_access": true,
+  "pmcid": "PMC3467229",
+  "pmid": "23056577",
+  "publication_type": "Meta-Analysis",
+  "pubtator_fallback": false,
+  "section_outcomes": {
+    "fulltext": {
+      "outcome": "data",
+      "sources": [
+        "Europe PMC"
+      ]
+    },
+    "indexing": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "tldr": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "title": "The prognostic value of BRAF mutation in colorectal cancer and melanoma: a systematic review and meta-analysis."
+}

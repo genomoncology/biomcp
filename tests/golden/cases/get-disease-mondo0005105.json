@@ -1,0 +1,292 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "Monarch",
+        "url": "https://monarchinitiative.org/MONDO:0005105"
+      }
+    ],
+    "next_commands": [
+      "biomcp get disease MONDO:0005105 genes",
+      "biomcp get disease MONDO:0005105 pathways",
+      "biomcp get disease MONDO:0005105 phenotypes",
+      "biomcp get disease MONDO:0005105 diagnostics",
+      "biomcp get disease MONDO:0005105 clinical_features",
+      "biomcp get disease MONDO:0005105 survival",
+      "biomcp get gene CDKN2A clingen constraint",
+      "biomcp search trial -c \"melanoma\"",
+      "biomcp search article -d \"melanoma\"",
+      "biomcp search diagnostic --disease \"melanoma\"",
+      "biomcp search drug --indication \"melanoma\"",
+      "biomcp study download --list"
+    ],
+    "section_sources": [
+      {
+        "key": "definition",
+        "label": "Definition",
+        "outcome": "data",
+        "sources": [
+          "MyDisease.info"
+        ]
+      },
+      {
+        "key": "synonyms",
+        "label": "Synonyms",
+        "outcome": "data",
+        "sources": [
+          "MONDO / Disease Ontology via MyDisease.info"
+        ]
+      },
+      {
+        "key": "parents",
+        "label": "Parents",
+        "outcome": "data",
+        "sources": [
+          "MONDO / Disease Ontology via MyDisease.info"
+        ]
+      },
+      {
+        "key": "top_genes",
+        "label": "Genes",
+        "outcome": "data",
+        "sources": [
+          "Open Targets"
+        ]
+      },
+      {
+        "key": "treatments",
+        "label": "Treatments",
+        "outcome": "data",
+        "sources": [
+          "MyChem.info indication search"
+        ]
+      },
+      {
+        "key": "recruiting_trials",
+        "label": "Recruiting Trials",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      }
+    ],
+    "suggestions": [
+      "biomcp get gene CDKN2A clingen constraint",
+      "biomcp search trial -c \"melanoma\"",
+      "biomcp search article -d \"melanoma\"",
+      "biomcp search diagnostic --disease \"melanoma\"",
+      "biomcp search drug --indication \"melanoma\"",
+      "biomcp study download --list"
+    ]
+  },
+  "definition": "A malignant, usually aggressive tumor composed of atypical, neoplastic melanocytes. Most often, melanomas arise in the skin (cutaneous melanomas) and include the following histologic subtypes: superficial spreading melanoma, nodular melanoma, acral lentiginous melanoma, and lentigo maligna melanoma. Cutaneous melanomas may arise from acquired or congenital melanocytic or dysplastic nevi. Melanomas may also arise in other anatomic sites including the gastrointestinal system, eye, urinary tract, and reproductive system. Melanomas frequently metastasize to lymph nodes, liver, lungs, and brain. [NCIT:C3224]",
+  "id": "MONDO:0005105",
+  "name": "melanoma",
+  "parents": [
+    "melanocytic neoplasm (MONDO:0021143)",
+    "organ system cancer (DOID:0050687)"
+  ],
+  "recruiting_trial_count": 481,
+  "section_outcomes": {
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diagnostics": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "funding": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "genes": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "models": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "pathways": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "phenotypes": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "prevalence": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "recruiting_trials": {
+      "outcome": "data",
+      "sources": [
+        "ClinicalTrials.gov"
+      ]
+    },
+    "survival": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "treatments": {
+      "outcome": "data",
+      "sources": [
+        "MyChem.info indication search"
+      ]
+    },
+    "variants": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "synonyms": [
+    "malignant melanoma",
+    "melanoma (disease)",
+    "melanoma, malignant",
+    "Naevocarcinoma"
+  ],
+  "top_gene_scores": [
+    {
+      "gwas_score": 0.7416477473130875,
+      "overall_score": 0.8725489100381859,
+      "rare_variant_score": 0.9622311193416772,
+      "somatic_mutation_score": 0.9294217320899748,
+      "symbol": "CDKN2A"
+    },
+    {
+      "overall_score": 0.853319758325584,
+      "rare_variant_score": 0.6991204172533643,
+      "somatic_mutation_score": 0.8799594223495624,
+      "symbol": "BRAF"
+    },
+    {
+      "overall_score": 0.8157085313822348,
+      "rare_variant_score": 0.6991204172533643,
+      "somatic_mutation_score": 0.8549710595655329,
+      "symbol": "BAP1"
+    },
+    {
+      "overall_score": 0.8070679370897884,
+      "somatic_mutation_score": 0.8832669675788113,
+      "symbol": "MAP2K1"
+    },
+    {
+      "overall_score": 0.7793683007677368,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.950988171427514,
+      "symbol": "NRAS"
+    },
+    {
+      "overall_score": 0.7693270623705425,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.9218300045217718,
+      "symbol": "MAP2K2"
+    },
+    {
+      "overall_score": 0.7647251781126859,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.8714032285883315,
+      "symbol": "PTEN"
+    },
+    {
+      "gwas_score": 0.9509755368702496,
+      "overall_score": 0.755395912355419,
+      "rare_variant_score": 0.6591624768836803,
+      "somatic_mutation_score": 0.6904796800151077,
+      "symbol": "MITF"
+    },
+    {
+      "overall_score": 0.7429453694369689,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.9259149731933332,
+      "symbol": "NF1"
+    },
+    {
+      "overall_score": 0.7348581672453307,
+      "rare_variant_score": 0.7969906583886166,
+      "somatic_mutation_score": 0.7767842513555645,
+      "symbol": "CDK4"
+    },
+    {
+      "gwas_score": 0.5053009803872783,
+      "overall_score": 0.7201081224946771,
+      "somatic_mutation_score": 0.9046064165072008,
+      "symbol": "TERT"
+    },
+    {
+      "overall_score": 0.7200339004792492,
+      "somatic_mutation_score": 0.8366320993174415,
+      "symbol": "GNAQ"
+    },
+    {
+      "overall_score": 0.7188286252450087,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.9323085885730568,
+      "symbol": "ARID2"
+    },
+    {
+      "gwas_score": 0.7624462149791942,
+      "overall_score": 0.7178221946978423,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.8562637233009452,
+      "symbol": "TP53"
+    },
+    {
+      "overall_score": 0.7177517654947704,
+      "rare_variant_score": 0.0,
+      "somatic_mutation_score": 0.8364557292989087,
+      "symbol": "KIT"
+    },
+    {
+      "overall_score": 0.7098371887710303,
+      "somatic_mutation_score": 0.8976856255938902,
+      "symbol": "RAC1"
+    },
+    {
+      "gwas_score": 0.7432881970196296,
+      "overall_score": 0.7097366099902447,
+      "symbol": "CTLA4"
+    },
+    {
+      "overall_score": 0.7077185542397579,
+      "somatic_mutation_score": 0.8894305712796143,
+      "symbol": "GNA11"
+    },
+    {
+      "overall_score": 0.7055883395627432,
+      "rare_variant_score": 0.8274613634158176,
+      "symbol": "MBD4"
+    },
+    {
+      "gwas_score": 0.35791349854830273,
+      "overall_score": 0.7039747271510038,
+      "rare_variant_score": 0.012158615952232422,
+      "somatic_mutation_score": 0.7248875184499493,
+      "symbol": "POT1"
+    }
+  ],
+  "top_genes": [
+    "CDKN2A",
+    "BRAF",
+    "BAP1",
+    "MAP2K1",
+    "NRAS"
+  ],
+  "treatment_landscape": [
+    "dabrafenib",
+    "tebentafusp",
+    "cobimetinib",
+    "vindesine",
+    "binimetinib"
+  ],
+  "xrefs": {
+    "MeSH": "D008545",
+    "NCI": "C3224",
+    "Orphanet": "411533",
+    "SNOMED": "372244006",
+    "doid": "DOID:1909",
+    "umls_cui": "C0025202"
+  }
+}

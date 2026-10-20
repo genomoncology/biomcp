@@ -111,7 +111,7 @@ def test_coverage_summary_counts_executed_work(
         fake_home / ".cargo/bin/cargo",
         """case "$*" in
   "llvm-cov report"*) echo 'TOTAL 0 0 0 0 0 0 0 0 72.5%' ;;
-  "nextest run"*) printf '%s\\n' "$TEST_NEXTEST_SUMMARY"; exit "$TEST_SUITE_STATUS" ;;
+  "nextest run"*) printf '%s\\n' "$TEST_NEXTEST_SUMMARY"; if [ "$TEST_SUITE_STATUS" != 0 ]; then echo "coverage command error" >&2; fi; exit "$TEST_SUITE_STATUS" ;;
 esac
 """,
     )
@@ -144,7 +144,9 @@ esac
         capture_output=True,
         timeout=20,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.returncode == (1 if status != "0" else 0), proc.stdout + proc.stderr
+    if status != "0":
+        assert "coverage command error" in proc.stderr
     lines = dict(
         line.removeprefix("RESULT ").split(" = ", 1)
         for line in proc.stdout.splitlines()
@@ -163,7 +165,7 @@ esac
 def test_runtime_retains_alternating_isolated_samples(
     tmp_path: Path, bash: str
 ) -> None:
-    """Provider failures remain observations and cache-off cannot erase warm data."""
+    """Failed commands retain observations and cache-off cannot erase warm data."""
     import hashlib
     import json
     import statistics
@@ -200,7 +202,8 @@ PYFAKE
         capture_output=True,
         timeout=60,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "provider unavailable" in proc.stdout + proc.stderr
     runtime = clone / ".cache/measure/runtime"
     samples = json.loads((runtime / "samples.json").read_text())
     measured = [s for s in samples if s["phase"] == "measure"]
@@ -270,6 +273,7 @@ def test_census_retains_the_runner_exit_status(
         fake_home / ".cargo/bin/cargo",
         "printf '%s\\n' "
         '\'{"type":"test","event":"ok","name":"sample","exec_time":1.5}\'\n'
+        'if [ "$CENSUS_EXIT" != 0 ]; then echo "census command error" >&2; fi\n'
         'exit "$CENSUS_EXIT"\n',
     )
     env = dict(os.environ, HOME=str(fake_home), CENSUS_EXIT=str(status))
@@ -286,7 +290,9 @@ def test_census_retains_the_runner_exit_status(
         capture_output=True,
         timeout=10,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.returncode == (0 if status == 0 else 1), proc.stdout + proc.stderr
+    if status != 0:
+        assert "census command error" in proc.stderr
     assert (clone / ".cache/measure/census.exit").read_text().strip() == str(status)
     expected = "complete" if status == 0 else "incomplete (exit 42)"
     assert f"RESULT rust_test_census_collection = {expected}" in proc.stdout

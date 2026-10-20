@@ -1,0 +1,695 @@
+{
+  "numberOfHits": 279,
+  "results": [
+    {
+      "id": "UniProtKB:P15056!327557530",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "NOT|enables",
+      "goId": "GO:0031267",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:12194967",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "O95057"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "UniProt",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20131211",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557531",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004672",
+      "goName": null,
+      "goEvidence": "IEA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000501",
+      "reference": "GO_REF:0000120",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P28028"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "ensembl",
+              "id": "ENSMUSP00000002487"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "InterPro",
+              "id": "IPR001245"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "InterPro",
+              "id": "IPR008271"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "UniProt",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260727",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557532",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004672",
+      "goName": null,
+      "goEvidence": "IDA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000314",
+      "reference": "PMID:17563371",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "BHF-UCL",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20120621",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557533",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004672",
+      "goName": null,
+      "goEvidence": "TAS",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000304",
+      "reference": "PMID:2284096",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "PINC",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20030904",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557534",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004674",
+      "goName": null,
+      "goEvidence": "IEA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000501",
+      "reference": "GO_REF:0000003",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "EC",
+              "id": "2.7.11.1"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "UniProt",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260727",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557535",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004674",
+      "goName": null,
+      "goEvidence": "IDA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000314",
+      "reference": "PMID:18567582",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "BHF-UCL",
+      "extensions": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q02750",
+              "relation": "has_input"
+            },
+            {
+              "db": "GO",
+              "id": "0007173",
+              "relation": "part_of"
+            }
+          ]
+        }
+      ],
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20200117",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557536",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004674",
+      "goName": null,
+      "goEvidence": "IDA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000314",
+      "reference": "PMID:19667065",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "UniProt",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20110318",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557537",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004708",
+      "goName": null,
+      "goEvidence": "IMP",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000315",
+      "reference": "PMID:29433126",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "UniProt",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20210525",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557538",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0004709",
+      "goName": null,
+      "goEvidence": "IBA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000318",
+      "reference": "GO_REF:0000033",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "FB",
+              "id": "FBgn0003079"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "MGI",
+              "id": "MGI:97847"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "PANTHER",
+              "id": "PTN001147804"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "RGD",
+              "id": "2148"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "RGD",
+              "id": "3531"
+            }
+          ]
+        },
+        {
+          "connectedXrefs": [
+            {
+              "db": "RGD",
+              "id": "619908"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "GO_Central",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20241121",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557539",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005509",
+      "goName": null,
+      "goEvidence": "IDA",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000314",
+      "reference": "PMID:18567582",
+      "withFrom": null,
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "BHF-UCL",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20200117",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557540",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:12620389",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P31946"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557541",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:15161933",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P63104"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557542",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:15778465",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P31947"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557543",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:16810323",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q02156"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557544",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:16810323",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q13233"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557545",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:16810323",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q15349"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557546",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:16888650",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q13233"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557547",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:17380122",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "Q8CGE9"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557548",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:17563371",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P46940"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "BHF-UCL",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20120621",
+      "synonyms": null,
+      "name": null
+    },
+    {
+      "id": "UniProtKB:P15056!327557549",
+      "geneProductId": "UniProtKB:P15056",
+      "qualifier": "enables",
+      "goId": "GO:0005515",
+      "goName": null,
+      "goEvidence": "IPI",
+      "goAspect": "molecular_function",
+      "evidenceCode": "ECO:0000353",
+      "reference": "PMID:17563371",
+      "withFrom": [
+        {
+          "connectedXrefs": [
+            {
+              "db": "UniProtKB",
+              "id": "P46940"
+            }
+          ]
+        }
+      ],
+      "taxonId": 9606,
+      "taxonName": null,
+      "assignedBy": "IntAct",
+      "extensions": null,
+      "targetSets": [
+        "BHF-UCL",
+        "KRUK"
+      ],
+      "symbol": "BRAF",
+      "date": "20260725",
+      "synonyms": null,
+      "name": null
+    }
+  ],
+  "pageInfo": {
+    "resultsPerPage": 20,
+    "current": 1,
+    "total": 14
+  }
+}
