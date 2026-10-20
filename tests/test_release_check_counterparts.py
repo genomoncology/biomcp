@@ -192,6 +192,7 @@ def test_nightly_reuses_the_existing_release_only_commands() -> None:
         for command in step["run"].strip().splitlines():
             assert command.strip() in nightly, f"nightly lost {job_name}: {command}"
     assert "make prepare-test" in nightly
+    assert "make lint BIOMCP_ADVISORY_SCOPE=always" in nightly
     assert "make test-long" in nightly
     assert "make feature-coverage" in nightly
     for target in ("repo-audit", "full-feature-check", "installed-wheel-smoke"):
@@ -222,7 +223,8 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
         "CALLS": str(calls), "FAILURE": failure,
     }, capture_output=True, text=True)
     expected = [
-        "make prepare-test", "make stress", "make test-long",
+        "make prepare-test", "make lint BIOMCP_ADVISORY_SCOPE=always",
+        "make stress", "make test-long",
         "cargo build --release --locked",
         "cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic",
         "proto --check",

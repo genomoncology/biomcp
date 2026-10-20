@@ -7,6 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 make prepare-test
+make lint BIOMCP_ADVISORY_SCOPE=always
 make stress
 make test-long
 tools/with-build-identity cargo build --release --locked
