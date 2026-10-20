@@ -21,3 +21,7 @@ Actual main175c00427685f31c79160bff08d3af6f0d34d5f6 failed `make main-gate` in j
 Before any source change, read the exact failed log and relevant build state, restate the outcome, and establish the narrow cause. Reproduce only the affected wheel stage through pm job. A source fix must have an outside-in failing check and its corrected pass. An environment-only recovery retains the failed original and successful unchanged-main affected stage, then the coordinator runs the full check on actual main. No speculative dependency upgrade, cache framework, new gate, public release or broad investigation. Escalate unresolved material choices to the coordinator. All builds through pm job on the configured host; never use the exclusive performance host while its timing hold remains active.
 
 Changes: `sdlc/records/2297-installed-wheel-build-recovery.md`.
+
+## Progress
+
+- 2026-10-20 started
