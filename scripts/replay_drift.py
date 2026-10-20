@@ -36,14 +36,10 @@ def provider_policy_ids(
     # A provider that already uses its canonical registry ID needs no alias.
     result = {prefix: prefix for prefix in overrides.values() if prefix in source_ids}
     for prefix, identities in candidates.items():
+        if prefix in source_ids:
+            continue
         if len(identities) == 1 and identities <= source_ids:
-            identity = next(iter(identities))
-            if prefix not in result or result[prefix] == identity:
-                result[prefix] = identity
-            else:
-                result.pop(prefix)
-        elif identities:
-            result.pop(prefix, None)
+            result[prefix] = next(iter(identities))
     return result
 
 
