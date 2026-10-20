@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "next_commands": [
+      "biomcp get variant \"chr7:g.140449165A>C\"",
+      "biomcp get gene BRAF",
+      "biomcp search disease --query melanoma",
+      "biomcp list variant"
+    ]
+  },
+  "count": 3,
+  "diagnostics": [],
+  "filter_evaluation": {
+    "condition": "evaluated",
+    "gene": "evaluated"
+  },
+  "pagination": {
+    "has_more": true,
+    "limit": 3,
+    "next_page_token": null,
+    "offset": 0,
+    "returned": 3,
+    "total": 42
+  },
+  "results": [
+    {
+      "clinvar_stars": 2,
+      "gene": "BRAF",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gerp": 2.67,
+      "hgvs_c": "c.1914T>G",
+      "hgvs_p": "p.Asp638Glu",
+      "id": "chr7:g.140449165A>C",
+      "legacy_name": "BRAF D638E",
+      "revel": 0.954,
+      "significance": "Pathogenic",
+      "significance_source": "MyVariant.info",
+      "transcript": "NM_004333.6"
+    },
+    {
+      "clinvar_stars": 2,
+      "gene": "BRAF",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gerp": 5.68,
+      "hgvs_c": "c.1574T>C",
+      "hgvs_p": "p.Leu525Pro",
+      "id": "chr7:g.140476832A>G",
+      "legacy_name": "BRAF L525P",
+      "revel": 0.876,
+      "significance": "Pathogenic",
+      "significance_source": "MyVariant.info",
+      "transcript": "NM_004333.6"
+    },
+    {
+      "clinvar_stars": 1,
+      "gene": "BRAF",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gerp": 5.47,
+      "hgvs_c": "c.416A>C",
+      "hgvs_p": "p.Gln139Pro",
+      "id": "chr7:g.140534497T>G",
+      "legacy_name": "BRAF Q139P",
+      "revel": 0.286,
+      "significance": "Uncertain significance",
+      "significance_source": "MyVariant.info",
+      "transcript": "NM_004333.6"
+    }
+  ]
+}

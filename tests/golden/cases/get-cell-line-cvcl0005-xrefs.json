@@ -1,0 +1,102 @@
+{
+  "_meta": {
+    "evidence_urls": [],
+    "next_commands": [
+      "biomcp get cell-line CVCL_0005 variants",
+      "biomcp get cell-line CVCL_0005 chembl",
+      "biomcp get cell-line CVCL_0005 drug_response"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      },
+      {
+        "key": "xrefs",
+        "label": "Cross-references",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      }
+    ]
+  },
+  "accession": "CVCL_0005",
+  "age": "23Y",
+  "category": "Cancer cell line",
+  "data_as_of": "56.0 (2026-06-25)",
+  "data_as_of_kind": "release",
+  "diseases": [
+    {
+      "accession": "C3182",
+      "database": "NCIt",
+      "label": "Acute promyelocytic leukemia with PML-RARA"
+    },
+    {
+      "accession": "Orphanet_520",
+      "database": "ORDO",
+      "label": "Acute promyelocytic leukemia"
+    }
+  ],
+  "name": "NB4",
+  "rrid": "RRID:CVCL_0005",
+  "section_outcomes": {
+    "chembl": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "drug_response": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "variants": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "xrefs": {
+      "outcome": "data",
+      "sources": [
+        "Cellosaurus"
+      ]
+    }
+  },
+  "sex": "Female",
+  "source": "Cellosaurus",
+  "species": [
+    {
+      "label": "Homo sapiens (Human)",
+      "taxon_id": "9606"
+    }
+  ],
+  "synonyms": [
+    "NB-4",
+    "NB.4"
+  ],
+  "xrefs": {
+    "cell_model_passport": [
+      "SIDM00428"
+    ],
+    "chembl": [
+      "CHEMBL3308423"
+    ],
+    "cosmic_clp": [
+      "1323913"
+    ],
+    "depmap": [
+      "ACH-000294"
+    ],
+    "gdsc": [
+      "1323913"
+    ],
+    "lincs_ldp": [
+      "LCL-1084"
+    ],
+    "pharmacodb": [
+      "NB4_990_2019"
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "CPIC",
+        "url": "https://cpicpgx.org/genes/cyp2d6/"
+      },
+      {
+        "label": "PharmGKB",
+        "url": "https://www.pharmgkb.org/gene/CYP2D6"
+      }
+    ],
+    "next_commands": [
+      "biomcp search pgx -g CYP2D6"
+    ],
+    "section_sources": [
+      {
+        "key": "interactions",
+        "label": "Interactions",
+        "outcome": "data",
+        "sources": [
+          "CPIC"
+        ]
+      }
+    ]
+  },
+  "gene": "CYP2D6",
+  "interactions": [
+    {
+      "cpiclevel": "A",
+      "drugname": "amitriptyline",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "pgxtesting": "Informative PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "atomoxetine",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6 and Atomoxetine",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251459",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "codeine",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6, OPRM1, COMT, and Opioids",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251454",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "nortriptyline",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "pgxtesting": "Informative PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "ondansetron",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6 and Ondansetron and Tropisetron",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251457",
+      "pgxtesting": "No Clinical PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "paroxetine",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6, CYP2C19, CYP2B6, SLC6A4, HTR2A and Serotonin Reuptake Inhibitor Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251452"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "pitolisant",
+      "genesymbol": "CYP2D6",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "tamoxifen",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6 and Tamoxifen",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251458",
+      "pgxtesting": "Informative PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "tramadol",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6, OPRM1, COMT, and Opioids",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251454",
+      "pgxtesting": "Actionable PGx"
+    },
+    {
+      "cpiclevel": "A",
+      "drugname": "tropisetron",
+      "genesymbol": "CYP2D6",
+      "guidelinename": "CYP2D6 and Ondansetron and Tropisetron",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251457"
+    }
+  ],
+  "query": "CYP2D6",
+  "section_outcomes": {
+    "annotations": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "frequencies": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "section_pagination": {
+    "interactions": {
+      "has_more": true,
+      "limit": 10,
+      "next_offset": 10,
+      "offset": 0,
+      "returned": 10,
+      "total": null
+    }
+  }
+}

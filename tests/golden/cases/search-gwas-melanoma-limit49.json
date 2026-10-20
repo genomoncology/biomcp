@@ -1,0 +1,986 @@
+{
+  "count": 49,
+  "results": [
+    {
+      "rsid": "rs1805007",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-72",
+        "mantissa": 2,
+        "exponent": -72,
+        "numeric": 1.9999999999999997e-72
+      },
+      "confidence_interval": "[0.39-0.47]",
+      "risk_allele_frequency": 0.1,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "MC1R"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs35026726",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "4e-61",
+        "mantissa": 4,
+        "exponent": -61,
+        "numeric": 4e-61
+      },
+      "effect_size": 0.6464,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "ZNF276"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs74800773",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-39",
+        "mantissa": 2,
+        "exponent": -39,
+        "numeric": 2e-39
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "DEF8"
+      ],
+      "study_accession": "GCST90103972",
+      "pmid": "34813871",
+      "author": "Liyanage U"
+    },
+    {
+      "rsid": "rs6059655",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-38",
+        "mantissa": 3,
+        "exponent": -38,
+        "numeric": 3e-38
+      },
+      "effect_size": 1.4116,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "RALY"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs1805007",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "4e-37",
+        "mantissa": 4,
+        "exponent": -37,
+        "numeric": 3.9999999999999994e-37
+      },
+      "effect_size": 1.5,
+      "effect_type": "OR",
+      "confidence_interval": "[1.41-1.59]",
+      "risk_allele_frequency": 0.07,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "MC1R"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs6059655",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-35",
+        "mantissa": 2,
+        "exponent": -35,
+        "numeric": 2e-35
+      },
+      "confidence_interval": "[0.26-0.38]",
+      "risk_allele_frequency": 0.1,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "RALY"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs869330",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-35",
+        "mantissa": 3,
+        "exponent": -35,
+        "numeric": 3e-35
+      },
+      "confidence_interval": "[0.16-0.24]",
+      "risk_allele_frequency": 0.48,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "MTAP"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "affx-35293625",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "5e-35",
+        "mantissa": 5,
+        "exponent": -35,
+        "numeric": 5e-35
+      },
+      "effect_size": 1.55008,
+      "effect_type": "OR",
+      "confidence_interval": "[1.48-1.62]",
+      "risk_allele": "?",
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs75570604",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "7e-34",
+        "mantissa": 7,
+        "exponent": -34,
+        "numeric": 7e-34
+      },
+      "confidence_interval": "[0.35-0.49]",
+      "risk_allele_frequency": 0.1029984,
+      "risk_allele": "C",
+      "mapped_genes": [
+        "FANCA"
+      ],
+      "study_accession": "GCST90468141",
+      "pmid": "39789286",
+      "author": "Loya H"
+    },
+    {
+      "rsid": "rs56238684",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-33",
+        "mantissa": 2,
+        "exponent": -33,
+        "numeric": 1.9999999999999998e-33
+      },
+      "effect_size": 0.7202,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "G",
+      "mapped_genes": [
+        "PIGU"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs12931267",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-32",
+        "mantissa": 1,
+        "exponent": -32,
+        "numeric": 9.999999999999999e-33
+      },
+      "effect_size": 1.53336,
+      "effect_type": "OR",
+      "confidence_interval": "[1.46-1.6]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "FANCA"
+      ],
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs1126809",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "6e-31",
+        "mantissa": 6,
+        "exponent": -31,
+        "numeric": 6.0000000000000005e-31
+      },
+      "confidence_interval": "[0.16-0.24]",
+      "risk_allele_frequency": 0.3,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "TYR"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs871024",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "6e-29",
+        "mantissa": 6,
+        "exponent": -29,
+        "numeric": 6e-29
+      },
+      "effect_size": 1.2163,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "MTAP"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs4408545",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-28",
+        "mantissa": 1,
+        "exponent": -28,
+        "numeric": 1.0000000000000001e-28
+      },
+      "effect_size": 1.2164,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "AFG3L1P"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs2425025",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "4e-28",
+        "mantissa": 4,
+        "exponent": -28,
+        "numeric": 4.0000000000000003e-28
+      },
+      "effect_size": 1.3762,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "G",
+      "mapped_genes": [
+        "MMP24",
+        "MMP24OS"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs258322",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-27",
+        "mantissa": 3,
+        "exponent": -27,
+        "numeric": 3e-27
+      },
+      "effect_size": 1.67,
+      "effect_type": "OR",
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.09,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "CDK10"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs258322",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-27",
+        "mantissa": 3,
+        "exponent": -27,
+        "numeric": 3e-27
+      },
+      "effect_size": 1.7,
+      "effect_type": "OR",
+      "confidence_interval": "[1.54-1.87]",
+      "risk_allele_frequency": 0.11,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "CDK10"
+      ],
+      "study_accession": "GCST001267",
+      "pmid": "21983787",
+      "author": "Barrett JH"
+    },
+    {
+      "rsid": "rs258322",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-27",
+        "mantissa": 3,
+        "exponent": -27,
+        "numeric": 3e-27
+      },
+      "effect_size": 1.67,
+      "effect_type": "OR",
+      "confidence_interval": "[1.52-1.83]",
+      "risk_allele_frequency": 0.09,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "CDK10"
+      ],
+      "study_accession": "GCST000437",
+      "pmid": "19578364",
+      "author": "Bishop DT"
+    },
+    {
+      "rsid": "rs31490",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-26",
+        "mantissa": 1,
+        "exponent": -26,
+        "numeric": 9.999999999999999e-27
+      },
+      "confidence_interval": "[0.13-0.21]",
+      "risk_allele_frequency": 0.44,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "CLPTM1L"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs4499232",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "9e-26",
+        "mantissa": 9,
+        "exponent": -26,
+        "numeric": 8.999999999999999e-26
+      },
+      "effect_size": 1.2057,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "T",
+      "mapped_genes": [
+        "SPG7"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs12203592",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-25",
+        "mantissa": 3,
+        "exponent": -25,
+        "numeric": 3e-25
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "IRF4"
+      ],
+      "study_accession": "GCST90103972",
+      "pmid": "34813871",
+      "author": "Liyanage U"
+    },
+    {
+      "rsid": "rs2280374",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-24",
+        "mantissa": 2,
+        "exponent": -24,
+        "numeric": 2.0000000000000002e-24
+      },
+      "effect_size": 1.4552,
+      "effect_type": "OR",
+      "confidence_interval": "[1.38-1.53]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "DPEP1"
+      ],
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs77270200",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "5e-24",
+        "mantissa": 5,
+        "exponent": -24,
+        "numeric": 5.0000000000000005e-24
+      },
+      "effect_size": 1.44664,
+      "effect_type": "OR",
+      "confidence_interval": "[1.38-1.52]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "GAS8"
+      ],
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs16891982",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-23",
+        "mantissa": 1,
+        "exponent": -23,
+        "numeric": 1.0000000000000001e-23
+      },
+      "effect_size": 2.3809524,
+      "effect_type": "OR",
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.96,
+      "risk_allele": "?",
+      "mapped_genes": [
+        "SLC45A2"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "chr3:69964940",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-23",
+        "mantissa": 2,
+        "exponent": -23,
+        "numeric": 2.0000000000000002e-23
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "study_accession": "GCST90854242",
+      "pmid": "40973091",
+      "author": "Dai J"
+    },
+    {
+      "rsid": "rs6059655",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "5e-23",
+        "mantissa": 5,
+        "exponent": -23,
+        "numeric": 5e-23
+      },
+      "effect_size": 1.38,
+      "effect_type": "OR",
+      "confidence_interval": "[1.29-1.47]",
+      "risk_allele_frequency": 0.07,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "RALY"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs74836424",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-22",
+        "mantissa": 1,
+        "exponent": -22,
+        "numeric": 1e-22
+      },
+      "effect_size": 1.47329,
+      "effect_type": "OR",
+      "confidence_interval": "[1.4-1.55]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "ANKRD11"
+      ],
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs4785763",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "6e-22",
+        "mantissa": 6,
+        "exponent": -22,
+        "numeric": 6e-22
+      },
+      "effect_size": 1.32,
+      "effect_type": "OR",
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.33,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "AFG3L1P"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs4785763",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "6e-22",
+        "mantissa": 6,
+        "exponent": -22,
+        "numeric": 6e-22
+      },
+      "effect_size": 1.36,
+      "effect_type": "OR",
+      "confidence_interval": "[1.28-1.45]",
+      "risk_allele_frequency": 0.32,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "AFG3L1P"
+      ],
+      "study_accession": "GCST000437",
+      "pmid": "19578364",
+      "author": "Bishop DT"
+    },
+    {
+      "rsid": "rs16891982",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-20",
+        "mantissa": 2,
+        "exponent": -20,
+        "numeric": 2e-20
+      },
+      "confidence_interval": "[0.52-0.8]",
+      "risk_allele_frequency": 0.03,
+      "risk_allele": "C",
+      "mapped_genes": [
+        "SLC45A2"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs871024",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-20",
+        "mantissa": 2,
+        "exponent": -20,
+        "numeric": 2e-20
+      },
+      "confidence_interval": "[0.19-0.29]",
+      "risk_allele_frequency": 0.48,
+      "risk_allele": "C",
+      "mapped_genes": [
+        "MTAP"
+      ],
+      "study_accession": "GCST90103972",
+      "pmid": "34813871",
+      "author": "Liyanage U"
+    },
+    {
+      "rsid": "rs17401449",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-20",
+        "mantissa": 3,
+        "exponent": -20,
+        "numeric": 2.9999999999999997e-20
+      },
+      "effect_size": 0.764,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "CBFA2T2",
+        "SNTA1"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "chr3:70012226",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "9e-20",
+        "mantissa": 9,
+        "exponent": -20,
+        "numeric": 8.999999999999999e-20
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "study_accession": "GCST90854241",
+      "pmid": "40973091",
+      "author": "Dai J"
+    },
+    {
+      "rsid": "rs35407",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-19",
+        "mantissa": 2,
+        "exponent": -19,
+        "numeric": 2e-19
+      },
+      "effect_size": 0.4798,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "SLC45A2"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs1204552",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-19",
+        "mantissa": 3,
+        "exponent": -19,
+        "numeric": 3e-19
+      },
+      "effect_size": 0.7461,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "T",
+      "mapped_genes": [
+        "NORAD"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs35407",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-19",
+        "mantissa": 3,
+        "exponent": -19,
+        "numeric": 3e-19
+      },
+      "effect_size": 2.0833335,
+      "effect_type": "OR",
+      "confidence_interval": "[1.79-2.44]",
+      "risk_allele_frequency": 0.97,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "SLC45A2"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs1126809",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "5e-19",
+        "mantissa": 5,
+        "exponent": -19,
+        "numeric": 5e-19
+      },
+      "effect_size": 0.847,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "G",
+      "mapped_genes": [
+        "TYR"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    },
+    {
+      "rsid": "rs1885120",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-18",
+        "mantissa": 2,
+        "exponent": -18,
+        "numeric": 2e-18
+      },
+      "effect_size": 1.55,
+      "effect_type": "OR",
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.07,
+      "risk_allele": "C",
+      "mapped_genes": [
+        "MYH7B"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs201131773",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "3e-17",
+        "mantissa": 3,
+        "exponent": -17,
+        "numeric": 3e-17
+      },
+      "effect_size": 1.19,
+      "effect_type": "OR",
+      "confidence_interval": "[1.15-1.24]",
+      "risk_allele_frequency": 0.48,
+      "risk_allele": "?",
+      "mapped_genes": [
+        "MTAP"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs401681",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "7e-16",
+        "mantissa": 7,
+        "exponent": -16,
+        "numeric": 6.999999999999999e-16
+      },
+      "effect_size": 1.22868,
+      "effect_type": "OR",
+      "confidence_interval": "[1.18-1.28]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "CLPTM1L"
+      ],
+      "study_accession": "GCST90027057",
+      "pmid": "34290314",
+      "author": "Brandes N"
+    },
+    {
+      "rsid": "rs6059655",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "9e-16",
+        "mantissa": 9,
+        "exponent": -16,
+        "numeric": 9e-16
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "RALY"
+      ],
+      "study_accession": "GCST90103972",
+      "pmid": "34813871",
+      "author": "Liyanage U"
+    },
+    {
+      "rsid": "rs910873",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-15",
+        "mantissa": 1,
+        "exponent": -15,
+        "numeric": 1e-15
+      },
+      "effect_size": 1.75,
+      "effect_type": "OR",
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.08,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "PIGU"
+      ],
+      "study_accession": "GCST004142",
+      "pmid": "28212542",
+      "author": "Ransohoff KJ"
+    },
+    {
+      "rsid": "rs910873",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-15",
+        "mantissa": 1,
+        "exponent": -15,
+        "numeric": 1e-15
+      },
+      "effect_size": 1.75,
+      "effect_type": "OR",
+      "confidence_interval": "[1.53-2.01]",
+      "risk_allele_frequency": 0.09,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "PIGU"
+      ],
+      "study_accession": "GCST000198",
+      "pmid": "18488026",
+      "author": "Brown KM"
+    },
+    {
+      "rsid": "rs1126809",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "5e-15",
+        "mantissa": 5,
+        "exponent": -15,
+        "numeric": 5.000000000000001e-15
+      },
+      "confidence_interval": "[0.15-0.25]",
+      "risk_allele_frequency": 0.305106,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "TYR"
+      ],
+      "study_accession": "GCST90468141",
+      "pmid": "39789286",
+      "author": "Loya H"
+    },
+    {
+      "rsid": "rs12203592",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "8e-15",
+        "mantissa": 8,
+        "exponent": -15,
+        "numeric": 8e-15
+      },
+      "confidence_interval": "[0.2-0.32]",
+      "risk_allele_frequency": 0.21,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "IRF4"
+      ],
+      "study_accession": "GCST90558252",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs958219",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "8e-15",
+        "mantissa": 8,
+        "exponent": -15,
+        "numeric": 8e-15
+      },
+      "confidence_interval": "[0.15-0.23]",
+      "risk_allele_frequency": 0.51,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "MTAP",
+        "RN7SL151P"
+      ],
+      "study_accession": "GCST90558252",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs2413507",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "1e-14",
+        "mantissa": 1,
+        "exponent": -14,
+        "numeric": 1e-14
+      },
+      "confidence_interval": "[0.091-0.169]",
+      "risk_allele_frequency": 0.43,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "PLA2G6"
+      ],
+      "study_accession": "GCST90558253",
+      "pmid": "39141363",
+      "author": "Ingold N"
+    },
+    {
+      "rsid": "rs1393350",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "2e-14",
+        "mantissa": 2,
+        "exponent": -14,
+        "numeric": 2e-14
+      },
+      "effect_size": 1.29,
+      "effect_type": "OR",
+      "confidence_interval": "[1.21-1.38]",
+      "risk_allele_frequency": 0.27,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "TYR"
+      ],
+      "study_accession": "GCST000437",
+      "pmid": "19578364",
+      "author": "Bishop DT"
+    },
+    {
+      "rsid": "rs150260898",
+      "trait_name": "melanoma",
+      "p_value": {
+        "scientific": "4e-14",
+        "mantissa": 4,
+        "exponent": -14,
+        "numeric": 4e-14
+      },
+      "effect_size": 0.7799,
+      "effect_type": "OR",
+      "confidence_interval": "-",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "RAB5IF",
+        "TGIF2-RAB5IF"
+      ],
+      "study_accession": "GCST90011809",
+      "pmid": "32887889",
+      "author": "Rashkin SR"
+    }
+  ],
+  "_meta": {
+    "pagination": {
+      "limit": 49,
+      "offset": 0,
+      "returned": 49,
+      "has_more": true,
+      "next_offset": 49,
+      "truncated_by_provider_budget": false
+    },
+    "next_commands": [
+      "biomcp get variant rs1805007",
+      "biomcp list gwas"
+    ]
+  }
+}

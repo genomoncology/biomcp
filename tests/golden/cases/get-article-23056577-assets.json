@@ -1,0 +1,376 @@
+{
+  "_meta": {
+    "next_commands": [
+      "biomcp --json get article 23056577 assets",
+      "biomcp get article 23056577 asset pone.0047054.g001.jpg",
+      "biomcp get article 23056577 asset pone.0047054.g002.jpg",
+      "biomcp get article 23056577 asset pone.0047054.g003.jpg",
+      "biomcp get article 23056577 asset pone.0047054.s001.doc",
+      "biomcp get article 23056577 asset pone.0047054.s002.doc",
+      "biomcp get article 23056577 asset pone.0047054.t001.jpg",
+      "biomcp get article 23056577 asset pone.0047054.t002.jpg"
+    ]
+  },
+  "article_id": "23056577",
+  "asset_page": {
+    "continuation_command": null,
+    "has_more": false,
+    "next_offset": null,
+    "returned": 7,
+    "total": 7
+  },
+  "assets": [
+    {
+      "asset_key": "pone.0047054.g001.jpg",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        }
+      ],
+      "filename": "pone.0047054.g001.jpg",
+      "handle": "biomcp get article 23056577 asset pone.0047054.g001.jpg",
+      "jats": {
+        "caption": "Flow diagram demonstrates the study selection process.",
+        "label": "Figure 1",
+        "source_id": "pone-0047054-g001"
+      },
+      "kind": "figure-image",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "5d7caf8d5f3996c8326422f823fc9829aabc60507c32ca0fb721bca59bb6d4d9",
+      "size_bytes": 89666
+    },
+    {
+      "asset_key": "pone.0047054.g002.jpg",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        }
+      ],
+      "filename": "pone.0047054.g002.jpg",
+      "handle": "biomcp get article 23056577 asset pone.0047054.g002.jpg",
+      "jats": {
+        "caption": "Random effect model of Log hazard ratio (LogHR) with 95% confidence interval for studies comparing the effect of BRAF- V600E mutation on overall survival of colorectal cancer patients. A LogHR <0 implies a survival benefit for patients with BRAF mutation. The square size indicates the power of each study in meta-analysis based on the number of patients in that study. The center of diamond shape at the lowest part indicates the combined LogHR for meta-analysis and its extremities the 95% confidence interval.",
+        "label": "Figure 2",
+        "source_id": "pone-0047054-g002"
+      },
+      "kind": "figure-image",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "eae3f8d3639846fa6ac4d3f7f5c08decad11d466c8e06627b2a9b3f4e8b9cdd0",
+      "size_bytes": 152553
+    },
+    {
+      "asset_key": "pone.0047054.g003.jpg",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        }
+      ],
+      "filename": "pone.0047054.g003.jpg",
+      "handle": "biomcp get article 23056577 asset pone.0047054.g003.jpg",
+      "jats": {
+        "caption": "Random effect model of Log hazard ratio (LogHR) with 95% confidence interval for studies comparing the effect of BRAF- V600E mutation on overall survival in melanoma patients. A LogHR <0 implies a survival benefit for patients with BRAF mutation. The square size indicates the power of each study in meta-analysis based on the number of patients in that study. The center of diamond shape at the lowest part indicates the combined LogHR for meta-analysis and its extremities the 95% confidence interval.",
+        "label": "Figure 3",
+        "source_id": "pone-0047054-g003"
+      },
+      "kind": "figure-image",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "edb2115cdff0837bf4be21b68d6933349161ebd2be6fccae21dd5ea15fd31b04",
+      "size_bytes": 52930
+    },
+    {
+      "asset_key": "pone.0047054.s001.doc",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "Europe PMC XML",
+            "source": "Europe PMC"
+          },
+          "source_document": "jats_xml"
+        },
+        {
+          "provider": {
+            "label": "NCBI EFetch PMC XML",
+            "source": "NCBI EFetch"
+          },
+          "source_document": "jats_xml"
+        },
+        {
+          "provider": {
+            "label": "PMC Linked Article Asset",
+            "source": "PMC"
+          },
+          "source_document": "pmc_html"
+        },
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        },
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "jats_xml"
+        }
+      ],
+      "filename": "pone.0047054.s001.doc",
+      "handle": "biomcp get article 23056577 asset pone.0047054.s001.doc",
+      "jats": {
+        "caption": "Complete PRISMA search for Pubmed and EMBASE 2002–2011. (DOC)",
+        "label": "Figure S1",
+        "source_id": "pone.0047054.s001"
+      },
+      "kind": "supplementary-file",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "aab8c23f416463e92a79779c288ea6597fcb31da0a98e00e3fccf80d7de54d40",
+      "size_bytes": 61440
+    },
+    {
+      "asset_key": "pone.0047054.s002.doc",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "Europe PMC XML",
+            "source": "Europe PMC"
+          },
+          "source_document": "jats_xml"
+        },
+        {
+          "provider": {
+            "label": "NCBI EFetch PMC XML",
+            "source": "NCBI EFetch"
+          },
+          "source_document": "jats_xml"
+        },
+        {
+          "provider": {
+            "label": "PMC Linked Article Asset",
+            "source": "PMC"
+          },
+          "source_document": "pmc_html"
+        },
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        },
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "jats_xml"
+        }
+      ],
+      "filename": "pone.0047054.s002.doc",
+      "handle": "biomcp get article 23056577 asset pone.0047054.s002.doc",
+      "jats": {
+        "caption": "PRISMA checklist. (DOC)",
+        "label": "Table S1",
+        "source_id": "pone.0047054.s002"
+      },
+      "kind": "supplementary-file",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "45f315e02432c0ef3714434fe5709a22958377e1bbb2c727c4f5e71c8615312f",
+      "size_bytes": 65536
+    },
+    {
+      "asset_key": "pone.0047054.t001.jpg",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        }
+      ],
+      "filename": "pone.0047054.t001.jpg",
+      "handle": "biomcp get article 23056577 asset pone.0047054.t001.jpg",
+      "kind": "figure-image",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "bc2ad2efa4f5cc9ad25debc6d05ea7b8f579e327bcfb49de802f8ad5bfd55011",
+      "size_bytes": 159966
+    },
+    {
+      "asset_key": "pone.0047054.t002.jpg",
+      "discovery_routes": [
+        {
+          "provider": {
+            "label": "PMC OA Archive",
+            "source": "PMC OA"
+          },
+          "source_document": "pmc_oa_archive"
+        }
+      ],
+      "filename": "pone.0047054.t002.jpg",
+      "handle": "biomcp get article 23056577 asset pone.0047054.t002.jpg",
+      "kind": "figure-image",
+      "provenance": {
+        "open_access": true,
+        "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "retracted": false
+      },
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "reuse": {
+        "license": "CC BY",
+        "license_present": true
+      },
+      "sha256": "6706bf630abd4a3401a421573e2c087c6431f26e43c64a88a3a6fbd7e3ab79db",
+      "size_bytes": 54905
+    }
+  ],
+  "coverage": [],
+  "coverage_page": {
+    "continuation_command": null,
+    "has_more": false,
+    "next_offset": null,
+    "returned": 0,
+    "total": 0
+  },
+  "pmcid": "PMC3467229",
+  "pmid": "23056577",
+  "provenance": {
+    "open_access": true,
+    "package_url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+    "retracted": false
+  },
+  "provider": {
+    "label": "PMC OA Archive",
+    "source": "PMC OA"
+  },
+  "source_attempts": [
+    {
+      "outcome": "data",
+      "provider": {
+        "label": "PMC OA Archive",
+        "source": "PMC OA"
+      },
+      "source_document": "pmc_oa_archive"
+    },
+    {
+      "outcome": "data",
+      "provider": {
+        "label": "Europe PMC XML",
+        "source": "Europe PMC"
+      },
+      "source_document": "jats_xml"
+    },
+    {
+      "outcome": "data",
+      "provider": {
+        "label": "NCBI EFetch PMC XML",
+        "source": "NCBI EFetch"
+      },
+      "source_document": "jats_xml"
+    },
+    {
+      "outcome": "data",
+      "provider": {
+        "label": "PMC Linked Article Asset",
+        "source": "PMC"
+      },
+      "source_document": "pmc_html"
+    },
+    {
+      "outcome": "source_unavailable",
+      "provider": {
+        "label": "Figshare",
+        "source": "Figshare"
+      },
+      "source_document": "figshare"
+    }
+  ]
+}

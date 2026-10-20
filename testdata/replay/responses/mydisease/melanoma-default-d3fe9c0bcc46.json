@@ -1,0 +1,74 @@
+{
+  "_id": "MONDO:0004992",
+  "disease_ontology": {
+    "def": "\"A cancer that is classified based on the organ it starts in.\" [url:https\\://www.cancer.gov/types/by-body-location]",
+    "doid": "DOID:0050686",
+    "name": "organ system cancer",
+    "parents": [
+      "DOID:162"
+    ],
+    "synonyms": {},
+    "xrefs": {
+      "mesh": "D009371"
+    }
+  },
+  "mondo": {
+    "definition": "A tumor composed of atypical neoplastic, often pleomorphic cells that invade other tissues. Malignant neoplasms often metastasize to distant anatomic sites and may recur after excision. The most common malignant neoplasms are carcinomas (adenocarcinomas or squamous cell carcinomas), Hodgkin and non-Hodgkin lymphomas, leukemias, melanomas, and sarcomas. [NCIT:C9305]",
+    "label": "cancer",
+    "parents": [
+      "MONDO:0005070"
+    ],
+    "synonym": {
+      "exact": [
+        "CA",
+        "cancer",
+        "cell type cancer",
+        "malignancy",
+        "malignant growth",
+        "malignant neoplasm",
+        "malignant neoplasm (disease)",
+        "malignant neoplastic disease",
+        "malignant tumor",
+        "malignant tumour",
+        "neoplasm (disease), malignant",
+        "neoplasm, malignant"
+      ],
+      "related": [
+        "MT"
+      ]
+    },
+    "xrefs": {
+      "birnlex": [
+        "406"
+      ],
+      "doid": [
+        "DOID:0050687",
+        "DOID:0050686",
+        "DOID:162"
+      ],
+      "icd9": [
+        "199",
+        "199.1",
+        "195.8"
+      ],
+      "icdo": [
+        "8000/3"
+      ],
+      "medgen": [
+        "14297"
+      ],
+      "ncit": [
+        "C9305"
+      ],
+      "oncotree": [
+        "MT"
+      ],
+      "sctid": [
+        "363346000"
+      ],
+      "umls": [
+        "C0006826"
+      ]
+    }
+  }
+}

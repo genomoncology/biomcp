@@ -55,8 +55,12 @@ def main() -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
+    if result.returncode != 0:
+        print(result.stdout, end="", file=sys.stderr)
+        print(result.stderr, end="", file=sys.stderr)
+        raise SystemExit(result.returncode)
     tools = json.loads(result.stdout)
     serialized = json.dumps(tools, ensure_ascii=False, separators=(",", ":"))
     tokens = len(encoding.encode(serialized))

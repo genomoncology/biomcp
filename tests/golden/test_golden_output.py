@@ -41,10 +41,196 @@ WALL_TIME_RE = re.compile(r'("wall_time_ms": )\d+')
 class Case:
     id: str
     argv: tuple[str, ...]
+    formats: tuple[str, ...] = ("json", "markdown")
 
 
 CASES = (
+    Case(
+        "get-disease-mondo0005105",
+        ("get", "disease", "MONDO:0005105"),
+    ),
+    Case(
+        "get-pgx-cyp2d6-frequencies",
+        ("get", "pgx", "CYP2D6", "frequencies"),
+    ),
+    Case(
+        "get-pgx-cyp2d6-guidelines",
+        ("get", "pgx", "CYP2D6", "guidelines"),
+    ),
+    Case(
+        "get-article-23056577-fulltext",
+        ("--disable-sources", "semantic-scholar,figshare", "get", "article", "23056577", "fulltext"),
+    ),
+    Case(
+        "get-article-23056577-assets",
+        ("--disable-sources", "semantic-scholar,figshare", "get", "article", "23056577", "assets"),
+        formats=("json",),
+    ),
+    Case(
+        'get-gene-braf-go-interactions-hpa',
+        (
+            'get',
+            'gene',
+            'BRAF',
+            'go',
+            'interactions',
+            'hpa',
+        ),
+    ),
+    Case(
+        'get-gene-egfr-druggability',
+        (
+            'get',
+            'gene',
+            'EGFR',
+            'druggability',
+        ),
+    ),
+    Case(
+        'get-gene-erbb2-funding',
+        (
+            'get',
+            'gene',
+            'ERBB2',
+            'funding',
+        ),
+    ),
+    Case(
+        'get-cell-line-cvcl0005-xrefs',
+        (
+            'get',
+            'cell-line',
+            'CVCL_0005',
+            'xrefs',
+        ),
+    ),
+    Case(
+        'get-cell-line-cvcl0064-variants-xrefs',
+        (
+            'get',
+            'cell-line',
+            'CVCL_0064',
+            'variants',
+            'xrefs',
+        ),
+    ),
+    Case(
+        'get-cell-line-cvcl1844-variants',
+        (
+            'get',
+            'cell-line',
+            'CVCL_1844',
+            'variants',
+        ),
+    ),
+    Case(
+        'search-cell-line-kg1-limit3',
+        (
+            'search',
+            'cell-line',
+            'KG1',
+            '--limit',
+            '3',
+        ),
+    ),
+    Case(
+        'get-article-20516115',
+        (
+            '--disable-sources',
+            'semantic-scholar',
+            'get',
+            'article',
+            '20516115',
+        ),
+    ),
+    Case(
+        'get-article-30738221-annotations',
+        (
+            '--disable-sources',
+            'semantic-scholar',
+            'get',
+            'article',
+            '30738221',
+            'annotations',
+        ),
+    ),
+    Case(
+        'article-entities-30738221',
+        (
+            '--disable-sources',
+            'semantic-scholar',
+            'article',
+            'entities',
+            '30738221',
+        ),
+    ),
+    Case(
+        'search-disease-melanoma-limit1',
+        ('search', 'disease', 'melanoma', '--limit', '1'),
+    ),
+    Case(
+        'search-variant-braf-melanoma-limit3',
+        (
+            'search',
+            'variant',
+            '--gene',
+            'BRAF',
+            '--condition',
+            'melanoma',
+            '--limit',
+            '3',
+        ),
+    ),
+    Case(
+        'search-gwas-braf-limit49',
+        ('search', 'gwas', '--gene', 'BRAF', '--limit', '49'),
+    ),
+    Case(
+        'search-gwas-melanoma-limit49',
+        ('search', 'gwas', '--trait', 'melanoma', '--limit', '49'),
+    ),
+    Case(
+        'search-pgx-cyp2d6-limit20',
+        ('search', 'pgx', '--gene', 'CYP2D6', '--limit', '20'),
+    ),
+    Case(
+        'search-pgx-clopidogrel-limit20',
+        ('search', 'pgx', '--drug', 'clopidogrel', '--limit', '20'),
+    ),
+    Case(
+        'get-author-orcid-4299-3018',
+        ('get', 'author', 'orcid:0000-0002-4299-3018'),
+    ),
+    Case(
+        'author-papers-orcid-4299-3018-limit3',
+        ('author', 'papers', 'orcid:0000-0002-4299-3018', '--limit', '3'),
+    ),
+    Case(
+        'search-protein-braf-limit3',
+        ('search', 'protein', 'BRAF', '--limit', '3'),
+    ),
+    Case(
+        'search-phenotype-hp1250-hp1263-limit1',
+        ('search', 'phenotype', 'HP:0001250 HP:0001263', '--limit', '1'),
+    ),
+    Case(
+        'get-pgx-cyp2d6-interactions',
+        ('get', 'pgx', 'CYP2D6', 'interactions'),
+    ),
+    Case(
+        'get-pgx-cyp2d6-recommendations',
+        ('get', 'pgx', 'CYP2D6', 'recommendations'),
+    ),
     Case("get-gene-braf", ("get", "gene", "BRAF")),
+    Case("get-protein-p15056", ("get", "protein", "P15056")),
+    Case(
+        "get-protein-p15056-structures",
+        ("get", "protein", "P15056", "structures"),
+    ),
+    Case(
+        "protein-structures-p15056-limit1-offset1",
+        ("protein", "structures", "P15056", "--limit", "1", "--offset", "1"),
+    ),
     Case("search-gene-braf", ("search", "gene", "BRAF", "--limit", "3")),
     Case("get-variant-braf-v600e", ("get", "variant", "BRAF V600E")),
     Case(
@@ -137,6 +323,15 @@ def _run_case(
         f"{case.id} ({output_format}) exited {run.process.returncode}\n"
         f"stderr:\n{run.process.stderr}"
     )
+    # The CLI reports its managed download path. Only this run's private
+    # cache prefix varies; keep the basename and all output around it pinned.
+    cache = run.run_dir / "cache"
+    # macOS may expose the same temporary root through /var and /private/var.
+    roots = {str(cache), str(cache.resolve())}
+    for root in sorted(roots, key=len, reverse=True):
+        run.process.stdout = run.process.stdout.replace(
+            json.dumps(root)[1:-1], "<CACHE_ROOT>"
+        ).replace(root, "<CACHE_ROOT>")
     return run.process
 
 
@@ -153,8 +348,8 @@ def _diff(expected: str, actual: str, name: str) -> str:
 
 @pytest.mark.parametrize(
     "case, output_format",
-    [(case, fmt) for case in CASES for fmt in ("json", "markdown")],
-    ids=[f"{case.id}-{fmt}" for case in CASES for fmt in ("json", "markdown")],
+    [(case, fmt) for case in CASES for fmt in case.formats],
+    ids=[f"{case.id}-{fmt}" for case in CASES for fmt in case.formats],
 )
 def test_golden_output(
     case: Case,
@@ -187,3 +382,25 @@ def test_replay_env_covers_every_provider_override(
                 names.add(name)
     uncovered = sorted(names - NON_PROVIDER_OVERRIDES - set(replay.provider_env))
     assert not uncovered, f"provider overrides missing from the replay env: {uncovered}"
+
+
+def test_article_supplement_stdout_preserves_recorded_bytes(
+    replay: ReplayEnvironment,
+) -> None:
+    run = replay.run(
+        BINARY,
+        (
+            "--disable-sources",
+            "semantic-scholar,figshare",
+            "get",
+            "article",
+            "23056577",
+            "asset",
+            "pone.0047054.s002.doc",
+        ),
+        text=False,
+    )
+    assert not _failed_requests(run), run.request_log_lines
+    assert run.process.returncode == 0, run.process.stderr
+    recorded = REPO_ROOT / "testdata/replay/responses/pmc-oa/pmc3467229-s002.doc.bin"
+    assert run.process.stdout == recorded.read_bytes()

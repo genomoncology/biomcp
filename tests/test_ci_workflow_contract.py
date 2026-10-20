@@ -627,6 +627,9 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
 # executables (verified by reading them). They need no built binary or
 # real cargo, so the docs-only lane may run them.
 FAKE_TOOL_FIXTURE_MODULES = {
+    # Failure controls provide their own temporary BIOMCP_BIN executable.
+    "test_demo_scripts.py",
+    "test_measure_mcp_tools.py",
     "test_lint.py",
     # The copied spec runner uses sys.executable as BIOMCP_BIN.
     "test_replay_server_lifetime.py",

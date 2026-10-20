@@ -1,0 +1,290 @@
+{
+  "totalCount": 481,
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT04095195",
+          "briefTitle": "Registry of Subjects at Risk of Pancreatic Cancer"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2019-08-20"
+          },
+          "completionDateStruct": {
+            "date": "2045-09-20"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Associazione Italiana per lo Studio del Pancreas"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "IRFARPC is a multicenter national registry designed to study the diagnosis and predisposing factors of subjects with an inherited increased risk for pancreatic cancer."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Familial Pancreatic Cancer",
+            "BRCA1 Mutation",
+            "BRCA2 Mutation",
+            "Lynch Syndrome",
+            "FAMMM - Familial Atypical Mole Malignant Melanoma Syndrome",
+            "Hereditary Pancreatitis",
+            "Peutz-Jeghers Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "OBSERVATIONAL",
+          "enrollmentInfo": {
+            "count": 1000
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "MRCP"
+            },
+            {
+              "name": "Endoultrasonography"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years",
+          "maximumAge": "80 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07341737",
+          "briefTitle": "SL-28 for Advanced Solid Tumours"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2026-08-14"
+          },
+          "completionDateStruct": {
+            "date": "2027-03-01"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Second Life Therapeutics"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "Second Life Therapeutics is developing SL-28, an allogeneic, non-genetically modified cell-based therapy for the treatment of advanced solid tumours. The company has recently demonstrated a novel, non-genetic approach to modulate immune cell activity through targeted manipulation of the Universal Receptive System. The purpose of this open label, multi-center clinical trial is to evaluate the anti-tumor activity, safety, and pharmacokinetics, single-agent SL-28 in patients with a diverse array of solid tumors. The study includes an initial Phase 1 dose escalation to determine recommended dose(s) for expansion of SL-28 as a monotherapy and Phase 2 expansion cohorts. The study will enroll patients with advanced solid tumours, including those who failed previous lines of chemo- and immunotherapies."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Head & Neck Cancer",
+            "Pancreas Carcinoma",
+            "Pancreas Cancer, Metastatic",
+            "Lung Adenocarcinoma",
+            "Lung Cancer (NSCLC)",
+            "Lung Cancer (Non-Small Cell)",
+            "Esophageal Cancer",
+            "Stomach (Gastric) Cancer",
+            "Liver Cancer",
+            "Intestinal Cancer",
+            "Bladder Cancer",
+            "Renal Cancer",
+            "Prostate Cancer",
+            "Melanoma (Skin Cancer)",
+            "Breast Cancer",
+            "Ovarian Cancer",
+            "Endometrial Cancer",
+            "Colorectal Cancer"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1",
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 60
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "SL-28"
+            },
+            {
+              "name": "SL-28"
+            },
+            {
+              "name": "SL-28"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07469709",
+          "briefTitle": "A Study of Biological, Genetic, and Constitutional Factors and Non-invasive Monitoring to Assess Personal Cancer Risks"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2024-02-01"
+          },
+          "completionDateStruct": {
+            "date": "2027-12-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Fondazione del Piemonte per l'Oncologia"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The PRO-ACTIVE study aims to develop a clinical-translational program in the field of cancer prevention in all its phases (primary, secondary, and tertiary) to intervene before the clinical and radiological manifestation of the disease. It starts with risk prediction and leads to early diagnosis of the disease or recurrence in the subclinical phase.\n\nThe PRO-ACTIVE study includes the following activities:\n\n* WP1: Integrated DNA-RNA approach for the identification of hereditary markers of predisposition to tumors\n* WP2: Global biological and molecular analysis of the host and tumor for the prevention and monitoring of recurrences\n* WP3: Analysis of the immunological status for the diagnosis of primary prevention and relapses in correlation to genetic and environmental factors\n* WP4: Study of the tumor microenvironment for recurrence prediction"
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Breast Cancer",
+            "Colo-rectal Cancer",
+            "Ovarian Cancer",
+            "Melanoma (Skin Cancer)",
+            "Non-Small Cell Lung Cancer (MeSH Term: Carcinoma, Non-Small-Cell Lung)"
+          ]
+        },
+        "designModule": {
+          "studyType": "OBSERVATIONAL",
+          "enrollmentInfo": {
+            "count": 850
+          }
+        },
+        "armsInterventionsModule": {},
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07584226",
+          "briefTitle": "A First-in-human Study of RLY-8161 in Advanced NRAS-Mutant Solid Tumors"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2026-03-09"
+          },
+          "completionDateStruct": {
+            "date": "2029-12-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Relay Therapeutics, Inc."
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is a Phase 1 first-in-human, open-label multicenter study designed to evaluate the safety, tolerability, pharmacokinetics (PK), pharmacodynamics, and preliminary antitumor activity of RLY-8161, an NRAS-selective inhibitor, in participants with advanced NRAS-mutant melanoma and other solid tumors."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Advanced NRAS-Mutant Melanoma",
+            "Advanced NRAS-Mutant Solid Tumors",
+            "NRAS Mutation",
+            "NRAS G12D",
+            "NRAS G13R",
+            "NRAS G13D",
+            "NRAS G12V",
+            "NRAS Q61R",
+            "NRAS Q61K",
+            "NRAS Q61L",
+            "NRAS Q61H"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1"
+          ],
+          "enrollmentInfo": {
+            "count": 35
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "RLY-8161"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07376707",
+          "briefTitle": "A Phase 1 Study of TGI-5 as Monotherapy and in Combination With Nivolumab in Subjects With Locally Advanced/Metastatic Solid Tumors"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2025-06-12"
+          },
+          "completionDateStruct": {
+            "date": "2027-12-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Hefei TG ImmunoPharma Co., Ltd."
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is a Phase 1, multicenter, open-label, two-parts, FIH study to evaluate the tolerability, safety, PK/PD, and preliminary antitumor activity of TGI-5 as monotherapy and in combination with Nivolumab in subjects with unresectable locally advanced/metastatic solid tumors.\n\nThe study consists of two parts: TGI-5 monotherapy (Phase 1a: including a dose escalation part and a dose expansion part), TGI-5 in combination with a fixed dose of Nivolumab (Phase 1b: including a dose escalation part and a dose expansion part)."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "CRC (Colorectal Cancer)",
+            "Melanoma (Skin Cancer)",
+            "HCC - Hepatocellular Carcinoma",
+            "NSCLC (Non-small Cell Lung Cancer)"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1"
+          ],
+          "enrollmentInfo": {
+            "count": 194
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "TGI-5"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    }
+  ],
+  "nextPageToken": "ZVNj7o2Elu8o3lpzW96v4q2tmpOQJJxpZPal3Pg"
+}

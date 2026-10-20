@@ -1,0 +1,143 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/20516115/"
+      },
+      {
+        "label": "PMC",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/"
+      }
+    ],
+    "next_commands": [
+      "biomcp article entities 20516115",
+      "biomcp search gene -q BRCA1",
+      "biomcp search disease --query \"breast and ovarian cancer\"",
+      "biomcp search disease --query \"breast or ovarian cancer\"",
+      "biomcp article references 20516115 --limit 3",
+      "biomcp article citations 20516115 --limit 3",
+      "biomcp article recommendations 20516115 --limit 3"
+    ],
+    "section_sources": [
+      {
+        "key": "bibliography",
+        "label": "Bibliography",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "authors",
+        "label": "Authors",
+        "outcome": "data",
+        "sources": [
+          "PubTator3"
+        ]
+      },
+      {
+        "key": "abstract",
+        "label": "Abstract",
+        "outcome": "data",
+        "sources": [
+          "PubMed",
+          "Europe PMC"
+        ]
+      },
+      {
+        "key": "annotations",
+        "label": "PubTator Annotations",
+        "outcome": "data",
+        "sources": [
+          "PubTator3"
+        ]
+      },
+      {
+        "key": "tldr",
+        "label": "Semantic Scholar",
+        "outcome": "disabled",
+        "sources": []
+      }
+    ],
+    "workflow": "article-follow-up",
+    "workflow_playbook": "biomcp skill article-follow-up",
+    "workflow_rationale": "Use article annotations first, then citation and recommendation graph pivots for efficient literature expansion."
+  },
+  "abstract_text": "Genetic screening of the breast and ovarian cancer susceptibility gene BRCA1 has uncovered a large number of variants of uncertain clinical significance. Here, we use biochemical and cell-based transcriptional assays to assess the structural and functional defects associated with a large set of 117 distinct BRCA1 missense variants within the essential BRCT domain of the BRCA1 protein that have been documented in individuals with a family history of breast or ovarian cancer. In the first method, we used limited proteolysis to assess the protein folding stability of each of the mutants compared with the wild-type. In the second method, we used a phosphopeptide pull-down assay to assess the ability of each of the variants to specifically interact with a peptide containing a pSer-X-X-Phe motif, a known functional target of the BRCA1 BRCT domain. Finally, we used transcriptional assays to assess the ability of each BRCT variant to act as a transcriptional activation domain in human cells. Through a correlation of the assay results with available family history and clinical data, we define limits to predict the disease risk associated with each variant. Forty-two of the variants show little effect on function and are likely to represent variants with little or no clinical significance; 50 display a clear functional effect and are likely to represent pathogenic variants; and the remaining 25 variants display intermediate activities. The excellent agreement between the structure/function effects of these mutations and available clinical data supports the notion that functional and structure information can be useful in the development of models to assess cancer risk.",
+  "annotations": {
+    "diseases": [
+      {
+        "count": 1,
+        "identifier": "MESH:D061325",
+        "name": "Hereditary Breast and Ovarian Cancer Syndrome",
+        "namespace": "MESH",
+        "text": "breast and ovarian cancer"
+      },
+      {
+        "count": 1,
+        "identifier": "MESH:D061325",
+        "name": "Hereditary Breast and Ovarian Cancer Syndrome",
+        "namespace": "MESH",
+        "text": "breast or ovarian cancer"
+      },
+      {
+        "count": 1,
+        "identifier": "MESH:D009369",
+        "name": "Neoplasms",
+        "namespace": "MESH",
+        "text": "cancer"
+      }
+    ],
+    "genes": [
+      {
+        "count": 5,
+        "identifier": "672",
+        "namespace": "NCBIGene",
+        "text": "BRCA1"
+      }
+    ]
+  },
+  "author_completeness": "complete",
+  "author_count": 11,
+  "author_source": "pubtator",
+  "authors": [
+    "Lee MS",
+    "Green R",
+    "Marsillac SM",
+    "Coquelle N",
+    "Williams RS",
+    "Yeung T",
+    "Foo D",
+    "Hau DD",
+    "Hui B",
+    "Monteiro AN",
+    "Glover JN"
+  ],
+  "citation_count": 138,
+  "date": "2010-06-15",
+  "doi": "10.1158/0008-5472.can-09-4563",
+  "journal": "Cancer Res",
+  "open_access": false,
+  "pmcid": "PMC3040717",
+  "pmid": "20516115",
+  "publication_type": "research support, non-u.s. gov't",
+  "pubtator_fallback": false,
+  "section_outcomes": {
+    "fulltext": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "indexing": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "tldr": {
+      "message": "Semantic Scholar is disabled by --disable-sources=semantic-scholar.",
+      "outcome": "disabled",
+      "sources": []
+    }
+  },
+  "title": "Comprehensive analysis of missense variations in the BRCT domain of BRCA1 by structural and functional assays."
+}

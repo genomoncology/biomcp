@@ -1,0 +1,35 @@
+{
+  "_id": "MONDO:0021143",
+  "mondo": {
+    "label": "melanocytic neoplasm",
+    "parents": [
+      "MONDO:0005070",
+      "MONDO:0021635"
+    ],
+    "synonym": {
+      "exact": [
+        "melanocytic neoplasm"
+      ],
+      "related": [
+        "melanomas and nevi"
+      ]
+    },
+    "xrefs": {
+      "medgen": [
+        "224910"
+      ],
+      "mesh": [
+        "D018326"
+      ],
+      "ncit": [
+        "C7058"
+      ],
+      "sctid": [
+        "399956005"
+      ],
+      "umls": [
+        "C1302746"
+      ]
+    }
+  }
+}

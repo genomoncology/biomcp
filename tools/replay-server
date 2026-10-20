@@ -34,6 +34,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from replay_drift import recording_provider  # noqa: E402
+
 MANIFEST_SCHEMA_VERSION = 1
 ENV_SUFFIXES = ("_BASE_URL", "_FIXTURE_ORIGIN", "_BASE", "_URL")
 BODY_KEY_METHODS = frozenset({"POST", "PUT", "PATCH"})
@@ -362,7 +365,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(200, {"status": "ok"}, head_only)
             return
         key = request_key(method, path, query, body)
+        entry = self.replay.store.routes.get(key)
         provider = self.replay.provider_for(path)
+        if provider is None and entry is not None:
+            # Origin-substitution clients retain the canonical object path.
+            # Only an already stored, exact source identity may use this route.
+            routes = {
+                prefix: upstream
+                for prefix, (upstream, _) in self.replay.by_prefix.items()
+            }
+            prefix = recording_provider(key, entry, routes)
+            if prefix in routes:
+                provider = (prefix, routes[prefix], path)
         if provider is None:
             self.replay.log(
                 method, path, query, body, "miss", 404,
@@ -375,7 +389,6 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         prefix, upstream, suffix = provider
-        entry = self.replay.store.routes.get(key)
         if entry is None and self.replay.record:
             with self.replay.store.lock:
                 entry = self.replay.store.routes.get(key)

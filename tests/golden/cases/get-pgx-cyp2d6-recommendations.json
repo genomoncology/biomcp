@@ -1,0 +1,437 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "CPIC",
+        "url": "https://cpicpgx.org/genes/cyp2d6/"
+      },
+      {
+        "label": "PharmGKB",
+        "url": "https://www.pharmgkb.org/gene/CYP2D6"
+      }
+    ],
+    "next_commands": [
+      "biomcp search pgx -g CYP2D6"
+    ],
+    "section_sources": [
+      {
+        "key": "recommendations",
+        "label": "Recommendations",
+        "outcome": "data",
+        "sources": [
+          "CPIC"
+        ]
+      }
+    ]
+  },
+  "gene": "CYP2D6",
+  "query": "CYP2D6",
+  "recommendation_drugs": [
+    "amitriptyline",
+    "clomipramine",
+    "fluvoxamine",
+    "tamoxifen"
+  ],
+  "recommendations": [
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "0.25"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Optional",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Intermediate Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Reduced metabolism of TCAs to less active compounds compared to normal metabolizers; Higher plasma concentrations of active drug will increase the probability of side effects"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Consider a 25% reduction of recommended starting dose. Utilizing therapeutic drug monitoring to guide dose adjustments is strongly recommended."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "0.5"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Optional",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Intermediate Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Reduced metabolism of TCAs to less active compounds compared to normal metabolizers; Higher plasma concentrations of active drug will increase the probability of side effects"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Consider a 25% reduction of recommended starting dose. Utilizing therapeutic drug monitoring to guide dose adjustments is strongly recommended."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "0.75"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Optional",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Intermediate Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Reduced metabolism of TCAs to less active compounds compared to normal metabolizers; Higher plasma concentrations of active drug will increase the probability of side effects"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Consider a 25% reduction of recommended starting dose. Utilizing therapeutic drug monitoring to guide dose adjustments is strongly recommended."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "1.0"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Optional",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Intermediate Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Reduced metabolism of TCAs to less active compounds compared to normal metabolizers; Higher plasma concentrations of active drug will increase the probability of side effects"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Consider a 25% reduction of recommended starting dose. Utilizing therapeutic drug monitoring to guide dose adjustments is strongly recommended."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "1.25"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Strong",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Normal Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Normal metabolism of TCAs"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Initiate therapy with recommended starting dose."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "1.5"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Strong",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Normal Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Normal metabolism of TCAs"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Initiate therapy with recommended starting dose."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "2.0"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Strong",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Normal Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Normal metabolism of TCAs"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Initiate therapy with recommended starting dose."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "2.25"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Strong",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Normal Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Normal metabolism of TCAs"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Initiate therapy with recommended starting dose."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "1.75"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Strong",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Normal Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Normal metabolism of TCAs"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Initiate therapy with recommended starting dose."
+    },
+    {
+      "activity_score": [
+        [
+          "CYP2D6",
+          "0.0"
+        ],
+        [
+          "CYP2C19",
+          "n/a"
+        ]
+      ],
+      "classification": "Optional",
+      "drugname": "amitriptyline",
+      "genotype": [
+        [
+          "CYP2D6",
+          "Poor Metabolizer"
+        ],
+        [
+          "CYP2C19",
+          "Intermediate Metabolizer"
+        ]
+      ],
+      "guidelinename": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "guidelineurl": "https://www.clinpgx.org/guideline/PA166251445",
+      "implication": [
+        [
+          "CYP2D6",
+          "Greatly reduced metabolism of TCAs to less active compounds compared to normal metabolizers; Higher plasma concentrations of active drug will increase the probability of side effects"
+        ],
+        [
+          "CYP2C19",
+          "Reduced metabolism of tertiary amines compared to normal metabolizers"
+        ]
+      ],
+      "population": "general",
+      "recommendation": "Avoid amitriptyline use. If a amitripyline is warranted, consider a 50% reduction of recommended starting dose. Utilizing therapeutic drug monitoring to guide dose adjustments is strongly recommended."
+    }
+  ],
+  "section_outcomes": {
+    "annotations": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "frequencies": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "section_pagination": {
+    "recommendations": {
+      "has_more": true,
+      "limit": 10,
+      "next_offset": 10,
+      "offset": 0,
+      "returned": 10,
+      "total": null
+    }
+  }
+}

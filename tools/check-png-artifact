@@ -19,13 +19,13 @@ bash "$repo_root/spec/fixtures/setup-study-spec-fixture.sh" "$repo_root"
 export BIOMCP_STUDY_DIR
 
 "$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
-  --output "$output_dir/default.png" >/dev/null
+  --output "$output_dir/default.png"
 "$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
-  --output "$output_dir/scaled.png" --scale 3 >/dev/null
+  --output "$output_dir/scaled.png" --scale 3
 "$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
-  --output "$output_dir/chart.svg" >/dev/null
+  --output "$output_dir/chart.svg"
 "$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
-  --terminal >/dev/null
+  --terminal
 
 python3 - "$output_dir/default.png" "$output_dir/scaled.png" "$output_dir/chart.svg" <<'PY'
 from pathlib import Path

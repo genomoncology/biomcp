@@ -1,0 +1,431 @@
+{
+  "data": {
+    "target": {
+      "tractability": [
+        {
+          "label": "Approved Drug",
+          "modality": "SM",
+          "value": true
+        },
+        {
+          "label": "Advanced Clinical",
+          "modality": "SM",
+          "value": false
+        },
+        {
+          "label": "Phase 1 Clinical",
+          "modality": "SM",
+          "value": false
+        },
+        {
+          "label": "Structure with Ligand",
+          "modality": "SM",
+          "value": true
+        },
+        {
+          "label": "High-Quality Ligand",
+          "modality": "SM",
+          "value": true
+        },
+        {
+          "label": "High-Quality Pocket",
+          "modality": "SM",
+          "value": true
+        },
+        {
+          "label": "Med-Quality Pocket",
+          "modality": "SM",
+          "value": false
+        },
+        {
+          "label": "Druggable Family",
+          "modality": "SM",
+          "value": true
+        },
+        {
+          "label": "Approved Drug",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "Advanced Clinical",
+          "modality": "AB",
+          "value": false
+        },
+        {
+          "label": "Phase 1 Clinical",
+          "modality": "AB",
+          "value": false
+        },
+        {
+          "label": "UniProt loc high conf",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "GO CC high conf",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "UniProt loc med conf",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "UniProt SigP or TMHMM",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "GO CC med conf",
+          "modality": "AB",
+          "value": false
+        },
+        {
+          "label": "Human Protein Atlas loc",
+          "modality": "AB",
+          "value": true
+        },
+        {
+          "label": "Approved Drug",
+          "modality": "PR",
+          "value": false
+        },
+        {
+          "label": "Advanced Clinical",
+          "modality": "PR",
+          "value": false
+        },
+        {
+          "label": "Phase 1 Clinical",
+          "modality": "PR",
+          "value": false
+        },
+        {
+          "label": "Literature",
+          "modality": "PR",
+          "value": true
+        },
+        {
+          "label": "UniProt Ubiquitination",
+          "modality": "PR",
+          "value": true
+        },
+        {
+          "label": "Database Ubiquitination",
+          "modality": "PR",
+          "value": true
+        },
+        {
+          "label": "Half-life Data",
+          "modality": "PR",
+          "value": true
+        },
+        {
+          "label": "Small Molecule Binder",
+          "modality": "PR",
+          "value": true
+        },
+        {
+          "label": "Approved Drug",
+          "modality": "OC",
+          "value": false
+        },
+        {
+          "label": "Advanced Clinical",
+          "modality": "OC",
+          "value": true
+        },
+        {
+          "label": "Phase 1 Clinical",
+          "modality": "OC",
+          "value": false
+        }
+      ],
+      "safetyLiabilities": [
+        {
+          "event": "alopecia",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": null,
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "ocular keratitis",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "ocular",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "Hepatotoxicity",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Activation/Increase/Upregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "liver",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "Skin rash",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "skin",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "diarrhoea",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "GI",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "Diarrhea",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "AST increase",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "liver",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "regulation of catalytic activity",
+          "datasource": "ToxCast",
+          "effects": [],
+          "biosamples": [
+            {
+              "tissueLabel": null,
+              "cellLabel": null,
+              "cellFormat": "cell-free"
+            }
+          ]
+        },
+        {
+          "event": "epithelial inflammation",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": null,
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "drug toxicity",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "decreased appetite",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": null,
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "rash",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "hypertension",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "cardiomyopathy",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "CV",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "weight loss",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": null,
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "heart disease",
+          "datasource": "Force et al. (2011)",
+          "effects": [],
+          "biosamples": [
+            {
+              "tissueLabel": "cardiovascular system",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "diarrhea",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "conjunctival hemorrhage",
+          "datasource": "ClinPGx",
+          "effects": [],
+          "biosamples": []
+        },
+        {
+          "event": "ALT increase",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "liver",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "hypertension",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "CV",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        },
+        {
+          "event": "interstitial lung disease",
+          "datasource": "Brennan et al. (2024)",
+          "effects": [
+            {
+              "direction": "Inhibition/Decrease/Downregulation",
+              "dosing": null
+            }
+          ],
+          "biosamples": [
+            {
+              "tissueLabel": "respiratory",
+              "cellLabel": null,
+              "cellFormat": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

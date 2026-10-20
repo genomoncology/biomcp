@@ -1,0 +1,296 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "NCBI Gene",
+        "url": "https://www.ncbi.nlm.nih.gov/gene/2064"
+      },
+      {
+        "label": "UniProt",
+        "url": "https://www.uniprot.org/uniprot/P04626"
+      },
+      {
+        "label": "Ensembl",
+        "url": "https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000141736"
+      },
+      {
+        "label": "OMIM",
+        "url": "https://www.omim.org/entry/164870"
+      }
+    ],
+    "next_commands": [
+      "biomcp get gene ERBB2 pathways",
+      "biomcp get gene ERBB2 ontology",
+      "biomcp get gene ERBB2 diseases",
+      "biomcp get gene ERBB2 diagnostics",
+      "biomcp search diagnostic --gene ERBB2",
+      "biomcp search pgx -g ERBB2",
+      "biomcp search variant -g ERBB2",
+      "biomcp search article -g ERBB2",
+      "biomcp search drug --target ERBB2",
+      "biomcp gene trials ERBB2"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene"
+        ]
+      },
+      {
+        "key": "aliases",
+        "label": "Aliases",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      },
+      {
+        "key": "funding",
+        "label": "Funding",
+        "outcome": "data",
+        "sources": [
+          "NIH Reporter"
+        ]
+      }
+    ],
+    "suggestions": [
+      "biomcp search diagnostic --gene ERBB2",
+      "biomcp search pgx -g ERBB2",
+      "biomcp search variant -g ERBB2",
+      "biomcp search article -g ERBB2",
+      "biomcp search drug --target ERBB2",
+      "biomcp gene trials ERBB2"
+    ],
+    "workflow": "mechanism-pathway",
+    "workflow_playbook": "biomcp skill mechanism-pathway",
+    "workflow_rationale": "Orient from a mechanism-relevant drug to target and pathway context, then confirm the disease mechanism in review literature."
+  },
+  "aliases": [
+    "CD340",
+    "HER2",
+    "MLN 19",
+    "NEU",
+    "NGL"
+  ],
+  "clinical_diseases": [
+    "non-small cell lung carcinoma",
+    "cancer",
+    "gastric cancer",
+    "breast carcinoma",
+    "gastric adenocarcinoma"
+  ],
+  "clinical_drugs": [
+    "MM-111",
+    "KBP5209",
+    "LAPATINIB DITOSYLATE",
+    "CANERTINIB DIHYDROCHLORIDE",
+    "PERTUZUMAB"
+  ],
+  "ensembl_id": "ENSG00000141736",
+  "entrez_id": "2064",
+  "funding": {
+    "fiscal_years": [
+      2023,
+      2024,
+      2025,
+      2026,
+      2027
+    ],
+    "grants": [
+      {
+        "award_amount": 2147209,
+        "core_project_num": "ZIASC004020",
+        "fiscal_year": 2023,
+        "organization": "DIVISION OF CLINICAL SCIENCES - NCI",
+        "pi_name": "BERZOFSKY, JAY A",
+        "project_detail_url": "https://reporter.nih.gov/project-details/10926563",
+        "project_num": "1ZIASC004020-46",
+        "project_title": "Vaccine and immunotherapy strategies for cancer and viruses causing cancer"
+      },
+      {
+        "award_amount": 1340183,
+        "core_project_num": "R01CA287486",
+        "fiscal_year": 2026,
+        "organization": "CINCINNATI CHILDRENS HOSP MED CTR",
+        "pi_name": "WELLS, SUSANNE I",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11359721",
+        "project_num": "4R01CA287486-03",
+        "project_title": "HPV and host factors in juvenile onset recurrent respiratory papillomatosis"
+      },
+      {
+        "award_amount": 1023757,
+        "core_project_num": "R44DK143865",
+        "fiscal_year": 2026,
+        "organization": "IN VIVO MICROSYSTEMS TECHNOLOGIES, LLC",
+        "pi_name": "BRADY, ELAINE",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11418082",
+        "project_num": "5R44DK143865-02",
+        "project_title": "In-vivo study of KSP/QRH heptapeptide dimer for detection of biliary intra-epithelial neoplasia"
+      },
+      {
+        "award_amount": 856322,
+        "core_project_num": "R01DK051265",
+        "fiscal_year": 2026,
+        "organization": "VANDERBILT UNIVERSITY MEDICAL CENTER",
+        "pi_name": "HARRIS, RAYMOND C.",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11447640",
+        "project_num": "2R01DK051265-29A1",
+        "project_title": "The role of NRG4-ErbB4 signaling in kidney disease"
+      },
+      {
+        "award_amount": 718548,
+        "core_project_num": "R01HL180354",
+        "fiscal_year": 2026,
+        "organization": "UT SOUTHWESTERN MEDICAL CENTER",
+        "pi_name": "HILL, JOSEPH A",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11365606",
+        "project_num": "1R01HL180354-01A1",
+        "project_title": "Endothelial Fli1 In Ischemic Heart Disease"
+      },
+      {
+        "award_amount": 715002,
+        "core_project_num": "R01CA309345",
+        "fiscal_year": 2026,
+        "organization": "SLOAN-KETTERING INST CAN RESEARCH",
+        "pi_name": "HARDING, JAMES J",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11275885",
+        "project_num": "1R01CA309345-01",
+        "project_title": "HER2 PET imaging to assess HER2 heterogeneity and predict response to HER2-targeted therapy in biliary tract cancer"
+      },
+      {
+        "award_amount": 695700,
+        "core_project_num": "R01CA244233",
+        "fiscal_year": 2025,
+        "organization": "SLOAN-KETTERING INST CAN RESEARCH",
+        "pi_name": "LEWIS, JASON S.",
+        "project_detail_url": "https://reporter.nih.gov/project-details/10978233",
+        "project_num": "5R01CA244233-05",
+        "project_title": "Improving radiolabeled imaging and targeting of HER2 positive EG cancers using lovastatin"
+      },
+      {
+        "award_amount": 695513,
+        "core_project_num": "R01HL153058",
+        "fiscal_year": 2023,
+        "organization": "UNIVERSITY OF PITTSBURGH AT PITTSBURGH",
+        "pi_name": "WENZEL, SALLY E",
+        "project_detail_url": "https://reporter.nih.gov/project-details/10664889",
+        "project_num": "5R01HL153058-04",
+        "project_title": "Mucin sialylation drives epithelial cell senescence and severe asthma"
+      },
+      {
+        "award_amount": 690011,
+        "core_project_num": "R01CA310024",
+        "fiscal_year": 2026,
+        "organization": "DUKE UNIVERSITY",
+        "pi_name": "HARTMAN, ZACHARY CONRAD",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11380590",
+        "project_num": "1R01CA310024-01A1",
+        "project_title": "Functionally selective signaling of HER2 isoforms controls early dissemination and immune escape"
+      },
+      {
+        "award_amount": 643104,
+        "core_project_num": "R37CA276498",
+        "fiscal_year": 2026,
+        "organization": "WASHINGTON UNIVERSITY",
+        "pi_name": "RIBEIRO PEREIRA, PATRICIA MANUELA",
+        "project_detail_url": "https://reporter.nih.gov/project-details/11263688",
+        "project_num": "5R37CA276498-04",
+        "project_title": "Reversing Drug Resistance in Tumors with Clickable Antibody Pairs"
+      }
+    ],
+    "matching_project_years": 149,
+    "query": "ERBB2"
+  },
+  "gene_type": "protein-coding",
+  "genomic_coordinates": {
+    "coordinate": "17:39687914-39730426 (strand: 1)",
+    "genome_build": "GRCh38",
+    "provenance": "MyGene.info provider default",
+    "source": "MyGene.info"
+  },
+  "location": "17",
+  "name": "erb-b2 receptor tyrosine kinase 2",
+  "omim_id": "164870",
+  "section_outcomes": {
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "clingen": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "constraint": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diagnostics": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diseases": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "disgenet": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "druggability": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "expression": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "funding": {
+      "outcome": "data",
+      "sources": [
+        "NIH Reporter"
+      ]
+    },
+    "gencc": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "go": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "hpa": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "ontology": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "pathways": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "protein": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "summary": "This gene encodes a member of the epidermal growth factor (EGF) receptor family of receptor tyrosine kinases. This protein has no ligand binding domain of its own and therefore cannot bind growth factors.",
+  "symbol": "ERBB2",
+  "uniprot_id": "P04626"
+}

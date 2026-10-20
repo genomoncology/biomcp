@@ -19,6 +19,9 @@ benchmarks/output-footprint/tokenizer-cache/* -diff
 # CHANGELOG.md deliberately merges with git's ordinary rules: the
 # union driver kept both sides of an edited bullet, so a reworded
 # bullet landed beside its old copy with no conflict (2104)
+
+# Golden Markdown preserves the CLI final blank line byte for byte.
+tests/golden/cases/*.md whitespace=-blank-at-eof
 """
 
 

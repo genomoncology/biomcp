@@ -64,6 +64,17 @@ else
   skip 'MCP registry metadata check (not configured)'
 fi
 
+if [ -f scripts/check-changelog-coverage.py ]; then
+  run_required 'Branch changelog coverage' python3 scripts/check-changelog-coverage.py --branch
+else
+  skip 'Branch changelog coverage (not configured)'
+fi
+if [ -f scripts/check-no-climb-tracked.sh ]; then
+  run_required 'Tracked scratch check' bash scripts/check-no-climb-tracked.sh
+else
+  skip 'Tracked scratch check (not configured)'
+fi
+
 if has_tracked_files '*.py'; then
   if command -v ruff >/dev/null 2>&1 && ruff --version | grep -Fxq 'ruff 0.13.2'; then
     run_required 'Python lint (ruff check .)' ruff check .

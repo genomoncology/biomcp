@@ -1,0 +1,33 @@
+{
+  "data": {
+    "search": {
+      "hits": [
+        {
+          "id": "MONDO_0005105",
+          "name": "melanoma",
+          "entity": "disease"
+        },
+        {
+          "id": "MONDO_0005012",
+          "name": "cutaneous melanoma",
+          "entity": "disease"
+        },
+        {
+          "id": "MONDO_0006486",
+          "name": "uveal melanoma",
+          "entity": "disease"
+        },
+        {
+          "id": "OBA_2050157",
+          "name": "melanoma-derived growth regulatory protein  level",
+          "entity": "disease"
+        },
+        {
+          "id": "MONDO_0013759",
+          "name": "melanoma, cutaneous malignant, susceptibility to, 8",
+          "entity": "disease"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "resolved_query": [
+    {
+      "raw": "HP:0001250",
+      "id": "HP:0001250",
+      "label": "Seizure"
+    },
+    {
+      "raw": "HP:0001263",
+      "id": "HP:0001263",
+      "label": "Global developmental delay"
+    }
+  ],
+  "pagination": {
+    "offset": 0,
+    "limit": 1,
+    "returned": 1,
+    "total": null,
+    "has_more": true,
+    "next_page_token": null,
+    "provider_window_limit": 50,
+    "provider_raw_row_count": 50,
+    "provider_window_exhausted": true
+  },
+  "count": 1,
+  "results": [
+    {
+      "disease_id": "MONDO:0010450",
+      "disease_name": "intellectual disability, X-linked 89",
+      "score": 13.32920248405424,
+      "direct_support": [
+        {
+          "hpo_id": "HP:0001250",
+          "status": "not_supported"
+        },
+        {
+          "hpo_id": "HP:0001263",
+          "status": "supported"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "next_commands": [
+      "biomcp search phenotype \"HP:0001250 HP:0001263\" --limit 1 --offset 1",
+      "biomcp list phenotype"
+    ]
+  }
+}

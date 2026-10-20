@@ -1,0 +1,86 @@
+{
+  "pmid": "30738221",
+  "annotations": {
+    "genes": [
+      {
+        "text": "KRAS",
+        "count": 12,
+        "namespace": "NCBIGene",
+        "identifier": "3845"
+      },
+      {
+        "text": "PD-L1",
+        "count": 9,
+        "namespace": "NCBIGene",
+        "identifier": "29126"
+      },
+      {
+        "text": "programmed death ligand 1",
+        "count": 1,
+        "namespace": "NCBIGene",
+        "identifier": "29126"
+      },
+      {
+        "text": "cytotoxic T-lymphocyte associated protein 4",
+        "count": 1,
+        "namespace": "NCBIGene",
+        "identifier": "1493"
+      }
+    ],
+    "diseases": [
+      {
+        "text": "NSCLC",
+        "count": 16,
+        "namespace": "MESH",
+        "identifier": "MESH:D002289",
+        "name": "Carcinoma Non-Small-Cell Lung"
+      },
+      {
+        "text": "tumor",
+        "count": 3,
+        "namespace": "MESH",
+        "identifier": "MESH:D009369",
+        "name": "Neoplasms"
+      },
+      {
+        "text": "Non-Small Cell Lung Cancer",
+        "count": 1,
+        "namespace": "MESH",
+        "identifier": "MESH:D002289",
+        "name": "Carcinoma Non-Small-Cell Lung"
+      }
+    ],
+    "mutations": [
+      {
+        "text": "G12A",
+        "count": 1,
+        "namespace": "HGVS",
+        "identifier": "KRAS p.G12A"
+      },
+      {
+        "text": "G12C",
+        "count": 1,
+        "namespace": "HGVS",
+        "identifier": "KRAS p.G12C"
+      },
+      {
+        "text": "G12D",
+        "count": 1,
+        "namespace": "HGVS",
+        "identifier": "KRAS p.G12D"
+      },
+      {
+        "text": "G12V",
+        "count": 1,
+        "namespace": "HGVS",
+        "identifier": "KRAS p.G12V"
+      },
+      {
+        "text": "G13C",
+        "count": 1,
+        "namespace": "HGVS",
+        "identifier": "KRAS p.G13C"
+      }
+    ]
+  }
+}

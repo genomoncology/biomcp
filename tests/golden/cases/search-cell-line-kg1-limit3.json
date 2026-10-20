@@ -1,0 +1,62 @@
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 3,
+    "returned": 3,
+    "total": 3,
+    "has_more": false,
+    "next_page_token": null
+  },
+  "count": 3,
+  "results": [
+    {
+      "accession": "CVCL_0374",
+      "name": "KG-1",
+      "species": [
+        {
+          "taxon_id": "9606",
+          "label": "Homo sapiens (Human)"
+        }
+      ],
+      "category": "Cancer cell line",
+      "disease": "Acute myeloid leukemia without maturation",
+      "match": "exact",
+      "matched_on": "name"
+    },
+    {
+      "accession": "CVCL_UD72",
+      "name": "KG1",
+      "species": [
+        {
+          "taxon_id": "10090",
+          "label": "Mus musculus (Mouse)"
+        }
+      ],
+      "category": "Conditionally immortalized cell line",
+      "match": "exact",
+      "matched_on": "name"
+    },
+    {
+      "accession": "CVCL_E3VV",
+      "name": "B16-F10.9.KG1",
+      "species": [
+        {
+          "taxon_id": "10090",
+          "label": "Mus musculus (Mouse)"
+        }
+      ],
+      "category": "Cancer cell line",
+      "disease": "Mouse melanoma",
+      "match": "exact",
+      "matched_on": "synonym"
+    }
+  ],
+  "data_as_of": "56.0 (2026-06-25)",
+  "data_as_of_kind": "release",
+  "_meta": {
+    "next_commands": [
+      "biomcp get cell-line CVCL_0374",
+      "biomcp list cell-line"
+    ]
+  }
+}

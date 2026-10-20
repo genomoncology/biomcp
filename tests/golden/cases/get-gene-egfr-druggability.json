@@ -1,0 +1,318 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "NCBI Gene",
+        "url": "https://www.ncbi.nlm.nih.gov/gene/1956"
+      },
+      {
+        "label": "UniProt",
+        "url": "https://www.uniprot.org/uniprot/P00533"
+      },
+      {
+        "label": "Ensembl",
+        "url": "https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000146648"
+      },
+      {
+        "label": "OMIM",
+        "url": "https://www.omim.org/entry/131550"
+      }
+    ],
+    "next_commands": [
+      "biomcp get gene EGFR pathways",
+      "biomcp get gene EGFR ontology",
+      "biomcp get gene EGFR diseases",
+      "biomcp get gene EGFR diagnostics",
+      "biomcp get gene EGFR protein",
+      "biomcp search diagnostic --gene EGFR",
+      "biomcp search pgx -g EGFR",
+      "biomcp search variant -g EGFR",
+      "biomcp search article -g EGFR",
+      "biomcp search drug --target EGFR",
+      "biomcp gene trials EGFR"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene"
+        ]
+      },
+      {
+        "key": "aliases",
+        "label": "Aliases",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      },
+      {
+        "key": "druggability",
+        "label": "Druggability",
+        "outcome": "data",
+        "sources": [
+          "DGIdb",
+          "Open Targets"
+        ]
+      }
+    ],
+    "suggestions": [
+      "biomcp get gene EGFR protein",
+      "biomcp search diagnostic --gene EGFR",
+      "biomcp search pgx -g EGFR",
+      "biomcp search variant -g EGFR",
+      "biomcp search article -g EGFR",
+      "biomcp search drug --target EGFR",
+      "biomcp gene trials EGFR"
+    ],
+    "workflow": "mechanism-pathway",
+    "workflow_playbook": "biomcp skill mechanism-pathway",
+    "workflow_rationale": "Orient from a mechanism-relevant drug to target and pathway context, then confirm the disease mechanism in review literature."
+  },
+  "aliases": [
+    "ERBB",
+    "ERBB1",
+    "ERRP",
+    "HER1",
+    "NISBD2"
+  ],
+  "clinical_diseases": [
+    "non-small cell lung carcinoma",
+    "lung adenocarcinoma",
+    "cancer",
+    "head and neck squamous cell carcinoma",
+    "lung cancer"
+  ],
+  "clinical_drugs": [
+    "RUSERONTINIB",
+    "TESEVATINIB",
+    "AFATINIB",
+    "CETUXIMAB SAROTALOCAN",
+    "MDX-447"
+  ],
+  "druggability": {
+    "categories": [
+      "Cell Surface",
+      "Clinically Actionable",
+      "Drug Resistance",
+      "Druggable Genome",
+      "Kinase",
+      "Tyrosine Kinase"
+    ],
+    "interactions": [
+      {
+        "approved": true,
+        "drug": "NECITUMUMAB",
+        "interaction_types": [
+          "antibody",
+          "inhibitor"
+        ],
+        "score": 1.091381226665623,
+        "source_count": 6
+      },
+      {
+        "approved": true,
+        "drug": "CETUXIMAB",
+        "interaction_types": [
+          "antibody",
+          "inhibitor"
+        ],
+        "score": 0.4648475595057285,
+        "source_count": 13
+      },
+      {
+        "approved": true,
+        "drug": "PANITUMUMAB",
+        "interaction_types": [
+          "antibody",
+          "inhibitor"
+        ],
+        "score": 0.1818968711109372,
+        "source_count": 13
+      }
+    ],
+    "safety_liabilities": [
+      {
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Inhibition/Decrease/Downregulation",
+        "event": "alopecia"
+      },
+      {
+        "biosample": "ocular",
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Inhibition/Decrease/Downregulation",
+        "event": "ocular keratitis"
+      },
+      {
+        "biosample": "liver",
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Activation/Increase/Upregulation",
+        "event": "Hepatotoxicity"
+      },
+      {
+        "biosample": "skin",
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Inhibition/Decrease/Downregulation",
+        "event": "Skin rash"
+      },
+      {
+        "biosample": "GI",
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Inhibition/Decrease/Downregulation",
+        "event": "diarrhoea"
+      },
+      {
+        "datasource": "ClinPGx",
+        "event": "Diarrhea"
+      },
+      {
+        "biosample": "liver",
+        "datasource": "Brennan et al. (2024)",
+        "effect_direction": "Inhibition/Decrease/Downregulation",
+        "event": "AST increase"
+      },
+      {
+        "biosample": "cell-free",
+        "datasource": "ToxCast",
+        "event": "regulation of catalytic activity"
+      }
+    ],
+    "tractability": [
+      {
+        "evidence_labels": [
+          "Approved Drug",
+          "Structure with Ligand",
+          "High-Quality Ligand",
+          "High-Quality Pocket",
+          "Druggable Family"
+        ],
+        "modality": "small molecule",
+        "tractable": true
+      },
+      {
+        "evidence_labels": [
+          "Approved Drug",
+          "UniProt loc high conf",
+          "GO CC high conf",
+          "UniProt loc med conf",
+          "UniProt SigP or TMHMM",
+          "Human Protein Atlas loc"
+        ],
+        "modality": "antibody",
+        "tractable": true
+      },
+      {
+        "evidence_labels": [
+          "Literature",
+          "UniProt Ubiquitination",
+          "Database Ubiquitination",
+          "Half-life Data",
+          "Small Molecule Binder"
+        ],
+        "modality": "PROTAC",
+        "tractable": true
+      },
+      {
+        "evidence_labels": [
+          "Advanced Clinical"
+        ],
+        "modality": "other modality",
+        "tractable": true
+      }
+    ]
+  },
+  "ensembl_id": "ENSG00000146648",
+  "entrez_id": "1956",
+  "gene_type": "protein-coding",
+  "genomic_coordinates": {
+    "coordinate": "7:55018820-55211628 (strand: 1)",
+    "genome_build": "GRCh38",
+    "provenance": "MyGene.info provider default",
+    "source": "MyGene.info"
+  },
+  "location": "7",
+  "name": "epidermal growth factor receptor",
+  "omim_id": "131550",
+  "section_outcomes": {
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "clingen": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "constraint": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diagnostics": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diseases": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "disgenet": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "druggability": {
+      "outcome": "data",
+      "sources": [
+        "DGIdb",
+        "Open Targets"
+      ]
+    },
+    "expression": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "funding": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "gencc": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "go": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "hpa": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "ontology": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "pathways": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "protein": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "summary": "The protein encoded by this gene is a transmembrane glycoprotein that is a member of the protein kinase superfamily. This protein is a receptor for members of the epidermal growth factor family.",
+  "symbol": "EGFR",
+  "uniprot_id": "P00533"
+}

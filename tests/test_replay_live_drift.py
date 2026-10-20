@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import runpy
+import shlex
 import subprocess
 import sys
 import threading
@@ -415,3 +416,220 @@ def test_invalid_xml_keeps_complete_recording_accounting(
         if historical
         else "live response has unsupported or invalid shape"
     ]
+
+
+FORMAT_CASES = [
+    ("image/jpeg", b"\xff\xd8\xff\xe0photo", b"not a jpeg"),
+    ("application/msword", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1document", b"not a doc"),
+    ("application/zip", b"PK\x03\x04archive", b"not a zip"),
+    (
+        "text/html",
+        b"<!DOCTYPE html><html><body>article</body></html>",
+        b"not html",
+    ),
+    ("binary/octet-stream", b'{"Key":"value","tail":1}', b""),
+]
+
+
+@pytest.mark.parametrize(("content_type", "body", "malformed"), FORMAT_CASES)
+@pytest.mark.parametrize("fault", [None, "historical", "live", "status", "type"])
+def test_real_formats_report_only_the_checks_performed(
+    tmp_path, provider, content_type, body, malformed, fault
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = content_type
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    (replay / "reply.json").write_bytes(malformed if fault == "historical" else body)
+    server.content_type = content_type if fault != "type" else "application/json"
+    server.body = malformed if fault == "live" else body
+    server.status = 503 if fault == "status" else 200
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == int(fault is not None), process.stdout
+    assert summary["checked"] == int(fault != "historical")
+    state = "blocked" if fault == "historical" else "drift" if fault else "passed"
+    assert summary[state] == 1
+    assert results[0]["added_paths"] == []
+    assert results[0]["qualification"] == "status/type/signature only"
+    if fault == "status":
+        assert "changed status" in results[0]["details"]
+    if fault == "type":
+        assert "changed content-type" in results[0]["details"]
+
+
+@pytest.mark.parametrize(
+    ("doctype", "refused"),
+    [
+        (b'<!DOCTYPE reply SYSTEM "UPSTREAM/no-fetch">', False),
+        (b'<!DOCTYPE reply [<!ENTITY word "expanded">]>', True),
+        (b'<!DOCTYPE reply [<!ENTITY word SYSTEM "file:///never-read">]>', True),
+        (
+            b'<!DOCTYPE reply [<!ENTITY % remote SYSTEM "UPSTREAM/no-fetch">%remote;]>',
+            True,
+        ),
+    ],
+)
+@pytest.mark.parametrize("historical", [False, True])
+def test_doctype_allows_declarations_but_refuses_entity_expansion(
+    tmp_path, provider, doctype, refused, historical
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/xml"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    xml = doctype.replace(b"UPSTREAM", origin.encode()) + b"<reply><row/></reply>"
+    (replay / "reply.json").write_bytes(xml if historical else b"<reply><row/></reply>")
+    server.content_type = "application/xml"
+    server.body = b"<reply><row/></reply>" if historical else xml
+    process, _, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == int(refused), process.stdout
+    state = "blocked" if historical and refused else "drift" if refused else "passed"
+    assert summary[state] == 1
+    assert len(server.requests) == int(not (historical and refused))
+
+
+@pytest.mark.parametrize(
+    ("source", "upstream"),
+    [
+        ("mygene", "https://mygene.info/v3/object?q=1"),
+        (
+            "pmc-html",
+            "https://pmc.ncbi.nlm.nih.gov/articles/instance/3467229/bin/supp.doc",
+        ),
+    ],
+)
+def test_real_formats_keep_root_object_provider_from_capture_provenance(
+    tmp_path, source, upstream
+):
+    replay, routes = recording(tmp_path, "https://mygene.info/v3")
+    entry = next(iter(routes.values()))
+    entry["recording_provenance"] = {"provider": source}
+    entry["upstream"] = upstream
+    from urllib.parse import urlsplit
+
+    parsed = urlsplit(upstream)
+    raw_path = parsed.path + ("?" + parsed.query if parsed.query else "")
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": {f"GET {raw_path}": entry}})
+    )
+    process, results, summary = run_check(tmp_path, replay)
+    assert process.returncode == 0
+    assert results[0]["provider"] == source
+    assert summary["ready"] == 1
+
+
+def test_real_formats_do_not_parse_octet_stream_json_as_json(tmp_path, provider):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/octet-stream"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    (replay / "reply.json").write_bytes(b'{"same-prefix":  "recorded"}')
+    server.content_type = "application/octet-stream"
+    server.body = b'{"same-prefix":  invalid JSON remains uninterpreted'
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 0
+    assert summary["passed"] == 1
+    assert results[0]["qualification"] == "status/type/signature only"
+
+
+@pytest.mark.parametrize("historical", [False, True])
+def test_real_formats_reject_truncated_opaque_signature(tmp_path, provider, historical):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "binary/octet-stream"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    body = b'{"recorded":"opaque body"}'
+    (replay / "reply.json").write_bytes(body[:8] if historical else body)
+    server.content_type = "binary/octet-stream"
+    server.body = body if historical else body[:8]
+    process, _, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 1
+    assert summary["blocked" if historical else "drift"] == 1
+    assert summary["checked"] == int(not historical)
+
+
+@pytest.mark.parametrize(
+    ("name", "source_id", "origin"),
+    [
+        ("pubmed", "pubmed", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"),
+        ("hpa", "human-protein-atlas", "https://www.proteinatlas.org"),
+        ("hpo", "hpo-jax-api", "https://ontology.jax.org/api/hp"),
+        ("monarch", "monarch-initiative", "https://api-v3.monarchinitiative.org"),
+    ],
+)
+def test_inventory_uses_runtime_provider_policy_identity(
+    tmp_path, name, source_id, origin
+):
+    replay, _ = recording(tmp_path, origin, provider=name)
+    process, results, summary = run_check(tmp_path, replay)
+    assert process.returncode == 0, results
+    assert summary["ready"] == 1
+    process, results, summary = run_check(
+        tmp_path, replay, "--disable-sources", source_id
+    )
+    assert process.returncode == 0, results
+    assert summary["disabled"] == 1
+
+
+def test_inventory_refuses_unknown_provider_identity(tmp_path):
+    replay, _ = recording(tmp_path, "https://example.invalid", provider="future-source")
+    recipe = (
+        (ROOT / "Makefile")
+        .read_text()
+        .split("landing-gate:\n", 1)[1]
+        .split("\n\n", 1)[0]
+    )
+    command = next(
+        line.strip()
+        for line in recipe.splitlines()
+        if "tools/check-replay-live" in line
+    )
+    arguments = shlex.split(command)
+    assert "--live" not in arguments
+    # Execute the real gate recipe with only its Python launcher replaced, using
+    # an isolated unknown recording instead of the repository inventory.
+    arguments = [sys.executable, str(CHECKER), *arguments[5:]]
+    process = subprocess.run(
+        [*arguments, "--replay-dir", str(replay)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env=isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"),
+    )
+    rows = [json.loads(line) for line in process.stdout.splitlines()]
+    assert process.returncode == 1
+    assert rows[-1]["summary"]["blocked"] == 1
+    assert rows[0]["details"] == ["unknown or ambiguous provider policy identity"]
+
+
+def test_policy_identity_follows_runtime_declaration_and_refuses_ambiguity(tmp_path):
+    helper = runpy.run_path(str(ROOT / "scripts/replay_drift.py"))
+    module = tmp_path / "provider.rs"
+    module.write_text(
+        'const BASE_ENV: &str = "BIOMCP_FUTURE_BASE";\n'
+        'fn new() { shared_client("kegg"); }\n'
+    )
+    overrides = {"BIOMCP_FUTURE_BASE": "future"}
+    derive = helper["provider_policy_ids"]
+    resolve = helper["provider_policy_id"]
+    identities = derive(tmp_path, overrides, {"kegg", "mygene-info"})
+    assert resolve("future", identities) == "kegg"
+    module.write_text(
+        module.read_text() + 'fn other() { shared_client("mygene-info"); }'
+    )
+    with pytest.raises(
+        ValueError, match="unknown or ambiguous provider policy identity"
+    ):
+        resolve("future", derive(tmp_path, overrides, {"kegg", "mygene-info"}))
+    with pytest.raises(
+        ValueError, match="unknown or ambiguous provider policy identity"
+    ):
+        resolve("future", derive(tmp_path, overrides, set()))

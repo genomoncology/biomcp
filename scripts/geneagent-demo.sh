@@ -14,12 +14,24 @@ if [[ ! -x "$BIN" ]]; then
   exit 1
 fi
 
+# Keep structured command errors visible when stdout feeds a JSON variable.
+command_json() {
+  local output status
+  if output=$("$BIN" "$@"); then
+    printf '%s\n' "$output"
+  else
+    status=$?
+    printf '%s\n' "$output" >&2
+    return "$status"
+  fi
+}
+
 echo "GeneAgent demo: variant, pathway, and protein pivots"
 
-variant_json="$("$BIN" --json get variant "BRAF V600E" clinvar)"
-pathway_json="$("$BIN" --json get pathway R-HSA-5673001 genes)"
-drug_json="$("$BIN" --json pathway drugs R-HSA-5673001 --limit 3)"
-protein_json="$("$BIN" --json protein structures P15056)"
+variant_json="$(command_json --json get variant "BRAF V600E" clinvar)"
+pathway_json="$(command_json --json get pathway R-HSA-5673001 genes)"
+drug_json="$(command_json --json pathway drugs R-HSA-5673001 --limit 3)"
+protein_json="$(command_json --json protein structures P15056)"
 
 if ! grep -q '"id"' <<<"$variant_json" || ! grep -q '"gene"' <<<"$variant_json"; then
   echo "Variant lookup failed" >&2

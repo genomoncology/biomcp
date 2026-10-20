@@ -1,0 +1,180 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "CPIC",
+        "url": "https://cpicpgx.org/genes/cyp2d6/"
+      },
+      {
+        "label": "PharmGKB",
+        "url": "https://www.pharmgkb.org/gene/CYP2D6"
+      }
+    ],
+    "next_commands": [
+      "biomcp search pgx -g CYP2D6"
+    ],
+    "section_sources": [
+      {
+        "key": "guidelines",
+        "label": "Guidelines",
+        "outcome": "data",
+        "sources": [
+          "CPIC"
+        ]
+      }
+    ]
+  },
+  "gene": "CYP2D6",
+  "guidelines": [
+    {
+      "drugs": [
+        "atomoxetine"
+      ],
+      "genes": [
+        "CYP2D6"
+      ],
+      "name": "CYP2D6 and Atomoxetine",
+      "url": "https://www.clinpgx.org/guideline/PA166251459"
+    },
+    {
+      "drugs": [
+        "dolasetron",
+        "ondansetron",
+        "palonosetron",
+        "ramosetron",
+        "tropisetron"
+      ],
+      "genes": [
+        "CYP2D6"
+      ],
+      "name": "CYP2D6 and Ondansetron and Tropisetron",
+      "url": "https://www.clinpgx.org/guideline/PA166251457"
+    },
+    {
+      "drugs": [
+        "tamoxifen"
+      ],
+      "genes": [
+        "CYP2D6"
+      ],
+      "name": "CYP2D6 and Tamoxifen",
+      "url": "https://www.clinpgx.org/guideline/PA166251458"
+    },
+    {
+      "drugs": [
+        "acebutolol",
+        "atenolol",
+        "betaxolol",
+        "bisoprolol",
+        "carvedilol",
+        "esmolol",
+        "labetalol",
+        "metoprolol",
+        "nadolol",
+        "nebivolol",
+        "pindolol",
+        "propranolol",
+        "sotalol"
+      ],
+      "genes": [
+        "ADRA2C",
+        "ADRB1",
+        "ADRB2",
+        "CYP2D6",
+        "GRK4",
+        "GRK5"
+      ],
+      "name": "CYP2D6, ADRB1, ADRB2, ADRA2C, GRK4, and GRK5 and Beta-Blockers",
+      "url": "https://www.clinpgx.org/guideline/PA166343383"
+    },
+    {
+      "drugs": [
+        "amitriptyline",
+        "clomipramine",
+        "desipramine",
+        "doxepin",
+        "imipramine",
+        "nortriptyline",
+        "trimipramine"
+      ],
+      "genes": [
+        "CYP2C19",
+        "CYP2D6"
+      ],
+      "name": "CYP2D6, CYP2C19 and Tricyclic Antidepressants",
+      "url": "https://www.clinpgx.org/guideline/PA166251445"
+    },
+    {
+      "drugs": [
+        "citalopram",
+        "desvenlafaxine",
+        "duloxetine",
+        "escitalopram",
+        "fluoxetine",
+        "fluvoxamine",
+        "levomilnacipran",
+        "milnacipran",
+        "paroxetine",
+        "sertraline",
+        "venlafaxine",
+        "vilazodone",
+        "vortioxetine"
+      ],
+      "genes": [
+        "CYP2B6",
+        "CYP2C19",
+        "CYP2D6",
+        "HTR2A",
+        "SLC6A4"
+      ],
+      "name": "CYP2D6, CYP2C19, CYP2B6, SLC6A4, HTR2A and Serotonin Reuptake Inhibitor Antidepressants",
+      "url": "https://www.clinpgx.org/guideline/PA166251452"
+    },
+    {
+      "drugs": [
+        "alfentanil",
+        "buprenorphine",
+        "codeine",
+        "fentanyl",
+        "hydrocodone",
+        "hydromorphone",
+        "levomethadone",
+        "methadone",
+        "morphine",
+        "naltrexone",
+        "oxycodone",
+        "remifentanil",
+        "sufentanil",
+        "tramadol"
+      ],
+      "genes": [
+        "COMT",
+        "CYP2D6",
+        "OPRM1"
+      ],
+      "name": "CYP2D6, OPRM1, COMT, and Opioids",
+      "url": "https://www.clinpgx.org/guideline/PA166251454"
+    }
+  ],
+  "query": "CYP2D6",
+  "section_outcomes": {
+    "annotations": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "frequencies": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "section_pagination": {
+    "guidelines": {
+      "has_more": false,
+      "limit": 10,
+      "next_offset": null,
+      "offset": 0,
+      "returned": 7,
+      "total": null
+    }
+  }
+}

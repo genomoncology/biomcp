@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "evidence_urls": [],
+    "next_commands": [
+      "biomcp get cell-line CVCL_1844 xrefs",
+      "biomcp get cell-line CVCL_1844 chembl",
+      "biomcp get cell-line CVCL_1844 drug_response"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      },
+      {
+        "key": "variants",
+        "label": "Variants",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      }
+    ]
+  },
+  "accession": "CVCL_1844",
+  "age": "57Y",
+  "category": "Cancer cell line",
+  "data_as_of": "56.0 (2026-06-25)",
+  "data_as_of_kind": "release",
+  "diseases": [
+    {
+      "accession": "C7962",
+      "database": "NCIt",
+      "label": "Adult acute myelomonocytic leukemia"
+    },
+    {
+      "accession": "Orphanet_517",
+      "database": "ORDO",
+      "label": "Acute myelomonocytic leukemia"
+    }
+  ],
+  "name": "OCI-AML-3",
+  "rrid": "RRID:CVCL_1844",
+  "section_outcomes": {
+    "chembl": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "drug_response": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "variants": {
+      "outcome": "data",
+      "sources": [
+        "Cellosaurus"
+      ]
+    },
+    "xrefs": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "sex": "Male",
+  "source": "Cellosaurus",
+  "species": [
+    {
+      "label": "Homo sapiens (Human)",
+      "taxon_id": "9606"
+    }
+  ],
+  "synonyms": [
+    "OCI-Aml-3",
+    "OCI/AML-3",
+    "OCI-AML3",
+    "OCI/AML3",
+    "OCI AML3",
+    "OCIAML3",
+    "Ontario Cancer Institute-Acute Myeloid Leukemia-3"
+  ],
+  "variants": [
+    {
+      "description": "p.Arg882Cys (c.2644C>T)",
+      "gene": "DNMT3A",
+      "hgnc_id": "HGNC:2978",
+      "mutation_type": "Simple",
+      "pubmed_ids": [
+        "31739141",
+        "31160637",
+        "26434589"
+      ],
+      "variation_type": "Mutation",
+      "zygosity": "Heterozygous"
+    },
+    {
+      "description": "p.Trp288Cysfs*12 (c.860_863dupTCTG)",
+      "gene": "NPM1",
+      "hgnc_id": "HGNC:7910",
+      "mutation_type": "Simple",
+      "pubmed_ids": [
+        "16079892"
+      ],
+      "variation_type": "Mutation",
+      "zygosity": "Heterozygous"
+    },
+    {
+      "description": "p.Gln61Leu (c.182A>T)",
+      "gene": "NRAS",
+      "hgnc_id": "HGNC:7989",
+      "mutation_type": "Simple",
+      "variation_type": "Mutation",
+      "zygosity": "Homozygous"
+    }
+  ]
+}

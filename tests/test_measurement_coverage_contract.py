@@ -95,7 +95,7 @@ printf '===== 2 passed in 0.1s =====\\n'
         text=True,
         capture_output=True,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == int(failed_python), result.stdout + result.stderr
     assert (
         "RESULT coverage_integration_tests = exit 0; 1 run: 1 passed" in result.stdout
     )
@@ -103,6 +103,7 @@ printf '===== 2 passed in 0.1s =====\\n'
     assert "RESULT coverage_spec_lane = exit 0; 1 pages, 0 failed" in result.stdout
     assert "RESULT coverage_unit_lines_pct = 100" in result.stdout
     if failed_python:
+        assert "===== 1 failed, 1 passed in 0.1s =====" in result.stderr
         assert (
             "RESULT coverage_python_lane = exit 1; 1 passed, 1 failed" in result.stdout
         )

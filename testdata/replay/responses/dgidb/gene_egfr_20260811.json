@@ -1,0 +1,189 @@
+{
+  "data": {
+    "genes": {
+      "nodes": [
+        {
+          "name": "EGFR",
+          "geneCategories": [
+            {
+              "name": "KINASE"
+            },
+            {
+              "name": "TYROSINE KINASE"
+            },
+            {
+              "name": "DRUGGABLE GENOME"
+            },
+            {
+              "name": "DRUG RESISTANCE"
+            },
+            {
+              "name": "CLINICALLY ACTIONABLE"
+            },
+            {
+              "name": "CELL SURFACE"
+            }
+          ],
+          "interactions": [
+            {
+              "drug": {
+                "name": "PANITUMUMAB",
+                "approved": true
+              },
+              "interactionScore": 0.1818968711109372,
+              "interactionTypes": [
+                {
+                  "type": "antibody"
+                },
+                {
+                  "type": "inhibitor"
+                },
+                {
+                  "type": "antibody"
+                }
+              ],
+              "sources": [
+                {
+                  "sourceDbName": "TEND"
+                },
+                {
+                  "sourceDbName": "TdgClinicalTrial"
+                },
+                {
+                  "sourceDbName": "ClearityFoundationBiomarkers"
+                },
+                {
+                  "sourceDbName": "CGI"
+                },
+                {
+                  "sourceDbName": "DoCM"
+                },
+                {
+                  "sourceDbName": "MyCancerGenome"
+                },
+                {
+                  "sourceDbName": "GuideToPharmacology"
+                },
+                {
+                  "sourceDbName": "CIViC"
+                },
+                {
+                  "sourceDbName": "ClearityFoundationClinicalTrial"
+                },
+                {
+                  "sourceDbName": "TALC"
+                },
+                {
+                  "sourceDbName": "FDA"
+                },
+                {
+                  "sourceDbName": "TTD"
+                },
+                {
+                  "sourceDbName": "ChEMBL"
+                }
+              ]
+            },
+            {
+              "drug": {
+                "name": "NECITUMUMAB",
+                "approved": true
+              },
+              "interactionScore": 1.091381226665623,
+              "interactionTypes": [
+                {
+                  "type": "antibody"
+                },
+                {
+                  "type": "antibody"
+                },
+                {
+                  "type": "inhibitor"
+                }
+              ],
+              "sources": [
+                {
+                  "sourceDbName": "TdgClinicalTrial"
+                },
+                {
+                  "sourceDbName": "MyCancerGenome"
+                },
+                {
+                  "sourceDbName": "GuideToPharmacology"
+                },
+                {
+                  "sourceDbName": "TALC"
+                },
+                {
+                  "sourceDbName": "TTD"
+                },
+                {
+                  "sourceDbName": "ChEMBL"
+                }
+              ]
+            },
+            {
+              "drug": {
+                "name": "CETUXIMAB",
+                "approved": true
+              },
+              "interactionScore": 0.4648475595057285,
+              "interactionTypes": [
+                {
+                  "type": "inhibitor"
+                },
+                {
+                  "type": "antibody"
+                },
+                {
+                  "type": "antibody"
+                }
+              ],
+              "sources": [
+                {
+                  "sourceDbName": "TEND"
+                },
+                {
+                  "sourceDbName": "CancerCommons"
+                },
+                {
+                  "sourceDbName": "TdgClinicalTrial"
+                },
+                {
+                  "sourceDbName": "ClearityFoundationBiomarkers"
+                },
+                {
+                  "sourceDbName": "CGI"
+                },
+                {
+                  "sourceDbName": "DoCM"
+                },
+                {
+                  "sourceDbName": "MyCancerGenome"
+                },
+                {
+                  "sourceDbName": "GuideToPharmacology"
+                },
+                {
+                  "sourceDbName": "CIViC"
+                },
+                {
+                  "sourceDbName": "TALC"
+                },
+                {
+                  "sourceDbName": "FDA"
+                },
+                {
+                  "sourceDbName": "TTD"
+                },
+                {
+                  "sourceDbName": "ChEMBL"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

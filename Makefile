@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
-.PHONY: landing-gate main-gate repo-audit
+.PHONY: landing-gate main-gate repo-audit installed-wheel-smoke
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
@@ -106,6 +106,7 @@ lint:
 # shipped-feature build and behavior checks before the next landing.
 landing-gate:
 	$(MAKE) lint
+	uv run --no-project python tools/check-replay-live --disable-sources commercial-restricted,semantic-scholar,kegg
 	$(MAKE) test
 	$(MAKE) spec
 
@@ -113,6 +114,10 @@ main-gate:
 	$(MAKE) landing-gate
 	$(MAKE) repo-audit
 	$(MAKE) full-feature-check
+	$(MAKE) installed-wheel-smoke
+
+installed-wheel-smoke: sync-python-dev
+	bash scripts/check-linux-wheel.sh
 
 repo-audit: sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "repo_audit and not release_gate"

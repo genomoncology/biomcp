@@ -1,0 +1,104 @@
+{
+  "last-modified-date" : {
+    "value" : 1520870886378
+  },
+  "name" : {
+    "created-date" : {
+      "value" : 1460759144271
+    },
+    "last-modified-date" : {
+      "value" : 1460759144271
+    },
+    "given-names" : {
+      "value" : "Charles"
+    },
+    "family-name" : {
+      "value" : "Swanton"
+    },
+    "credit-name" : null,
+    "source" : null,
+    "visibility" : "public",
+    "path" : "0000-0002-4299-3018"
+  },
+  "other-names" : {
+    "last-modified-date" : null,
+    "other-name" : [ ],
+    "path" : "/0000-0002-4299-3018/other-names"
+  },
+  "biography" : {
+    "created-date" : {
+      "value" : 1614600093303
+    },
+    "last-modified-date" : {
+      "value" : 1614612594959
+    },
+    "content" : "Charles completed his MDPhD training in 1999 at the Imperial Cancer Research Fund Laboratories and Cancer Research UK clinician scientist/medical oncology training in 2008. Charles is a senior group leader of the Cancer Evolution and Genome Instability Laboratory at the Francis Crick Institute  and combines his research with clinical duties at UCLH, as a thoracic oncologist, focussed on how tumours evolve over space and time. Charles research branched evolutionary histories of solid tumours, processes that drive cancer cell-to-cell variation in the form of new cancer mutations or chromosomal instabilities, and the impact of such cancer diversity on effective immune surveillance and clinical outcome. Charles is chief investigator of TRACERx, a lung cancer evolutionary study and the national PEACE autopsy program.\n \nCharles was made Fellow of the Royal College of Physicians in April 2011, appointed Fellow of the Academy of Medical Sciences in 2015, awarded the Napier Professor in Cancer by the Royal Society in 2016, appointed Cancer Research UK’s Chief Clinician in 2017, and elected Fellow of the Royal Society in 2018 and Fellow of the Academy of American Association for Cancer Research in 2020. Charles is an editorial board member of Cell, Plos Medicine, Cancer Discovery and Annals of Oncology and an advisory board member for Nature Reviews Clinical Oncology and Cancer Cell. In 2016 he co-founded Achilles Therapeutics, a UCL/CRUK/Francis Crick Institute spin-out company, assessing the efficacy of T cells targeting clonal neoantigens.",
+    "visibility" : "public",
+    "path" : "/0000-0002-4299-3018/biography"
+  },
+  "researcher-urls" : {
+    "last-modified-date" : null,
+    "researcher-url" : [ ],
+    "path" : "/0000-0002-4299-3018/researcher-urls"
+  },
+  "emails" : {
+    "last-modified-date" : null,
+    "email" : [ ],
+    "path" : "/0000-0002-4299-3018/email"
+  },
+  "addresses" : {
+    "last-modified-date" : null,
+    "address" : [ ],
+    "path" : "/0000-0002-4299-3018/address"
+  },
+  "keywords" : {
+    "last-modified-date" : null,
+    "keyword" : [ ],
+    "path" : "/0000-0002-4299-3018/keywords"
+  },
+  "external-identifiers" : {
+    "last-modified-date" : {
+      "value" : 1520870886378
+    },
+    "external-identifier" : [ {
+      "created-date" : {
+        "value" : 1520870886378
+      },
+      "last-modified-date" : {
+        "value" : 1520870886378
+      },
+      "source" : {
+        "source-orcid" : null,
+        "source-client-id" : {
+          "uri" : "https://orcid.org/client/0000-0002-5982-8983",
+          "path" : "0000-0002-5982-8983",
+          "host" : "orcid.org"
+        },
+        "source-name" : {
+          "value" : "Scopus - Elsevier"
+        },
+        "assertion-origin-orcid" : {
+          "uri" : "https://orcid.org/0000-0002-4299-3018",
+          "path" : "0000-0002-4299-3018",
+          "host" : "orcid.org"
+        },
+        "assertion-origin-client-id" : null,
+        "assertion-origin-name" : {
+          "value" : "Charles Swanton"
+        }
+      },
+      "external-id-type" : "Scopus Author ID",
+      "external-id-value" : "7005912775",
+      "external-id-url" : {
+        "value" : "http://www.scopus.com/inward/authorDetails.url?authorID=7005912775&partnerID=MN8TOARS"
+      },
+      "external-id-relationship" : "self",
+      "visibility" : "public",
+      "path" : "/0000-0002-4299-3018/external-identifiers/971916",
+      "put-code" : 971916,
+      "display-index" : 0
+    } ],
+    "path" : "/0000-0002-4299-3018/external-identifiers"
+  },
+  "path" : "/0000-0002-4299-3018/person"
+}

@@ -1,0 +1,31 @@
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "returned": 2,
+    "total": null,
+    "has_more": false,
+    "next_page_token": null
+  },
+  "count": 2,
+  "results": [
+    {
+      "genesymbol": "CYP2C19",
+      "drugname": "clopidogrel",
+      "cpiclevel": "A",
+      "pgxtesting": "Actionable PGx",
+      "guidelinename": "CYP2C19 and Clopidogrel"
+    },
+    {
+      "genesymbol": "CES1",
+      "drugname": "clopidogrel",
+      "cpiclevel": "C"
+    }
+  ],
+  "_meta": {
+    "next_commands": [
+      "biomcp get pgx clopidogrel",
+      "biomcp list pgx"
+    ]
+  }
+}

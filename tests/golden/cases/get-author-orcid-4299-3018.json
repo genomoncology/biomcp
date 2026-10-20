@@ -1,0 +1,37 @@
+{
+  "identity": {
+    "kind": "exact_provider",
+    "id": "orcid:0000-0002-4299-3018"
+  },
+  "display_name": "Charles Swanton",
+  "provider_records": [
+    {
+      "id": "orcid:0000-0002-4299-3018",
+      "source": "orcid",
+      "status": "available"
+    }
+  ],
+  "affiliations": [],
+  "paper_count": null,
+  "citation_count": null,
+  "h_index": null,
+  "conflicts": [],
+  "warnings": [],
+  "_meta": {
+    "source_status": [
+      {
+        "source": "orcid",
+        "status": "available"
+      }
+    ],
+    "evidence_urls": [
+      {
+        "source": "orcid",
+        "url": "https://orcid.org/0000-0002-4299-3018"
+      }
+    ],
+    "next_commands": [
+      "biomcp author papers orcid:0000-0002-4299-3018"
+    ]
+  }
+}

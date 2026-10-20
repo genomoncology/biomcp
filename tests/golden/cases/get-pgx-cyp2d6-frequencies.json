@@ -1,0 +1,143 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "CPIC",
+        "url": "https://cpicpgx.org/genes/cyp2d6/"
+      },
+      {
+        "label": "PharmGKB",
+        "url": "https://www.pharmgkb.org/gene/CYP2D6"
+      }
+    ],
+    "next_commands": [
+      "biomcp search pgx -g CYP2D6"
+    ],
+    "section_sources": [
+      {
+        "key": "frequencies",
+        "label": "Population Frequencies",
+        "outcome": "data",
+        "sources": [
+          "CPIC"
+        ]
+      }
+    ]
+  },
+  "frequencies": [
+    {
+      "allele": "*1",
+      "frequency": 0.21115738,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 1.0,
+      "min_frequency": 0.306,
+      "population_group": "African American/Afro-Caribbean",
+      "subject_count": 12165
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.5164585,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.994,
+      "min_frequency": 0.3889,
+      "population_group": "American",
+      "subject_count": 5036
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.29324096,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.96,
+      "min_frequency": 0.354,
+      "population_group": "Central/South Asian",
+      "subject_count": 4208
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.25353962,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.9931,
+      "min_frequency": 0.195,
+      "population_group": "East Asian",
+      "subject_count": 21185
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.28500712,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 1.0,
+      "min_frequency": 0.244,
+      "population_group": "European",
+      "subject_count": 65090
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.36455274,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.998,
+      "min_frequency": 0.1229,
+      "population_group": "Latino",
+      "subject_count": 9347
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.24876314,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.9,
+      "min_frequency": 0.286,
+      "population_group": "Near Eastern",
+      "subject_count": 3254
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.6170194,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.8669,
+      "min_frequency": 0.334,
+      "population_group": "Oceanian",
+      "subject_count": 999
+    },
+    {
+      "allele": "*1",
+      "frequency": 0.15676576,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.96,
+      "min_frequency": 0.0675,
+      "population_group": "Sub-Saharan African",
+      "subject_count": 3209
+    },
+    {
+      "allele": "*10",
+      "frequency": 0.038160447,
+      "genesymbol": "CYP2D6",
+      "max_frequency": 0.075,
+      "min_frequency": 0.025,
+      "population_group": "African American/Afro-Caribbean",
+      "subject_count": 12165
+    }
+  ],
+  "gene": "CYP2D6",
+  "query": "CYP2D6",
+  "section_outcomes": {
+    "annotations": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "frequencies": {
+      "outcome": "data",
+      "sources": [
+        "CPIC"
+      ]
+    }
+  },
+  "section_pagination": {
+    "frequencies": {
+      "has_more": true,
+      "limit": 10,
+      "next_offset": 10,
+      "offset": 0,
+      "returned": 10,
+      "total": null
+    }
+  }
+}

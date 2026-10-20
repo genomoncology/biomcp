@@ -315,3 +315,49 @@ print(json.dumps(results))
         upstream.shutdown()
         upstream.server_close()
         thread.join(timeout=5)
+
+
+def test_stored_root_object_routes_preserve_their_source_identity(tmp_path: Path) -> None:
+    from replay_env import replay_environment
+
+    root = tmp_path / "fixture"
+    root.mkdir()
+    (root / "src").symlink_to(ROOT / "src", target_is_directory=True)
+    directory = root / "testdata/replay"
+    directory.mkdir(parents=True)
+    (directory / "reply.json").write_bytes(b'{"recorded": true}')
+    path = "/PMC3467229.1/object.json"
+    base = "https://pmc-oa-opendata.s3.amazonaws.com"
+    cases = [
+        ("valid", "pmc-oa", base + path + "?case=valid", 200),
+        ("provider", "unknown", base + path + "?case=provider", 404),
+        ("origin", "pmc-oa", "https://example.invalid" + path + "?case=origin", 404),
+        ("path", "pmc-oa", base + "/different.json?case=path", 404),
+        ("query", "pmc-oa", base + path + "?case=different", 404),
+    ]
+    routes = {
+        f"GET {path}?case={case}": {
+            "upstream": upstream,
+            "status": 200,
+            "file": "reply.json",
+            "headers": {"content-type": "application/json"},
+            "recording_provenance": {"provider": provider},
+        }
+        for case, provider, upstream, _ in cases
+    }
+    (directory / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    with replay_environment(root=root) as replay:
+        for case, _, _, expected in [*cases, ("absent", "", "", 404)]:
+            try:
+                response = urllib.request.urlopen(
+                    replay.origin + path + "?case=" + case, timeout=5
+                )
+            except urllib.error.HTTPError as error:
+                response = error
+            with response:
+                body = response.read()
+                assert response.status == expected, (case, body)
+                if expected == 200:
+                    assert body == b'{"recorded": true}'

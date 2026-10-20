@@ -61,6 +61,7 @@ pub(crate) fn classify_html_document(
     };
 
     Ok(ClassifiedArticleDocument {
+        license: None,
         coverage,
         markdown,
         abstract_text,

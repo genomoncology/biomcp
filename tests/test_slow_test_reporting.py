@@ -92,6 +92,7 @@ def test_nextest_reporter_preserves_child_signal() -> None:
     assert result.returncode == 143, result.stdout + result.stderr
 
 
+@pytest.mark.timeout(30)
 def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
     import signal
 
@@ -102,23 +103,35 @@ def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
             str(ROOT / "tools/report-slow-tests.py"),
             sys.executable,
             "-c",
-            "import os, time; print(os.getpid(), flush=True); time.sleep(20)",
+            "import os, signal\n"
+            "def terminate(signum, frame):\n"
+            "    print('SIGTERM forwarded', flush=True)\n"
+            "    signal.signal(signal.SIGTERM, signal.SIG_DFL)\n"
+            "    os.kill(os.getpid(), signal.SIGTERM)\n"
+            "signal.signal(signal.SIGTERM, terminate)\n"
+            "print(os.getpid(), flush=True)\n"
+            "signal.pause()\n",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        start_new_session=True,
     ) as process:
         try:
             assert process.stdout is not None
             child_pid = int(process.stdout.readline())
             process.send_signal(signal.SIGTERM)
-            stdout, stderr = process.communicate(timeout=3)
+            # Observe forwarding and exit; the test watchdog only bounds hangs.
+            assert process.stdout.readline() == "SIGTERM forwarded\n"
+            stdout, stderr = process.communicate()
             assert process.returncode == 143, stdout + stderr
             with pytest.raises(ProcessLookupError):
                 os.kill(child_pid, 0)
+            child_pid = None
         finally:
-            if child_pid is not None:
-                try:
-                    os.kill(child_pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+            # Include a runner whose PID readiness was never forwarded.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
