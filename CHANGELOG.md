@@ -89,6 +89,8 @@
 
 ### Internal
 
+- Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
+
 - Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
 
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
