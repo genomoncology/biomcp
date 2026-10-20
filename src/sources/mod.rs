@@ -2181,7 +2181,6 @@ mod tests {
         Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
     };
-    use tokio::io::AsyncWriteExt;
     fn test_response(
         status: StatusCode,
         headers: &[(&'static str, &'static str)],
