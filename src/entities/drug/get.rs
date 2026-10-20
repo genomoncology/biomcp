@@ -1387,14 +1387,21 @@ async fn populate_us_regional_sections(
         drug.shortage = None;
     }
 
-    if section_flags.include_regulatory || section_flags.include_approvals {
+    let compact_approvals = section_flags.include_regulatory || section_flags.include_approvals;
+    if section_flags.include_approval_history {
+        add_approvals_section(drug, label_response, identity_brands, true).await;
+        if compact_approvals {
+            let outcome = drug
+                .section_outcomes
+                .get("approval-history")
+                .expect("completed approval history")
+                .clone();
+            drug.section_outcomes.complete("approvals", outcome);
+        }
+    } else if compact_approvals {
         add_approvals_section(drug, label_response, identity_brands, false).await;
     } else {
         drug.approvals = None;
-    }
-
-    if section_flags.include_approval_history {
-        add_approvals_section(drug, label_response, identity_brands, true).await;
     }
 
     drug.fda_orphan_designations = if section_flags.include_regulatory {

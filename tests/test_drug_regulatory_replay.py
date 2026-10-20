@@ -33,6 +33,7 @@ def replay(tmp_path: Path):
             query = parse_qs(path.query).get("search", [""])[0]
             name = state["name"]
             if "drugsfda" in path.path:
+                state["approval_requests"] = state.get("approval_requests", 0) + 1
                 if state["approvals_unavailable"]:
                     self.answer({}, 503)
                     return
@@ -124,9 +125,10 @@ def replay(tmp_path: Path):
     binary = os.environ["BIOMCP_BIN"]
 
     def run(section, markdown=False):
+        sections = [section] if isinstance(section, str) else section
         result = subprocess.run([binary, *([] if markdown else ["--json"]), "get", "drug",
-                                 "--name", state["name"], section,
-                                 *(["--region", "us"] if section in {"regulatory", "safety"} else [])], env=env, text=True,
+                                 "--name", state["name"], *sections,
+                                 *(["--region", "us"] if len(sections) == 1 and sections[0] in {"regulatory", "safety"} else [])], env=env, text=True,
                                 capture_output=True, timeout=30, check=False)
         assert result.returncode == 0, result.stdout + result.stderr
         return result if markdown else (json.loads(result.stdout), result.stderr)
@@ -262,3 +264,13 @@ def test_approval_history_preserves_full_provider_submissions_and_documents(repl
         data, _ = run(section)
         assert data["section_outcomes"]["approval-history"]["outcome"] == "not_requested"
         assert len(data["approvals"][0]["submissions"]) == 8
+
+
+@pytest.mark.parametrize("section", ["approvals", "regulatory", "all"])
+def test_combined_approval_views_share_one_provider_result(replay, section):
+    state, run = replay
+    state.update(name="pembrolizumab", brands=["KEYTRUDA"])
+    data, _ = run([section, "approval-history"])
+    assert state["approval_requests"] == 1
+    assert len(data["approvals"][0]["submissions"]) == 127
+    assert data["section_outcomes"]["approvals"] == data["section_outcomes"]["approval-history"]
