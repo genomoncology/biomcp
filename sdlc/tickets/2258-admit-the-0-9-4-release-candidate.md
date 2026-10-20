@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293, 2294
 
 Reviews: revision 1b8e728, accept
 
@@ -157,3 +157,7 @@ Ian moved 2288, 2289, 2290, 2291, 2236 and rebuild-cost work 2284 into 0.9.4. Fi
 PM decision: current CPIC frequency and guideline routes return HTTP400 for obsolete sort columns. Repair 2292 is required for 0.9.4, including corrected public recordings and existing live-check coverage. The failed exact capture is retained under 2102 public-captures/2236; successful unrelated capture routes continue.
 
 PM decision: bounded checker repair2293 qualifies real formats. XML DOCTYPE is accepted without entity expansion/external resource access; non-JSON/XML status/type/signature checks carry that explicit limited scope. Coverage reuses the unchanged39 prior live observations plus exact new observed captures and their CLI proof. No new full live collection.
+
+PM decision: 2294 is required for 0.9.4. Complete sufficient primary archive asset answers return without waiting for the optional secondary ZIP; preserve fallback availability and budgets. The owning product lane is separate from 2236 recorded coverage.
+
+PM decision: the rebuild comparison uses Gator for both arms after the PM relays its quiet-host hold. This supersedes the earlier M5-only measurement location for 2284; the completed 2234 M5 comparison remains historical context.
