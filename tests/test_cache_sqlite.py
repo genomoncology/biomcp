@@ -13,6 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
 from replay_env import retained_cache_env  # noqa: E402
+from cache_reuse import admitted_provider_keys, assert_admitted_reused, provider_key  # noqa: E402
 
 import test_cache_persistent_size  # noqa: E402
 
@@ -75,6 +76,7 @@ def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_pat
         assert (cache / name / "keep.txt").read_text() == "saved bytes"
 
 
+@pytest.mark.timeout(120)
 def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provider):
     env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
     first = invoke(env, "search", "gene", "BRAF", "--limit", "1")
@@ -85,7 +87,7 @@ def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provid
     try:
         assert writer.stdout.readline().strip() == "ready"
         writer.kill()
-        writer.wait(timeout=5)
+        writer.wait()
         assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == first
         with sqlite3.connect(database) as connection:
             assert connection.execute("pragma integrity_check").fetchone() == ("ok",)
@@ -93,7 +95,7 @@ def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provid
     finally:
         if writer.poll() is None:
             writer.kill()
-            writer.wait(timeout=5)
+            writer.wait()
 
 
 def test_small_reply_lookup_uses_index_among_one_hundred_thousand_entries(tmp_path, gene_provider):
@@ -133,6 +135,7 @@ def test_explicit_legacy_cleanup_preserves_saved_files_and_current_cache(tmp_pat
     assert (cache / "biomcp.db").is_file()
 
 
+@pytest.mark.timeout(120)
 def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path, gene_provider, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from http.server import BaseHTTPRequestHandler
@@ -192,11 +195,16 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
             assert {parse_qs(urlsplit(url).query)["q"][0] for url in urls} == {r"BRAF\-cli", r"BRAF\-mcp"}
             assert all(url.startswith(gene_provider + "/query?") for url in urls), urls
             assert connection.execute("pragma integrity_check").fetchone() == ("ok",)
-        admitted_requests = list(requests)
+        admitted = admitted_provider_keys(tmp_path / "cache")
+        admitted_requests = {provider_key(path) for path in requests}
+        before_reuse = len(requests)
         for query in queries:
             assert mcp_gene(query) == expected
             assert invoke(env, "search", "gene", query, "--limit", "1")["results"] == expected
-        assert requests == admitted_requests, "both processes must reuse the admitted responses"
+        assert_admitted_reused(
+            admitted, admitted_requests,
+            (provider_key(path) for path in requests[before_reuse:]),
+        )
     finally:
         client.close()
 

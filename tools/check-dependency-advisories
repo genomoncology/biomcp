@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Run OSV with exactly the reviewed advisory exceptions from deny.toml."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import tomllib
+
+
+def reviewed_policy() -> str:
+    policy = tomllib.loads(Path("deny.toml").read_text())
+    entries = policy["advisories"].get("ignore", [])
+    if not isinstance(entries, list):
+        raise ValueError("deny.toml advisory ignore entries must be a list")
+    sections = []
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {"id", "reason"}:
+            raise ValueError("unsupported advisory exception; expected only id and reason")
+        if any(not isinstance(entry[key], str) or not entry[key].strip() for key in ("id", "reason")):
+            raise ValueError("each reviewed advisory exception needs an id and reason")
+        sections.append("[[IgnoredVulns]]\nid = " + json.dumps(entry["id"]) + "\nreason = " + json.dumps(entry["reason"]) + "\n")
+    return "\n".join(sections)
+
+
+def validate_lockfiles() -> None:
+    # Validate both inputs before scanning so a partially readable tree cannot
+    # qualify when the scanner extracts packages from only one lockfile.
+    for name in ("Cargo.lock", "uv.lock"):
+        lock = tomllib.loads(Path(name).read_text())
+        packages = lock.get("package")
+        if not isinstance(packages, list) or not packages:
+            raise ValueError(f"{name} has no resolved packages")
+        for package in packages:
+            if not isinstance(package, dict) or any(
+                not isinstance(package.get(key), str) or not package[key]
+                for key in ("name", "version")
+            ):
+                raise ValueError(f"{name} has an invalid resolved package")
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("usage: tools/check-dependency-advisories SCANNER", file=sys.stderr)
+        return 2
+    try:
+        validate_lockfiles()
+        policy = reviewed_policy()
+        with tempfile.TemporaryDirectory(prefix="biomcp-osv-") as directory:
+            config = Path(directory) / "osv-scanner.toml"
+            config.write_text(policy)
+            return subprocess.run([
+                sys.argv[1], "scan", "source", "--lockfile=Cargo.lock", "--lockfile=uv.lock",
+                f"--config={config}",
+            ], check=False).returncode
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Dependency advisory check failed: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

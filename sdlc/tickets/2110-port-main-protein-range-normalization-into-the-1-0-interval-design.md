@@ -1,6 +1,8 @@
 # 2110 — Port main's protein-range normalization into the 1.0 interval design
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-20, Ian paused the 1.0 line; withdrawn so pm next offers only active work. Reopen when 1.0 resumes..
 
 Milestone: 1.0
 
