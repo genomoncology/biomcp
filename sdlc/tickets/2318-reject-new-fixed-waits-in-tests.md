@@ -20,4 +20,4 @@ After 2301 and 2302, one routine check rejects a new fixed sleep or short fixed 
 
 35 Rust files call sleep and Python tests used 14 short fixed deadlines; fixed waits caused 2298, 2178 and 2175 (root cause record 2299). From Ian's process assessment of 2026-10-20.
 
-Changes: `tools/check-quality-ratchet.py`, `tests/test_quality_ratchet_contract.py`, `tools/test-wait-exceptions.json`, `CHANGELOG.md`.
+Changes: `tools/check-quality-ratchet.py`, `tests/test_quality_ratchet_contract.py`, `tools/test-wait-exceptions.json`, `tests/managed_state_permissions.rs`, `CHANGELOG.md`.

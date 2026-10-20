@@ -410,6 +410,9 @@ fn queued_tcp_contact_is_never_reported_as_no_contact() {
             .expect("connect before fixture teardown");
         let result = finish_mygene_fixture(fixture);
         drop(client);
-        assert!(result.is_err(), "completed TCP contact was reported as {result:?}");
+        assert!(
+            result.is_err(),
+            "completed TCP contact was reported as {result:?}"
+        );
     }
 }
