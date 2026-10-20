@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292
 
 Reviews: revision 1b8e728, accept
 
@@ -149,3 +149,5 @@ Whole repaired Linux2258/1792502148739-726187 passed all stages on2ca, and actua
 ## Final process batch
 
 Ian moved 2288, 2289, 2290, 2291, 2236 and rebuild-cost work 2284 into 0.9.4. Finish these reviewed batches before the one new full untagged rehearsal. Formal rebuild measurements require a quiet M5. FDA approval-history feature 2272 stays accepted on its 0.9.5 branch until after the 0.9.4 tag. The earlier deferral of process improvements is superseded.
+
+PM decision: current CPIC frequency and guideline routes return HTTP400 for obsolete sort columns. Repair 2292 is required for 0.9.4, including corrected public recordings and existing live-check coverage. The failed exact capture is retained under 2102 public-captures/2236; successful unrelated capture routes continue.
