@@ -12,6 +12,8 @@ Depends on: 2234, 2294, 2296
 
 Reviews: revision 7b56fb8, accept
 
+Reviews: revision b8eb64d, accept
+
 ## Outcome
 
 Disposition the measured test-profile rebuild slowdown through the approved bounded attribution and single prototype. Land a reduction only if the controlled comparison supports it; otherwise reject the prototype and record that the source cause remains unknown, as the PM explicitly approved.
