@@ -31,6 +31,7 @@
 
 set -euo pipefail
 
+FAILED=0
 DRY_RUN=0
 ONLY=""
 EXPECT_TAG=""
@@ -116,11 +117,18 @@ runsh() {
 # python3's clock gives the same sub-second precision on every gate host;
 # GNU date's %s.%N does not exist on the macOS one.
 timedsh() {
-  local label="$1" command="$2" start end wall
+  local label="$1" command="$2" start end wall status logfile
+  shift 2
   show "$command"
   if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
   start=$(python3 -c 'import time; print(time.time())')
-  bash -c "$command"
+  if bash -e -o pipefail -c "$command"; then
+    :
+  else
+    status=$?
+    for logfile in "$@"; do cat "$logfile" >&2; done
+    return "$status"
+  fi
   end=$(python3 -c 'import time; print(time.time())')
   wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
   result "${label}_wall_s" "$wall"
@@ -131,16 +139,21 @@ timedsh() {
 # nonzero exit is data the reports need, so the run continues and the status
 # reaches the report step instead of stopping the script.
 timedsh_exit() {
-  local label="$1" exitfile="$2" command="$3" start end wall status
+  local label="$1" exitfile="$2" command="$3" start end wall status logfile
+  shift 3
   show "$command"
   if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
   start=$(python3 -c 'import time; print(time.time())')
   set +e
-  bash -c "$command"
+  bash -e -o pipefail -c "$command"
   status=$?
   set -e
   end=$(python3 -c 'import time; print(time.time())')
   wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
+  if [[ "$status" != 0 ]]; then
+    FAILED=1
+    for logfile in "$@"; do cat "$logfile" >&2; done
+  fi
   printf '%s\n' "$status" >"$exitfile"
   result "${label}_wall_s" "$wall"
 }
@@ -460,7 +473,7 @@ fi
 
 if want_section make-test; then
   say make-test "the routine gate, wall time with artifacts already fresh"
-  timedsh make_test "make test > $LOGD/make-test.log 2>&1"
+  timedsh make_test "make test > $LOGD/make-test.log 2>&1" "$LOGD/make-test.log"
   runsh "grep -E 'Summary \\[|tests? run:' $LOGD/make-test.log | tail -1 || true"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/make-test.log | tail -2 || true"
   runsh "grep -iE 'documentation built|docs built' $LOGD/make-test.log | tail -1 || true"
@@ -501,7 +514,7 @@ fi
 if want_section rust-test-census; then
   say rust-test-census "test-duration census of the routine Rust suite (from the archive make test built)"
   timedsh_exit rust_test_census "$LOGD/census.exit" \
-    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err"
+    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err" "$LOGD/census.jsonl" "$LOGD/census.err"
   if ((!DRY_RUN)); then
     census_status="$(<"$LOGD/census.exit")"
     if [[ "$census_status" == "0" ]]; then
@@ -547,7 +560,7 @@ fi
 if want_section python-test-count; then
   say python-test-count "python lane test count (collection, no runs)"
   timedsh python_collect \
-    "tools/run-offline -- env BIOMCP_BIN=$PWD/target/spec/biomcp uv run --no-sync pytest tests/ --collect-only -q > $LOGD/pytest-collect.txt 2>&1"
+    "tools/run-offline -- env BIOMCP_BIN=$PWD/target/spec/biomcp uv run --no-sync pytest tests/ --collect-only -q > $LOGD/pytest-collect.txt 2>&1" "$LOGD/pytest-collect.txt"
   runsh "tail -2 $LOGD/pytest-collect.txt"
   show "python3 (collected count)"
   if ((!DRY_RUN)); then
@@ -573,7 +586,7 @@ fi
 
 if want_section make-spec; then
   say make-spec "the spec lane, wall time with artifacts already fresh"
-  timedsh make_spec "make spec > $LOGD/make-spec.log 2>&1"
+  timedsh make_spec "make spec > $LOGD/make-spec.log 2>&1" "$LOGD/make-spec.log"
   runsh "tail -6 $LOGD/make-spec.log"
 fi
 
@@ -581,7 +594,7 @@ fi
 
 if want_section make-lint; then
   say make-lint "the lint gate, wall time"
-  timedsh make_lint "make lint > $LOGD/make-lint.log 2>&1"
+  timedsh make_lint "make lint > $LOGD/make-lint.log 2>&1" "$LOGD/make-lint.log"
   runsh "tail -6 $LOGD/make-lint.log"
 fi
 
@@ -591,10 +604,10 @@ if want_section release-build; then
   say release-build "cold release build (default features, shipped profile: thin LTO, one codegen unit, strip)"
   if TIME_BIN=$(gnu_time); then
     timedsh release_build \
-      "$TIME_BIN -v -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
+      "$TIME_BIN -v -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1" "$LOGD/release-build.log"
   else
     timedsh release_build \
-      "/usr/bin/time -l -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
+      "/usr/bin/time -l -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1" "$LOGD/release-build.log"
   fi
   runsh "grep -E 'Elapsed \\(wall clock|Maximum resident set size|User time|System time' $LOGD/release-time.txt 2>/dev/null || true"
   runsh "tail -3 $LOGD/release-build.log"
@@ -640,7 +653,7 @@ fi
 
 if want_section llvm-lines; then
   say llvm-lines "LLVM IR lines and function copies of the library, release profile"
-  timedsh llvm_lines "cargo llvm-lines --release --lib > $LOGD/llvm-lines.txt 2>&1"
+  timedsh llvm_lines "cargo llvm-lines --release --lib > $LOGD/llvm-lines.txt 2>&1" "$LOGD/llvm-lines.txt"
   runsh "head -8 $LOGD/llvm-lines.txt"
   show "awk (sum of the Lines and Copies columns)"
   if ((!DRY_RUN)); then
@@ -792,19 +805,19 @@ if want_section coverage; then
     mkdir -p "$CARGO_TARGET_DIR"
   fi
   timedsh coverage_build \
-    "cargo build --locked --no-default-features --all-targets > $LOGD/cov-build.log 2>&1"
+    "cargo build --locked --no-default-features --all-targets > $LOGD/cov-build.log 2>&1" "$LOGD/cov-build.log"
   # absolute path: the suites run subprocesses from many working
   # directories, and a relative profile path silently drops their profiles
   export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/out-%8m.profraw"
   timedsh_exit coverage_integration_tests "$LOGD/cov-integration.exit" \
-    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(test)' > $LOGD/cov-integration.log 2>&1"
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(test)' > $LOGD/cov-integration.log 2>&1" "$LOGD/cov-integration.log"
   runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-integration.log | tail -1 || true"
   if ((!DRY_RUN)); then
     record_cov_suite integration_tests nextest "$LOGD/cov-integration.exit" "$LOGD/cov-integration.log"
   fi
   export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/unit-%8m.profraw"
   timedsh_exit coverage_unit_tests "$LOGD/cov-unit.exit" \
-    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1"
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1" "$LOGD/cov-unit.log"
   runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-unit.log | tail -1 || true"
   if ((!DRY_RUN)); then
     record_cov_suite unit_tests nextest "$LOGD/cov-unit.exit" "$LOGD/cov-unit.log"
@@ -820,7 +833,7 @@ if want_section coverage; then
   fi
   export LLVM_PROFILE_FILE="$PWD/$COVT/out-%8m.profraw"
   timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
-    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
+    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1" "$LOGD/cov-pytest.log"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
   if ((!DRY_RUN)); then
     record_cov_suite python_lane pytest "$LOGD/cov-pytest.exit" "$LOGD/cov-pytest.log"
@@ -836,7 +849,7 @@ export BIOMCP_BIN=$PWD/$COVT/debug/biomcp
 ENVEOF
 cat .cache/spec-artifacts.env"
   timedsh_exit coverage_spec_lane "$LOGD/cov-spec.exit" \
-    "PATH=\"$PWD/$COVT/debug:\$PATH\" BIOMCP_SPEC_ARTIFACTS_PREPARED=1 ROUTINE_CARGO_FEATURES=--no-default-features SPEC_PROFILE=dev tools/run-offline -- bash scripts/run-specs.sh spec > $LOGD/cov-spec.log 2>&1"
+    "PATH=\"$PWD/$COVT/debug:\$PATH\" BIOMCP_SPEC_ARTIFACTS_PREPARED=1 ROUTINE_CARGO_FEATURES=--no-default-features SPEC_PROFILE=dev tools/run-offline -- bash scripts/run-specs.sh spec > $LOGD/cov-spec.log 2>&1" "$LOGD/cov-spec.log"
   runsh "tail -4 $LOGD/cov-spec.log || true"
   if ((!DRY_RUN)); then
     record_cov_suite spec_lane spec "$LOGD/cov-spec.exit" "$LOGD/cov-spec.log"
@@ -873,7 +886,7 @@ cat .cache/spec-artifacts.env"
     # top level) pins it. Driver suites already restored the caller's
     # environment; these report-only removals prevent any caller pins
     # from redirecting profile discovery.
-    runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV -u CARGO_LLVM_COV_TARGET_DIR cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
+    runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV -u CARGO_LLVM_COV_TARGET_DIR cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1 || { status=\$?; cat $LOGD/cov-report-${report_set//-/_}.txt >&2; exit \$status; }; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
     if ((!DRY_RUN)); then
       incomplete=""
       for feed in $feeds; do
@@ -905,7 +918,7 @@ if want_section runtime; then
   runsh 'HOST_CACHE=$(python3 -c "import sys; print(sys.argv[1] if sys.platform != \"darwin\" else sys.argv[2])" "$HOME/.cache/biomcp" "$HOME/Library/Caches/biomcp"); { find "$HOST_CACHE/http" -type f 2>/dev/null || true; } | wc -l; du -sh "$HOST_CACHE" 2>/dev/null || echo "no host cache"'
   show "python3 (five warm/cache-off pairs; ten drug-card pairs; raw samples, median and spread in seconds)"
   if ((!DRY_RUN)); then
-    RUN_SCRATCH="$PWD/$LOGD/runtime" python3 - <<'PY'
+    if RUN_SCRATCH="$PWD/$LOGD/runtime" python3 - <<'PY'
 import hashlib
 import json
 import os
@@ -964,6 +977,10 @@ def run_once(case, argv, cache, mode, phase):
                   stdout_bytes=len(output), stdout_sha256=hashlib.sha256(output).hexdigest())
     samples.append(sample)
     (scratch / "samples.json").write_text(json.dumps(samples, indent=2) + "\n")
+    if code != 0 or timed_out:
+        print("failed command: " + " ".join([bin_path, *argv]), file=sys.stderr)
+        print(output.decode(errors="replace"), file=sys.stderr, end="")
+        print(errors.decode(errors="replace"), file=sys.stderr, end="")
     print(f"sample {stem}: {elapsed:.6f}s exit {code} timeout {timed_out} gwas {gwas_errors}", flush=True)
     return sample
 
@@ -1009,7 +1026,13 @@ for case, argv in {
     values = [run_once(case, argv, warm, "default", "measure") for _ in range(5)]
     report(case, values)
 
+raise SystemExit(1 if any(s["exit_code"] != 0 or s["timed_out"] for s in samples) else 0)
 PY
+    then
+      :
+    else
+      FAILED=1
+    fi
   fi
 fi
 
@@ -1017,7 +1040,7 @@ if want_section edit-test-group; then
   say edit-test-group "one Rust edit followed by one existing gene-render test group"
   runsh 'touch src/render/markdown/gene.rs'
   timedsh_exit edit_test_group "$LOGD/edit-test-group.exit" \
-    "tools/run-offline -- tools/with-build-identity cargo nextest run --locked --no-default-features --lib -E 'test(gene_markdown)' > $LOGD/edit-test-group.log 2>&1"
+    "tools/run-offline -- tools/with-build-identity cargo nextest run --locked --no-default-features --lib -E 'test(gene_markdown)' > $LOGD/edit-test-group.log 2>&1" "$LOGD/edit-test-group.log"
   if ((!DRY_RUN)); then
     result edit_test_group_exit "$(<"$LOGD/edit-test-group.exit")"
     if [[ "$(<"$LOGD/edit-test-group.exit")" != 0 ]] || ! grep -qE 'Summary .* [1-9][0-9]* tests? run:' "$LOGD/edit-test-group.log"; then
@@ -1090,3 +1113,4 @@ if want_section host-after; then
 fi
 
 printf '\n### done — measurement complete\n'
+exit "$FAILED"
