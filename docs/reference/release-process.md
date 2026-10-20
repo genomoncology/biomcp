@@ -70,6 +70,8 @@ python3 scripts/check-release-metadata.py --candidate-sha "$(git rev-parse HEAD)
 
 Use the intended stable version and tag. Run the command through the configured local build job. It runs the existing version, changelog, runbook, citation, release-note and Rust metadata checks, continues after failures, and names every failed group. It does not create a tag. Full release qualification and rehearsal remain separate steps.
 
+Run this command before pushing changes. Its repository contract tier runs `make repo-audit`, using that target's maintained whole-repository test selection.
+
 Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` checks Cargo, Python, lockfiles, `manifest.json`, both `server.json` fields, `CITATION.cff`, and the concrete Homebrew version. `scripts/check-release-versions.py` adds tag equality and stable-tag enforcement, so the release workflow refuses a tag whose own name carries `-dev` and refuses a stable tag while any committed version still does. Commit the complete version change before pushing the tag. The current release candidate is stable Cargo `0.9.4` and Python `0.9.4`. Main carries the next development version between releases, and development builds report the development version with a commit suffix. The release commit drops the development suffix and commits the released number throughout the package, registry, and citation metadata. Homebrew remains a version placeholder until the release workflow renders and publishes its formula.
 
 ## Permissions and concurrency

@@ -93,6 +93,9 @@
 
 ### Internal
 
+- Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
+- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
+
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
