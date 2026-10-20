@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import runpy
+import shlex
 import subprocess
 import sys
 import threading
@@ -579,10 +580,22 @@ def test_inventory_uses_runtime_provider_policy_identity(
 
 def test_inventory_refuses_unknown_provider_identity(tmp_path):
     replay, _ = recording(tmp_path, "https://example.invalid", provider="future-source")
-    process, results, summary = run_check(tmp_path, replay)
+    recipe = (ROOT / "Makefile").read_text().split("landing-gate:\n", 1)[1].split("\n\n", 1)[0]
+    command = next(line.strip() for line in recipe.splitlines() if "tools/check-replay-live" in line)
+    arguments = shlex.split(command)
+    assert "--live" not in arguments
+    # Execute the real gate recipe with only its Python launcher replaced, using
+    # an isolated unknown recording instead of the repository inventory.
+    arguments = [sys.executable, str(CHECKER), *arguments[5:]]
+    process = subprocess.run(
+        [*arguments, "--replay-dir", str(replay)],
+        capture_output=True, text=True, timeout=30,
+        env=isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"),
+    )
+    rows = [json.loads(line) for line in process.stdout.splitlines()]
     assert process.returncode == 1
-    assert summary["blocked"] == 1
-    assert results[0]["details"] == ["unknown or ambiguous provider policy identity"]
+    assert rows[-1]["summary"]["blocked"] == 1
+    assert rows[0]["details"] == ["unknown or ambiguous provider policy identity"]
 
 
 def test_policy_identity_follows_runtime_declaration_and_refuses_ambiguity(tmp_path):
