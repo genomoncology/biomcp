@@ -33,3 +33,7 @@ The initial claim permits only the named test and owned record/changelog. If evi
 Retain the original failure and the unavailable-case-database limitation. Use one bounded focused diagnosis through pm job after the coordinator releases a slot, with expected-red and corrected-green proof and meaningful sensitivity to the identified defect. Preserve any newly reproduced failed case database before teardown using the smallest existing control. Run affected tests and required lint; reuse unchanged artifacts. Push the final green implementation once, report its exact revision and evidence, and stop for fresh review. No full gate, landing or tag by the developer.
 
 Keep: experiments/170-biomcp-2233-linux-offline-evidence — retain all initial, failed and renewed final Linux attempts, including the new parallel-article failure.
+
+## Progress
+
+- 2026-10-19 started
