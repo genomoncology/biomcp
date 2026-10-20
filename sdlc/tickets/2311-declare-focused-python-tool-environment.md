@@ -4,17 +4,21 @@ priority: 2
 
 # 2311 — Declare the focused Python tool environment
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Depends on: 2308
 
+Reviews: revision 6cbe728, accept
+
+Reviews: revision 957e895, accept
+
 ## Outcome
 
 One existing declared Python bootstrap supplies pinned Ruff beside pytest. Focused checks use one documented command convention and their own job environment; they never borrow another ticket environment. Keep the established Ruff version as one source of truth and preserve ordinary lint failures. Add no release gate or cleanup framework.
 
-Changes: `pyproject.toml`, `uv.lock`, `Makefile`, `bin/lint`, `AGENTS.md`, `tests/test_lint.py`, `CHANGELOG.md`, `sdlc/records/2311-focused-python-environment.md`.
+Changes: `.github/actions/lane-setup/action.yml`, `.github/workflows/ci.yml`, `tests/test_upstream_planning_analysis_docs.py`, `pyproject.toml`, `uv.lock`, `Makefile`, `bin/lint`, `AGENTS.md`, `tests/test_lint.py`, `CHANGELOG.md`, `sdlc/records/2311-focused-python-environment.md`.
 
 ## Evidence
 
