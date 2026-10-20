@@ -73,3 +73,10 @@ The earlier routine pass on `851e73b53` qualifies its original call-only impleme
 
 
 Gator mechanical job `2299/1792528879304-1253965` passed changed-file Ruff and the tracked-text scans. The quality ratchet reported a tooling error because `mustmatch` was unavailable on Gator. No native compilation ran. Its exact source overlays, commands and output remain under `failure-state/2299/reviewer-mechanical-final`. This run does not claim a quality-ratchet pass. The required routine check must supply that gate. Local whitespace validation passed for the repair.
+
+
+## Reviewed routine qualification
+
+M5 job `2299/1792529260237-46688` passed on clean committed candidate `a141519870ed8c8a6bb174f2e40f5dcc4d8be882`, containing reviewed published main `267f583c2a28605b0a4998a0d282812fbd7a132d`. The retained runner fetched the exact candidate bundle, asserted that revision and published-base ancestry, set the ticket branch identity, prepared its own Python environment and ran the binary-module marker contract followed by `make landing-gate`. Every command exited zero and the final tracked-input check was clean. The expanded setup, call and teardown regressions passed against the job's real CLI under the routine worker run. This routine supplies the quality-ratchet gate that Gator could not run. It supersedes the earlier routine qualification for the changed retention implementation.
+
+Complete source and raw results remain on M5 under `failure-state/2299/candidate-a14151987.bundle`, `landing_gate_review_a14151987.py` and `routine-a14151987`. The final evidence commit changes prose only. The gate proves routine correctness on Darwin; Darwin supplied no network isolation, and this run makes no Linux offline claim. Original red phase evidence, positive retained state and the original immutable CLI remain untouched.
