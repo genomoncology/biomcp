@@ -98,6 +98,8 @@
 
 ### Internal
 
+- Add a local nightly target for stress, optimized panic recovery, protobuf generation, long tests and feature coverage, and reject release checks without an earlier counterpart or a platform boundary. (2315)
+
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
