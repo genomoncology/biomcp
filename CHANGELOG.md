@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Update certifi, urllib3, mkdocs-material and xxhash-rust to their first patched security releases. (2308)
+
 - Update TLS certificate validation and bundled trust roots to reject distrusted emSign certificate paths. (2305)
 
 - Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
