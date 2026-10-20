@@ -13,6 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
 from replay_env import retained_cache_env  # noqa: E402
+from cache_reuse import admitted_provider_keys, assert_admitted_reused, provider_key  # noqa: E402
 
 import test_cache_persistent_size  # noqa: E402
 
@@ -192,11 +193,16 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
             assert {parse_qs(urlsplit(url).query)["q"][0] for url in urls} == {r"BRAF\-cli", r"BRAF\-mcp"}
             assert all(url.startswith(gene_provider + "/query?") for url in urls), urls
             assert connection.execute("pragma integrity_check").fetchone() == ("ok",)
-        admitted_requests = list(requests)
+        admitted = admitted_provider_keys(tmp_path / "cache")
+        admitted_requests = {provider_key(path) for path in requests}
+        before_reuse = len(requests)
         for query in queries:
             assert mcp_gene(query) == expected
             assert invoke(env, "search", "gene", query, "--limit", "1")["results"] == expected
-        assert requests == admitted_requests, "both processes must reuse the admitted responses"
+        assert_admitted_reused(
+            admitted, admitted_requests,
+            (provider_key(path) for path in requests[before_reuse:]),
+        )
     finally:
         client.close()
 
