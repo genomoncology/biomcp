@@ -10,10 +10,7 @@
       "feature": "install-update"
     },
     "tests/golden/spec/test_spec_page_golden.py": {
-      "feature": "gene",
-      "tests": {
-        "test_get_variant_queries_myvariant_once_by_protein_change": "variant"
-      }
+      "feature": "@golden-calls"
     },
     "tests/golden/test_golden_output.py": {
       "tests": {
@@ -283,6 +280,30 @@
         "test_failed_platform_reinspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
         "test_tampered_signing_evidence_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation."
       }
+    },
+    "tests/test_public_installer_checksum.py": {
+      "tests": {
+        "test_installer_accepts_one_valid_checksum_record": "install-update",
+        "test_installer_refuses_unproven_checksum_before_destination_change": "install-update",
+        "test_installer_accepts_uppercase_checksum_hex": "install-update",
+        "test_installer_rejects_mismatched_checksum_without_touching_existing_destination": "install-update",
+        "test_installer_refuses_when_checksum_computation_is_unavailable_or_fails": "install-update",
+        "test_installer_uses_openssl_when_other_checksum_tools_are_unavailable": "install-update",
+        "test_installer_handles_checksum_download_failures_for_both_downloaders": "install-update",
+        "test_installer_smokes_destination_stage_before_replacing_existing_binary": "install-update",
+        "test_installer_never_edits_shell_startup_files": "install-update",
+        "test_installer_refuses_symlink_destination_without_changing_target": "install-update",
+        "test_pinned_install_reads_the_version_flag_against_a_staged_release": "install-update",
+        "test_pinned_install_falls_back_to_the_second_word_of_the_version_banner": "install-update",
+        "test_latest_install_receipt_carries_the_true_version": "install-update",
+        "test_pinned_install_still_refuses_a_version_mismatch": "install-update",
+        "test_installer_reads_existing_version_when_install_path_contains_spaces": "install-update"
+      },
+      "internal": {
+        "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_ci_proves_installer_identity_before_the_version_sync_check": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_public_installer_verifier_compares_deployed_bytes": "Compares installer source, documentation or workflow wiring without running the public installer."
+      }
     }
   },
   "rust": {
@@ -302,7 +323,7 @@
       "feature": "cache"
     },
     "tests/cli_global_modifiers.rs": {
-      "feature": "cli-reference"
+      "feature": "cli-controls"
     },
     "tests/disable_sources_cli.rs": {
       "feature": "source-policy"
@@ -464,7 +485,7 @@
       "feature": "variant"
     },
     "spec/surface/build-profile-live.md": {
-      "feature": "cli-reference"
+      "feature": "health"
     },
     "spec/surface/cli-contract-ratchet.md": {
       "feature": "cli-reference"
@@ -473,10 +494,10 @@
       "feature": "cli-reference"
     },
     "spec/surface/discover-live.md": {
-      "feature": "cli-reference"
+      "feature": "discovery"
     },
     "spec/surface/discover.md": {
-      "feature": "cli-reference"
+      "feature": "discovery"
     },
     "spec/surface/mcp.md": {
       "feature": "mcp-parity"
@@ -540,7 +561,6 @@
     "tests/test_provider_contract_fixture.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_provider_network_policy.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_public_install_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_public_installer_checksum.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_public_landing_copy_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_public_search_all_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_public_skill_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",

@@ -34,3 +34,5 @@ Each stable name describes one caller-visible behavior. Tests declare their owni
 - operator-tls: Honor operator certificate bundles without weakening transport security.
 - provider-retry: Handle provider rate limits and retries within the published policy.
 - trial: Find clinical trials and retrieve verified eligibility, sites, interventions and documents.
+- discovery: Resolve free-text terms to a supported entity and useful follow-up commands.
+- cli-controls: Apply global command options consistently before provider or filesystem work.

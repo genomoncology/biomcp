@@ -58,6 +58,21 @@ def golden_features(root: Path) -> dict[str, str]:
     return links
 
 
+
+def golden_call_feature(root: Path, path: Path, test: str) -> str:
+    owners = {instance.partition("[")[2].removesuffix("]").rsplit("-", 1)[0]: feature
+              for instance, feature in golden_features(root).items()}
+    function = next(node for node in ast.parse(path.read_text()).body
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == test)
+    cases = {node.args[1].value for node in ast.walk(function) if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Name) and node.func.id == "_run"
+             and len(node.args) > 1 and isinstance(node.args[1], ast.Constant)}
+    features = {owners[case] for case in cases}
+    if len(features) != 1:
+        raise ValueError(f"{path.name}::{test} needs one explicit owning feature")
+    return features.pop()
+
+
 def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     names = read_features(root)
     config = json.loads((root / "tests/feature-links.json").read_text())
@@ -92,6 +107,8 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
                     if test not in declaration.get("internal", {}):
                         errors.append(f"unclassified test {relative}::{test}")
                     continue
+                if owner == "@golden-calls":
+                    owner = golden_call_feature(root, path, test)
                 if owner == "@golden":
                     for instance, feature in golden_features(root).items():
                         links.append({"kind": kind, "test": f"{relative}::{instance}",

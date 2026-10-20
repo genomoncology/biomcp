@@ -101,6 +101,11 @@ def test_golden_links_follow_existing_command_metadata(tmp_path: Path) -> None:
     config["python"]["tests/golden/test_golden_output.py"] = {"feature": "@golden"}
     path.write_text(json.dumps(config))
     assert run(root, "links").returncode == 0
+    caller = root / "tests/test_spec_case.py"
+    caller.write_text('def test_case(): return _run(replay, "lookup")\n')
+    config["python"]["tests/test_spec_case.py"] = {"feature": "@golden-calls"}
+    path.write_text(json.dumps(config))
+    assert run(root, "links").returncode == 0
     golden.write_text(golden.read_text().replace('"gene"', '"drug"'))
     rejected = run(root, "links")
     assert rejected.returncode != 0
