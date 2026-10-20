@@ -8,11 +8,19 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286
+
+Reviews: revision 1b8e728, accept
+
+Reviews: revision fffcf09, accept
+
+Reviews: revision 5db2cfd, accept
 
 ## Outcome
 
 Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `sdlc/release-checklist.md`, including a full untagged release rehearsal, and the PM has a go request naming the exact commit. No tag or publication.
+
+Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
 
 ## Order
 
@@ -20,7 +28,7 @@ Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `
 2. On that candidate: the final 2233 Linux fresh-clone offline run and the 2234 paired measurement against v0.9.3, with raw evidence in a numbered experiment folder.
 3. A fresh read-only reviewer reads every commit since v0.9.3 through the final tip, including records-only commits; commits after its accept get their own review.
 4. The full untagged `release.yml` rehearsal on GitHub from the final commit with its full `candidate_sha` and `rehearsal_version` 0.9.4. Every required job succeeds. Record the run URL, the SHA and the unexercised publication limits.
-5. Branch, worktree, reservation and scratch cleanup for this repository; `workspace repos --dirty` clean.
+5. Branch, worktree, reservation and scratch cleanup for this repository; `git status --porcelain` empty on main and each owned worktree, plus `pm daily` cleanup evidence.
 
 ## Keeps
 
@@ -33,18 +41,28 @@ The release record lists every checklist item in section 1 with its evidence, an
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 next: Frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 passes full main and live replay (39 checked/passed, eight explicitly unverified). Final Linux and paired measurements run before record review and full untagged rehearsal; no tag.
+- 2026-10-19 next: Release admission held by final Linux concurrent cache-entry assertion;2283 is the sole repair lane. Main M5 full gate and live39/39 enabled coverage remain passed on51f5e03; candidate measurement arms await repaired source. No tag.
+- 2026-10-19 next: PM approved test-only2283 under existing best-effort admission policy. Fresh review accepts; sole repair landing gate runs. Measurements resumed on unchanged product51f5e03. Final Linux whole run follows repair tip; live39/39 proof remains applicable to unchanged runtime/checker/recordings. No tag.
+- 2026-10-19 next: Reviewed test-only2283 landed4c582db4186837893e4839f6d47e5e60a129aae7. Gate1792454342992-75134 and actualmainfull1792454758788-87321 passed; raw2103 retained. Whole final Linux rerun starts on this tip; paired measurements continue on PM-approved unchanged runtime51f5e03. No tag; final records and rehearsal follow.
+- 2026-10-19 next: Final Linux 2233/1792455276832-365318 failed parallel article cache command1 during full Python; traceback pending, accessible raw evidence kept and caseDB teardown limit recorded. Sole repair2285 prepares diagnosis. Measurements continue old-release rows and hold before remaining candidate/runtime samples. Main M5 full remains green; no tag.
+- 2026-10-19 next: Repair2285 landed as 40eac3b; actual-main M5 full job2285/1792458885162-87683 passed, raw retained in experiment2285. Linux renewal2233/1792458909149-436786 remains queued for memory under approved Rust reuse. Measurements complete; exact millisecond timing and fixed SQLite disk costs sent PM for disposition. Final records, fresh reviews and nonpublishing release rehearsal remain; no tag.
+- 2026-10-20 next: Network restored. Final Linux2233/1792458909149-436786 independently verified PASS; fresh lane finishes retained record without rerun. Measurement2234 record accepted; interrupted landing resumed, new gate1792496574946-47864 runs. PM permits records-only receipt reuse and no separate full-main rerun; final rehearsal covers final tip. Fresh read-only admission reviewer /root/resume_release_audit_2258 active; no tag.
+- 2026-10-20 next: 2233 and2234 records landed; exact candidatecffae4af5fb600039137b7c13d6955165ca46823/tree50e028fcb3dd0a17c0d5ee64e3678245895d6bc5 accepted through actualprefix. M5finalversion/changelog2258/1792497270549-70460 passed all86citations. Full nonpublishing release rehearsal39418376272 runs once on that SHA; main held fixed. Finalresult/cleanup/ownrecordreview follow, no tag.
+- 2026-10-20 next: Fullrehearsal39418376272 failed bothmanylinuxinstalled-wheelsmokes after successfulqualification andall5archive/5wheelbuilds. Cache stats exits1aftervalidversion; causeunknown. Solefreshrepair2286 reproducesactualartifact/containerbeforefix. Admissionheld, no tag; preservefailedrunandreevaluateaffectedproofbindingsoncecauseknown.
+- 2026-10-20 next: Reviewed wheel repair2286 passes both installed Linux smoke profiles; landing gate runs. Whole fresh Linux2258/1792502148739-726187 runs reviewed2ca without Rust reuse. Next actual-main full check and new full untagged rehearsal; original rehearsal remains failed, no tag.
 
 ## Preparation evidence
 
 Static preparation on 40c730fbe identified stable-version edits in Cargo.toml, Cargo.lock, pyproject.toml, uv.lock, manifest.json, server.json and CITATION.cff, plus the dated CHANGELOG section and current-candidate wording in docs/reference/release-process.md. Formula placeholders remain unchanged. No source edits or checks ran during preparation.
 
-The active changelog lacks citations for landed 2191, 2202, 2203, 2204, 2205, 2210, 2211, 2213, 2214, 2228, 2231 and 2232. Describe each actual outcome, including retained profiles, rejected TOML trial, retained linking and metadata-recovery behavior; do not imply rejected alternatives shipped. Recompute final coverage after source and qualification records land.
+Preparation found missing changelog citations for landed 2191, 2202, 2203, 2204, 2205, 2210, 2211, 2213, 2214, 2228, 2231 and 2232. Ticket 2262 supplied the reviewed citations and actual outcomes, including retained profiles, rejected TOML trial, retained linking and metadata-recovery behavior. Final coverage is checked again after qualification records land.
 
 Issue dispositions need finding-specific landing references for GTR encoding, transcript numbering, AlphaGenome CA bundles, trial-alias caching, CAID pagination, stale get JSON notes, removed lifecycle tests, aspirin identity, MCP probe counters, diagnostic synonym coverage, deadline joins and the single-CPU readiness handshake. The two October 7 omnibus reviews require individual historical dispositions; no blanket closure or new clinical judgment. The coordinator asked the PM to identify any still-material findings or approved deferrals.
 
 ## Final collection ownership
 
-The PM assigned 2258 the mandatory observed drift collection on the final candidate. Ticket 2259 owns the accepted checker implementation and may close with its product batch. Before go, this ticket must retain the full collection report, refresh twenty-eight historical missing content types from observed replies, refresh the stale dbSNP declaration from the current product endpoint, name all three KEGG recordings as not checked live: commercial-restricted source, and resolve every other drift or coverage gap through its owning fix. Never count KEGG as checked or call it live from these runs. Partial coverage is not a release pass.
+The PM assigned 2258 the mandatory observed drift collection on the final candidate. Ticket 2259 owns the accepted checker implementation and may close with its product batch. Before go, this ticket must retain the full collection report, refresh historical missing content types from the recomputed inventory of observed replies, refresh the stale dbSNP declaration from the current product endpoint, name all three KEGG recordings as not checked live: commercial-restricted source, and resolve every other drift or coverage gap through its owning fix. Never count KEGG as checked or call it live from these runs. Partial coverage is not a release pass.
 
 ## Shared replay ownership proof
 
@@ -58,10 +76,65 @@ Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the pri
 
 ## Observed live collection scope
 
-Changes: `testdata/replay/manifest.json`, `sdlc/records/2258-replay-live-collection.md`.
-
 After stable metadata lands, recompute the actual recording inventory. Use observed credential-free primary replies to refresh historical missing response content types and the stale dbSNP request declaration, retaining original recording provenance and dates. Retain raw replies privately with exact request settings, status, case-insensitive Content-Type, observation time, bytes and SHA256. Final coverage uses tools/check-replay-live --live on the final candidate and records every entry and complete counts. No hardcoded historical inventory count.
 
 Never call KEGG live; every KEGG recording says not checked live: commercial-restricted source and never counts as checked. Do not print, log, hash or store credentials or a derived value. Reuse authorized source settings; no new paid access. One serial request stream, bounded response size and time, no redirect/proxy/retry loop; obey Retry-After and stop the affected provider.
 
 No checker/runtime/code changes in this collection. Do not publish broad or licensed source replies. Report every blocked, drifted or unsupported entry with the supported next repair or recording action; source/fixture body changes belong to a separately reviewed bounded fix. Partial coverage never means pass. Retain collection proof in a numbered private experiment with OWNER and Keep; the public record contains safe request metadata, counts, hashes and limitations. No tag or publication.
+
+## Final qualification authority
+
+The accepted runtime and recording batch was published at main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8, shared gate 2277/1792450592155-61493 passed with tree 90d9f94dfa5541a135bc728d88f849e595537d15. Its actual-main full check passed before the later test-only corrections. Use the accepted current checker for one final complete live inventory on this revision. Disable commercial-restricted sources and semantic-scholar explicitly. The three KEGG rows remain not checked live: commercial-restricted source. The PM approved Semantic Scholar as not checked live: rate limited after the one later 429 diagnostic; its five rows remain unverified, and no further requests to that source are authorized. Do not count any disabled entry as checked or passed. No credentials except an existing NCI_API_KEY may be inherited; never inspect, log, hash or store credentials. No new keys, proxies, authentication, paid access or provider contact.
+
+The full untagged release rehearsal already includes MCP contract conformance; the PM withdrew its mistaken request for an additional separate conformance run. The existing checklist remains the release scope.
+
+## Final live proof
+
+Job 2258/1792451039742-39317 passed the actual frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8: 47 total, 39 checked, 39 passed, eight disabled, zero blocked, zero drift, zero ready. Complete 48-line output and settings are retained. KEGG rows14/15/16 remain commercially restricted; Semantic Scholar40/41/45/46/47 remain rate-limited and unverified under the PM ruling. Neither source was called. Preparation failure1792450988450-21123 made no calls; the final invocation used installed Python3.12.13. The safe collection record names shape-only limits and missing wire details.
+
+Keep: experiments/2096-biomcp-2258-live-collection — retain original observed collection, source inventory, requests, raw hashes and repair provenance.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain complete final per-entry checker output, exact candidate, settings, summary and preparation failure.
+
+## Admission checklist
+
+- [ ] Every open review file in `sdlc/issues/` for this release has a disposition line for each finding: fixed with its commit, or deferred with Ian's recorded approval.
+- [ ] Every ticket merged since the last release has a ticket file, a code review verdict from a fresh read-only reviewer with its dispatch reference, and its local build-job gate evidence.
+- [ ] A fresh read-only reviewer has reviewed every commit through the final tip, including records-only commits, and read the commit diffs. Commits after its ACCEPT have their own review.
+- [ ] Every claimed fix fails its test when the fix is reverted.
+- [ ] Every new or changed data source has its terms stated plainly in `docs/reference/sources.json` and `docs/reference/source-licensing.md`, including sources used only for identifiers.
+- [ ] The changelog section `## X.Y.Z — YYYY-MM-DD` describes each change for users, names every GitHub issue the release fixes, and cites every ticket merged since the last release. `scripts/check-changelog-coverage.py --tag vX.Y.Z --revision <candidate-sha>` passes without creating a tag.
+- [ ] Every public version file says X.Y.Z — the release commit drops the `-dev` suffix Cargo and Python carry between releases, and `check-release-versions.py` refuses the tag if any committed version still carries it. `scripts/check-version-sync.sh` and `scripts/check-release-versions.py --tag vX.Y.Z` pass against the committed stable candidate, without creating a tag.
+- [ ] Every change landed through the coordinator's existing landing gate, singly or in a reviewed batch that shares one gate, followed by the full main check through a build job. The final candidate's routine, shipped-feature and required long checks passed.
+- [ ] On the final candidate, run `python3 tools/check-replay-live --live` with the authorized source-disable and access settings. Retain every recording's result, the complete summary counts and candidate revision. Repair or re-record every blocked or drifted entry before tagging; name disabled sources explicitly because they remain unverified. See the release process for JSON/XML structure coverage and unsupported-format blockers and credential restrictions.
+- [ ] Both the prior release and candidate measurements used the same build host, corrected measurement harness, toolchain, workload and cache settings; retain raw samples and label failed collections incomplete.
+- [ ] Every `gh` call in `.github/workflows/release.yml` carries `GH_REPO: ${{ github.repository }}` (or a checkout), and every repository script runs after a checkout — `tests/test_release_workflow_provenance.py` enforces both. Every job that downloads the release while it is still a draft has `contents: write`.
+- [ ] Merged ticket branches, worktrees, local branches, stale ticket-number reservations and scratch build folders for this repository are removed. Branches owned by the 1.0 team are left alone. `git status --porcelain` is empty on this repository's main checkout and each owned worktree, and `pm daily` confirms owned cleanup.
+- [ ] After every release ticket and the final measurement record has landed, manually run the full untagged `release.yml` rehearsal from the final candidate commit, with its full `candidate_sha` and stable `rehearsal_version`. Every required job, including `rehearsal-complete`, succeeds. Record the run URL and exact SHA in the go request. No tag or publication is created. A later source/workflow change requires a new full rehearsal.
+- [ ] Record the rehearsal limits: GitHub release creation/upload/publication, PyPI trusted upload, registry authentication/pushes and `latest` movement, Pages deployment/live-site verification, and the Homebrew push remain unexercised. The rehearsal validates production builds, installed-package and container smokes, generated documentation and publication payloads without their credentials.
+
+## Frozen-source gate evidence
+
+Standalone checker gate 2281/1792449822402-39931 passed source tree 0229a6eb09dcfe6e84d16d5d44b54543cc8b9f68 and landed 6ddaed41268bfa49e992948673b8907de6798a33. Its actual-main full check 2156/1792450232278-98788 passed with the required all-feature and image proofs. The reviewed fixture batch then passed shared gate 2277/1792450592155-61493 at tree 90d9f94dfa5541a135bc728d88f849e595537d15 and landed frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8. Actual-main full check 2156/1792450891631-7897 passed in 405.149 seconds, including routine Rust, 1,575 Python cases, specifications, repository audit, all-feature checks and PNG/SVG/terminal output. Durable raw output remains in experiment 2101-biomcp-2282-pathway-recording-fidelity/main-checks.iFaHnu; shared gate raw remains in experiment 2097-biomcp-2277-canonical-disease-pages/batch-gate. Test-only corrections 2283 and 2285 followed. Product Rust, Cargo files, replay recordings, the live checker and release workflow remain unchanged. Later record commits receive their own review.
+
+## Admission review scope
+
+Ongoing read-only review /root/review_release_commits_2258 read every commit diff through 51f5e03 and the owning late metadata deltas. It found no missing finding disposition in the reviewed issue scope, unsupported product-fix claim, source-terms gap, or missing ticket review/gate. It reused owning red/control evidence and supplied exact gate identities; it did not rerun every historical fix in reverse or reopen every private raw archive. Final admission must extend that review through later actual landings. The release has no newly fixed GitHub issue named in its changelog; earlier release issue numbers are not new 0.9.4 fixes.
+
+The reviewed source terms include ORCID API/data distinctions, restricted identifier sources, and Reactome data versus artwork/software. Reviewed workflow provenance retains repository-qualified gh calls, checkout before scripts and draft-download permissions. The full nonpublishing rehearsal remains required.
+
+## Cleanup evidence
+
+The coordinator ran pm sweep --dry-run and removed only its fifteen explicitly abandoned empty reservation markers: 2064, 2069, 2070, 2075, 2083, 2085, 2086, 2108, 2118, 2119, 2121, 2123, 2135, 2153 and 2212. The push confirmed all fifteen deletions. Active release reservations, record-owned reservations, paused branches and unmerged historical work were retained. Current release worktrees and build output are removed after their consumers finish.
+
+## Test-only qualification binding
+
+Repair 2283 landed at 4c582db4186837893e4839f6d47e5e60a129aae7 and passed full actual-main job 2283/1792454758788-87321. Repair 2285 landed at 40eac3b38cf7d1f333f6bd34ee6119859547d500 after gate 2285/1792458419485-80284 passed. Its exact diff from 4c582db contains only tests/test_http_cache_fail_soft.py, CHANGELOG.md and the owned ticket/record Markdown. The coordinator independently verified that list and final test hash 2033f3ed0f93dba131fbd3630c55def78425fc53f00a8e97a88bc179449ef0de.
+
+The PM approved reuse of the unchanged Rust routine/long/inventory proof while fresh Linux qualification rebuilds the exact CLI/example and reruns full Python, strict docs and shipped-feature checks under isolation. A Rust, Cargo, build, script or fixture-file change would require the whole Linux suite. Both failed final Linux attempts remain failed. The unchanged runtime measurement source remains 51f5e03 under the explicit reuse ruling; the live checker and recording inputs also remain identical to their 39-passed proof. These component bindings do not substitute for the required final rehearsal.
+
+## Repaired wheel qualification
+
+Repair 2286 is accepted at source 2ca44d1bd1430d7af2bb01bf98bb82d88aa8415c (runtime 9ac7829038d77c54dd86c864000ac393f2edf05d), with final evidence record 78e678ac58b96b87562a37d8d40e4310f9ff9c31 and separately reviewed retention metadata 2b7f09031. Both installed Linux wheels passed the PM-approved public smoke profile; live DDInter remains unverified. The first rehearsal remains failed. Whole fresh Linux qualification 2258/1792502148739-726187 runs the reviewed 2ca source without Rust reuse. Actual-main full checks and a new full untagged rehearsal follow landing. The PM approved reuse of the existing paired measurements and live checker evidence with this missing-directory correction disclosed.
+
+Keep: experiments/493-biomcp-2258-repaired-linux — retain the exact runner, source identities, isolation verifier, full raw output, inventories and artifacts from repaired whole Linux qualification, including the prior attempt cancelled before any build or test. Regenerable clone and build copies may be removed after evidence is retained.

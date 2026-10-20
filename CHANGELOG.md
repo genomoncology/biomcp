@@ -6,7 +6,7 @@
 
 ### Fixes
 
-- Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails.
+- Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
 
@@ -83,6 +83,8 @@
 - Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
 
 ### Internal
+
+- Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
 
 - Qualify the final candidate from a fresh Linux clone under kernel network isolation, with complete Python, strict docs and shipped-feature checks plus approved reuse of unchanged Rust suite evidence. Preserve both failed qualification attempts and their evidence limits. (2233)
 
