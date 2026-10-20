@@ -56,4 +56,4 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 
 ## Worked for 0.9.1
 
-This checklist was first worked for 0.9.1 on 2026-09-30; the ticket for that pass is `sdlc/tickets/1283-close-the-fourth-go-request-round.md`, whose go request cites this file.
+This checklist was first worked for 0.9.1 on 2026-09-30; the ticket for that pass is `sdlc/archive/tickets/1283-close-the-fourth-go-request-round.md`, whose go request cites this file.
