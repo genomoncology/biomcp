@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+Changes: `Cargo.toml`, `Cargo.lock`, `crates/biomcp-mcp-contract-client/Cargo.toml`, `src/mcp/shell/http_server.rs`, `src/mcp/shell/http_server_security_tests.rs`, `CHANGELOG.md`, `sdlc/records/2309-mcp-security-upgrade.md`.
+
 BioMCP and `crates/biomcp-mcp-contract-client` use rmcp 2.1.0 or later, clearing eight open GitHub security alerts. The most serious for users is the unauthenticated session-table leak in rmcp's streamable HTTP server transport, a remote denial of service against `biomcp serve-http` (`src/mcp/shell/http_server.rs`). The others cover OAuth resource metadata validation and fetching, and custom headers leaking to cross-origin redirects, mostly on the client side. MCP behavior over stdio and HTTP stays the same for clients.
 
 - Proof: both manifests and `Cargo.lock` name rmcp 2.1 or later; the existing MCP stdio and HTTP contract suites, the contract client checks and the installed-wheel smoke pass unchanged; an outside-in test opens and abandons many HTTP sessions and shows the server's session table does not grow without bound; after landing, GitHub shows alerts 81 to 86, 90 and 92 closed.
