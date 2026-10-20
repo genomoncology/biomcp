@@ -11,9 +11,9 @@ import sys
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+pytestmark = pytest.mark.needs_binary
 
 
-@pytest.mark.needs_binary
 def test_failed_replay_case_keeps_cache_and_log_while_passing_case_cleans_up(
     tmp_path: Path,
 ) -> None:
