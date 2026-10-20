@@ -252,7 +252,10 @@ def _assert_release_contract(workflow: str) -> None:
         assert artifact in smoke
     assert "Scripts/biomcp.exe" in smoke and "bin/biomcp" in smoke
     assert '"$status" -eq 101' in smoke and '"$status" -ge 128' in smoke
-    assert "require_exit 0 drug interactions apixaban" in smoke
+    assert "require_ddinter_disabled ddinter sync" in smoke
+    assert "require_ddinter_disabled drug interactions apixaban" in smoke
+    assert "BIOMCP_DISABLE_SOURCES: commercial-restricted,kegg,semantic-scholar" in smoke
+    assert '-e BIOMCP_DISABLE_SOURCES ' in smoke
     assert "Drug not found in FAERS" in smoke
     assert "skill asset" in smoke
 
@@ -402,8 +405,8 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "18174be22c9800d5306692ca4013103bf2b9293edb7fc543c4ad613d27599907",
-    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "11b2e4960294116b4d5ec21d7d6cb612b54aa46247ee1c7aa382c704b4f3a910",
+    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "d4784fee81dc7aa01774fe5766b98846ff993047d9b62571a1355062bf8a1850",
     ("docs-live", "Check out the gate helper"): "ff29379fee6ad185b41206f3cd927d55f6c99711dafe8c11de48998ec8e64373",
     ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",

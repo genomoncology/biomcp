@@ -22,7 +22,9 @@ Private raw job logs are temporarily in /tmp/biomcp-manylinux-failure-kunfr9_b/1
 
 Read current main and reproduce with the existing built wheel and exact container command before editing product code. Restate the outcome, record the command/output, name the bounded files and failing outside-in test, and narrow Changes before the fix. Decide from evidence whether this is the wheel, runtime, container environment or smoke command. Keep the genuine installed-artifact check; do not make a failure pass by accepting empty output or ignoring the exit code. No new proof framework or unrelated refactor.
 
-Changes: `sdlc/records/2286-manylinux-wheel-rehearsal-failure.md`, `CHANGELOG.md`.
+Changes: `src/cache/private.rs`, `tests/test_cache_sqlite.py`, `.github/workflows/release.yml`, `tests/test_release_workflow_provenance.py`, `tests/test_disable_sources_replay_walk.py`, `sdlc/records/2286-manylinux-wheel-rehearsal-failure.md`, `CHANGELOG.md`.
+
+The approved smoke profile disables commercial-restricted sources, KEGG and Semantic Scholar in every wheel-smoke process, including the manylinux container. DDInter sync and interactions must fail with the explicit disabled-source message and exit 1. Live DDInter behavior remains unverified for this release. One replay assertion exercises the article smoke and requires no Semantic Scholar request. The source-profile ruling supplements the initial provider prohibition below for the existing public workload only.
 
 The initial claim covers diagnosis and its record only. Extend it to the concrete bounded repair files after reproducing the cause. No other product lane is active. Source or workflow changes require fresh review, the existing landing gate, applicable local qualification and a new full untagged rehearsal. Changes to runtime inputs also require the relevant measurement/live evidence bindings to be reassessed; do not discard existing valid baseline data or call providers.
 
