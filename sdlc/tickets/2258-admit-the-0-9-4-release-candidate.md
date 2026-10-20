@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2233, 2234
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2233, 2234
 
 ## Outcome
 
@@ -103,3 +103,13 @@ Keep: experiments/2102-biomcp-2258-final-live-replay — retain complete final p
 ## Frozen-source gate evidence
 
 Standalone checker gate 2281/1792449822402-39931 passed source tree 0229a6eb09dcfe6e84d16d5d44b54543cc8b9f68 and landed 6ddaed41268bfa49e992948673b8907de6798a33. Its actual-main full check 2156/1792450232278-98788 passed with the required all-feature and image proofs. The reviewed fixture batch then passed shared gate 2277/1792450592155-61493 at tree 90d9f94dfa5541a135bc728d88f849e595537d15 and landed frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8. Actual-main full check 2156/1792450891631-7897 passed in 405.149 seconds, including routine Rust, 1,575 Python cases, specifications, repository audit, all-feature checks and PNG/SVG/terminal output. Durable raw output remains in experiment 2101-biomcp-2282-pathway-recording-fidelity/main-checks.iFaHnu; shared gate raw remains in experiment 2097-biomcp-2277-canonical-disease-pages/batch-gate. Later commits are records only and receive their own review.
+
+## Admission review scope
+
+Ongoing read-only review /root/review_release_commits_2258 read every commit diff through 51f5e03 and the owning late metadata deltas. It found no missing finding disposition in the reviewed issue scope, unsupported product-fix claim, source-terms gap, or missing ticket review/gate. It reused owning red/control evidence and supplied exact gate identities; it did not rerun every historical fix in reverse or reopen every private raw archive. Final admission must extend that review through later actual landings. The release has no newly fixed GitHub issue named in its changelog; earlier release issue numbers are not new 0.9.4 fixes.
+
+The reviewed source terms include ORCID API/data distinctions, restricted identifier sources, and Reactome data versus artwork/software. Reviewed workflow provenance retains repository-qualified gh calls, checkout before scripts and draft-download permissions. The full nonpublishing rehearsal remains required.
+
+## Cleanup evidence
+
+The coordinator ran pm sweep --dry-run and removed only its fifteen explicitly abandoned empty reservation markers: 2064, 2069, 2070, 2075, 2083, 2085, 2086, 2108, 2118, 2119, 2121, 2123, 2135, 2153 and 2212. The push confirmed all fifteen deletions. Active release reservations, record-owned reservations, paused branches and unmerged historical work were retained. Current release worktrees and build output are removed after their consumers finish.
