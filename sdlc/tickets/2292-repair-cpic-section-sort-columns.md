@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 3fd8aa1, accept
+
 ## Outcome
 
 Current CYP2D6 frequency and guideline sections use supported CPIC sort columns and return provider data. Preserve deterministic pagination, existing output and source failure reporting. This is an API request repair; make no clinical judgment or recommendation changes.
