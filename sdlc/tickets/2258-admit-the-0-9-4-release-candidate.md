@@ -16,6 +16,8 @@ Reviews: revision 1b8e728, accept
 
 Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `sdlc/release-checklist.md`, including a full untagged release rehearsal, and the PM has a go request naming the exact commit. No tag or publication.
 
+Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
+
 ## Order
 
 1. After the last source landing, the admission commit lands through child ticket 2262: stable 0.9.4 in every public version file, the changelog section `## 0.9.4 — YYYY-MM-DD` covering every ticket since v0.9.3, and a disposition line for each finding in every open `sdlc/issues/` file this release touches (fixed with its commit, moot, or not a bug with the reason). `check-version-sync.sh`, `check-release-versions.py --tag v0.9.4` and `check-changelog-coverage.py --tag v0.9.4 --revision <sha>` pass without a tag.
@@ -69,8 +71,6 @@ The release defect lanes retain a private, read-only copy of research runs 0031,
 Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the private research replies and source checksum manifest used by the release defect lanes.
 
 ## Observed live collection scope
-
-Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
 
 After stable metadata lands, recompute the actual recording inventory. Use observed credential-free primary replies to refresh historical missing response content types and the stale dbSNP request declaration, retaining original recording provenance and dates. Retain raw replies privately with exact request settings, status, case-insensitive Content-Type, observation time, bytes and SHA256. Final coverage uses tools/check-replay-live --live on the final candidate and records every entry and complete counts. No hardcoded historical inventory count.
 
