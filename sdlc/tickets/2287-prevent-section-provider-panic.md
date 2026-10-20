@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 6206f22, accept
+
 ## Outcome
 
 `biomcp get protein P15056 structures --json` succeeds against the existing exact recorded UniProt response instead of panicking on its credited provider. Audit the same mismatch class across every entity section and fix any others found in this lane. Preserve truthful source credits and existing successful behavior.
