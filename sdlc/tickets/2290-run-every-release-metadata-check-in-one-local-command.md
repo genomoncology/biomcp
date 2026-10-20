@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 One local command runs every version, changelog, runbook and release-metadata check, Python and Rust, against a candidate with a proposed version and tag. A developer runs it before any metadata gate, so a gate never stops on a second metadata check.
 
-Changes: `scripts/check-release-metadata.py`, `sdlc/release-checklist.md`, `docs/reference/release-process.md`, `CHANGELOG.md`.
+Changes: `scripts/check-release-metadata.py`, `sdlc/release-checklist.md`, `docs/reference/release-process.md`, `sdlc/records/2290-collected-release-metadata-check.md`, `CHANGELOG.md`.
 
 - Proof: Running the command on the 0.9.4 metadata commit's parent with the 0.9.4 changes applied reproduces both original failures in one run.
 
@@ -25,3 +25,5 @@ Collect the existing checks; add none. The release checklist names the command.
 ## Implementation boundary
 
 Collect the existing metadata tests and actual runbook audit in one command; add no new checks. Interface accepts candidate SHA, version and tag. Run all groups after failures and report every failed group. Reproduce the two original stable-metadata failures together at fc1e2deb62dc7e122aad7677d7f4c703d7f3f21c using the existing tests and audit, then pass on the corrected candidate. Do not edit Makefile or the release workflow.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain metadata-command/2290 raw preimage and corrected job evidence while release admission consumes this batch.
