@@ -18,7 +18,7 @@ Identify which changes between 0.9.3 and 0.9.4 raised test-profile compilation a
 
 The first two measurement pairs in 2234 show a repeated development rebuild slowdown. The first canonical gene edit-test row is 53.9 seconds for 0.9.3 and 63.2 seconds for the candidate. The second pair's outer elapsed values are 39.823 and 58.952 seconds. Its Cargo test-profile compile values are 37.97 and 57.08 seconds, while the same 16 selected tests execute in 0.034 seconds on both. Rust-touch rebuilding is also slower in the second pair. These observations locate the cost in rebuilding; they do not identify a particular source change. Use the final paired table and retained raw evidence in `sdlc/records/2234-candidate-measurements.md` when work starts.
 
-The PM ruled that this developer rebuild cost is a known 0.9.4 release cost and belongs in the next release. User-facing runtime regressions remain release blockers under that separate ruling.
+The PM ruled that this developer rebuild cost is a known 0.9.4 release cost and belongs in the next release. The separate runtime ruling requires disposition before release. The PM subsequently accepted the measured warm-variant and cached-GWAS timing increases and small-cache SQLite overhead for 0.9.4, with timing cause unknown and no runtime lane; the final 2234 record preserves those exceptions.
 
 ## Scope
 
