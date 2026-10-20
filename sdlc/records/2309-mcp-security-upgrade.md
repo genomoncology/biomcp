@@ -19,3 +19,9 @@ Candidate c95e30e0b resolves rmcp and rmcp-macros 2.2.0 with compatible sse-stre
 M5 job 2309/1792531121552-49033 passed 76 Rust/MCP tests and 29 Python stdio, HTTP and protocol cases on d9a95030a. This includes the local session-retention regression with the SDK-defined 422 response and expected error text; the first attempt guessed 400 and failed that new assertion, then the correction preserved the zero-retained-session claim. Existing protocol assertions remain unchanged.
 
 Merged candidate 287d81d6273cac54bb2c52077e8b7fad2928dc03 incorporates actual main a5314c569 with both changelog entries preserved and no source conflict. Its required M5 routine and actual installed Linux wheel smoke are submitted on the exact retained bundle. Those results remain pending here. The security regression stays on localhost; the standard installed-artifact smoke performs only its already authorized read-only public provider queries. Fresh review and final advisory closure remain required.
+
+## Security proof scope
+
+The ticket proof now names the actual advisory and regression: repeated rejected non-initializing first POSTs allocate no retained sessions; one valid initialization and DELETE establish the positive control. It does not claim a general bound on abandoned valid sessions. This corrects proof wording without changing implementation, tool schemas or protocol assertions.
+
+The separate 2310 recipe repair owns source prevention of root-owned temporary wheel output. Any 2309 aggregate cleanup failure must remain failed; verified successful build and installed-smoke stages and a later owned-cleanup receipt may be cited separately. Final admission remains held for the repaired recipe and full rehearsal.
