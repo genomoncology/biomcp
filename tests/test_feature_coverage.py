@@ -116,12 +116,22 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     tools.mkdir()
     for name in ("collect_feature_coverage.py", "feature_coverage.py"):
         shutil.copyfile(ROOT / "tools" / name, tools / name)
-    (root / "pyproject.toml").write_text("")
+    (root / "pyproject.toml").write_text('[tool.biomcp.feature-coverage]\nllvm-cov-version = "0.9.1"\n')
+    workflow = root / ".github/workflows/ci.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("  MUSTMATCH_VERSION: 0.1.0\n")
     output = root / ".cache/feature-coverage"
     output.mkdir(parents=True)
     (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
     commands = root / "commands"
     commands.mkdir()
+    tooling = output / "tools/bin"
+    tooling.mkdir(parents=True)
+    (tooling / "cargo-llvm-cov").touch()
+    for name in ("rustup", "uv"):
+        executable = commands / name
+        executable.write_text("#!/bin/sh\nexit 0\n")
+        executable.chmod(0o755)
     make = commands / "make"
     make.write_text("#!/bin/sh\nexit 0\n")
     make.chmod(0o755)

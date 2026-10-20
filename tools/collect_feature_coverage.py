@@ -37,6 +37,24 @@ def collect(root: Path, baseline: bool) -> int:
 
     if run("python-prepare", ["make", "sync-python-dev"]):
         return 1
+    # The nightly/release job owns its auxiliary executables. Do not replace a
+    # different version another lane installed in a shared user directory.
+    tooling = output / "tools"
+    tool_bin = tooling / "bin"
+    tool_env = ordinary | {"UV_TOOL_DIR": str(tooling / "uv"), "UV_TOOL_BIN_DIR": str(tool_bin)}
+    ordinary["PATH"] = str(tool_bin) + os.pathsep + ordinary["PATH"]
+    if not (tool_bin / "cargo-llvm-cov").exists():
+        version = settings["llvm-cov-version"]
+        if run("install-llvm-cov", ["cargo", "install", "cargo-llvm-cov", "--locked", "--version", version, "--root", str(tooling)]):
+            return 1
+    if run("llvm-tools", ["rustup", "component", "add", "llvm-tools-preview"]):
+        return 1
+    workflow = (root / ".github/workflows/ci.yml").read_text()
+    mustmatch = re.search(r"^  MUSTMATCH_VERSION: ([0-9.]+)$", workflow, re.M)
+    if mustmatch is None:
+        raise ValueError("cannot read the configured mustmatch version")
+    if run("install-mustmatch", ["uv", "tool", "install", "mustmatch==" + mustmatch[1]], tool_env):
+        return 1
     if run("coverage-clean", ["cargo", "llvm-cov", "clean", "--workspace"]):
         return 1
     show = subprocess.check_output(["cargo", "llvm-cov", "show-env"], cwd=root, env=ordinary, text=True)

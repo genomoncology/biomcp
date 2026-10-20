@@ -98,6 +98,8 @@
 
 ### Internal
 
+- Link outside-in tests to caller features and check product-only source coverage in nightly and release qualification. (2319)
+
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
