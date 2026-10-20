@@ -54,9 +54,6 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # fixtures: tests/fda.rs carries the four stub clients that drive the
     # orphan probe row tests, and the split runner tests carry none.
     # ca_bundle.rs constructs three builders in the process-reentry parse-once test.
-    # The article deadline tests construct one raw loopback client for the
-    # held-reply self-release proof: paused time drives the bound,
-    # so the client stays raw and loopback-only.
     assert found == Counter(
         {
             "src/sources/mod.rs": 3,
@@ -67,7 +64,6 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
             "src/sources/rate_limit.rs": 1,
             "src/sources/fda_orphan.rs": 2,
             "src/sources/pubmed/tests/parsing.rs": 1,
-            "src/entities/article/search/tests/deadline.rs": 1,
             "src/entities/trial/documents.rs": 1,
             "src/entities/trial/search/ctgov/tests.rs": 1,
             "src/cli/health/runner.rs": 1,
