@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 46f3b44, accept
+
 ## Outcome
 
 Every landing gate and full check runs the repo's own make targets. No gate runs a private script from an experiment folder.
