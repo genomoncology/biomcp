@@ -25,3 +25,7 @@ Inventory ci.yml steps against the local gate and the full main check. Move each
 ## Implementation boundary
 
 Inventory every ci.yml step and map it to local execution or explicit release-only platform/load/toolchain reason. Add existing branch changelog and tracked no-climb checks to local lint. Integrate stable dated candidates without weakening development-section or missing-citation failure. Use real committed Git fixture branches for outside-in lint checks. No Makefile or release workflow edits; no local GitHub query. Preserve existing release-only Windows, stress and optimized checks with reasons; document protobuf generation tooling limits explicitly.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain local-ci-parity/2291 raw preimage and corrected job evidence while release admission consumes this batch.
+
+Landing alone: this changes the local gate implementation, which must land separately from other gate changes.
