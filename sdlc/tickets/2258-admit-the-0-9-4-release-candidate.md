@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286
 
+Reviews: revision 1b8e728, accept
+
 ## Outcome
 
 Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `sdlc/release-checklist.md`, including a full untagged release rehearsal, and the PM has a go request naming the exact commit. No tag or publication.
