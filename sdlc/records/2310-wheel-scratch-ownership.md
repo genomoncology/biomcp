@@ -19,3 +19,9 @@ Final direct preimage job 2310/1792531661790-1465829 reproduced PermissionError 
 The source fix uses an EXIT trap inside the existing build container, restoring only this run target and wheel output with physical chown behavior before container exit. The host finally preserves the primary exception if its ordinary cleanup also fails. No later cleanup container is the preventive implementation.
 
 The lander found the same recipe hardcodes ticket 2288 on containers serving later jobs. Correcting this ownership label is part of this ticket: the documented PM_JOB contract is NNNN SHA; validate and use its ticket token, with release for non-job use. The unstarted 84cf211e8 routine waiter was verified and canceled before any command ran so the next routine can qualify the final label-corrected source. The existing ownership-control proof remains bound to its exact tested bytes.
+
+## Final source and controls
+
+Final candidate c92fcf0a338314dc9697a0bd749a210d84c848ed validates PM_JOB as numeric ticket plus revision and labels both containers with that ticket; non-job use labels release. Gator 2310/1792532164644-1491629 passed all twelve focused runner cases and Bash syntax. The real root-container cases establish ownership restoration before host cleanup and preserve an unrelated differently owned symlink target; label controls cover job and release contexts. The production fix adds no CPU tuning or later cleanup container.
+
+M5 routine 2310/1792532173981-15039 runs on the exact final source. Its retained final-v3 bundle SHA256 is 64f3335ca9f452d83b04a655a03d4388ee0c3650965172dd0c4d8c22eac08af9 and runner SHA256 is 03c3b8eb85d8fe0f39190e50637e412dcba33288033c3f14561a468ece24c85d. Raw controls, job records and bundles are durably retained under wheel-scratch/2310 in the owning admission experiment. Fresh review and the routine result remain pending here.
