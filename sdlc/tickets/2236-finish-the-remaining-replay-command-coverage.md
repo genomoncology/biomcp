@@ -28,6 +28,8 @@ Final OA batch Changes: `tests/golden/replay_env.py`, `tests/golden/test_golden_
 
 Remaining finite-boundary Changes: `tests/golden/cases/get-pgx-cyp2d6-frequencies.*`, `tests/golden/cases/get-pgx-cyp2d6-guidelines.*`, `tests/golden/cases/get-disease-melanoma-default.*`, and existing declared replay response prefixes for CPIC, MyDisease, MyChem, Open Targets and CTGov. The default melanoma case omits all optional sections and retains only the PM-approved public aggregate projection.
 
+Canonical root-object routing Changes: `tools/replay-server` and `tests/test_replay_server_lifetime.py`. Reuse the shared `recording_provider` resolver supplied by 2293 in `scripts/replay_drift.py`; that dependency owns the resolver and merges before final review. Only existing stored records with an exact declared provider, canonical source origin/base/path/query may use root object paths. Missing records never gain live forwarding.
+
 ## Inventory
 
 The completed coverage includes search all, gene, trial and pathway, and get gene, variant, trial and pathway. The remaining search selectors are author, disease, diagnostic, pgx, phenotype, gwas, article, variant, drug, cell-line, protein and adverse-event. Remaining get selectors are author, article, disease, diagnostic, pgx, drug, cell-line, protein and adverse-event. Also inventory traversal commands and local-data outputs; distinguish byte or JSON-only outputs from commands with both JSON and Markdown forms.
