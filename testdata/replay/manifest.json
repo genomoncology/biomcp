@@ -653,6 +653,38 @@
       "status": 200,
       "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
     },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5": {
+      "upstream": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+      "status": 200,
+      "file": "responses/mydisease/query_xref_mesh_d002289.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "d89e8b86829e9af87a1df20971991251b32765c5fdc3a624828d2188a19d2efe",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5": {
+      "upstream": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+      "status": 200,
+      "file": "responses/mydisease/query_xref_mesh_d009369.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "257e8756d958485f986a76899b8db08681bd90b45113c267438f6fd0f491758d",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=50&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50": {
       "file": "responses/mydisease/melanoma-page-two.json",
       "headers": {
@@ -703,38 +735,6 @@
       },
       "status": 200,
       "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1"
-    },
-    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&q=symbol%3A%22EGFR%22&size=1&species=human": {
-      "upstream": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
-      "status": 200,
-      "file": "responses/mygene/get_egfr_20260811.json",
-      "headers": {
-        "content-type": "application/json"
-      },
-      "recording_provenance": {
-        "provider": "MyGene.info",
-        "request": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
-        "captured_at": "2026-08-11T22:27:00Z",
-        "sha256": "749dc54f58ac3a2ed73466823163368bb9edb1d9b2d82b5c0345a53e1ada0c41",
-        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
-        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
-      }
-    },
-    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&q=symbol%3A%22ERBB2%22&size=1&species=human": {
-      "upstream": "https://mygene.info/v3/query?q=symbol%3A%22ERBB2%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
-      "status": 200,
-      "file": "responses/mygene/get_erbb2_20260811.json",
-      "headers": {
-        "content-type": "application/json"
-      },
-      "recording_provenance": {
-        "provider": "MyGene.info",
-        "request": "https://mygene.info/v3/query?q=symbol%3A%22ERBB2%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
-        "captured_at": "2026-08-11T22:27:00Z",
-        "sha256": "c30c679f4077447aae130493f958903fe5520789e51df5f5e8a1311cbe0c7aaa",
-        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
-        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
-      }
     },
     "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
       "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin",
@@ -1064,7 +1064,7 @@
       "status": 429,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3"
     },
-    "GET /string/network?identifiers=BRAF&limit=15&species=9606": {
+    "GET /string/json/network?identifiers=BRAF&limit=15&species=9606": {
       "upstream": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
       "status": 200,
       "file": "responses/string/network_braf_20260811.json",
@@ -1132,28 +1132,6 @@
         "provider_origin_statement": "Bytes were recorded from the public DGIdb response through BioMCP's production request path before any stated minimization."
       },
       "request_body": "{\"query\":\"\\nquery DgidbGeneDruggability($gene: String!, $first: Int!) {\\n  genes(names: [$gene], first: $first) {\\n    nodes {\\n      name\\n      geneCategories {\\n        name\\n      }\\n      interactions {\\n        drug {\\n          name\\n          approved\\n        }\\n        interactionScore\\n        interactionTypes {\\n          type\\n        }\\n        sources {\\n          sourceDbName\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"first\":1,\"gene\":\"EGFR\"}}"
-    },
-    "POST /nih-reporter/projects/search#73694944e7a26ce0": {
-      "upstream": "https://api.reporter.nih.gov/v2/projects/search",
-      "status": 200,
-      "file": "responses/nih-reporter/nih-reporter-projects-search-73694944e7a-6215cbe62760.json",
-      "headers": {
-        "content-type": "application/json; charset=utf-8"
-      },
-      "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"offset\":0,\"limit\":50,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}",
-      "request_headers": {
-        "accept": "application/json",
-        "content-type": "application/json"
-      },
-      "recording_provenance": {
-        "provider": "NIH RePORTER",
-        "request": "https://api.reporter.nih.gov/v2/projects/search",
-        "captured_at": "2026-10-20T15:09:48.131127+00:00",
-        "sha256": "cc59221f77957c6ac380f8128ebe31238db2150a721b08be4934602c6c08a7a2",
-        "minimization_or_redaction": "Raw public response bytes retained without edits.",
-        "provider_origin_statement": "Captured directly from the public NIH RePORTER endpoint.",
-        "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"offset\":0,\"limit\":50,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
-      }
     },
     "POST /opentargets/graphql#34180b1b60125348": {
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
