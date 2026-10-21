@@ -20,6 +20,10 @@ Depends on: 2334
 Depends on: 2335
 Depends on: 2336
 Depends on: 2337
+Depends on: 2338
+Depends on: 2339
+Depends on: 2340
+Depends on: 2341
 
 ## Outcome
 
@@ -46,3 +50,5 @@ Resolved tool interruption: On 2026-10-21 the live pm database reported schema 1
 - PM m3178 reports that unfinished pm code ran on the live database during the 13:44–13:54 interruption. Jarvis restored compatibility without losing mail or job rows. The coordinator independently reran inbox, daily, next and job-list reads successfully, recorded the pending reviewed fixture acceptance, and resumed only the refused landing/full-gate operations. Previously passed focused evidence remains valid.
 
 - Final Linux recipe review found that the earlier prepared command-final.sh supplied only development-profile feature output proof and omitted release-profile specifications. Its retained SHA256 b496079787599ae41926e7c56d0d5bb9eb6905d2294dfd1c613563c7ad0086d8 remains historical preparation, not a qualifying run. The corrected command-final-release.sh retains fresh-clone isolation and full suites, invokes the declared full-feature-check with FULL_FEATURE_PROFILE=release, records the optimized artifact, then runs declared release-profile specifications. Its SHA256 is 4160458ac4e97af8fa7be3e421b893ed086cb7b9e10b1dd4bed995f287f6e5df. Both recipes live under Yellow data/biomcp/release-evidence/0.9.4/qualification-2330. The direct main-gate remains a separate unchanged declared job command; the full rehearsal supplies its actual workflow qualification and platform proof.
+
+- PM replies to m3211 and m3212 authorize four fresh-review corrections on tickets/pm-artifacts at bfcbfc2f5: 2338 narrows the local-guide promise to embedded skills and the documentation site and removes the unused packaging path; 2339 fully parses installed-smoke JSON; 2340 replaces Windows managed-directory DACLs exactly; 2341 repairs broad variant pagination if the isolated probe confirms the counterexample. All four precede final admission. Preserve completed review scope, and bind final qualification and rehearsal only after their product changes land. The low long-suite documentation mismatch has no currently omitted marked product cases and is not a separate product blocker.
