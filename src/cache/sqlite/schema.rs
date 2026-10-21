@@ -28,5 +28,5 @@ END;
 CREATE TRIGGER IF NOT EXISTS entries_update AFTER UPDATE OF bytes ON entries BEGIN
     UPDATE cache_meta SET bytes = bytes + NEW.bytes - OLD.bytes, optional_bytes = optional_bytes + CASE WHEN NEW.namespace != 'capture' THEN NEW.bytes - OLD.bytes ELSE 0 END WHERE id = 1;
 END;
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
 "#;

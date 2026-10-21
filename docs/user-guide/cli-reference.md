@@ -157,7 +157,7 @@ executable provenance and PATH diagnostics.
 resolved cache path, total blob inventory, referenced blob bytes used for
 enforcement, HTTP entry count, article-session count, orphan count, age range,
 and the resolved cache limits including `min_disk_free`; under `--json`, it
-returns the same contract as a JSON object. It also names legacy store sizes without deleting those stores.
+returns the same contract as a JSON object. Opening the cache removes retired reusable stores before stats reports their sizes.
 
 `biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]`
 is the targeted maintenance command for the same cache family. It always removes

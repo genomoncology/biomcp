@@ -30,7 +30,7 @@ fn cache_path_names_database_without_creating_it() {
 }
 
 #[test]
-fn cache_stats_observe_committed_http_and_artifact_rows_and_legacy_sizes() {
+fn cache_stats_observe_current_rows_after_retiring_legacy_stores() {
     let root = TempDirGuard::new("sqlite-cache-stats");
     let config = config(root.path());
     let mut store = crate::cache::sqlite::Store::open(root.path()).unwrap();
@@ -52,7 +52,7 @@ fn cache_stats_observe_committed_http_and_artifact_rows_and_legacy_sizes() {
     let report = collect_cache_stats_for_config(&config).unwrap();
     assert_eq!(report.http_entry_count, 1);
     assert!(report.provider_capture_bytes >= capture.byte_length);
-    assert_eq!(report.legacy_cache_bytes["http"], 6);
+    assert_eq!(report.legacy_cache_bytes["http"], 0);
     assert_eq!(report.max_size_origin, CacheStatsOrigin::Env);
     assert_eq!(report.max_age_origin, CacheStatsOrigin::Default);
     assert_eq!(
@@ -70,7 +70,7 @@ fn cache_stats_observe_committed_http_and_artifact_rows_and_legacy_sizes() {
 }
 
 #[test]
-fn managed_clear_removes_reusable_rows_and_preserves_saved_and_legacy_files() {
+fn managed_clear_removes_reusable_and_legacy_rows_and_preserves_saved_files() {
     let root = TempDirGuard::new("sqlite-cache-clear");
     let config = config(root.path());
     let mut store = crate::cache::sqlite::Store::open(root.path()).unwrap();
@@ -98,12 +98,11 @@ fn managed_clear_removes_reusable_rows_and_preserves_saved_and_legacy_files() {
             .unwrap(),
         b"saved capture"
     );
-    for name in ["downloads", "citation-evidence"] {
-        assert_eq!(
-            std::fs::read(root.path().join(name).join("keep")).unwrap(),
-            b"saved"
-        );
-    }
+    assert_eq!(
+        std::fs::read(root.path().join("downloads/keep")).unwrap(),
+        b"saved"
+    );
+    assert!(!root.path().join("citation-evidence").exists());
 }
 
 #[test]

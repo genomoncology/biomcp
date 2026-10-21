@@ -9,6 +9,7 @@ pub(crate) mod manager;
 mod private;
 mod provider_capture;
 pub(crate) mod sqlite;
+mod timing;
 
 pub(crate) use citation_evidence::{read_citation_evidence, write_citation_evidence};
 pub(crate) use clean::CleanReport;
@@ -29,3 +30,7 @@ pub(crate) use provider_capture::{
 
 #[cfg(test)]
 pub(crate) use provider_capture::ProviderCaptureProvider;
+
+/// Pre-SQLite reusable stores can contain credential-bearing request keys.
+pub(crate) const LEGACY_STORES: &[&str] =
+    &["http", "http-cacache", "citation-evidence", "captures"];

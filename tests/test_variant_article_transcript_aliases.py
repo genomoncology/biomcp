@@ -13,6 +13,7 @@ import sys
 import pytest
 
 from test_mcp_2026_protocol import RawStdioMcp
+from transcript_alias_replay import prepare_transcript_alias_replay
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
 from replay_env import REPO_ROOT, isolated_command_env, replay_environment  # noqa: E402
@@ -29,8 +30,7 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
     fixture_root = tmp_path / "fixture"
     fixture_root.mkdir()
     (fixture_root / "src").symlink_to(REPO_ROOT / "src", target_is_directory=True)
-    (fixture_root / "testdata").mkdir()
-    (fixture_root / "testdata/replay").symlink_to(CAPTURE, target_is_directory=True)
+    prepare_transcript_alias_replay(CAPTURE, fixture_root / "testdata/replay")
     with replay_environment(root=fixture_root) as replay:
         ready = replay.greeting
         assert ready.startswith("READY "), ready

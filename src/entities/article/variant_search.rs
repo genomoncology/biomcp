@@ -84,6 +84,7 @@ use super::{
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
 const MAX_EXACT_ALIASES: usize = 10;
+const MAX_RESOLVED_ALIASES: usize = 16;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -344,6 +345,7 @@ pub(crate) struct VariantArticleExecutionContext {
     query_aliases: Vec<String>,
     boolean_gene_aliases: Arc<Mutex<Vec<String>>>,
     boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
+    lexical_aliases: Arc<Mutex<Option<Vec<String>>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
     attempted_alias_sources: Arc<Mutex<BTreeSet<(String, String)>>>,
     boolean_query_omissions: Arc<Mutex<BTreeSet<(String, String)>>>,
@@ -394,6 +396,7 @@ impl VariantArticleExecutionContext {
             query_aliases: Vec::new(),
             boolean_gene_aliases: Arc::new(Mutex::new(Vec::new())),
             boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
+            lexical_aliases: Arc::new(Mutex::new(None)),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
             attempted_alias_sources: Arc::new(Mutex::new(BTreeSet::new())),
             boolean_query_omissions: Arc::new(Mutex::new(BTreeSet::new())),
@@ -543,6 +546,14 @@ impl VariantArticleExecutionContext {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
             RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
         });
+    }
+
+    fn lexical_aliases(&self, selected: &[String]) -> Vec<String> {
+        self.lexical_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .unwrap_or_else(|| selected.to_vec())
     }
 
     fn for_alias(&self, alias: &str) -> Self {
@@ -2035,6 +2046,29 @@ async fn resolve_search_context(
     {
         truncated |= expand_gene_symbol_aliases(&context, &mut aliases, execution).await;
     }
+    // Save the original source/CAR and gene-symbol selection before strict
+    // coding discovery changes either its ordinary or Boolean provider plans.
+    *execution
+        .lexical_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(aliases.clone());
+    if strategy == VariantArticleStrategy::Union {
+        let boolean_variants = execution
+            .boolean_variant_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        if boolean_variants.is_empty() {
+            (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
+        } else {
+            let (expanded, cut) = coding_discovery_aliases(&context, &boolean_variants);
+            *execution
+                .boolean_variant_aliases
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = expanded;
+            truncated |= cut;
+        }
+    }
     Ok((context, canonical_equivalence, aliases, truncated))
 }
 
@@ -2377,6 +2411,36 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     (aliases, truncated)
 }
 
+/// Add bounded coding discovery without evicting the lexical route's old queries.
+fn coding_discovery_aliases(
+    context: &VariantArticleResolutionContext,
+    legacy: &[String],
+) -> (Vec<String>, bool) {
+    if context.requested.is_authoritative_refseq() {
+        return (legacy.to_vec(), false);
+    }
+    let mut aliases = all_exact_aliases(context);
+    let mut ordered = Vec::new();
+    if !aliases.is_empty() {
+        ordered.push(aliases.remove(0));
+    }
+    let (coding, other): (Vec<_>, Vec<_>) = aliases.into_iter().partition(|alias| {
+        alias
+            .split_once(' ')
+            .is_some_and(|(_, change)| change.starts_with("c."))
+    });
+    ordered.extend(coding);
+    ordered.extend(other);
+    for alias in legacy {
+        if !ordered.contains(alias) {
+            ordered.push(alias.clone());
+        }
+    }
+    let truncated = ordered.len() > MAX_RESOLVED_ALIASES;
+    ordered.truncate(MAX_RESOLVED_ALIASES);
+    (ordered, truncated)
+}
+
 fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -2549,7 +2613,7 @@ fn alias_coverage(
             );
         }
         if resolved {
-            planned.extend(selected.iter().cloned());
+            planned.extend(execution.lexical_aliases(selected));
         } else {
             planned.extend(fallback_aliases(input, context).0);
         }
@@ -2588,16 +2652,16 @@ fn alias_coverage(
                 "strategy_does_not_query_alias"
             } else if execution.deadline_exhausted() {
                 "invocation_deadline"
-            } else if execution.route_stopped("strict")
-                || execution.route_stopped("exact_lexical")
-                || execution.route_stopped("exact_name")
-            {
-                "logical_work_cap"
             } else if let Some(reason) = setup_failures
                 .get(&alias)
                 .and_then(|reasons| reasons.first())
             {
                 reason
+            } else if execution.route_stopped("strict")
+                || execution.route_stopped("exact_lexical")
+                || execution.route_stopped("exact_name")
+            {
+                "logical_work_cap"
             } else {
                 "no_provider_query_available"
             };
@@ -3451,12 +3515,15 @@ fn pmid_seed(pmid: String) -> ArticleSearchResult {
 fn select_hydrated_source_hit(
     hits: Vec<crate::sources::myvariant::MyVariantHit>,
     source_key: Option<&str>,
+    build: Option<crate::entities::variant::GenomeBuild>,
 ) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
     hits.into_iter()
         .filter(|hit| {
             source_key.is_none_or(|key| {
-                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
-                    .normalized_key()
+                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit_with_build(
+                    hit, build,
+                )
+                .normalized_key()
                     == key
             })
         })
@@ -3497,10 +3564,19 @@ async fn citation_candidates(
                 return Ok((Vec::new(), true));
             }
         };
+        // Unqualified MyVariant requests already use GRCh37. Carry a
+        // resolved non-default build through hydration and identity checking.
+        let build = context.source_identity.as_ref().and_then(|identity| {
+            identity
+                .genome_build
+                .parse()
+                .ok()
+                .filter(|build| *build != crate::entities::variant::GenomeBuild::Grch37)
+        });
         let result = client
-            .get_all(&retained_hit.id)
+            .get_all(&retained_hit.id, build)
             .await
-            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
+            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref(), build));
         match result {
             Ok(hit) => (Some(hit), Some(unit)),
             Err(error) => {
@@ -3697,9 +3773,29 @@ fn plan_queries(
     context: &VariantArticleResolutionContext,
     route: &str,
     exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
 ) -> Vec<String> {
     match route {
-        "strict" | "exact_lexical" => exact_aliases.to_vec(),
+        "strict" => {
+            let mut aliases = Vec::new();
+            for plan in provider_variant_query_plan_with_gene_aliases(
+                input,
+                context,
+                VariantArticleStrategy::Lexical,
+                exact_aliases,
+                execution,
+            ) {
+                if plan.route == "strict" {
+                    for alias in plan.coverage_aliases {
+                        if !aliases.contains(&alias) {
+                            aliases.push(alias);
+                        }
+                    }
+                }
+            }
+            aliases
+        }
+        "exact_lexical" => execution.lexical_aliases(exact_aliases),
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -4056,7 +4152,8 @@ fn materialize_discovery_route_plans(
             "exact_lexical",
             source,
             exact_applicable.then(|| {
-                exact_aliases
+                execution
+                    .lexical_aliases(exact_aliases)
                     .iter()
                     .filter(|alias| {
                         !matches!(source, "pubmed" | "europepmc")
@@ -4227,7 +4324,7 @@ fn build_debug_plan(
             let queries = if route == "pubtator_variant" {
                 execution.pubtator_variant_queries()
             } else {
-                plan_queries(input, context, route, canonical_aliases)
+                plan_queries(input, context, route, canonical_aliases, execution)
             };
             let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
             for event in events.iter().filter(|event| event.route == route) {
@@ -4842,7 +4939,7 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
             let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
-                selected_exact_aliases.clone(),
+                execution.lexical_aliases(&selected_exact_aliases),
                 selected_exact_aliases_truncated,
                 &execution,
             )
@@ -5216,6 +5313,9 @@ async fn search_variant_articles_identity(
         &canonical_equivalence,
         &execution,
     );
+    let aliases_omitted = alias_coverage.iter().any(|row| row.reason == "alias_limit");
+    let complete = complete && !aliases_omitted;
+    let truncated = truncated || aliases_omitted;
     let debug_plan = include_debug_plan.then(|| {
         let mut plan = build_debug_plan(
             input,
@@ -8543,7 +8643,7 @@ mod tests {
 
     #[test]
     fn missing_confirmed_record_during_citation_hydration_is_unavailable() {
-        let error = select_hydrated_source_hit(Vec::new(), Some("missing"))
+        let error = select_hydrated_source_hit(Vec::new(), Some("missing"), None)
             .expect_err("a stale confirmed record must not become healthy empty coverage");
         assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     }
@@ -8612,6 +8712,7 @@ mod tests {
                 &context,
                 "pubtator_variant",
                 &[],
+                &VariantArticleExecutionContext::single(),
             )
             .is_empty()
         );

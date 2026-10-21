@@ -13,6 +13,8 @@ import sys
 
 import pytest
 
+from transcript_alias_replay import prepare_transcript_alias_replay
+
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
 import replay_env  # noqa: E402
 
@@ -30,11 +32,10 @@ def test_variant_article_markdown_uses_json_source_plan_and_states(
     fixture_root.mkdir()
     (fixture_root / "src").symlink_to(REPO_ROOT / "src", target_is_directory=True)
     replay_root = fixture_root / "testdata/replay"
-    replay_root.mkdir(parents=True)
-    (replay_root / "responses").symlink_to(CAPTURE / "responses", target_is_directory=True)
-    manifest = json.loads((CAPTURE / "manifest.json").read_text())
+    prepare_transcript_alias_replay(CAPTURE, replay_root)
+    manifest = json.loads((replay_root / "manifest.json").read_text())
     # Authored empty S2 control keeps output parity independent from retry delays.
-    # All other replies retain their recorded bytes, and replay misses still fail.
+    # Recorded replies retain their bytes, and replay misses still fail.
     (replay_root / "s2-empty.json").write_text(json.dumps({"total": 0, "data": []}))
     for route, entry in manifest["routes"].items():
         if route.startswith("GET /s2/") and entry["status"] == 429:
