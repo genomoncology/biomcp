@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a31447f, accept
+
 ## Outcome
 
 Every file in `sdlc/issues/` is either closed into `sdlc/archive/issues/` with a one-line disposition citing the landing that fixed it, or turned into an open ticket, or closed as moot with its reason. `pm lint` reports no findings for BioMCP's `sdlc/`. No product code changes.
