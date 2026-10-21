@@ -306,7 +306,13 @@ print(json.dumps({
     if (
         completed.returncode != 0
         and already_enclosed
-        and "No permissions to create new namespace" in completed.stdout
+        and any(
+            message in completed.stdout
+            for message in (
+                "No permissions to create new namespace",
+                "No permissions to create a new namespace",
+            )
+        )
     ):
         pytest.skip("the enclosing AppArmor profile forbids a nested user namespace")
     completed.check_returncode()
