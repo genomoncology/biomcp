@@ -69,10 +69,10 @@ def _make_fixture(root: Path, env: dict[str, str]) -> None:
     makefile = (REPO_ROOT / "Makefile").read_text()
     makefile += '\n' + '\n'.join(
         f'{target}:\n\t@echo {target} >> "$$GATE_LOG"'
-        for target in ("test", "test-long", "repo-audit", "full-feature-check", "spec", "installed-wheel-smoke")
+        for target in ("test", "test-long", "repo-audit", "full-feature-check", "spec", "installed-wheel-smoke", "feature-coverage")
     ) + '\n'
     (root / "Makefile").write_text(makefile)
-    _write_executable(root / "tools/check-quality-ratchet.sh", '#!/usr/bin/env bash\necho ratchet >> "$GATE_LOG"\n')
+    _write_executable(root / "tools/check-semantic-contracts.sh", '#!/usr/bin/env bash\necho ratchet >> "$GATE_LOG"\n')
     _write_executable(Path(env["PATH"].split(":")[0]) / "uv", '#!/usr/bin/env bash\necho "uv $*" >> "$GATE_LOG"\n')
     _write_executable(root / "tools/run-offline", '#!/usr/bin/env bash\nshift\nexec "$@"\n')
     env["GATE_LOG"] = str(root.parent / "gates.log")

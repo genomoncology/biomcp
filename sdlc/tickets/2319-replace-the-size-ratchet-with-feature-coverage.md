@@ -4,11 +4,17 @@ priority: 2
 
 # 2319 — Replace the size ratchet with feature coverage
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Depends on: 2316, 2318
+
+Reviews: revision f321da7, accept
+
+Reviews: revision a146294, accept
+
+Reviews: revision 2d10c0b, accept
 
 ## Outcome
 
@@ -19,6 +25,8 @@ One corrected outside-in-only coverage collection excludes test and generated co
 List unreached production code. Give each item a feature test or a separate reviewed deletion; do not delete product code because one collection misses it. This ticket delivers the complete scope rather than a golden-only initial suite or a later implementation ticket.
 
 - Proof: Every selected outside-in test maps to a listed feature; planted unknown or missing links fail. The corrected collection passes, reports its actual source and exclusions, and establishes the floor checked by the nightly and release targets. Routine feature-link validation adds no instrumented build.
+
+- Changes: `scripts/install-nextest.sh` `tests/test_ci_workflow_contract.py` `tools/test-wait-exceptions.json` `tests/test_routine_cargo_feature_contract.py` `tests/test_release_workflow_provenance.py` `.github/workflows/release.yml` `Makefile` `clippy.toml` `scripts/check-release-metadata.py` `scripts/pre-commit` `spec/surface/mcp.md` `tests/surface/test_ticket_401_surface_ratchets.py` `tests/test_cli_surface_contract_ratchet.py` `tests/test_dependency_advisory_gate.py` `tests/test_quality_ratchet_contract.py` `tests/test_section_provider_credits.py` `tests/test_upstream_planning_analysis_docs.py` `tools/check-quality-ratchet.py` `tools/check-quality-ratchet.sh` `tools/check-semantic-contracts.py` `tools/check-semantic-contracts.sh` `sdlc/features.md` `tests/feature-links.json` `tests/test_feature_coverage.py` `tools/feature_coverage.py` `tools/check-feature-coverage.py` `tools/collect_feature_coverage.py` `scripts/collect-feature-coverage.sh` `pyproject.toml` `CHANGELOG.md` `crates/biomcp-mcp-contract-client/src/lib.rs` `tests/tls_ca_bundle_contract.rs`
 
 ## Evidence
 

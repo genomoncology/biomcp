@@ -117,7 +117,7 @@ TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run BioMCP's quality-ratchet audits and write JSON artifacts.",
+        description="Run BioMCP's semantic contract audits and write JSON artifacts.",
     )
     parser.add_argument("--root-dir", type=Path, default=Path.cwd())
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -1887,7 +1887,7 @@ def _shell_segment_starts_nested_test_gate(tokens: list[str]) -> bool:
         if "-n" in args or "--dry-run" in args:
             return False
         return any(token in {"test", "lint"} for token in args)
-    return command == "check-quality-ratchet.sh"
+    return command == "check-semantic-contracts.sh"
 
 
 def _shell_segment_preparation_owned_cargo(tokens: list[str]) -> str | None:
@@ -2800,7 +2800,7 @@ def main() -> int:
         payloads["spec_lint"] = lint_specs(
             resolve_spec_paths(args.spec_glob), args.spec_glob, args.root_dir
         )
-        write_json(args.output_dir / "quality-ratchet-lint.json", payloads["spec_lint"])
+        write_json(args.output_dir / "semantic-contracts-lint.json", payloads["spec_lint"])
 
     if "mcp_allowlist" in selected_audits:
         payloads["mcp_allowlist"] = run_json_command(
@@ -2818,7 +2818,7 @@ def main() -> int:
             allowed_exit_codes={0, 1},
         )
         write_json(
-            args.output_dir / "quality-ratchet-mcp-allowlist.json",
+            args.output_dir / "semantic-contracts-mcp-allowlist.json",
             payloads["mcp_allowlist"],
         )
 
@@ -2838,54 +2838,54 @@ def main() -> int:
             allowed_exit_codes={0, 1},
         )
         write_json(
-            args.output_dir / "quality-ratchet-source-registry.json",
+            args.output_dir / "semantic-contracts-source-registry.json",
             payloads["source_registry"],
         )
 
     simple_audits = {
-        "test_waits": ("quality-ratchet-test-waits.json", lambda: check_test_waits(args.root_dir, rust_snapshot)),
+        "test_waits": ("semantic-contracts-test-waits.json", lambda: check_test_waits(args.root_dir, rust_snapshot)),
         "paused_clock_io": (
-            "quality-ratchet-paused-clock-io.json",
+            "semantic-contracts-paused-clock-io.json",
             lambda: check_paused_clock_io(args.root_dir, rust_snapshot),
         ),
         "dead_code_allowances": (
-            "quality-ratchet-dead-code-allowances.json",
+            "semantic-contracts-dead-code-allowances.json",
             lambda: check_dead_code_allowances(
                 args.root_dir, rust_snapshot, dead_code_exception_inventory
             ),
         ),
         "experiment_results": (
-            "quality-ratchet-experiment-results.json",
+            "semantic-contracts-experiment-results.json",
             lambda: check_architecture_experiment_results(args.root_dir),
         ),
         "renderer_next_command_source": (
-            "quality-ratchet-renderer-next-command-source.json",
+            "semantic-contracts-renderer-next-command-source.json",
             lambda: check_renderer_next_command_source(args.root_dir),
         ),
         "terminal_output_boundaries": (
-            "quality-ratchet-terminal-output-boundaries.json",
+            "semantic-contracts-terminal-output-boundaries.json",
             lambda: check_terminal_output_boundaries(args.root_dir),
         ),
         "cli_surface_contract": (
-            "quality-ratchet-cli-surface-contract.json",
+            "semantic-contracts-cli-surface-contract.json",
             lambda: check_cli_surface_contract(args.root_dir),
         ),
         "remote_resource_bounds": (
-            "quality-ratchet-remote-resource-bounds.json",
+            "semantic-contracts-remote-resource-bounds.json",
             lambda: check_remote_resource_bounds(args.root_dir),
         ),
         "source_state_registry": (
-            "quality-ratchet-source-state-registry.json",
+            "semantic-contracts-source-state-registry.json",
             lambda: check_source_state_registry(args.root_dir),
         ),
         "source_attributed_status_typing": (
-            "quality-ratchet-source-status-typing.json",
+            "semantic-contracts-source-status-typing.json",
             lambda: check_source_attributed_status_is_typed(
                 args.root_dir, rust_snapshot
             ),
         ),
         "external_error_logging": (
-            "quality-ratchet-external-error-logging.json",
+            "semantic-contracts-external-error-logging.json",
             lambda: check_external_error_logging(args.root_dir, rust_snapshot),
         ),
     }
@@ -2914,7 +2914,7 @@ def main() -> int:
             "oversized_files": oversized_policy_modules,
         }
         write_json(
-            args.output_dir / "quality-ratchet-section-outcome-policy-line-cap.json",
+            args.output_dir / "semantic-contracts-section-outcome-policy-line-cap.json",
             payloads["section_outcome_policy_line_cap"],
         )
 
@@ -2935,7 +2935,7 @@ def main() -> int:
         summary_payload[summary_name] = (
             payload if audit_name == "spec_lint" else {"status": payload.get("status")}
         )
-    write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
+    write_json(args.output_dir / "semantic-contracts-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1
 
 

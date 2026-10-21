@@ -130,6 +130,8 @@
 
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
+- Link outside-in tests to caller features and check product-only source coverage in nightly and release qualification. (2319)
+
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
 - Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)
