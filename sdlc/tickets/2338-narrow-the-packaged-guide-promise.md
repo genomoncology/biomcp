@@ -1,12 +1,14 @@
 # 2338 — Promise only what the packages ship
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision d2e827f15c7b246df8c7f837e3c467b7d96db5e7, accept
 
 Reviews: revision 030fcc1d6f71ecf52fb88ac0e77d86276dac958d, accept
+
+Landed: ba679af
 
 ## Outcome
 
