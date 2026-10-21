@@ -2894,7 +2894,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sqlite_initialization_preserves_legacy_cache_and_markers() {
+    async fn sqlite_initialization_removes_legacy_cache_and_preserves_markers() {
         let root = TempDirGuard::new("sqlite-legacy-coexistence");
         let legacy = root.path().join("http-cacache");
         std::fs::create_dir(&legacy).unwrap();
@@ -2906,7 +2906,7 @@ mod tests {
         };
         assert!(cache.initialize(None).await.unwrap().is_some());
         assert!(root.path().join("biomcp.db").is_file());
-        assert_eq!(std::fs::read(legacy.join("keep")).unwrap(), b"legacy bytes");
+        assert!(!legacy.exists());
         assert_eq!(
             std::fs::read(root.path().join(".body-limit-cache-v1")).unwrap(),
             b"old marker"

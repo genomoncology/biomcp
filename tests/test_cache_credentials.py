@@ -48,7 +48,8 @@ def replay(tmp_path):
                 payload = {"data": [], "total": 0}
             # A provider may echo request context. Cache publication must not
             # persist an authentication value even in a response body.
-            if any(CANARY in values for values in parse_qs(target.query).values()):
+            if (any(CANARY in values for values in parse_qs(target.query).values())
+                    or CANARY in self.headers.values()):
                 payload["request_context"] = CANARY
             body = json.dumps(payload).encode()
             self.send_response(503 if "credential-failure" in self.path else 200)
@@ -143,10 +144,74 @@ def test_upgrade_removes_canary_from_old_sqlite_pages_and_blobs(replay):
         assert connection.execute("SELECT count(*) FROM entries").fetchone() == (0,)
 
 
-def test_failed_keyed_request_redacts_debug_and_error_output(replay):
+@pytest.mark.parametrize("key,args", [
+    ("NCBI_API_KEY", ("search", "article", "credential-failure", "--source", "pubmed", "--limit", "1")),
+    ("S2_API_KEY", ("search", "article", "credential-failure", "--source", "semanticscholar", "--limit", "1")),
+    ("NCI_API_KEY", ("search", "trial", "--source", "nci", "--condition", "credential-failure", "--limit", "1")),
+])
+def test_failed_keyed_request_redacts_debug_and_error_output(replay, key, args):
     env, received = replay
-    env["NCBI_API_KEY"] = CANARY
-    result = run(env, "search", "article", "credential-failure", "--source", "pubmed", "--limit", "1")
+    env[key] = CANARY
+    result = run(env, *args)
     assert result.returncode != 0
     assert received
     assert_no_canary(Path(env["BIOMCP_CACHE_DIR"]), result.stdout, result.stderr)
+
+
+def test_legacy_cleanup_unlinks_symlinks_without_touching_their_targets(replay, tmp_path):
+    env, _ = replay
+    cache = Path(env["BIOMCP_CACHE_DIR"])
+    cache.mkdir(parents=True, exist_ok=True)
+    outside = tmp_path / "saved-outside-cache"
+    outside.mkdir()
+    sentinel = outside / "saved.txt"
+    sentinel.write_text("keep saved data")
+    for name in LEGACY:
+        (cache / name).symlink_to(outside, target_is_directory=True)
+    result = run(env, "cache", "stats")
+    assert result.returncode == 0, "cache initialization failed"
+    assert all(not (cache / name).is_symlink() for name in LEGACY)
+    assert sentinel.read_text() == "keep saved data"
+
+
+def test_upgrade_with_active_reader_retries_before_marking_sanitization_complete(replay):
+    env, _ = replay
+    assert run(env, "cache", "stats").returncode == 0
+    cache = Path(env["BIOMCP_CACHE_DIR"])
+    database = cache / "biomcp.db"
+    with sqlite3.connect(database) as connection:
+        connection.execute("PRAGMA user_version=1")
+        connection.execute("INSERT INTO entries(namespace,key,base_key,metadata,body,bytes,created,last_access) "
+                           "VALUES('http','old','old',?,X'7B7D',?,0,0)",
+                           (CANARY.encode(), len(CANARY) + 2))
+    reader = sqlite3.connect(database)
+    try:
+        reader.execute("BEGIN")
+        reader.execute("SELECT count(*) FROM entries").fetchone()
+        result = run(env, "cache", "stats")
+        assert result.returncode != 0, "occupied migration must not claim success"
+        assert CANARY.encode() not in result.stdout + result.stderr
+        with sqlite3.connect(database) as probe:
+            assert probe.execute("PRAGMA user_version").fetchone() == (1,)
+    finally:
+        reader.close()
+    result = run(env, "cache", "stats")
+    assert result.returncode == 0, "migration must retry after the reader closes"
+    assert_no_canary(cache, result.stdout, result.stderr)
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
+
+
+@pytest.mark.parametrize("command", [("cache", "clean"), ("cache", "clear", "--yes")])
+def test_explicit_clean_and_clear_remove_retired_stores(replay, command):
+    env, _ = replay
+    assert run(env, "cache", "stats").returncode == 0
+    cache = Path(env["BIOMCP_CACHE_DIR"])
+    for name in LEGACY:
+        directory = cache / name
+        directory.mkdir()
+        (directory / "index").write_text("https://example.org/?api_key=" + CANARY)
+    result = run(env, *command)
+    assert result.returncode == 0, "explicit cache cleanup failed"
+    assert all(not (cache / name).exists() for name in LEGACY)
+    assert_no_canary(cache, result.stdout, result.stderr)

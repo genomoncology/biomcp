@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Keep authentication values out of reusable cache entries and discard credential-capable legacy stores and older database entries during upgrade. (2332)
+- Keep authentication values out of reusable cache entries. The first cached command after upgrade deletes credential-capable 0.9.3 stores and older database entries. (2332)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
