@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 0a630248db8f26b70061a3c3306e45bb1102e073, accept
+
 ## Outcome
 
 The shared release-qualification setup provisions the already declared host tools before preflight runs. Linux qualification has working ripgrep and bubblewrap, including the existing kernel-isolated offline test path. Keep preflight, tool versions, advisory policy and offline failure behavior intact.
