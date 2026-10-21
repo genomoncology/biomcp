@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 274f36b3539ec387900b994fc259010f1220bcb3, accept
 
+Reviews: revision e6baee3acbeae287aaf1cbd49dd27d3c5df8175d, accept
+
 ## Outcome
 
 Changes: `tools/check-replay-live`, `tests/test_replay_live_drift.py`, `docs/reference/release-process.md`, `CHANGELOG.md`.
