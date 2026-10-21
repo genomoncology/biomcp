@@ -49,3 +49,4 @@ Pending the remaining accepted source landings and assessment work. The final jo
 - 2026-10-20 next: Resolve2322 after failed fresh Linux j402 on b91c4d46b, then qualify the repaired final source and complete the full untagged rehearsal; no tag or publication
 - 2026-10-20 next: Qualify repaired final main a4918fa3e298b8cc48eb900fb720ea041868850c with the main gate and fresh Linux run, then complete full untagged rehearsal and hand the exact commit to PM for Ian; no publication
 - 2026-10-20 next: Local qualification passes on a4918fa3e298b8cc48eb900fb720ea041868850c (main j637, fresh Linux j643); monitor full untagged rehearsal39540105855, then record proof and hand the exact commit to PM for Ian; no publication
+- 2026-10-21 landed 13eb246d8a566ead86bb1fbe2c6ac76dc45c0a28; next: Complete full untagged rehearsal on the corrected candidate and hand the qualified commit to PM for Ian; no publication
