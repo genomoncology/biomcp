@@ -626,7 +626,8 @@
     "src/entities/trial/search/eligibility/keep_paths.rs": "Test-only module declared under cfg(test) in src/entities/trial/search/eligibility.rs.",
     "tests/test_advisory_bootstrap.py": "Build tooling installation contract; does not drive the shipped product.",
     "tests/test_dependency_advisories.py": "Dependency policy scanner contract; does not drive the shipped product.",
-    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product."
+    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product.",
+    "tests/test_gate_preflight.py": "Build host prerequisite contract; does not drive the shipped product."
   },
   "accounting_cases": {
     "gene": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol",

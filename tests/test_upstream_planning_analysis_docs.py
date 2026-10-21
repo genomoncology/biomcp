@@ -1127,7 +1127,7 @@ def test_manual_qualification_remains_separate_from_protected_release() -> None:
     ):
         assert f"run: {command}" in _workflow_job_block(ci, job)
     for version in (
-        "1.93.1",
+        "tools/rust-toolchain-version",
         "3.12.3",
         "0.8.0",
         "0.9.146",
