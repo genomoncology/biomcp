@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 scripts/installed-wheel-smoke.sh parses each command's complete stdout as JSON and requires an object where the release runbook promises one. Malformed output such as `{garbage`, trailing text, or an array where an object is required fails the smoke with a message naming the command.
 
-- Changes: `scripts/installed-wheel-smoke.sh`, `tests/test_installed_wheel_smoke.py`, `tests/test_release_workflow_provenance.py`, `docs/reference/release-process.md`.
+- Changes: `scripts/installed-wheel-smoke.sh`, `tests/test_installed_wheel_smoke.py`, `tests/test_release_workflow_provenance.py`, `docs/reference/release-process.md`, `CHANGELOG.md`.
 - Proof: negative regressions feed `{garbage`, valid JSON followed by text, and a JSON array to the smoke's check and see each fail; the existing installed-wheel smoke still passes on a real wheel.
 
 ## Evidence

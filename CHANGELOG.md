@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Reject malformed or non-object JSON in installed-wheel checks and verify rendered and installed agent guidance. (2339)
+
 - Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
 
 - Keep cached responses usable during concurrent cache updates, avoid repeated database opens and skip cleanup transactions when maintenance is not due. (2326)
