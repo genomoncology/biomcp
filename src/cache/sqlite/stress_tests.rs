@@ -84,14 +84,11 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
     assert!(child.child.try_wait().unwrap().is_none());
     control.write_all(&[2]).unwrap();
     for _ in 0..192 {
-        match reader
+        if let Some(record) = reader
             .get("http", "shared")
             .expect("eviction must yield a verified row or a miss")
         {
-            Some(record) => {
-                assert_generation(&record, record.metadata[0]);
-            }
-            None => {}
+            assert_generation(&record, record.metadata[0]);
         }
     }
     let mut acknowledgement = [0];
