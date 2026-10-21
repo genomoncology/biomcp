@@ -313,6 +313,7 @@ pub(super) fn map_drugsfda_approvals(
                 }
 
                 Some(DrugApprovalProduct {
+                    product_number: trim_nonempty(product.product_number),
                     brand_name,
                     dosage_form,
                     route,

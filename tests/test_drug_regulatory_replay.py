@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.needs_binary]
 
 @pytest.fixture
 def replay(tmp_path: Path):
-    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False, "related_label": False, "approvals_unavailable": False}
+    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False, "related_label": False, "approvals_unavailable": False, "ndc_identity": False, "ndc_override": {}, "duplicate_product": False}
 
     class Handler(BaseHTTPRequestHandler):
         def answer(self, payload, status=200):
@@ -40,7 +40,7 @@ def replay(tmp_path: Path):
                     self.answer({}, 503)
                     return
                 rows = []
-                if name == "pembrolizumab":
+                if name == "pembrolizumab" or state.get("history_response"):
                     fixture = Path(__file__).resolve().parents[1] / "testdata/sources/openfda/drugsfda_keytruda_20261020.json"
                     self.answer(json.loads(fixture.read_text()))
                     return
@@ -48,11 +48,16 @@ def replay(tmp_path: Path):
                     rows = [{"application_number": app, "products": [{"active_ingredients": [{"name": ingredient}]}]}
                             for app, ingredient in [("BLA761036", name), ("BLA761145", name),
                                                     ("BLA999999", "daratumumab derivative")]]
-                if name == "belantamab mafodotin" and "BLENREP" in query.upper():
-                    rows = [{"application_number": "BLA761440", "products": [{"brand_name": "BLENREP",
+                if name == "belantamab mafodotin":
+                    rows = [{"application_number": "BLA761440", "products": [{"product_number": "001", "brand_name": "BLENREP",
                              "active_ingredients": [{"name": "BELANTAMAB MAFODOTIN-BLMF"}]}]},
                             {"application_number": "BLA999999", "products": [{"brand_name": "BLENREP",
                              "active_ingredients": [{"name": "unrelated"}]}]}]
+                if state["duplicate_product"] and rows:
+                    duplicate = dict(rows[0]["products"][0])
+                    if state["duplicate_product"] == "different_number":
+                        duplicate["product_number"] = "002"
+                    rows[0]["products"].append(duplicate)
                 if name == "daratumumab" and rows:
                     rows[1]["products"][0]["active_ingredients"].append({"name": "HYALURONIDASE-FIHJ"})
                     rows.append({"application_number": "BLA999998", "products": [{"active_ingredients": [{"name": "DARATUMUMAB-ABCD"}]}]})
@@ -78,6 +83,9 @@ def replay(tmp_path: Path):
                             {"name": "DARATUMUMAB"}, {}]}]}]
                 self.answer({"meta": {"results": {"skip": 0, "limit": 8, "total": len(rows)}}, "results": rows})
             elif "label" in path.path:
+                if state["ndc_identity"]:
+                    self.answer({"error": {"code": "NOT_FOUND", "message": "No matches found!"}}, 404)
+                    return
                 ingredient = "BELANTAMAB MAFODOTIN-BLMF" if name == "belantamab mafodotin" else name
                 if state["related_label"]:
                     ingredient = "DARATUMUMAB-ABCD"
@@ -94,6 +102,17 @@ def replay(tmp_path: Path):
             elif "mechanism" in path.path:
                 self.answer({"mechanisms": []})
             elif "query" in path.path:
+                if state["ndc_identity"]:
+                    # Minimized public FDA NDC and UNII fields delivered by MyChem on 2026-10-21.
+                    ndc = {"nonproprietaryname": name, "proprietaryname": "Blenrep",
+                           "applicationnumber": "BLA761440", "productndc": "0173-0913",
+                           "substancename": "BELANTAMAB MAFODOTIN", **state["ndc_override"]}
+                    fields = parse_qs(path.query).get("fields", [""])[0].split(",")
+                    ndc = {key: value for key, value in ndc.items() if f"ndc.{key}" in fields}
+                    self.answer({"total": 2, "hits": [{"_id": "DB1041CXDG", "unii": {
+                        "unii": "DB1041CXDG", "display_name": "BELANTAMAB MAFODOTIN"}},
+                        {"_id": "0173-0913", "ndc": ndc}]})
+                    return
                 self.answer({"total": 1, "hits": [{"_id": "fixture", "drugbank": {"name": name},
                     "chembl": {"pref_name": name, "molecule_chembl_id": "CHEMBL1"}}]})
             else:
@@ -163,6 +182,41 @@ def test_approvals_find_ingredient_and_brand_records_without_other_drugs(replay,
         assert contradictory["approvals"] == []
 
 
+def test_approvals_confirm_the_source_owned_blenrep_product_without_a_label(replay):
+    state, run = replay
+    state.update(name="belantamab mafodotin", ndc_identity=True)
+    data, _ = run("approvals")
+    assert {row["application_number"] for row in data["approvals"]} == {"BLA761440"}
+    assert data["approvals"][0]["products"][0]["active_ingredients"] == ["BELANTAMAB MAFODOTIN-BLMF"]
+    assert data["approvals"][0]["products"][0]["product_number"] == "001"
+    markdown = run("approvals", markdown=True).stdout
+    assert "001" in markdown
+    assert "BELANTAMAB MAFODOTIN-BLMF" in markdown
+
+
+@pytest.mark.parametrize("ndc_override,duplicate", [
+    ({"applicationnumber": "BLA999999"}, False),
+    ({"proprietaryname": "Other brand"}, False),
+    ({"productndc": "0173-9999"}, False),
+    ({"substancename": None}, False),
+    ({"substancename": ["BELANTAMAB MAFODOTIN", "unrelated"]}, False),
+    ({"substancename": "BELANTAMAB MAFODOTIN-ABCD"}, False),
+    ({}, True),
+    ({}, "different_number"),
+])
+def test_approvals_leave_conflicting_or_ambiguous_product_identity_unconfirmed(replay, ndc_override, duplicate):
+    state, run = replay
+    state.update(name="belantamab mafodotin", ndc_identity=True,
+                 ndc_override=ndc_override, duplicate_product=duplicate)
+    data, _ = run("approvals")
+    assert data["approvals"] == []
+    message = data["section_outcomes"]["approvals"]["message"]
+    assert "unconfirmed" in message.lower()
+    provider = json.dumps(data["unconfirmed_approvals"])
+    assert "BLA761440" in provider
+    assert "BLENREP" in provider
+
+
 def test_related_label_cannot_establish_approval_identity_by_suffix(replay):
     state, run = replay
     state["related_label"] = True
@@ -229,12 +283,32 @@ def test_empty_approvals_explain_unverified_identity_without_ruling_out_approval
         else:
             assert outcome["outcome"] == "empty"
             message = outcome["message"]
-            assert "no exact-name match" in message.lower()
-            assert "belantamab mafodotin-blmf" in message
+            assert "unconfirmed" in message.lower()
+            provider = json.dumps(data["unconfirmed_approvals"])
+            for identity in ["BELANTAMAB MAFODOTIN-BLMF", "BLA761440", "BLENREP", "001"]:
+                assert identity in provider
+                assert identity in markdown
+            assert "Unconfirmed provider records" in markdown
             assert "source-confirmed identity" in message
             assert "FDA approvals are not ruled out" in message
             assert message in markdown
         assert "No approvals found" not in markdown
+
+
+def test_unconfirmed_approval_history_preserves_full_provider_history(replay):
+    state, run = replay
+    state.update(name="belantamab mafodotin", history_response=True)
+    data, _ = run("approval-history")
+    assert data["approvals"] == []
+    assert len(data["unconfirmed_approvals"][0]["submissions"]) == 127
+    markdown = run("approval-history", markdown=True).stdout
+    assert "Unconfirmed provider records" in markdown
+    assert "EFFICACY" in markdown
+    assert "125514s128lbl.pdf" in markdown
+    assert "125514Orig1s128ltr.pdf" in markdown
+    for row in data["unconfirmed_approvals"][0]["submissions"]:
+        if row.get("submission_number"):
+            assert f"| {row['submission_number']} |" in markdown
 
 
 def test_approval_history_preserves_full_provider_submissions_and_documents(replay):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory recorded requests; opt in to a paced, credential-free drift check."""
+"""Inventory recorded requests; opt in to a paced drift check; credentials require explicit source-specific opt-in."""
 
 from __future__ import annotations
 
@@ -32,18 +32,24 @@ from replay_drift import (  # noqa: E402
 
 SENSITIVE = re.compile(r"api.?key|token|password|secret|authorization|credential", re.I)
 MAX_REPLY_BYTES = 32 * 1024 * 1024
+KEYED_S2_RECORDINGS = 5
 
 
-def default_interval() -> float:
-    # Use the most conservative existing unkeyed provider policy. Keep one
-    # serial schedule instead of copying the Rust provider policy table.
+def default_interval(keyed_s2: bool = False) -> float:
+    # Derive the selected S2 schedule from the runtime provider policy.
+    # Other inventory checks retain its conservative unkeyed interval.
     text = (ROOT / "src/sources/rate_limit.rs").read_text()
-    function = re.search(r"fn s2_min_interval\([^}]+\}\s*else\s*\{([^}]+)", text)
+    pattern = (
+        r"fn s2_min_interval\([^}]+?if has_s2_api_key\s*\{([^}]+)"
+        if keyed_s2
+        else r"fn s2_min_interval\([^}]+\}\s*else\s*\{([^}]+)"
+    )
+    function = re.search(pattern, text)
     seconds = re.search(
         r"Duration::from_secs\((\d+)\)", function[1] if function else ""
     )
     if not seconds:
-        raise ValueError("cannot derive unkeyed provider pacing")
+        raise ValueError("cannot derive provider pacing")
     return float(seconds[1])
 
 
@@ -171,6 +177,16 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="comma-separated sources whose access is explicitly authorized",
     )
+    parser.add_argument(
+        "--source",
+        choices=["semantic-scholar"],
+        help="select only Semantic Scholar recordings",
+    )
+    parser.add_argument(
+        "--keyed-semantic-scholar",
+        action="store_true",
+        help="use inherited S2_API_KEY for the selected release recordings",
+    )
     args = parser.parse_args(argv)
     try:
         registry = json.loads((ROOT / "docs/reference/sources.json").read_text())
@@ -195,15 +211,48 @@ def main(argv: list[str] | None = None) -> int:
         manifest = json.loads((args.replay_dir / "manifest.json").read_text())
         if manifest.get("schema_version") != 1:
             raise ValueError("unsupported manifest schema")
-        interval = default_interval()
+        entries = sorted(manifest["routes"].items())
+        if args.source:
+            entries = [
+                (key, entry)
+                for key, entry in entries
+                if provider_policy_id(
+                    recording_provider(key, entry, routes), identities
+                )
+                == args.source
+            ]
+        if args.keyed_semantic_scholar:
+            if args.source != "semantic-scholar" or len(entries) != KEYED_S2_RECORDINGS:
+                raise ValueError("keyed check requires the selected release recordings")
+            for key, entry in entries:
+                provider = recording_provider(key, entry, routes)
+                method, url, _, _ = request_metadata(key, entry, provider, routes)
+                parsed = urlsplit(url)
+                declared = urlsplit(routes[provider])
+                if parsed.scheme != "https" or (parsed.scheme, parsed.netloc) != (
+                    declared.scheme,
+                    declared.netloc,
+                ):
+                    raise ValueError("keyed check requires the declared HTTPS origin")
+                if (method, parsed.path) not in {
+                    ("GET", "/graph/v1/paper/search"),
+                    ("POST", "/graph/v1/paper/batch"),
+                }:
+                    raise ValueError("keyed check requires read-only paper endpoints")
+            key_available = bool(os.environ.get("S2_API_KEY", "").strip())
+            if not key_available or any(
+                not 32 <= ord(c) <= 126 for c in os.environ["S2_API_KEY"]
+            ):
+                raise ValueError("keyed check requires a valid inherited S2_API_KEY")
+        interval = default_interval(args.keyed_semantic_scholar)
     except (ValueError, OSError, KeyError):
         print(json.dumps({"error": "invalid inventory or policy configuration"}))
         return 2
-    counts: Counter = Counter(total=len(manifest["routes"]))
+    counts: Counter = Counter(total=len(entries))
     stopped = set()
     last_start = None
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-    for index, (key, entry) in enumerate(sorted(manifest["routes"].items()), 1):
+    for index, (key, entry) in enumerate(entries, 1):
         # Never print URLs, request bodies, response bodies or raw exceptions.
         provider = recording_provider(key, entry, routes)
         result = {"recording": index, "provider": provider, "file": entry.get("file")}
@@ -244,6 +293,8 @@ def main(argv: list[str] | None = None) -> int:
                     if last_start is not None:
                         time.sleep(max(0, interval - (time.monotonic() - last_start)))  # noqa: TID251 -- provider pacing
                     last_start = time.monotonic()
+                    if args.keyed_semantic_scholar:
+                        headers["x-api-key"] = os.environ["S2_API_KEY"]
                     request = urllib.request.Request(
                         url, data=body, headers=headers, method=method
                     )
@@ -292,6 +343,15 @@ def main(argv: list[str] | None = None) -> int:
                 if type(error) is ValueError
                 else ["request or recording unavailable"]
             )
+        if args.keyed_semantic_scholar:
+            # A provider can echo authentication into field names or errors.
+            # Keep keyed diagnostics fixed and never persist response material.
+            details = (
+                ["recording blocked" if state == "blocked" else "response drift"]
+                if details
+                else []
+            )
+            added_paths = []
         counts[state] += 1
         print(
             json.dumps(
