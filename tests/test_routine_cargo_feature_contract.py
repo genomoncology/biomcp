@@ -192,12 +192,16 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
     tools.mkdir()
     # The gate's live-replay command is unrelated to ordering these leaves.
     uv = tools / "uv"
-    uv.write_text("#!/bin/sh\necho gate-stage:replay\n"
-                  + ("exit 23\n" if failed_stage == "replay" else "exit 0\n"))
+    uv.write_text(
+        "#!/bin/sh\n"
+        '[ "$*" = "run --no-project python tools/check-replay-live --disable-sources commercial-restricted,semantic-scholar,kegg" ] || exit 97\n'
+        "echo gate-stage:replay\n"
+        + ("exit 23\n" if failed_stage == "replay" else "exit 0\n")
+    )
     uv.chmod(0o755)
     wrapper = tmp_path / "gate.mk"
     wrapper.write_text(
-        f"include {REPO_ROOT / 'Makefile'}\ngate-preflight:\n\t@:\n"
+        f"include {REPO_ROOT / 'Makefile'}\ngate-preflight sync-python-dev:\n\t@:\n"
         + "\n".join(
             f"{stage}:\n\t@echo gate-stage:{stage}\n"
             + ("\t@exit 23\n" if stage == failed_stage else "")
