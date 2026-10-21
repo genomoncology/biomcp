@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Reviews: revision 7d1b9f08dcbf96b6f643abf3c2488de36d7ca95d, accept
 
+Reviews: revision 417219b32c3bfefac65de7b068086f3daa060110, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `src/entities/article/enrichment.rs`, `src/entities/article/mod.rs`, `src/entities/article/variant_search.rs`, `src/cli/variant/articles.rs`, `src/render/markdown/article.rs`, `templates/article_search.md.j2`, `tests/test_variant_article_metadata_status.py`, `tests/feature-links.json`, `docs/user-guide/cli-reference.md`, `docs/user-guide/variant.md`.
