@@ -22,7 +22,7 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/coding-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical"])
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene"])
 def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path) -> None:
     control = json.loads(FIXTURE.read_text())
     hit = control["hit"]
@@ -40,7 +40,9 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
             requests.append((target.path, parse_qs(target.query)))
             if target.path == "/query":
                 # Authored empty MyGene facts keep this control about coding-form coverage.
-                body = {"total": 0, "hits": []}
+                body = ({"total": 1, "hits": [{"symbol": "ABCC8", "entrezgene": 6833,
+                                               "alias": ["SUR1"]}]} if surface == "gene"
+                        else {"total": 0, "hits": []})
             elif target.path == "/v1/query":
                 body = {"total": 1, "hits": [hit]}
             elif target.path.startswith("/v1/variant/"):
@@ -122,7 +124,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         request.write_text(json.dumps([{"gene": "ABCC8", "protein": "R1437Q"}]))
         command.remove("ABCC8 R1437Q")
         command += ["--input", str(request)]
-    if surface in ("debug", "batch", "reported"):
+    if surface in ("debug", "batch", "reported", "gene"):
         command.append("--debug-plan")
     if surface == "reported":
         command.append("--verify-identity")
@@ -185,11 +187,15 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
             assert len(query["query"][0]) <= 2048
         elif path.endswith("/esearch.fcgi"):
             assert len(query["term"][0]) <= 4096
-    if surface in ("debug", "batch", "reported"):
+    if surface in ("debug", "batch", "reported", "gene"):
         assert payload["debug_plan"]["alias_coverage"] == coverage
         plan = payload["debug_plan"]
         lexical_queries = next(row["queries"] for row in plan["routes"]
                                if row["route"] == "exact_lexical")
+        if surface == "gene":
+            assert "ABCC8 R1458Q" in lexical_queries, lexical_queries
+            assert any(query.get("query", [""])[0].startswith("ABCC8 R1458Q AND NOT")
+                       for path, query in requests if path == "/search"), requests
         for alias in ("ABCC8 c.4310G>A", "ABCC8 c.4373G>A"):
             assert alias not in lexical_queries
             assert any(row["route"] == "strict" and row["query_alias"] == alias

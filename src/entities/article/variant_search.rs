@@ -310,6 +310,7 @@ pub(crate) struct VariantArticleExecutionContext {
     query_aliases: Vec<String>,
     boolean_gene_aliases: Arc<Mutex<Vec<String>>>,
     boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
+    lexical_aliases: Arc<Mutex<Option<Vec<String>>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
     attempted_alias_sources: Arc<Mutex<BTreeSet<(String, String)>>>,
     boolean_query_omissions: Arc<Mutex<BTreeSet<(String, String)>>>,
@@ -360,6 +361,7 @@ impl VariantArticleExecutionContext {
             query_aliases: Vec::new(),
             boolean_gene_aliases: Arc::new(Mutex::new(Vec::new())),
             boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
+            lexical_aliases: Arc::new(Mutex::new(None)),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
             attempted_alias_sources: Arc::new(Mutex::new(BTreeSet::new())),
             boolean_query_omissions: Arc::new(Mutex::new(BTreeSet::new())),
@@ -508,6 +510,14 @@ impl VariantArticleExecutionContext {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
             RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
         });
+    }
+
+    fn lexical_aliases(&self, selected: &[String]) -> Vec<String> {
+        self.lexical_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .unwrap_or_else(|| selected.to_vec())
     }
 
     fn for_alias(&self, alias: &str) -> Self {
@@ -1961,15 +1971,35 @@ async fn resolve_search_context(
     } else {
         exact_aliases_with_equivalence(&context, &canonical_equivalence)
     };
-    if strategy == VariantArticleStrategy::Union {
-        (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
-    }
     if !matches!(
         strategy,
         VariantArticleStrategy::Exact | VariantArticleStrategy::Annotation
     ) && context.available
     {
         truncated |= expand_gene_symbol_aliases(&context, &mut aliases, execution).await;
+    }
+    // Save the original source/CAR and gene-symbol selection before strict
+    // coding discovery changes either its ordinary or Boolean provider plans.
+    *execution
+        .lexical_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(aliases.clone());
+    if strategy == VariantArticleStrategy::Union {
+        let boolean_variants = execution
+            .boolean_variant_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        if boolean_variants.is_empty() {
+            (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
+        } else {
+            let (expanded, cut) = coding_discovery_aliases(&context, &boolean_variants);
+            *execution
+                .boolean_variant_aliases
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = expanded;
+            truncated |= cut;
+        }
     }
     Ok((context, canonical_equivalence, aliases, truncated))
 }
@@ -2098,13 +2128,8 @@ async fn expand_gene_symbol_aliases(
             ordered.push(alias.clone());
         }
     }
-    let limit = if coverage.status == "available" {
-        MAX_EXACT_ALIASES
-    } else {
-        MAX_RESOLVED_ALIASES
-    };
-    let truncated = ordered.len() > limit;
-    ordered.truncate(limit);
+    let truncated = ordered.len() > MAX_EXACT_ALIASES;
+    ordered.truncate(MAX_EXACT_ALIASES);
     *selected = ordered;
     for alias in &mut coverage.aliases {
         alias.planned = selected.contains(&alias.alias);
@@ -2348,14 +2373,6 @@ fn coding_discovery_aliases(
     (ordered, truncated)
 }
 
-fn lexical_aliases(context: &VariantArticleResolutionContext, selected: &[String]) -> Vec<String> {
-    if selected.len() > MAX_EXACT_ALIASES {
-        exact_aliases(context).0
-    } else {
-        selected.to_vec()
-    }
-}
-
 fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -2528,7 +2545,7 @@ fn alias_coverage(
             );
         }
         if resolved {
-            planned.extend(lexical_aliases(context, selected));
+            planned.extend(execution.lexical_aliases(selected));
         } else {
             planned.extend(fallback_aliases(input, context).0);
         }
@@ -3673,10 +3690,29 @@ fn plan_queries(
     context: &VariantArticleResolutionContext,
     route: &str,
     exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
 ) -> Vec<String> {
     match route {
-        "strict" => exact_aliases.to_vec(),
-        "exact_lexical" => lexical_aliases(context, exact_aliases),
+        "strict" => {
+            let mut aliases = Vec::new();
+            for plan in provider_variant_query_plan_with_gene_aliases(
+                input,
+                context,
+                VariantArticleStrategy::Lexical,
+                exact_aliases,
+                execution,
+            ) {
+                if plan.route == "strict" {
+                    for alias in plan.coverage_aliases {
+                        if !aliases.contains(&alias) {
+                            aliases.push(alias);
+                        }
+                    }
+                }
+            }
+            aliases
+        }
+        "exact_lexical" => execution.lexical_aliases(exact_aliases),
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -4033,7 +4069,8 @@ fn materialize_discovery_route_plans(
             "exact_lexical",
             source,
             exact_applicable.then(|| {
-                lexical_aliases(context, exact_aliases)
+                execution
+                    .lexical_aliases(exact_aliases)
                     .iter()
                     .filter(|alias| {
                         !matches!(source, "pubmed" | "europepmc")
@@ -4204,7 +4241,7 @@ fn build_debug_plan(
             let queries = if route == "pubtator_variant" {
                 execution.pubtator_variant_queries()
             } else {
-                plan_queries(input, context, route, canonical_aliases)
+                plan_queries(input, context, route, canonical_aliases, execution)
             };
             let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
             for event in events.iter().filter(|event| event.route == route) {
@@ -4819,7 +4856,7 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
             let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
-                lexical_aliases(&context, &selected_exact_aliases),
+                execution.lexical_aliases(&selected_exact_aliases),
                 selected_exact_aliases_truncated,
                 &execution,
             )
@@ -8530,6 +8567,7 @@ mod tests {
                 &context,
                 "pubtator_variant",
                 &[],
+                &VariantArticleExecutionContext::single(),
             )
             .is_empty()
         );
