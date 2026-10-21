@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 4e7f582bcd1aa17f7f737d2aac982fc50ae7fe8b, accept
+
 ## Outcome
 
 Changes: `tests/release_workflow_inventory.py`, `tests/test_release_check_counterparts.py`, `tests/test_release_workflow_provenance.py`, `CHANGELOG.md`.
