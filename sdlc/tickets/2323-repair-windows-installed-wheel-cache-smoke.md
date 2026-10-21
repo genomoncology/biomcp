@@ -14,7 +14,7 @@ The installed Windows wheel passes the existing clean-home, keyless cache-stats 
 
 - Proof: Reproduce the failing boundary on current main through a build job with an outside-in control. Preserve the original cache-stats exit and JSON assertions and all trial, drug, absent-FAERS and packaged-skill checks. The final complete untagged release rehearsal must pass its actual Windows installed-wheel job.
 
-Changes: `scripts/installed-wheel-smoke.sh`, `scripts/installed-wheel-smoke.py`, `tests/test_installed_wheel_smoke.py`, `sdlc/tickets/2323-repair-windows-installed-wheel-cache-smoke.md`, `sdlc/records/2323-windows-wheel-smoke.md`, `CHANGELOG.md`. Correct the claim when actual files are known.
+Changes: `.github/workflows/release.yml`, `scripts/installed-wheel-smoke.sh`, `tests/test_installed_wheel_smoke.py`, `sdlc/tickets/2323-repair-windows-installed-wheel-cache-smoke.md`, `sdlc/records/2323-windows-wheel-smoke.md`, `CHANGELOG.md`.
 
 ## Evidence
 

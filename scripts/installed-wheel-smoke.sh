@@ -11,7 +11,8 @@ smoke_home="$smoke_root/home"
 if command -v cygpath >/dev/null 2>&1; then
   smoke_home="$(cygpath -w "$smoke_home")"
 fi
-env -i PATH="$PATH" SYSTEMROOT="${SYSTEMROOT:-}" WINDIR="${WINDIR:-}" \
+# Windows cache ACLs need the host account name, not caller credentials.
+env -i USERNAME="${USERNAME:-}" PATH="$PATH" SYSTEMROOT="${SYSTEMROOT:-}" WINDIR="${WINDIR:-}" \
   HOME="$smoke_home" USERPROFILE="$smoke_home" \
   LOCALAPPDATA="$smoke_home/AppData/Local" APPDATA="$smoke_home/AppData/Roaming" \
   BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar \
