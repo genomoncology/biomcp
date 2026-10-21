@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2315, 2316, 2317, 2318, 2319, 2320, 2272, 2306, 2321
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2315, 2316, 2317, 2318, 2319, 2320, 2272, 2306, 2321, 2322
 
 Reviews: revision 1b8e728, accept
 
@@ -19,6 +19,8 @@ Reviews: revision 5db2cfd, accept
 Reviews: revision 07e81e6, accept
 
 Reviews: revision 851911d, accept
+
+Reviews: revision f4dd2b6, accept
 
 ## Outcome
 
@@ -39,3 +41,11 @@ The release admission record names the exact candidate, final Linux job, success
 Final gate:
 
 Pending the remaining accepted source landings and assessment work. The final job and rehearsal identifiers will be recorded here when they complete.
+
+## Progress
+
+- 2026-10-20 landed 368a8ac8f5074d9f78bae5ee5a9b0ff232313572; next: Land remaining accepted release work, complete final qualification and rehearse without publication
+- 2026-10-20 next: Qualify frozen main b91c4d46bb33741e76065dbe81e3b406d0e1596c with the final main gate and fresh Linux offline run, then complete one full untagged rehearsal and send the PM go request; no tag or publication
+- 2026-10-20 next: Resolve2322 after failed fresh Linux j402 on b91c4d46b, then qualify the repaired final source and complete the full untagged rehearsal; no tag or publication
+- 2026-10-20 next: Qualify repaired final main a4918fa3e298b8cc48eb900fb720ea041868850c with the main gate and fresh Linux run, then complete full untagged rehearsal and hand the exact commit to PM for Ian; no publication
+- 2026-10-20 next: Local qualification passes on a4918fa3e298b8cc48eb900fb720ea041868850c (main j637, fresh Linux j643); monitor full untagged rehearsal39540105855, then record proof and hand the exact commit to PM for Ian; no publication
