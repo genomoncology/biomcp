@@ -616,11 +616,10 @@ async fn save_resolved_fulltext(
     manifest.quality.has_sections = text
         .lines()
         .any(|line| crate::transform::article::markdown_heading_level(line).is_some());
-    let path = download::save_atomic(
-        &fulltext_cache_key(kind, first_cache_identifier(article, requested_id)),
-        &text,
-    )
-    .await?;
+    let cache_identifier = first_cache_identifier(article, requested_id);
+    let path =
+        download::save_atomic(&fulltext_cache_key(kind.clone(), cache_identifier), &text).await?;
+    super::fulltext_saved::remember(article, requested_id, cache_identifier, kind).await?;
     let outcome_source = source.source.clone();
     article.full_text_path = Some(path);
     article.full_text_note = None;

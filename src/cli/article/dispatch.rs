@@ -46,6 +46,17 @@ pub(in crate::cli) async fn handle_get(
         return Ok(outcome);
     }
 
+    if (outline || lines.is_some())
+        && let Some(path) = crate::entities::article::saved_fulltext_path(&args.id).await
+    {
+        return Ok(CommandOutcome::stdout(super::fulltext_view::render(
+            &path,
+            outline,
+            lines.as_deref(),
+            json_output,
+        )?));
+    }
+
     let article = crate::entities::article::get(
         &args.id,
         &sections,

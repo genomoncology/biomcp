@@ -15,6 +15,9 @@ mod source_outcomes;
 #[path = "article_asset_terminal/primary_archive.rs"]
 mod primary_archive;
 
+#[path = "article_asset_terminal/saved_fulltext.rs"]
+mod saved_fulltext;
+
 struct ArticleFixture {
     root: PathBuf,
     workspace: PathBuf,

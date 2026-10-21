@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Read the saved article full-text conversion for immediate line and outline views when a later provider response has no full text, while honoring explicit cache bypasses. (2354)
+
 - Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)
