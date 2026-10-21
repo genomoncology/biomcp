@@ -17,7 +17,7 @@ Depends on: 2332
 
 ## Outcome
 
-After the four newly approved fixes land and pass review, qualify the exact new 0.9.4 source with the full local main gate, fresh-clone Linux offline qualification and complete untagged release rehearsal. Hand the explicit qualified and rehearsed commit to the PM for Ian. Ian alone publishes.
+After the required fixes land and pass review, qualify the exact new 0.9.4 source with the full local main gate, fresh-clone Linux offline qualification, authorized Semantic Scholar live check and complete untagged release rehearsal. Hand the explicit qualified and rehearsed commit to the PM for Ian. Ian alone publishes.
 
 - Proof: the new source passes the required final local main and fresh Linux checks and every required job in one complete untagged rehearsal, including native installed-wheel checks, both containers and rehearsal-complete. Retained raw evidence and the fresh completion review name the actual revisions and limits. No earlier source pass substitutes for these new runs.
 
