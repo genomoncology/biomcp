@@ -9,6 +9,8 @@ This plan says what BioMCP builds next, why, and in what order. Read status from
 3. Process fixes from Ian's 2026-10-20 assessment that make the release path cheaper: one release document, release-only checks run earlier, the landing gate booking its real need, and removal of leftover pipeline scripts and re-stamping checkers.
 4. Full FDA approval history (2272), adopted with its recorded provider replies and normal source review.
 5. Feature coverage linked to outside-in behavior, with one valid baseline and a nightly/release floor. Complete records cleanup (2306) before the release rehearsal.
+6. Fixes Ian moved in from 0.9.5 after research's 0.9.4 recheck: the Rust toolchain pin and declared gate tools (2324, landed alone because it changes the gate), recovery of papers from dropped coding spellings (2327), BLENREP approvals for belantamab mafodotin (2328) and PubTator3 row status (2329).
+7. Fresh admission (2330) after all four: final main check, Linux offline run and full untagged rehearsal on the new candidate. Ian publishes.
 
 Exit: every 0.9.4 ticket lands or is withdrawn, main passes its full local check, the Linux fresh-clone offline run passes, and one full manual release rehearsal passes on final main without a tag. Ian then authorizes the tag.
 
@@ -16,6 +18,7 @@ Exit: every 0.9.4 ticket lands or is withdrawn, main passes its full local check
 
 1. Measure whether an agent answers cancer care questions better with BioMCP (ideal-state gap: nobody measures agent success), following `sdlc/planning/2026-10-03-prove-agent-value.md`.
 2. Prove trial answers correct against keys taken from ClinicalTrials.gov itself (ideal-state gap: nothing proves the trial answers are correct).
+3. Make warm cache reads as fast as 0.9.3 (2326), measuring before changing.
 
 Lanes run in parallel where their claims do not collide. Accepted tickets land in batches through one lander, with one candidate landing gate per batch. All assessment and reliability work stays in 0.9.4. Run the full main check once on the final candidate before the full untagged rehearsal; nightly qualification will own its additional checks when scheduling is available.
 
