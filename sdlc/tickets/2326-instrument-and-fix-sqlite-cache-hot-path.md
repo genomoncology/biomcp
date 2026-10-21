@@ -10,7 +10,7 @@ Warm and day-cached answers return within 0.5 ms of 0.9.3 on the ticket 2234 row
 
 - Proof: record paired 0.9.3-versus-candidate rows from the 2234 method on the same Mac and the measured causes and limits. Target a gap within 0.5 ms; under Ian's PM m3064 ruling, a remaining GWAS gap may be recorded as a known limit after one attribution pass and does not block an otherwise correct, reviewed change. Deterministic concurrent-process tests return only correct bodies or misses, replacement-cache handles fail closed, and the security-composed branch passes the full routine and fresh review.
 
-- Changes: `src/cache/manager.rs`, `src/cache/mod.rs`, `src/cache/sqlite.rs`, `src/cache/sqlite/identity.rs`, `src/cache/sqlite/maintenance.rs`, `src/cache/sqlite/pool.rs`, `src/cache/sqlite/read.rs`, `src/cache/sqlite/stress_tests.rs`, `src/cache/sqlite/tests.rs`, `src/cache/timing.rs`, `tests/test_cache_sqlite.py`, `docs/troubleshooting.md`, `CHANGELOG.md`.
+- Changes: `src/cache/manager.rs`, `src/cache/mod.rs`, `src/cache/sqlite.rs`, `src/cache/sqlite/identity.rs`, `src/cache/sqlite/maintenance.rs`, `src/cache/sqlite/pool.rs`, `src/cache/sqlite/read.rs`, `src/cache/sqlite/stress_tests.rs`, `src/cache/sqlite/tests.rs`, `src/cache/timing.rs`, `tests/test_cache_sqlite.py`, `tests/test_http_cache_fail_soft.py`, `tests/surface/test_source_configuration_docs_contract.py`, `docs/troubleshooting.md`, `CHANGELOG.md`.
 
 ## Evidence
 
