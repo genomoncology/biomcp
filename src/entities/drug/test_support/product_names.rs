@@ -144,7 +144,7 @@ async fn sparse_multi_word_brand_label(
     capture: &str,
     elements: &str,
     set_id: &str,
-) -> (super::super::Drug, tokio::task::JoinHandle<()>) {
+) -> (super::super::Drug, crate::test_support::TestHttpServer) {
     let (base, server) = name_resolution_fixture_server_with_elements(
         vec![(brand.to_string(), capture.to_string())],
         Vec::new(),
@@ -167,40 +167,40 @@ async fn sparse_multi_word_brand_label(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn herceptin_hylecta_keeps_its_multi_word_brand_and_own_label() {
-    let (_drug, server) = sparse_multi_word_brand_label(
+    let (_drug, mut server) = sparse_multi_word_brand_label(
         "Herceptin Hylecta",
         HERCEPTIN_HYLECTA_CAPTURE,
         HERCEPTIN_HYLECTA_ELEMENTS_BODY,
         "ebf30894-41cf-480c-8bc3-56f592a13813",
     )
     .await;
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn rituxan_hycela_keeps_its_multi_word_brand_and_own_label() {
-    let (_drug, server) = sparse_multi_word_brand_label(
+    let (_drug, mut server) = sparse_multi_word_brand_label(
         "Rituxan Hycela",
         RITUXAN_HYCELA_CAPTURE,
         RITUXAN_HYCELA_ELEMENTS_BODY,
         "3e5b7e82-f018-4eaf-ae78-d6145a906b20",
     )
     .await;
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn tecentriq_hybreza_keeps_its_multi_word_brand_and_own_label() {
-    let (_drug, server) = sparse_multi_word_brand_label(
+    let (_drug, mut server) = sparse_multi_word_brand_label(
         "Tecentriq Hybreza",
         TECENTRIQ_HYBREZA_CAPTURE,
         TECENTRIQ_HYBREZA_ELEMENTS_BODY,
         "a617b089-ce66-464b-987b-b45d029b4d6f",
     )
     .await;
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The live sweep showed `get drug 5-FU` waiting four to six
@@ -210,32 +210,28 @@ async fn tecentriq_hybreza_keeps_its_multi_word_brand_and_own_label() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_slow_discover_round_never_holds_the_refusal_hostage() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind slow OLS4 fixture");
-    let ols_base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let ols_server = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let _ = &request[..len];
-                // Far past the rescue's budget and past the test's
-                // deadline: only a bounded rescue can answer inside it.
-                tokio::time::sleep(std::time::Duration::from_secs(8)).await;
-                let body = r#"{"response":{"docs":[]}}"#;
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
-        }
-    });
+    let mut ols_server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(_request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
 
-    let (base, server) = name_resolution_fixture_server(
+            // Far past the rescue's budget and past the test's
+            // deadline: only a bounded rescue can answer inside it.
+            tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+            let body = r#"{"response":{"docs":[]}}"#;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
+        }
+    })
+    .expect("start HTTP fixture");
+    let ols_base = ols_server.base.clone();
+
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Tarceva".to_string(),
             crate::transform::drug::name_resolution_tests::TARCEVA_CAPTURE.to_string(),
@@ -253,8 +249,8 @@ async fn a_slow_discover_round_never_holds_the_refusal_hostage() {
         .expect_err("the text-only match still refuses");
     let elapsed = started.elapsed();
     drop(env);
-    ols_server.abort();
-    server.abort();
+    ols_server.finish().unwrap();
+    server.finish().unwrap();
 
     let message = err.to_string();
     assert!(
@@ -396,7 +392,7 @@ fn assert_label_set_id_and_text(drug: &super::super::Drug, set_id: &str, needle:
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Headache Relief".to_string(),
             HEADACHE_RELIEF_CAPTURE.to_string(),
@@ -428,7 +424,7 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
         "a876daa7-ade3-497d-87bb-46d6e4dc185a",
         "minor aches and pains",
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The openFDA label answer for the "Advil" search (live total 39,
@@ -512,7 +508,7 @@ const ADVIL_CAPTURE: &str = r#"
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn advil_names_the_ingredient_it_pairs_not_the_merged_pm_row() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("Advil".to_string(), ADVIL_CAPTURE.to_string())],
         vec![("Advil".to_string(), ADVIL_LABEL_BODY.to_string())],
         Vec::new(),
@@ -535,7 +531,7 @@ async fn advil_names_the_ingredient_it_pairs_not_the_merged_pm_row() {
         "1f01c10a-9434-91a4-2ee4-352315a6b610",
         "minor aches and pains",
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The openFDA label answer for the "Nighttime Sleep Aid" search (live
@@ -605,7 +601,7 @@ const NIGHTTIME_SLEEP_AID_CAPTURE: &str = r#"
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nighttime_sleep_aid_names_the_record_not_another_products_row() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Nighttime Sleep Aid".to_string(),
             NIGHTTIME_SLEEP_AID_CAPTURE.to_string(),
@@ -634,5 +630,5 @@ async fn nighttime_sleep_aid_names_the_record_not_another_products_row() {
         "514aa6b5-c33b-494c-e063-6294a90a7ace",
         "occasional sleeplessness",
     );
-    server.abort();
+    server.finish().unwrap();
 }

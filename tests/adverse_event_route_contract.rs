@@ -1,8 +1,6 @@
-use std::io::{Read, Write};
-use std::net::TcpListener;
+use biomcp_mcp_contract_client::test_http::TestHttpServer;
 use std::process::{Command, Output};
 use std::sync::mpsc;
-use std::thread;
 use std::time::Duration;
 
 const EMPTY_OPENFDA_PAGE: &str =
@@ -27,7 +25,7 @@ const FAERS_REPORT_PAGE: &str = r#"{
 struct RequestFixture {
     base: String,
     requests: mpsc::Receiver<String>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl RequestFixture {
@@ -36,40 +34,21 @@ impl RequestFixture {
     }
 
     fn start_with_body(body: &'static str) -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind OpenFDA fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let (request_tx, requests) = mpsc::channel();
-        let thread = thread::spawn(move || {
-            if let Ok((mut stream, _)) = listener.accept() {
-                let mut request = Vec::new();
-                let mut chunk = [0_u8; 1024];
-                while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-                    let read = stream.read(&mut chunk).expect("read fixture request");
-                    if read == 0 {
-                        break;
-                    }
-                    request.extend_from_slice(&chunk[..read]);
-                }
-                let head = String::from_utf8_lossy(&request).into_owned();
-                let target = head
-                    .lines()
-                    .next()
-                    .and_then(|line| line.split_whitespace().nth(1))
-                    .unwrap_or_default()
-                    .to_string();
-                request_tx.send(target).expect("capture request target");
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    body.len(),
-                    body
-                );
-                let _ = stream.write_all(response.as_bytes());
+        let server = TestHttpServer::respond(move |request| {
+            let head = String::from_utf8_lossy(&request);
+            let target = head.lines().next().and_then(|line| line.split_whitespace().nth(1))
+                .unwrap_or_default().to_string();
+            request_tx.send(target).expect("capture request target");
+            async move {
+                Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).into_bytes())
             }
-        });
+        }).expect("start OpenFDA fixture");
+        let base = server.base.clone();
         Self {
             base,
             requests,
-            thread: Some(thread),
+            server,
         }
     }
 
@@ -86,19 +65,6 @@ impl RequestFixture {
                 .is_err(),
             "invalid command contacted OpenFDA"
         );
-    }
-}
-
-impl Drop for RequestFixture {
-    fn drop(&mut self) {
-        if let Some(thread) = self.thread.take() {
-            // Invalid-input tests leave accept blocked; connecting releases it without becoming
-            // a BioMCP provider request.
-            if !thread.is_finished() {
-                let _ = std::net::TcpStream::connect(self.base.trim_start_matches("http://"));
-            }
-            thread.join().expect("join OpenFDA fixture");
-        }
     }
 }
 
@@ -122,7 +88,7 @@ fn captured_search(target: &str) -> String {
 
 #[test]
 fn invalid_count_offset_is_rejected_without_provider_contact() {
-    let fixture = RequestFixture::start();
+    let mut fixture = RequestFixture::start();
     let output = run_biomcp(
         &[
             "search",
@@ -141,11 +107,12 @@ fn invalid_count_offset_is_rejected_without_provider_contact() {
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--count requires --offset 0"));
     fixture.assert_no_request();
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn unknown_get_section_is_rejected_without_provider_contact() {
-    let fixture = RequestFixture::start();
+    let mut fixture = RequestFixture::start();
     let output = run_biomcp(
         &["--json", "get", "adverse-event", "1001", "not-a-section"],
         &fixture,
@@ -161,11 +128,12 @@ fn unknown_get_section_is_rejected_without_provider_contact() {
             .is_some_and(|message| message.contains("Unknown section"))
     );
     fixture.assert_no_request();
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn faers_subset_json_process_contract_is_bounded_and_truthful() {
-    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    let mut fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
     let output = run_biomcp(
         &[
             "--json",
@@ -226,12 +194,13 @@ fn faers_subset_json_process_contract_is_bounded_and_truthful() {
         ["reactions", "outcomes"]
     );
     assert!(fixture.request_target().contains("drug/event.json"));
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn unsectioned_and_all_faers_json_keep_the_same_full_contract() {
     fn get_json(sections: &[&str]) -> serde_json::Value {
-        let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+        let mut fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
         let mut args = vec!["--json", "--no-cache", "get", "adverse-event", "1001"];
         args.extend_from_slice(sections);
         let output = run_biomcp(&args, &fixture);
@@ -242,6 +211,7 @@ fn unsectioned_and_all_faers_json_keep_the_same_full_contract() {
         );
         let value = serde_json::from_slice(&output.stdout).expect("full JSON");
         assert!(fixture.request_target().contains("drug/event.json"));
+        fixture.server.finish().unwrap();
         value
     }
 
@@ -280,7 +250,7 @@ fn unsectioned_and_all_faers_json_keep_the_same_full_contract() {
 
 #[test]
 fn combined_faers_filter_keeps_vaers_visibly_not_requested() {
-    let fixture = RequestFixture::start();
+    let mut fixture = RequestFixture::start();
     let output = run_biomcp(
         &[
             "--json",
@@ -310,11 +280,12 @@ fn combined_faers_filter_keeps_vaers_visibly_not_requested() {
         "not_requested"
     );
     assert!(captured_search(&fixture.request_target()).contains("reactionmeddrapt"));
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn faers_search_exposes_report_share_context_in_json_and_markdown() {
-    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    let mut fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
     let output = run_biomcp(
         &[
             "--json",
@@ -348,7 +319,8 @@ fn faers_search_exposes_report_share_context_in_json_and_markdown() {
     assert_eq!(value["summary"]["top_reactions"][0]["percentage"], 100.0);
     assert!(fixture.request_target().contains("drug/event.json"));
 
-    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    fixture.server.finish().unwrap();
+    let mut fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
     let output = run_biomcp(
         &[
             "--no-cache",
@@ -372,6 +344,7 @@ fn faers_search_exposes_report_share_context_in_json_and_markdown() {
     assert!(markdown.contains("not incidence"));
     assert!(markdown.contains("does not establish causality"));
     assert!(fixture.request_target().contains("drug/event.json"));
+    fixture.server.finish().unwrap();
 }
 
 #[test]
@@ -387,7 +360,7 @@ fn device_seriousness_requests_and_json_labels_are_exact() {
     ];
 
     for (serious_args, label, predicate) in cases {
-        let fixture = RequestFixture::start();
+        let mut fixture = RequestFixture::start();
         let mut args = vec![
             "--json",
             "--no-cache",
@@ -417,12 +390,13 @@ fn device_seriousness_requests_and_json_labels_are_exact() {
         if *label == "injury" {
             assert!(!search.contains("event_type:\"Death\""), "search={search}");
         }
+        fixture.server.finish().unwrap();
     }
 }
 
 #[test]
 fn broad_device_markdown_names_death_or_injury() {
-    let fixture = RequestFixture::start();
+    let mut fixture = RequestFixture::start();
     let output = run_biomcp(
         &[
             "--no-cache",
@@ -450,4 +424,5 @@ fn broad_device_markdown_names_death_or_injury() {
         captured_search(&fixture.request_target())
             .contains("event_type:\"Death\" OR event_type:\"Injury\"")
     );
+    fixture.server.finish().unwrap();
 }

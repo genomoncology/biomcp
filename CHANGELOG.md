@@ -117,6 +117,8 @@
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
+
+- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 

@@ -6325,7 +6325,7 @@ mod tests {
         // mark the route incomplete, like the annotation leg does. PubMed
         // answers one discovery page then fails the second; Europe PMC
         // answers page one then fails every later page.
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let target = request
                 .split_whitespace()
                 .nth(1)
@@ -6455,11 +6455,12 @@ mod tests {
             }),
             "the truncations surface in the route statuses: {statuses:?}"
         );
+        fixture.finish().unwrap();
     }
 
     #[tokio::test]
     async fn strict_alias_coverage_tracks_bare_transcript_forms() {
-        let fixture = TestHttpFixture::spawn(|_| {
+        let mut fixture = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/json",
@@ -6505,6 +6506,7 @@ mod tests {
             "strict query sent the supplied coding form"
         );
         assert_eq!(transcript.reason, "provider_query_attempted");
+        fixture.finish().unwrap();
     }
 
     #[test]
@@ -6569,7 +6571,7 @@ mod tests {
         const MYVARIANT: &[u8] = br#"{"_id":"fixture","civic":{"molecularProfiles":[{"evidenceItems":[{"source":{"sourceType":"PUBMED","citation":"PMID:12345"}}]}]}}"#;
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -6656,6 +6658,7 @@ mod tests {
         assert_eq!(citations[0].row.pmid, "12345");
         assert_eq!(execution.terminal_event_count(), 4);
         assert_eq!(requests.lock().expect("request log").len(), 4);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -6668,7 +6671,7 @@ mod tests {
             include_bytes!("../../../testdata/sources/pubtator/autocomplete_rsid_rs113488022.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -6739,6 +6742,8 @@ mod tests {
                 && line.contains("VARIANT_p.V600E_BRAF_human")),
             "the search ran by the kept entity id: {logged:?}"
         );
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -6755,7 +6760,7 @@ mod tests {
             include_bytes!("../../../testdata/sources/pubtator/search_variant_abcc8_r1436q.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -6829,6 +6834,8 @@ mod tests {
                 && line.contains("VARIANT_p.R1436Q_ABCC8_human")),
             "the search ran by the entity id: {logged:?}"
         );
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     /// Percent-decode one query parameter from a recorded request line so
@@ -6866,7 +6873,7 @@ mod tests {
         // autocomplete, and no alias beyond the name itself.
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -7030,6 +7037,8 @@ mod tests {
         assert_eq!(exact_yield.hits_received, 2);
         assert_eq!(exact_yield.hits_kept, 2);
         assert!(!exact_yield.cut_by_cap);
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7040,7 +7049,7 @@ mod tests {
         // merging, and whether the 25-result cap cut each source's list.
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -7233,6 +7242,7 @@ mod tests {
             yields[0]["route"], "exact_lexical",
             "yields serialize in deterministic route order"
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7246,7 +7256,7 @@ mod tests {
         // consulted LitVar2 since it joined the union, an empty autocomplete
         // is that source's healthy zero-row answer, and without the pin the
         // test would depend on the real provider's rate limits.
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
@@ -7321,6 +7331,7 @@ mod tests {
             status.detail.as_deref(),
             Some("PubTator autocomplete returned no variant entity for this request")
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7331,7 +7342,7 @@ mod tests {
         // rule still raised source_unavailable with exit 1. An empty search
         // with every source answered is an ok result; the indeterminate
         // provider validation keeps complete false without an error.
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 br#"{"total":1,"hits":[{"_id":"fixture-rs372266620","dbnsfp":{"genename":["SAMHD1"]}}]}"#
@@ -7417,6 +7428,7 @@ mod tests {
             "every route answered: {:?}",
             outcome.response.source_status
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7430,7 +7442,7 @@ mod tests {
             include_bytes!("../../../testdata/sources/litvar/autocomplete_cdkn2a_a57v.json");
         const PUBLICATIONS: &[u8] =
             include_bytes!("../../../testdata/sources/litvar/publications_rs372266620.json");
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /variant/autocomplete/?query=CDKN2A") {
                 AUTOCOMPLETE
@@ -7517,6 +7529,7 @@ mod tests {
                     && status.source == "litvar"
                     && status.status == VariantArticleSourceStatusKind::Ok)
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7527,7 +7540,7 @@ mod tests {
         // fetched.
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -7592,6 +7605,8 @@ mod tests {
             !logged.iter().any(|line| line.contains("rs121913227")),
             "the non-matching entry's id was never fetched: {logged:?}"
         );
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7600,7 +7615,7 @@ mod tests {
         // LitVar2 answers 503 while Europe PMC keeps one strict row: the row
         // still returns with exit 0, only the litvar source reports
         // unavailable, and no other route inherits the failure.
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             if first_line.starts_with("GET /variant/autocomplete/") {
                 return TestHttpReply::Bytes(test_http_response(
@@ -7694,6 +7709,7 @@ mod tests {
             "no other source inherited the LitVar2 failure: {:?}",
             outcome.response.source_status
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7766,7 +7782,7 @@ mod tests {
 
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -7894,6 +7910,8 @@ mod tests {
                 .cloned()
                 .collect::<Vec<_>>()
         );
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -7974,7 +7992,7 @@ mod tests {
 
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -8106,6 +8124,8 @@ mod tests {
                 .cloned()
                 .collect::<Vec<_>>()
         );
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[test]
@@ -9587,7 +9607,7 @@ mod tests {
             include_bytes!("../../../testdata/sources/pubtator/export_fulltext_34480199.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
-        let fixture = TestHttpFixture::spawn(move |request| {
+        let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             observed
                 .lock()
@@ -9726,6 +9746,8 @@ mod tests {
         // Plain gene text does not replace a missing typed Gene annotation.
         // This recorded table needs a separate owning decision before it can
         // confirm under a broader identity rule.
+        drop(logged);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -9772,7 +9794,7 @@ mod tests {
             let export = serde_json::to_vec(&export).expect("fixture export");
             // Full text adds an evidence source without weakening typed identity,
             // expected-paper validation, or existing contradiction reporting.
-            let fixture = TestHttpFixture::spawn(move |request| {
+            let mut fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             if first_line.starts_with("GET /entity/autocomplete/") {
                 return TestHttpReply::Bytes(test_http_response(
@@ -9873,6 +9895,7 @@ mod tests {
                 "{case}"
             );
             assert_eq!(identity.incomplete, case == "wrong-paper", "{case}");
+            fixture.finish().unwrap();
         }
     }
 }

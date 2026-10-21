@@ -71,7 +71,7 @@ const FLUOROURACIL_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn fluorouracil_synonym_takes_the_plain_ingredient_card_and_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "5-fluorouracil".to_string(),
             FLUOROURACIL_CAPTURE.to_string(),
@@ -93,7 +93,7 @@ async fn fluorouracil_synonym_takes_the_plain_ingredient_card_and_label() {
     assert_eq!(drug.name, "fluorouracil");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00544"));
     assert_label_data_with_set_id(&drug, "f0b60247-26a8-4e6b-9a47-7b1c7de50d0a");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=Motrin` (live answer recorded 2026-10-11, trimmed): the ibuprofen
@@ -177,7 +177,7 @@ const MOTRIN_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn motrin_resolves_to_the_ingredient_its_labels_mostly_name() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("Motrin".to_string(), MOTRIN_CAPTURE.to_string())],
         vec![
             ("Motrin".to_string(), MOTRIN_LABEL_BODY.to_string()),
@@ -198,7 +198,7 @@ async fn motrin_resolves_to_the_ingredient_its_labels_mostly_name() {
     assert_eq!(drug.name, "ibuprofen");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB01050"));
     assert_label_data_with_set_id(&drug, "52c650cf-3085-7b2c-e063-6394a90a797f");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=acetaminophen` (live answer recorded 2026-10-11, trimmed to the
@@ -278,7 +278,7 @@ const ACETAMINOPHEN_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn acetaminophen_takes_the_plain_ingredient_card_and_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "acetaminophen".to_string(),
             ACETAMINOPHEN_CAPTURE.to_string(),
@@ -300,7 +300,7 @@ async fn acetaminophen_takes_the_plain_ingredient_card_and_label() {
     assert_eq!(drug.name, "acetaminophen");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00316"));
     assert_label_data_with_set_id(&drug, "78874258-16cc-40b5-9e15-5943eddfce94");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=Tylenol` (live answer recorded 2026-10-11, trimmed): the
@@ -379,7 +379,7 @@ const TYLENOL_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn tylenol_resolves_to_the_plain_ingredient_its_labels_mostly_name() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("Tylenol".to_string(), TYLENOL_CAPTURE.to_string())],
         vec![
             ("Tylenol".to_string(), TYLENOL_LABEL_BODY.to_string()),
@@ -398,7 +398,7 @@ async fn tylenol_resolves_to_the_plain_ingredient_its_labels_mostly_name() {
     assert_eq!(drug.name, "acetaminophen");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00316"));
     assert_label_data_with_set_id(&drug, "997b9551-c222-4a9c-8ba1-09a5f97495fa");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=aspirin` (live answer recorded 2026-10-11, trimmed): the aspirin
@@ -454,7 +454,7 @@ const ASPIRIN_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn aspirin_card_names_the_ingredient_not_a_product_rows_strength() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             ("aspirin".to_string(), ASPIRIN_CAPTURE.to_string()),
             ("aspirin 81 mg".to_string(), ASPIRIN_CAPTURE.to_string()),
@@ -480,7 +480,7 @@ async fn aspirin_card_names_the_ingredient_not_a_product_rows_strength() {
     let drug = name_resolution_fixture_drug(&base, "aspirin 81 mg").await;
     assert_eq!(drug.name, "aspirin");
     assert_label_data_with_set_id(&drug, "a0a19cd1-eb8a-4773-be00-78de90d2a3c3");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=Qlex` (live answer recorded 2026-10-11): no record names the brand,
@@ -546,7 +546,7 @@ const PEMBROLIZUMAB_FOR_QLEX_CAPTURE: &str = r#"
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own_list() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             ("Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
             ("Keytruda Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
@@ -589,7 +589,7 @@ async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own
     assert_eq!(drug.name, "pembrolizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09037"));
     assert_label_data_with_set_id(&drug, "097d166f-b73b-41d3-9b37-7653cd2a0c41");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `q=Cold and Flu` (live answer recorded 2026-10-11, trimmed): two
@@ -624,7 +624,7 @@ const COLD_AND_FLU_CAPTURE: &str = r#"
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn cold_and_flu_still_refuses_across_distinct_combination_products() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("Cold and Flu".to_string(), COLD_AND_FLU_CAPTURE.to_string())],
         Vec::new(),
         Vec::new(),
@@ -644,7 +644,7 @@ async fn cold_and_flu_still_refuses_across_distinct_combination_products() {
         message.contains("No drug card matches \"Cold and Flu\""),
         "{message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// A combination card shows product-level identifiers or none: the merged records are one ingredient's records, so the

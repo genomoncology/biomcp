@@ -161,51 +161,54 @@ mod closing {
     /// logged.
     async fn spawn_scripted_orcid(
         responses: Vec<(u16, Option<&'static str>, String)>,
-    ) -> (String, Arc<StdMutex<Vec<String>>>) {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    ) -> (
+        String,
+        Arc<StdMutex<Vec<String>>>,
+        crate::test_support::TestHttpServer,
+    ) {
+        use tokio::io::AsyncWriteExt as _;
         let requests = Arc::new(StdMutex::new(Vec::new()));
         let logged = requests.clone();
         let counter = Arc::new(StdMutex::new(0usize));
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind orcid fixture");
-        let address = listener.local_addr().expect("orcid fixture address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                let responses = responses.clone();
-                let counter = counter.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    if let Some(target) = request.split_whitespace().nth(1) {
-                        logged.lock().unwrap().push(target.to_string());
-                    }
-                    let index = {
-                        let mut guard = counter.lock().unwrap();
-                        let index = *guard;
-                        *guard += 1;
-                        index
-                    };
-                    let (status, retry_after, body) =
-                        responses
-                            .get(index)
-                            .cloned()
-                            .unwrap_or((500, None, String::new()));
-                    let retry = retry_after
-                        .map(|value| format!("Retry-After: {value}\r\n"))
-                        .unwrap_or_default();
-                    let response = format!(
-                        "HTTP/1.1 {status} X\r\nContent-Type: application/vnd.orcid+json\r\n{retry}Content-Length: {}\r\nConnection: close\r\n\r\n{}",
-                        body.len(),
-                        body
-                    );
-                    let _ = stream.write_all(response.as_bytes()).await;
-                });
+        let server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            let responses = responses.clone();
+            let counter = counter.clone();
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                let request = String::from_utf8_lossy(&request);
+                if let Some(target) = request.split_whitespace().nth(1) {
+                    logged.lock().unwrap().push(target.to_string());
+                }
+                let index = {
+                    let mut guard = counter.lock().unwrap();
+                    let index = *guard;
+                    *guard += 1;
+                    index
+                };
+                let (status, retry_after, body) =
+                    responses
+                        .get(index)
+                        .cloned()
+                        .unwrap_or((500, None, String::new()));
+                let retry = retry_after
+                    .map(|value| format!("Retry-After: {value}\r\n"))
+                    .unwrap_or_default();
+                let response = format!(
+                    "HTTP/1.1 {status} X\r\nContent-Type: application/vnd.orcid+json\r\n{retry}Content-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await?;
+                Ok(())
             }
-        });
-        (format!("http://{address}"), requests)
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
+        (base, requests, server)
     }
 
     struct OrcidEnv {
@@ -263,51 +266,54 @@ mod closing {
     async fn spawn_recorded_orcid(
         person: &'static str,
         works: &'static str,
-    ) -> (String, Arc<StdMutex<Vec<String>>>) {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    ) -> (
+        String,
+        Arc<StdMutex<Vec<String>>>,
+        crate::test_support::TestHttpServer,
+    ) {
+        use tokio::io::AsyncWriteExt as _;
         let requests = Arc::new(StdMutex::new(Vec::<String>::new()));
         let logged = requests.clone();
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind recorded orcid fixture");
-        let address = listener.local_addr().expect("recorded orcid address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    let target = request.split_whitespace().nth(1).unwrap_or_default();
-                    let authorization = request
-                        .lines()
-                        .find_map(|line| {
-                            line.split_once(':')
-                                .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
-                                .map(|(_, value)| value.trim().to_string())
-                        })
-                        .unwrap_or_else(|| "none".into());
-                    logged
-                        .lock()
-                        .unwrap()
-                        .push(format!("{target} auth={authorization}"));
-                    let body = if target.ends_with("/person") {
-                        person
-                    } else if target.ends_with("/works") {
-                        works
-                    } else {
-                        "{}"
-                    };
-                    let response = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                        body.len(),
-                        body
-                    );
-                    let _ = stream.write_all(response.as_bytes()).await;
-                });
+        let server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                let request = String::from_utf8_lossy(&request);
+                let target = request.split_whitespace().nth(1).unwrap_or_default();
+                let authorization = request
+                    .lines()
+                    .find_map(|line| {
+                        line.split_once(':')
+                            .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+                            .map(|(_, value)| value.trim().to_string())
+                    })
+                    .unwrap_or_else(|| "none".into());
+                logged
+                    .lock()
+                    .unwrap()
+                    .push(format!("{target} auth={authorization}"));
+                let body = if target.ends_with("/person") {
+                    person
+                } else if target.ends_with("/works") {
+                    works
+                } else {
+                    "{}"
+                };
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await?;
+                Ok(())
             }
-        });
-        (format!("http://{address}"), requests)
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
+        (base, requests, server)
     }
 
     const RECORDED_TOKENLESS_ID: &str = "0000-0002-4299-3018";
@@ -323,7 +329,8 @@ mod closing {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn configured_person_read_records_the_bearer_header() {
-        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let (base, requests, mut server) =
+            spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
         let _env = OrcidEnv::new(&base);
         OrcidClient::new()
             .expect("client")
@@ -336,12 +343,14 @@ mod closing {
                 "/{RECORDED_TOKENLESS_ID}/person auth=Bearer fixture-public-read-token"
             )]
         );
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn tokenless_person_read_serves_the_recorded_reply_without_bearer_auth() {
-        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let (base, requests, mut server) =
+            spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
         let _env = OrcidEnv::tokenless(&base);
         let person = OrcidClient::new()
             .expect("client")
@@ -358,12 +367,14 @@ mod closing {
             vec![format!("/{RECORDED_TOKENLESS_ID}/person auth=none")],
             "no Authorization header may leave the tokenless client"
         );
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn tokenless_works_read_serves_the_recorded_reply_without_bearer_auth() {
-        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let (base, requests, mut server) =
+            spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
         let _env = OrcidEnv::tokenless(&base);
         let works = OrcidClient::new()
             .expect("client")
@@ -382,6 +393,7 @@ mod closing {
             vec![format!("/{RECORDED_TOKENLESS_ID}/works auth=none")],
             "no Authorization header may leave the tokenless client"
         );
+        server.finish().unwrap();
     }
 
     fn deadline(seconds: u64) -> Instant {
@@ -391,7 +403,7 @@ mod closing {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn transient_429_retries_once_under_the_pacing_gap_then_succeeds() {
-        let (base, requests) = spawn_scripted_orcid(vec![
+        let (base, requests, mut server) = spawn_scripted_orcid(vec![
             (429, Some("1"), String::new()),
             (200, None, person_body()),
         ])
@@ -414,12 +426,14 @@ mod closing {
         );
         let logged = requests.lock().unwrap().clone();
         assert_eq!(logged, vec!["/0000-0002-1825-0097/person".to_string(); 2]);
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn persistent_server_errors_stop_at_four_physical_gets_with_a_sanitized_error() {
-        let (base, requests) = spawn_scripted_orcid(vec![(500, None, String::new()); 4]).await;
+        let (base, requests, mut server) =
+            spawn_scripted_orcid(vec![(500, None, String::new()); 4]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -429,45 +443,52 @@ mod closing {
         assert_eq!(error.code(), "api");
         let logged = requests.lock().unwrap().clone();
         assert_eq!(logged.len(), 4, "exactly four physical GETs");
+        server.finish().unwrap();
     }
 
     /// Raw scripted loopback: each connection writes the exact response
     /// bytes supplied, so headers can lie about the body the way hostile or
     /// buggy servers do.
-    async fn spawn_raw_orcid(responses: Vec<String>) -> (String, Arc<StdMutex<Vec<String>>>) {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    async fn spawn_raw_orcid(
+        responses: Vec<String>,
+    ) -> (
+        String,
+        Arc<StdMutex<Vec<String>>>,
+        crate::test_support::TestHttpServer,
+    ) {
+        use tokio::io::AsyncWriteExt as _;
         let requests = Arc::new(StdMutex::new(Vec::new()));
         let logged = requests.clone();
         let counter = Arc::new(StdMutex::new(0usize));
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind orcid raw fixture");
-        let address = listener.local_addr().expect("orcid raw fixture address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                let responses = responses.clone();
-                let counter = counter.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    if let Some(target) = request.split_whitespace().nth(1) {
-                        logged.lock().unwrap().push(target.to_string());
-                    }
-                    let index = {
-                        let mut guard = counter.lock().unwrap();
-                        let index = *guard;
-                        *guard += 1;
-                        index
-                    };
-                    if let Some(response) = responses.get(index) {
-                        let _ = stream.write_all(response.as_bytes()).await;
-                    }
-                });
+        let server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            let responses = responses.clone();
+            let counter = counter.clone();
+
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                let request = String::from_utf8_lossy(&request);
+                if let Some(target) = request.split_whitespace().nth(1) {
+                    logged.lock().unwrap().push(target.to_string());
+                }
+                let index = {
+                    let mut guard = counter.lock().unwrap();
+                    let index = *guard;
+                    *guard += 1;
+                    index
+                };
+                if let Some(response) = responses.get(index) {
+                    stream.write_all(response.as_bytes()).await?;
+                }
+                Ok(())
             }
-        });
-        (format!("http://{address}"), requests)
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
+        (base, requests, server)
     }
 
     #[tokio::test]
@@ -480,7 +501,7 @@ mod closing {
             "HTTP/1.1 200 X\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
             600 * 1024
         );
-        let (base, requests) = spawn_raw_orcid(vec![response]).await;
+        let (base, requests, mut server) = spawn_raw_orcid(vec![response]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -493,6 +514,7 @@ mod closing {
             1,
             "an oversize body is never retried"
         );
+        server.finish().unwrap();
     }
 
     #[tokio::test]
@@ -513,7 +535,7 @@ mod closing {
             body.len(),
             body
         );
-        let (base, requests) = spawn_raw_orcid(vec![response]).await;
+        let (base, requests, mut server) = spawn_raw_orcid(vec![response]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -522,12 +544,14 @@ mod closing {
             .expect_err("streamed oversize body");
         assert!(is_body_limit(&error), "{error:?}");
         assert_eq!(requests.lock().unwrap().len(), 1);
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn rejected_credentials_fail_immediately_without_retry() {
-        let (base, requests) = spawn_scripted_orcid(vec![(401, None, String::new())]).await;
+        let (base, requests, mut server) =
+            spawn_scripted_orcid(vec![(401, None, String::new())]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -536,12 +560,14 @@ mod closing {
             .expect_err("401");
         assert!(matches!(error, BioMcpError::ApiKeyRejected { .. }));
         assert_eq!(requests.lock().unwrap().len(), 1);
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn not_found_is_a_sanitized_single_get() {
-        let (base, requests) = spawn_scripted_orcid(vec![(404, None, String::new())]).await;
+        let (base, requests, mut server) =
+            spawn_scripted_orcid(vec![(404, None, String::new())]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -550,12 +576,14 @@ mod closing {
             .expect_err("404");
         assert_eq!(error.code(), "api");
         assert_eq!(requests.lock().unwrap().len(), 1);
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn client_errors_are_never_retried() {
-        let (base, requests) = spawn_scripted_orcid(vec![(400, None, String::new())]).await;
+        let (base, requests, mut server) =
+            spawn_scripted_orcid(vec![(400, None, String::new())]).await;
         let _env = OrcidEnv::new(&base);
         let error = OrcidClient::new()
             .expect("client")
@@ -564,12 +592,14 @@ mod closing {
             .expect_err("400");
         assert_eq!(error.code(), "api");
         assert_eq!(requests.lock().unwrap().len(), 1);
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn an_expired_deadline_admits_no_second_attempt_and_paces_the_first() {
-        let (base, requests) = spawn_scripted_orcid(vec![(200, None, person_body()); 2]).await;
+        let (base, requests, mut server) =
+            spawn_scripted_orcid(vec![(200, None, person_body()); 2]).await;
         let _env = OrcidEnv::new(&base);
         let client = OrcidClient::new().expect("client");
         client
@@ -586,6 +616,7 @@ mod closing {
             .expect_err("deadline");
         assert_eq!(error.code(), "api");
         assert_eq!(requests.lock().unwrap().len(), 1);
+        server.finish().unwrap();
     }
 
     fn summary(

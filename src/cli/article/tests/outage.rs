@@ -8,7 +8,7 @@
 use std::sync::{Arc, Mutex};
 
 use clap::Parser;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 use crate::cli::{Cli, Commands, SearchEntity};
 
@@ -97,33 +97,34 @@ fn outage_fixture_reply(
 async fn outage_fixture(
     semantic_scholar: SemanticScholarMode,
     primary: PrimaryMode,
-) -> (String, Arc<Mutex<Vec<String>>>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind article outage fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let length = stream.read(&mut request).await.unwrap_or(0);
-                let request = String::from_utf8_lossy(&request[..length]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let response = outage_fixture_reply(&request, semantic_scholar, primary);
-                stream
-                    .write_all(&response)
-                    .await
-                    .expect("write fixture response");
-            });
+    let server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let response = outage_fixture_reply(&request, semantic_scholar, primary);
+            stream.write_all(&response).await?;
+            Ok(())
         }
-    });
-    (base, requests)
+    })
+    .expect("start HTTP fixture");
+    let base = server.base.clone();
+    (base, requests, server)
 }
 
 async fn outage_env(base: &str) -> crate::test_support::FixtureEnv {
@@ -171,7 +172,8 @@ fn reached_provider(requests: &Arc<Mutex<Vec<String>>>, prefix: &str) -> bool {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn zero_rows_with_semantic_scholar_down_exits_one_with_source_unavailable() {
-    let (base, requests) = outage_fixture(SemanticScholarMode::Down, PrimaryMode::Empty).await;
+    let (base, requests, mut server) =
+        outage_fixture(SemanticScholarMode::Down, PrimaryMode::Empty).await;
     let _env = outage_env(&base).await;
     let outcome = search_article_outcome(&["-g", "ABRAXAS1", "-k", "p.G39V", "--limit", "5"]).await;
     assert_eq!(outcome.exit_code, 1, "stdout:\n{}", outcome.text);
@@ -191,6 +193,7 @@ async fn zero_rows_with_semantic_scholar_down_exits_one_with_source_unavailable(
         reached_provider(&requests, "/graph/v1/paper/search"),
         "the fixture saw no Semantic Scholar request; the test passed vacuously"
     );
+    server.finish().unwrap();
 }
 
 /// An empty search where every source answered is an ok result: exit 0,
@@ -198,13 +201,15 @@ async fn zero_rows_with_semantic_scholar_down_exits_one_with_source_unavailable(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn zero_rows_with_every_source_answered_keeps_exit_zero_complete_true() {
-    let (base, _requests) = outage_fixture(SemanticScholarMode::Empty, PrimaryMode::Empty).await;
+    let (base, _requests, mut server) =
+        outage_fixture(SemanticScholarMode::Empty, PrimaryMode::Empty).await;
     let _env = outage_env(&base).await;
     let outcome = search_article_outcome(&["-g", "ABRAXAS1", "-k", "p.G39V", "--limit", "5"]).await;
     assert_eq!(outcome.exit_code, 0, "stdout:\n{}", outcome.text);
     let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("json reply");
     assert_eq!(value["complete"], serde_json::Value::Bool(true));
     assert!(value.get("error").is_none());
+    server.finish().unwrap();
 }
 
 /// Rows that arrived beside a down source still return: exit 0 with
@@ -212,7 +217,8 @@ async fn zero_rows_with_every_source_answered_keeps_exit_zero_complete_true() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn rows_with_semantic_scholar_down_keep_exit_zero_complete_false() {
-    let (base, _requests) = outage_fixture(SemanticScholarMode::Down, PrimaryMode::EuropeRow).await;
+    let (base, _requests, mut server) =
+        outage_fixture(SemanticScholarMode::Down, PrimaryMode::EuropeRow).await;
     let _env = outage_env(&base).await;
     let outcome = search_article_outcome(&["-g", "ABRAXAS1", "-k", "p.G39V", "--limit", "5"]).await;
     assert_eq!(outcome.exit_code, 0, "stdout:\n{}", outcome.text);
@@ -220,4 +226,5 @@ async fn rows_with_semantic_scholar_down_keep_exit_zero_complete_false() {
     assert_eq!(value["complete"], serde_json::Value::Bool(false));
     assert!(value.get("error").is_none());
     assert_eq!(value["count"], serde_json::Value::from(1));
+    server.finish().unwrap();
 }

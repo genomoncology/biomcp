@@ -1753,6 +1753,10 @@ def test_profile_independence_audit_reads_the_dual_lane_list_from_the_runner(
     ("", "let fixture = TestHttpFixture::spawn(handler).await; drop(fixture); time::pause();", False),
     ("", "let server = tokio::spawn(async move { let fixture = TestHttpFixture::spawn(handler).await; }); server.await.unwrap(); time::pause();", False),
     ("", "let fixture = TestHttpFixture::spawn(handler).await; let server = tokio::spawn(async move { drop(fixture); }); server.await.unwrap(); time::pause();", False),
+    ("", "let mut fixture = TestHttpServer::respond(handler).unwrap(); time::pause();", True),
+    ("", "let mut fixture = { let config = options(); TestHttpServer::spawn(handler).unwrap() }; time::pause();", True),
+    ("", "let mut fixture = TestHttpServer::respond(handler).unwrap(); fixture.finish().unwrap(); time::pause();", False),
+    ("", "let mut fixture = { let config = options(); TestHttpServer::spawn(handler).unwrap() }; fixture.finish().expect(reason); time::pause();", False),
     ("start_paused = true", "time::advance(duration).await;", False),
 ])
 def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
