@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision ea5563b, accept
 
+Reviews: revision ec16b3f, accept
+
 ## Outcome
 
 The release process lives in one place, `docs/reference/release-process.md`. `sdlc/release-checklist.md` and the release section of `AGENTS.md` shrink to a pointer. The process drops the fresh review of records-only commits and the full rehearsal after a records-only change. A release ticket points to the document; it does not copy and tick the checklist.
