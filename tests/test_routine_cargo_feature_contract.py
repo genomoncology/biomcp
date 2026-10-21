@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from hang_guard import HANG_TIMEOUT
+from make_fixture import make_fixture_env
 
 from pathlib import Path
 import json
@@ -40,8 +41,7 @@ def test_routine_feature_probe_runs_without_a_prepared_checkout(tmp_path: Path) 
     # at this boundary so the fixture needs neither product builds nor tools.
     command = block.split("| mustmatch like", 1)[0]
     routine_tmp = tmp_path / ".cache" / "routine-test-tmp"
-    env = {key: value for key, value in os.environ.items()
-           if key not in ("MAKEFLAGS", "MAKEOVERRIDES")}
+    env = make_fixture_env(tmp_path)
     env["TMPDIR"] = str(routine_tmp)
     result = subprocess.run(
         ["bash", "-eu", "-c", command], cwd=spec_dir, env=env,
@@ -59,8 +59,7 @@ def test_alternate_spec_targets_sync_python_before_the_runner(
     tmp_path: Path, target: str,
 ) -> None:
     shutil.copy2(REPO_ROOT / "Makefile", tmp_path / "Makefile")
-    env = {key: value for key, value in os.environ.items()
-           if key not in ("MAKEFLAGS", "MAKEOVERRIDES")}
+    env = make_fixture_env(tmp_path)
     result = subprocess.run(
         ["make", "--dry-run", target], cwd=tmp_path, env=env,
         capture_output=True, text=True,
@@ -169,21 +168,40 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
 @pytest.mark.parametrize(
     ("target", "expected"),
     [
-        ("landing-gate", ["lint", "test", "spec"]),
-        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check", "installed-wheel-smoke"]),
+        ("landing-gate", ["lint", "replay", "test", "spec"]),
+        ("main-gate", ["lint", "replay", "test", "spec", "repo-audit", "full-feature-check", "installed-wheel-smoke"]),
     ],
 )
-@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit", "installed-wheel-smoke"])
+@pytest.mark.parametrize("failed_stage", [None, "lint", "replay", "test", "repo-audit", "installed-wheel-smoke"])
 def test_landing_commands_run_ordered_checks_and_stop_on_failure(
-    tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
+    tmp_path: Path, target: str, expected: list[str], failed_stage: str | None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     if failed_stage and failed_stage not in expected:
         pytest.skip("this check runs after merging")
+    hostile = tmp_path / "inherited.mk"
+    hostile.write_text("$(error inherited Make configuration executed)\n")
+    monkeypatch.setenv("MAKEFILES", str(hostile))
+    monkeypatch.setenv("MAKEFLAGS", "--question")
+    monkeypatch.setenv("MAKEOVERRIDES", "TEST_LANE_WORKERS=99")
+    monkeypatch.setenv("MAKELEVEL", "9")
+    monkeypatch.setenv("BIOMCP_TOOL_DIR", str(tmp_path / "host-tools"))
     # Override existing leaves, not the gate recipes: exercise Make's real
     # ordering and failure propagation without compiling the product again.
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    # The gate's live-replay command is unrelated to ordering these leaves.
+    uv = tools / "uv"
+    uv.write_text(
+        "#!/bin/sh\n"
+        '[ "$*" = "run --no-project python tools/check-replay-live --disable-sources commercial-restricted,semantic-scholar,kegg" ] || exit 97\n'
+        "echo gate-stage:replay\n"
+        + ("exit 23\n" if failed_stage == "replay" else "exit 0\n")
+    )
+    uv.chmod(0o755)
     wrapper = tmp_path / "gate.mk"
     wrapper.write_text(
-        f"include {REPO_ROOT / 'Makefile'}\n"
+        f"include {REPO_ROOT / 'Makefile'}\ngate-preflight sync-python-dev:\n\t@:\n"
         + "\n".join(
             f"{stage}:\n\t@echo gate-stage:{stage}\n"
             + ("\t@exit 23\n" if stage == failed_stage else "")
@@ -196,7 +214,8 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
             "make", "--no-print-directory", "-s", "-j4", "-f", str(wrapper),
             f"MAKE=make --no-print-directory -s -f {wrapper}", target,
         ],
-        cwd=REPO_ROOT,
+        cwd=tmp_path,
+        env=make_fixture_env(tmp_path),
         capture_output=True,
         text=True,
         check=False,
@@ -237,6 +256,7 @@ def test_make_test_prepares_once_and_runs_lanes_sequentially(
     )
     overlay = tmp_path / "lanes.mk"
     overlay.write_text(
+        'sync-python-dev:\n\t@:\n'
         f'prepare-test:\n\t@echo prepare >> "{tmp_path / "prepared"}"\n'
         f"test-rust:\n\t@{sys.executable} {worker} {tmp_path} rust\n"
         f"test-python:\n\t@{sys.executable} {worker} {tmp_path} python\n"
@@ -249,7 +269,7 @@ def test_make_test_prepares_once_and_runs_lanes_sequentially(
         [*command, "test", "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
          "MAKE=" + " ".join(command)],
         cwd=REPO_ROOT,
-        env={**os.environ, "FAILED_LANE": failed_lane},
+        env=make_fixture_env(tmp_path, {"FAILED_LANE": failed_lane}),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -285,8 +305,8 @@ def test_make_uses_one_job_worker_allowance(tmp_path: Path, workers: str) -> Non
         ["make", "--no-print-directory", "-s", "-f", str(REPO_ROOT / "Makefile"),
          "-f", str(overlay), "workers", "TEST_LANE_WORKERS=" + workers],
         cwd=REPO_ROOT,
-        env={**os.environ, "CARGO_BUILD_JOBS": "99", "NEXTEST_JOBS": "99",
-             "PYTEST_WORKERS": "99"},
+        env=make_fixture_env(tmp_path, {"CARGO_BUILD_JOBS": "99", "NEXTEST_JOBS": "99",
+             "PYTEST_WORKERS": "99"}),
         capture_output=True, text=True, check=True,
     )
     assert result.stdout.splitlines() == [workers] * 3
@@ -330,6 +350,7 @@ def test_full_feature_gates_build_and_smoke_the_selected_profile(
             f"CARGO_WITH_IDENTITY={sys.executable} {recorder} cargo",
         ],
         cwd=tmp_path,
+        env=make_fixture_env(tmp_path),
         capture_output=True,
         text=True,
         check=False,
