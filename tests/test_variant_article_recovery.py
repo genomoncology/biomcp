@@ -200,10 +200,10 @@ def execute_case(case, tmp_path, *, markdown=False):
                     rows = []
                     for row in captured["resultList"]["result"]:
                         matching = (
-                            row["pmid"] == "10486320" and "Pro1749Arg" in term
-                            or row["pmid"] == "31788995" and "5246C>G" in term
+                            row.get("pmid") == "10486320" and "Pro1749Arg" in term
+                            or row.get("pmid") == "31788995" and "5246C>G" in term
                         )
-                        if metadata and row["pmid"] in term or (
+                        if metadata and row.get("pmid", "unrecorded-id") in term or (
                             not metadata and "TITLE_ABS:" not in term
                             and '"BRCA1"' in term and matching
                         ):

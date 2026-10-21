@@ -3254,7 +3254,7 @@ async fn federated_alias_candidates(
     (candidates, incomplete, succeeded, statuses)
 }
 
-async fn strict_provider_candidates(
+async fn planned_provider_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
@@ -3275,12 +3275,13 @@ async fn strict_provider_candidates(
         execution,
     )
     .into_iter()
-    .filter(|plan| plan.route == "strict");
+    .filter(|plan| matches!(plan.route.as_str(), "strict" | "exact_lexical"));
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;
 
     for plan in plans {
+        let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
         let scoped = if plan.provider == "pubtator" {
@@ -3289,17 +3290,18 @@ async fn strict_provider_candidates(
             execution.for_aliases(&plan.coverage_aliases)
         };
         let execution = &scoped;
-        if execution.route_stopped("strict") {
-            break;
+        if execution.route_stopped(route) {
+            incomplete = true;
+            continue;
         }
-        let stopped_before = execution.route_stopped("strict");
+        let stopped_before = execution.route_stopped(route);
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
                 0,
                 Some(execution),
-                "strict",
+                route,
                 Some(&plan.query),
             )
             .await
@@ -3315,7 +3317,7 @@ async fn strict_provider_candidates(
                 LEXICAL_ALIAS_FETCH_LIMIT,
                 0,
                 Some(execution),
-                "strict",
+                route,
                 Some(&plan.query),
             )
             .await
@@ -3330,7 +3332,7 @@ async fn strict_provider_candidates(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
                 Some(execution),
-                "strict",
+                route,
                 Some(&plan.query),
             )
             .await
@@ -3348,7 +3350,7 @@ async fn strict_provider_candidates(
                 }
             }),
             "pubtator" if strategy == VariantArticleStrategy::Union => {
-                shared_pubtator_candidates(input, context, execution, "strict")
+                shared_pubtator_candidates(input, context, execution, route)
                     .await
                     .map(|(candidates, incomplete, _, _)| {
                         if let Some(query) = execution.pubtator_variant_queries().first() {
@@ -3367,7 +3369,7 @@ async fn strict_provider_candidates(
                     })
             }
             "pubtator" => {
-                let Some(unit) = execution.begin_provider_unit("strict", "pubtator").await else {
+                let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
                     incomplete = true;
                     break;
                 };
@@ -3390,13 +3392,13 @@ async fn strict_provider_candidates(
                                     &token.entity_id,
                                 );
                             });
-                            execution.add_route_unit("strict", "pubtator");
+                            execution.add_route_unit(route, "pubtator");
                             search_pubtator_page_with_context(
                                 &filters,
                                 LEXICAL_ALIAS_FETCH_LIMIT,
                                 0,
                                 Some(execution),
-                                "strict",
+                                route,
                                 Some(&token.entity_id),
                             )
                         }
@@ -3422,7 +3424,7 @@ async fn strict_provider_candidates(
             _ => continue,
         };
         match rows {
-            Ok((rows, degraded, total)) if !execution.route_stopped("strict") || stopped_before => {
+            Ok((rows, degraded, total)) if !execution.route_stopped(route) || stopped_before => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
                 //.
@@ -3441,12 +3443,12 @@ async fn strict_provider_candidates(
                         .route_alias_truncations
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
-                        .entry(("strict".into(), plan.provider.clone()))
+                        .entry((route.into(), plan.provider.clone()))
                         .or_default()
                         .extend(plan.coverage_aliases.iter().cloned());
                 }
                 execution.record_alias_yield(
-                    "strict",
+                    route,
                     &plan.query_alias,
                     &plan.provider,
                     rows.len(),
@@ -3460,16 +3462,16 @@ async fn strict_provider_candidates(
                         vec![plan.query_alias.clone()]
                     };
                     let mut candidate =
-                        candidate_with_provenance(row, "strict", &plan.provider, aliases);
+                        candidate_with_provenance(row, route, &plan.provider, aliases);
                     if grouped {
                         candidate.variant_provenance[0].matched_alias = None;
                     }
                     candidate
                 }));
             }
-            Ok(_) | Err(_) if execution.route_stopped("strict") => {
+            Ok(_) | Err(_) if execution.route_stopped(route) => {
                 incomplete = true;
-                break;
+                continue;
             }
             Ok(_) | Err(_) => {
                 incomplete = true;
@@ -3477,7 +3479,8 @@ async fn strict_provider_candidates(
         }
     }
     let calls = execution.events();
-    let statuses = provider_statuses_for_route("strict", &calls);
+    let mut statuses = provider_statuses_for_route("strict", &calls);
+    statuses.extend(provider_statuses_for_route("exact_lexical", &calls));
     (candidates, incomplete, succeeded, statuses)
 }
 
@@ -4077,7 +4080,26 @@ fn plan_queries(
             }
             aliases
         }
-        "exact_lexical" => execution.lexical_aliases(exact_aliases),
+        "exact_lexical" => {
+            let mut aliases = execution.lexical_aliases(exact_aliases);
+            for plan in provider_variant_query_plan_with_gene_aliases(
+                input,
+                context,
+                VariantArticleStrategy::Lexical,
+                exact_aliases,
+                execution,
+            )
+            .into_iter()
+            .filter(|plan| plan.route == "exact_lexical")
+            {
+                for alias in plan.coverage_aliases {
+                    if !aliases.contains(&alias) {
+                        aliases.push(alias);
+                    }
+                }
+            }
+            aliases
+        }
         "best_effort_free_text" => execution.fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -4352,7 +4374,58 @@ fn compile_recovery_plan(
         pubtator_seen = true;
         keep
     });
+    if matches!(context.resolution.status, VariantResolutionStatus::Resolved)
+        && !matches!(
+            context.resolution.provider_validation.status,
+            VariantProviderValidationStatus::Contradictory
+        )
+    {
+        add_europepmc_all_field_plans(&mut plans, execution);
+    }
     plans
+}
+
+/// Restricted title/abstract coverage cannot replace all indexed fields.
+/// Keep the first precision query ahead of a bounded compatible-allele union.
+fn add_europepmc_all_field_plans(
+    plans: &mut Vec<ProviderVariantQueryPlan>,
+    execution: &VariantArticleExecutionContext,
+) {
+    let mut seen = BTreeSet::new();
+    let lexical = plans
+        .iter()
+        .filter(|plan| plan.route == "strict" && plan.provider == "europepmc")
+        .flat_map(|plan| plan.coverage_aliases.iter())
+        .filter(|alias| seen.insert((*alias).clone()))
+        .filter_map(|alias| {
+            let (gene, change) = alias.split_once(' ')?;
+            let change = change.strip_prefix("p.").unwrap_or(change);
+            Some(ProviderVariantQueryPlan {
+                provider: "europepmc".into(),
+                route: "exact_lexical".into(),
+                query_alias: alias.clone(),
+                query_aliases: Vec::new(),
+                coverage_aliases: vec![alias.clone()],
+                query: format!(
+                    "(\"{}\" AND \"{}\")",
+                    europepmc_escape(gene),
+                    europepmc_escape(change)
+                ),
+                query_template_version: "europepmc-all-indexed-fields-v1".into(),
+            })
+        })
+        .collect();
+    let mut grouped = group_overflow_queries("europepmc", lexical, execution);
+    for plan in &mut grouped {
+        plan.route = "exact_lexical".into();
+        plan.query_template_version = "europepmc-all-indexed-fields-v1".into();
+    }
+    if let Some(index) = plans
+        .iter()
+        .position(|plan| plan.route == "strict" && plan.provider == "europepmc")
+    {
+        plans.splice(index + 1..index + 1, grouped);
+    }
 }
 
 fn group_overflow_queries(
@@ -4597,6 +4670,10 @@ fn materialize_discovery_route_plans(
                                 .includes_boolean_alias_sources("exact_lexical")
                     })
                     .count()
+                    + strict
+                        .iter()
+                        .filter(|plan| plan.route == "exact_lexical" && plan.provider == source)
+                        .count()
             }),
         );
     }
@@ -5275,14 +5352,15 @@ async fn search_variant_articles_identity(
                     context.resolution.provider_validation.status,
                     VariantProviderValidationStatus::Contradictory
                 ) {
-                    let (rows, incomplete, succeeded, route_statuses) = strict_provider_candidates(
-                        input,
-                        &context,
-                        strategy,
-                        &selected_exact_aliases,
-                        &execution,
-                    )
-                    .await;
+                    let (rows, incomplete, succeeded, route_statuses) =
+                        planned_provider_candidates(
+                            input,
+                            &context,
+                            strategy,
+                            &selected_exact_aliases,
+                            &execution,
+                        )
+                        .await;
                     candidates.extend(rows);
                     statuses.extend(route_statuses);
                     succeeded_routes += usize::from(succeeded);
@@ -5349,7 +5427,7 @@ async fn search_variant_articles_identity(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
-            let (rows, incomplete, succeeded, route_statuses) = strict_provider_candidates(
+            let (rows, incomplete, succeeded, route_statuses) = planned_provider_candidates(
                 input,
                 &context,
                 strategy,
@@ -7119,7 +7197,7 @@ mod tests {
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
 
         let execution = VariantArticleExecutionContext::single();
-        let (rows, incomplete, succeeded, statuses) = strict_provider_candidates(
+        let (rows, incomplete, succeeded, statuses) = planned_provider_candidates(
             "BRAF p.V600E",
             &resolved_context(),
             VariantArticleStrategy::Union,
@@ -7180,7 +7258,7 @@ mod tests {
         context.requested.coding_change = Some("c.1799T>A".into());
         let aliases = vec!["NM_004333.6:c.1799T>A".to_string()];
         let execution = VariantArticleExecutionContext::single();
-        let (_, _, succeeded, _) = strict_provider_candidates(
+        let (_, _, succeeded, _) = planned_provider_candidates(
             "BRAF NM_004333.6:c.1799T>A",
             &context,
             VariantArticleStrategy::Lexical,

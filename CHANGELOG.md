@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Search all Europe PMC indexed fields for compatible variant aliases while retaining precise searches and existing work limits. (2355)
+
 - Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)

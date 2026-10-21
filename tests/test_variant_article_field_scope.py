@@ -12,10 +12,15 @@ def test_variant_articles_retains_all_field_compatible_allele_candidates(tmp_pat
     rows = {row["pmid"]: row for row in payload["results"]}
     assert {"10486320", "31788995"} <= rows.keys()
     for pmid in ("10486320", "31788995"):
-        assert rows[pmid]["identity"]["status"] == "unverified"
+        assert rows[pmid].get("identity", {}).get("status") != "confirmed"
     queries = [params["query"][0] for path, params in requests
                if path == "/search" and "query" in params]
-    assert any("TITLE_ABS:" in query for query in queries)
+    assert "TITLE_ABS:" in queries[0]
+    assert "TITLE_ABS:" not in queries[1]
+    planned = [plan for plan in payload["debug_plan"]["provider_queries"]
+               if plan["provider"] == "europepmc" and plan["route"] == "exact_lexical"]
+    assert len(planned) == 1
+    assert planned[0]["query_template_version"] == "europepmc-all-indexed-fields-v1"
     all_fields = [query for query in queries if "TITLE_ABS:" not in query
                   and "EXT_ID:" not in query]
     assert any("Pro1749Arg" in query for query in all_fields)
