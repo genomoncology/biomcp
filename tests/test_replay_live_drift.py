@@ -651,7 +651,7 @@ def s2_recordings(tmp_path, origin, count=5):
             "/query", "/graph/v1/paper/search"
         )
     if count == 5:
-        key, entry = routes.pop(next(iter(routes)))
+        entry = routes.pop(next(iter(routes)))
         body = '{"ids":["PMID:123"]}'
         digest = hashlib.sha256(body.encode()).hexdigest()[:16]
         entry["upstream"] = origin + "/graph/v1/paper/batch"
