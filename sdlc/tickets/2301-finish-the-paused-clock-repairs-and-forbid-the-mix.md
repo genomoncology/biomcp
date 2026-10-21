@@ -4,11 +4,17 @@ priority: 2
 
 # 2301 — Finish the paused-clock repairs and forbid the mix
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 5e8e6e4, accept
+
+Reviews: revision 389a513, accept
+
+Reviews: revision 1ddcb59, accept
+
+Reviews: revision ff685d0, accept
 
 ## Outcome
 

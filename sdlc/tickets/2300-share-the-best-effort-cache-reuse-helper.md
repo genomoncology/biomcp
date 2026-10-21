@@ -4,11 +4,15 @@ priority: 2
 
 # 2300 — Share the best-effort cache reuse helper
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision b46216f, accept
+
+Reviews: revision 607f347, accept
+
+Reviews: revision b358407, accept
 
 ## Outcome
 
