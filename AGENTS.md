@@ -126,4 +126,4 @@ State each source's terms plainly in its registry entry and on the licensing pag
 
 ## Source keys
 
-The source keys live in `~/.zshenv.local` on each build machine: `ALPHAGENOME_API_KEY`, `S2_API_KEY`, `DISGENET_API_KEY`, `UMLS_API_KEY`, `NCI_API_KEY` and `NCBI_API_KEY`. They carry no financial risk and only raise bandwidth and rate limits. Use them for all BioMCP testing. Name a key; never write its value in the repo, a log or a fixture.
+The source keys live in `~/.zshenv.local` on each build machine: `ALPHAGENOME_API_KEY`, `S2_API_KEY`, `DISGENET_API_KEY`, `UMLS_API_KEY`, `NCI_API_KEY` and `NCBI_API_KEY`. They carry no financial risk and only raise bandwidth and rate limits. Use them for all BioMCP testing. Name a key; never write its value in the repo, a log or a fixture. Replace a key only when its provider rejects it.
