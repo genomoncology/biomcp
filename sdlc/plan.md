@@ -1,25 +1,23 @@
 # BioMCP plan
 
-This plan describes future work and release exits. Read status from pm. BioMCP 0.9.4 is the active release; work on the 1.0 line stays paused.
+This plan says what BioMCP builds next, why, and in what order. Read status from pm. Work on the 1.0 line stays paused.
 
-## Outcome
+## 0.9.4: ship what we know is broken, fixed
 
-Ship 0.9.4 with BioMCP's cache in one SQLite database, the 0.9.3 release review's follow-ups tested or fixed, development builds back to v0.9.2's speed, and the moved test work on the replay server.
+1. Release blockers first: the security updates (2308 lock pins, 2309 rmcp 2.1) and the installed-wheel cleanup ownership (2310).
+2. Test reliability from the root cause record 2299, so full checks fail only on product bugs: 2299 to 2304, the advisory-gate scope (2307) and the focused Python environment. Then add the checks that stop new fixed waits and paused clocks mixed with real sockets.
+3. Process fixes from Ian's 2026-10-20 assessment that make the release path cheaper: one release document, release-only checks run earlier, the landing gate booking its real need, and removal of leftover pipeline scripts and re-stamping checkers.
+4. Full FDA approval history (2272), adopted with its recorded provider replies and normal source review.
+5. Feature coverage linked to outside-in behavior, with one valid baseline and a nightly/release floor. Complete records cleanup (2306) before the release rehearsal.
 
-## Order
+Exit: every 0.9.4 ticket lands or is withdrawn, main passes its full local check, the Linux fresh-clone offline run passes, and one full manual release rehearsal passes on final main without a tag. Ian then authorizes the tag.
 
-1. Land the after-release records for 0.9.3 first: the next development version, an empty Unreleased changelog section and the release record.
-2. Run the priority-2 lanes in parallel where their claims do not collide: development build time (2191), tests on the production cache paths (2199), the full-disk and disabled-source reviews (2202, 2204), whole-program tests for search all, update and uninstall (2213), and the Windows cache review (2201) once its execution path is approved. Reviews report defects as new tickets rather than widening their own scope.
-3. Let the cache reviews' findings set the requirements for the SQLite cache (2134) before it starts.
-4. Serialize manifest and profile edits: the tonic and prost upgrade (2077), the toml 1.x trial (2210) and release linking by measurement (2211).
-5. Serialize the overlapping replay and fixture work: replay server and golden output (2079), fixture consumers (2111) and fixture identifiers (2163).
-6. Fit the remaining product and review tickets around these: rsID routing in plain article search (2184), clearer output and assembly errors (2200), the mixed-version and long-running server reviews (2203, 2205), and the remaining measurement rows (2214). Transcript aliases (2185) wait for a clinical reviewer's ruling.
+## 0.9.5: prove BioMCP helps clinicians' agents
 
-Six lanes at most. Land accepted changes in batches that share one gate, merge the latest main before testing, and run the full main check after each landing. Before any release rehearsal, run the full Rust and Python suites once on Linux from a fresh clone with the network off.
+1. Measure whether an agent answers cancer care questions better with BioMCP (ideal-state gap: nobody measures agent success), following `sdlc/planning/2026-10-03-prove-agent-value.md`.
+2. Prove trial answers correct against keys taken from ClinicalTrials.gov itself (ideal-state gap: nothing proves the trial answers are correct).
 
-## Release exit
-
-Every 0.9.4 ticket is landed or withdrawn through pm, main passes the required full local check, the release measurement compares v0.9.3 and the candidate on one build machine, and the complete manual release workflow passes on final main without a tag or publication. Ian then authorizes the tag.
+Lanes run in parallel where their claims do not collide. Accepted tickets land in batches through one lander, with one candidate landing gate per batch. All assessment and reliability work stays in 0.9.4. Run the full main check once on the final candidate before the full untagged rehearsal; nightly qualification will own its additional checks when scheduling is available.
 
 ## Hardest problems
 
