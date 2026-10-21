@@ -1,8 +1,8 @@
 # Milestones
 
-Status: accepted 2026-10-06 on Ian's direction. Ian can overturn any milestone, criterion, or placement.
+Ian set these milestones on 2026-10-06 and can overturn any milestone, criterion, or placement.
 
-BioMCP works on the 0.9 line. 0.9.2 shipped, and 0.9.3 is the active milestone. 1.0 is paused by Ian's direction. Every new ticket names its milestone, and 0.9 tickets are the default.
+BioMCP works on the 0.9 line. 1.0 is paused by Ian's direction. Every new ticket names its milestone, and 0.9 tickets are the default.
 
 ## 0.9.2
 
@@ -20,19 +20,19 @@ Done when: every 0.9.3 bug ticket has landed with its proof; the test and build 
 
 ## 0.9.4
 
-Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; plus the test work moved out of 0.9.3: golden output tests on the replay server, the remaining fixture consumers on the replay server, owned fixture identifiers, and the tonic and prost upgrade; development builds back to v0.9.2's speed; and two article-search follow-ups from research: rsID routing in plain search and a clinical ruling on variant names from other transcripts.
+Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; golden output tests and the remaining fixture consumers on the replay server, with owned fixture identifiers; full FDA approval history for a drug; and, on top of that work, a fix for every known bug, the security updates, tests that fail only on product bugs, and process fixes that make the release path cheaper. `sdlc/plan.md` gives the order.
 
 Serves: BioMCP's ideal state that work stays bounded and that the same binary runs safely as a shell command, a local MCP server and a shared HTTP server.
 
-Done when: a long-used cache starts as fast as an empty one, the moved test work has landed, fresh and Rust-touch development builds are no slower than v0.9.2's on one build machine or the cost is explained, and a full release rehearsal passes.
+Done when: every 0.9.4 ticket lands or is withdrawn, main passes its full local check, the Linux fresh-clone offline run passes, and one full manual release rehearsal passes on final main without a tag.
 
 ## 0.9.5
 
-Delivers: the remaining replay-server golden coverage left outside 0.9.4: the other search and get selector families, traversal and local-data outputs, with fresh captures where old receipts no longer match current URLs.
+Delivers: a measurement of whether an agent answers cancer care questions better with BioMCP; and proof that trial answers are correct against keys taken from ClinicalTrials.gov itself.
 
-Serves: BioMCP's ideal state that tests prove what users run, offline and the same on every machine.
+Serves: the two gaps BioMCP's ideal state names: nobody measures whether an agent succeeds, and nothing proves the trial answers are correct.
 
-Done when: every search and get command's JSON and Markdown output is checked against committed golden files served by the replay server, and a full release rehearsal passes.
+Done when: the agent measurement and the trial answer check each run and report a result, and a full release rehearsal passes.
 
 ## 1.0
 

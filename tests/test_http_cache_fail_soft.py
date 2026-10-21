@@ -11,13 +11,14 @@ import subprocess
 import sys
 import threading
 from urllib.error import HTTPError
-from urllib.parse import parse_qsl, urlencode, urlsplit
+from urllib.parse import parse_qsl, urlsplit
 from urllib.request import urlopen
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
 from replay_env import REPO_ROOT, replay_environment, retained_cache_env  # noqa: E402
+from cache_reuse import admitted_provider_keys, assert_admitted_reused  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
@@ -27,19 +28,6 @@ GENE = ("search", "gene", "BRAF", "--limit", "1")
 
 def recorded_path(path):
     return path.replace("query=BRAF+AND+melanoma", "query=GENE_PROTEIN%3ABRAF+AND+melanoma")
-
-
-def admitted_provider_keys(cache):
-    with sqlite3.connect(cache / "biomcp.db") as connection:
-        urls = [json.loads(row[0])["response"]["url"] for row in
-                connection.execute("select metadata from entries where namespace='http'")]
-    keys = set()
-    for url in urls:
-        parts = urlsplit(url)
-        if parts.path.startswith(("/europepmc/", "/mygene/")):
-            path = urlsplit(recorded_path(parts.path + "?" + parts.query))
-            keys.add(f"GET {path.path}?{urlencode(sorted(parse_qsl(path.query, keep_blank_values=True)))}")
-    return keys
 
 
 @pytest.fixture
@@ -150,7 +138,9 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
         gene_section = next(section for section in first_payload["sections"] if section["entity"] == "gene")
         assert json.loads(seeded.stdout)["results"] == gene_section["results"]
         assert "local HTTP cache" not in seeded.stderr, seeded.stderr
-    cached_keys = admitted_provider_keys(cache)
+    cached_keys = admitted_provider_keys(
+        cache, normalize_path=recorded_path, prefixes=("/europepmc/", "/mygene/"),
+    )
     before = replay.request_log_line_count()
     second = run(command)
     assert second.returncode == 0, second.stderr
@@ -161,7 +151,6 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
         entry["key"] for entry in replay.request_log_entries()[:before]
         if entry["status"] == 200 and entry["key"].startswith(("GET /europepmc/", "GET /mygene/"))
     }
-    assert cached_keys and cached_keys <= contacted_keys, "reuse proof must name genuinely admitted provider answers"
     # EuropeOnly awaits its primary write before enrichment. Search-all uses
     # the uncontended gene seed instead; its exact original request must exist.
     seed_keys = {key for key in contacted_keys if key.startswith("GET /mygene/")} if command[1] == "all" else {
@@ -171,7 +160,44 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     if command[1] == "all":
         assert ("size", "50") in parse_qsl(urlsplit(next(iter(seed_keys)).removeprefix("GET ")).query)
     repeated = {entry["key"] for entry in replay.request_log_entries(since=before)}
-    assert not cached_keys & repeated, "identical search must reuse cached provider answers"
+    assert_admitted_reused(cached_keys, contacted_keys, repeated)
+
+
+def test_admitted_reuse_allows_contended_refetch_and_rejects_cache_bypass(provider):
+    run, cache, _, replay = provider
+    seeded = run(GENE)
+    assert seeded.returncode == 0, seeded.stderr
+    gene_results = json.loads(seeded.stdout)["results"]
+    with sqlite3.connect(cache / "biomcp.db") as held:
+        held.execute("begin immediate")
+        skipped = run(ARTICLE)
+        assert skipped.returncode == 0, skipped.stderr
+        article_results = json.loads(skipped.stdout)["results"]
+        assert article_results
+    admitted = admitted_provider_keys(cache, normalize_path=recorded_path)
+    assert admitted and all(key.startswith("GET /mygene/") for key in admitted), admitted
+    contacted = {entry["key"] for entry in replay.request_log_entries() if entry["status"] == 200}
+    assert any(key.startswith("GET /europepmc/") for key in contacted), contacted
+    before = replay.request_log_line_count()
+    hit = run(GENE)
+    refetch = run(ARTICLE)
+    assert hit.returncode == refetch.returncode == 0, (hit.stderr, refetch.stderr)
+    assert json.loads(hit.stdout)["results"] == gene_results
+    assert json.loads(refetch.stdout)["results"] == article_results
+    repeated = {entry["key"] for entry in replay.request_log_entries(since=before)}
+    assert_admitted_reused(admitted, contacted, repeated)
+    # The former all-contacted predicate rejects the permitted skipped write.
+    with pytest.raises(AssertionError, match="every contacted answer"):
+        assert not contacted & repeated, "every contacted answer must be reused"
+    before = replay.request_log_line_count()
+    bypass = run(("--no-cache", *GENE))
+    assert bypass.returncode == 0, bypass.stderr
+    assert json.loads(bypass.stdout)["results"] == gene_results
+    with pytest.raises(AssertionError, match="identical search must reuse"):
+        assert_admitted_reused(
+            admitted, contacted, (entry["key"] for entry in replay.request_log_entries(since=before)),
+        )
+
 
 def test_undecodable_cache_entry_refetches_then_keeps_cache_hits(provider):
     run, cache, _, replay = provider
@@ -291,6 +317,14 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
     assert seeded.returncode == 0, seeded.stderr
     assert "local HTTP cache" not in seeded.stderr, seeded.stderr
     expected = json.loads(seeded.stdout)["results"]
+    cached_keys = admitted_provider_keys(
+        cache, normalize_path=recorded_path, prefixes=("/europepmc/", "/mygene/"),
+    )
+    contacted = {entry["key"] for entry in replay.request_log_entries() if entry["status"] == 200}
+    primary = {key for key in contacted if key.startswith("GET /mygene/")} if command == GENE else {
+        key for key in contacted if ("pageSize", "25") in parse_qsl(urlsplit(key.removeprefix("GET ")).query)
+    }
+    assert len(primary) == 1 and primary <= cached_keys, "the primary response must be admitted before parallel reads"
     before = replay.request_log_line_count()
     # A process holding the epoch lock must not prevent readers of a current
     # epoch. Holding it across every start makes the old race deterministic.
@@ -302,10 +336,8 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
         assert result.returncode == 0, result.stderr
         assert json.loads(result.stdout)["results"] == expected
         assert "local HTTP cache" not in result.stderr, result.stderr
-    assert replay.request_log_line_count() == before, (
-        "all parallel starts must reuse the cache",
-        replay.request_log_entries(since=before),
-        [result.stderr for result in results],
+    assert_admitted_reused(
+        cached_keys, contacted, (entry["key"] for entry in replay.request_log_entries(since=before)),
     )
 
 

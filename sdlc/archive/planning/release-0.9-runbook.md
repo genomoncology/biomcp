@@ -4,7 +4,7 @@
 > `stage`/`promote` release pipeline. Phase 1 steps 2 and 5 name the removed
 > `stage` and `promote` modes. The current process is the single `Release`
 > workflow in
-> [`docs/reference/release-process.md`](../../docs/reference/release-process.md).
+> [`docs/reference/release-process.md`](../../../docs/reference/release-process.md).
 > The phases below stay as written for the record.
 
 Written 2026-08-28, promoted into the repository 2026-09-09 from a working
