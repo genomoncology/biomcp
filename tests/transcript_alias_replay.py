@@ -8,7 +8,9 @@ from pathlib import Path
 
 def prepare_transcript_alias_replay(capture: Path, destination: Path) -> None:
     destination.mkdir(parents=True)
-    (destination / "responses").symlink_to(capture / "responses", target_is_directory=True)
+    (destination / "responses").symlink_to(
+        capture / "responses", target_is_directory=True
+    )
     manifest = json.loads((capture / "manifest.json").read_text())
     # These queries were not captured. Empty authored responses keep the replay
     # about transcript provenance, without claiming these aliases find no papers.
@@ -25,7 +27,8 @@ def prepare_transcript_alias_replay(capture: Path, destination: Path) -> None:
         for template in templates:
             provider = template.split("/", 2)[1]
             manifest["routes"][template.replace("c.211T%3EA", alias)] = {
-                "status": 200, "file": f"authored-empty-{provider}.json",
+                "status": 200,
+                "file": f"authored-empty-{provider}.json",
                 "provenance": "AUTHORED empty discovery control; not captured provider bytes",
             }
     # The primary query's recorded S2 reply includes this PMID. Its paper body
@@ -33,8 +36,34 @@ def prepare_transcript_alias_replay(capture: Path, destination: Path) -> None:
     (destination / "authored-verification-unavailable.json").write_text(
         json.dumps({"error": "Authored unavailable verification control"})
     )
-    manifest["routes"]["GET /pubtator/publications/export/biocjson?full=true&pmids=35077220"] = {
-        "status": 503, "file": "authored-verification-unavailable.json",
+    manifest["routes"][
+        "GET /pubtator/publications/export/biocjson?full=true&pmids=35077220"
+    ] = {
+        "status": 503,
+        "file": "authored-verification-unavailable.json",
         "provenance": "AUTHORED unavailable verification control; not a captured outage",
     }
+    # Additional requests reach provider replies that were never captured. Keep
+    # each authored control exact and leave every captured response in place.
+    recovery = json.loads(
+        (Path(__file__).parent / "fixtures/article/recovery/authored.json").read_text()
+    )
+    controls = recovery["transcript_controls"]
+    bodies = {
+        **replies,
+        "s2-batch": [None, None, None],
+        "identity": recovery["transcript_identity"],
+        "unavailable": {"error": "Authored unavailable hydration control"},
+    }
+    for kind, body in bodies.items():
+        (destination / f"authored-recovery-{kind}.json").write_text(json.dumps(body))
+    for control in controls:
+        manifest["routes"].setdefault(
+            control["request"],
+            {
+                "status": control["status"],
+                "file": f"authored-recovery-{control['reply']}.json",
+                "provenance": "AUTHORED missing reply control; not captured provider bytes",
+            },
+        )
     (destination / "manifest.json").write_text(json.dumps(manifest))
