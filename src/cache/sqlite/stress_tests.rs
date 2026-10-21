@@ -83,8 +83,6 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
     assert_generation(&reader.get("http", "shared").unwrap().unwrap(), 2);
     assert!(child.child.try_wait().unwrap().is_none());
     control.write_all(&[2]).unwrap();
-    let mut hits = 0;
-    let mut misses = 0;
     for _ in 0..192 {
         match reader
             .get("http", "shared")
@@ -92,9 +90,8 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
         {
             Some(record) => {
                 assert_generation(&record, record.metadata[0]);
-                hits += 1;
             }
-            None => misses += 1,
+            None => {}
         }
     }
     let mut acknowledgement = [0];
@@ -108,7 +105,6 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
         child.child.wait().unwrap().success(),
         "evictor process failed"
     );
-    println!("cross-process verified hits={hits} misses={misses}");
     assert_eq!(
         reader
             .connection()

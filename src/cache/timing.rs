@@ -52,6 +52,9 @@ pub(super) fn busy_handler(count: i32) -> bool {
     if delay == 0 {
         return false;
     }
+    // SQLite specifies timeout-based retries rather than a wakeup signal;
+    // this callback preserves its existing total wait bounded at 100 ms.
+    #[allow(clippy::disallowed_methods)]
     std::thread::sleep(Duration::from_millis(delay));
     true
 }
