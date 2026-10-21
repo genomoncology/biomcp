@@ -43,3 +43,4 @@ Pending the remaining accepted source landings and assessment work. The final jo
 ## Progress
 
 - 2026-10-20 landed 368a8ac8f5074d9f78bae5ee5a9b0ff232313572; next: Land remaining accepted release work, complete final qualification and rehearse without publication
+- 2026-10-20 next: Qualify frozen main b91c4d46bb33741e76065dbe81e3b406d0e1596c with the final main gate and fresh Linux offline run, then complete one full untagged rehearsal and send the PM go request; no tag or publication
