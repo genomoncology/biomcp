@@ -22,6 +22,8 @@ Reviews: revision 851911d, accept
 
 Reviews: revision f4dd2b6, accept
 
+Reviews: revision 70d60c7b05b6863fa4d22d54d9622ce2c67bae03, accept
+
 ## Outcome
 
 Main holds a stable 0.9.4 candidate that meets `docs/reference/release-process.md`, passes the full Linux fresh-clone offline qualification and one complete untagged release rehearsal, and has a PM go request naming the exact commit. Ian alone authorizes the tag. This ticket creates no tag or publication.
