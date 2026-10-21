@@ -1,0 +1,384 @@
+{
+  "provenance": "AUTHORED CONTROLS. Literal command and alias strings come from sanitized command output. All provider-shaped replies and paper rows are authored; they are not captured provider bytes and make no literature or biological claim.",
+  "cases": [
+    {
+      "case": "c001",
+      "argv": [
+        "--json",
+        "variant",
+        "articles",
+        "BRCA1 p.P1749R",
+        "--limit",
+        "50",
+        "--debug-plan"
+      ],
+      "requested": {
+        "gene": "BRCA1",
+        "protein_change": "p.P1749R"
+      },
+      "resolution": {
+        "status": "resolved",
+        "normalized_aliases": {
+          "protein_changes": [
+            "P1702R",
+            "P1749R",
+            "P1770R",
+            "P240R",
+            "P59R",
+            "P607R",
+            "P645R"
+          ],
+          "coding_changes": [
+            "c.176C>G",
+            "c.1820C>G",
+            "c.1934C>G",
+            "c.5105C>G",
+            "c.5246C>G",
+            "c.5309C>G",
+            "c.719C>G"
+          ],
+          "genomic_ids": [
+            "chr17:g.41209100G>C"
+          ],
+          "rsids": [
+            "rs80357462"
+          ]
+        }
+      },
+      "gene": {
+        "entrez_id": "672",
+        "recorded_aliases": [
+          "BRCAI",
+          "BRCC1",
+          "BROVCA1",
+          "FANCS",
+          "IRIS",
+          "PNCA4",
+          "PPP1R53",
+          "PSCP",
+          "RNF53"
+        ]
+      },
+      "source_protein_forms": [
+        "P1702R",
+        "P1749R",
+        "P1770R",
+        "P240R",
+        "P59R",
+        "P607R",
+        "P645R",
+        "p.P1702R",
+        "p.P1749R",
+        "p.P1770R",
+        "p.P240R",
+        "p.P59R",
+        "p.P607R",
+        "p.P645R",
+        "p.Pro1702Arg",
+        "p.Pro1749Arg",
+        "p.Pro1770Arg",
+        "p.Pro240Arg",
+        "p.Pro59Arg",
+        "p.Pro607Arg",
+        "p.Pro645Arg"
+      ]
+    },
+    {
+      "case": "c003",
+      "argv": [
+        "--json",
+        "variant",
+        "articles",
+        "CHEK2 p.G167R",
+        "--limit",
+        "50"
+      ],
+      "requested": {
+        "gene": "CHEK2",
+        "protein_change": "p.G167R"
+      },
+      "resolution": {
+        "status": "ambiguous",
+        "normalized_aliases": {
+          "protein_changes": [
+            "G167R"
+          ],
+          "coding_changes": [],
+          "genomic_ids": [],
+          "rsids": []
+        }
+      },
+      "gene": {
+        "entrez_id": "11200",
+        "recorded_aliases": [
+          "CDS1",
+          "CHK2",
+          "HuCds1",
+          "LFS2",
+          "PP1425",
+          "RAD53",
+          "TPDS4",
+          "hCds1"
+        ]
+      },
+      "source_protein_forms": [
+        "G167R",
+        "p.G167R",
+        "p.Gly167Arg"
+      ]
+    },
+    {
+      "case": "c005",
+      "argv": [
+        "variant",
+        "articles",
+        "ABRAXAS1 G39V",
+        "--limit",
+        "50",
+        "--json"
+      ],
+      "requested": {
+        "gene": "ABRAXAS1",
+        "protein_change": "G39V"
+      },
+      "resolution": {
+        "status": "resolved",
+        "normalized_aliases": {
+          "protein_changes": [
+            "G32V",
+            "G39V",
+            "G93V"
+          ],
+          "coding_changes": [
+            "c.116G>T",
+            "c.278G>T",
+            "c.95G>T"
+          ],
+          "genomic_ids": [
+            "chr4:g.84403369C>A"
+          ],
+          "rsids": [
+            "rs762424001"
+          ]
+        }
+      },
+      "gene": {
+        "entrez_id": "84142",
+        "recorded_aliases": [
+          "ABRA1",
+          "CCDC98",
+          "FAM175A"
+        ]
+      },
+      "source_protein_forms": [
+        "G32V",
+        "G39V",
+        "G93V",
+        "p.G39V",
+        "p.Gly32Val",
+        "p.Gly39Val",
+        "p.Gly93Val"
+      ]
+    }
+  ],
+  "transcript_controls": [
+    {
+      "request": "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22chr17%3Ag.41203131A%3ET%22%5BTitle%2FAbstract%5D%29",
+      "reply": "pubmed",
+      "status": 200
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+chr17%5C%3Ag.41203131A%3ET%22",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+chr17%3Ag.41203131A%3ET",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F1714I%22%5BTitle%2FAbstract%5D%29",
+      "reply": "pubmed",
+      "status": 200
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+p.F1714I%22",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F1714I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F1761I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F1782I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F252I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F619I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F657I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.F71I%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe1714Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe1761Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe1782Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe252Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe619Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe657Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22p.Phe71Ile%22%5BTitle%2FAbstract%5D%29%29+OR+%28%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22rs1567760717%22%5BTitle%2FAbstract%5D%29%29",
+      "reply": "pubmed",
+      "status": 200
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=%28TITLE_ABS%3A%22BRCA1+p.F1761I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.F1782I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.F252I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.F619I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.F657I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.F71I%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe1714Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe1761Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe1782Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe252Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe619Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe657Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+p.Phe71Ile%22%29+OR+%28TITLE_ABS%3A%22BRCA1+rs1567760717%22%29",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F1761I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F1782I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F252I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F619I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F657I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.F71I",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe1714Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe1761Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe1782Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe252Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe619Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe657Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+p.Phe71Ile",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+rs1567760717",
+      "reply": "s2",
+      "status": 200
+    },
+    {
+      "request": "GET /myvariant/variant/chr17:g.41203131A%3ET?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
+      "reply": "identity",
+      "status": 200
+    },
+    {
+      "request": "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#ccb6c345bd3743df",
+      "reply": "s2-batch",
+      "status": 200
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=3&query=%28EXT_ID%3A42889535+OR+EXT_ID%3A42890735+OR+EXT_ID%3A42892765%29+AND+SRC%3AMED&resultType=core",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /pubtator/publications/export/biocjson?pmids=42892765",
+      "reply": "unavailable",
+      "status": 404
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42892765+AND+SRC%3AMED",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /pubtator/publications/export/biocjson?pmids=42890735",
+      "reply": "unavailable",
+      "status": 404
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42890735+AND+SRC%3AMED",
+      "reply": "europepmc",
+      "status": 200
+    },
+    {
+      "request": "GET /pubtator/publications/export/biocjson?pmids=42889535",
+      "reply": "unavailable",
+      "status": 404
+    },
+    {
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42889535+AND+SRC%3AMED",
+      "reply": "europepmc",
+      "status": 200
+    }
+  ],
+  "transcript_identity": {
+    "_id": "chr17:g.41203131A>T",
+    "dbnsfp": {
+      "genename": [
+        "BRCA1",
+        "BRCA1",
+        "BRCA1",
+        "BRCA1",
+        "BRCA1",
+        "BRCA1",
+        "BRCA1",
+        "BRCA1"
+      ],
+      "hgvsp": [
+        "p.F1761I",
+        "p.F71I",
+        "p.Phe1761Ile",
+        "p.F1782I",
+        "p.Phe657Ile",
+        "p.Phe619Ile",
+        "p.F657I",
+        "p.Phe1714Ile",
+        "p.Phe71Ile",
+        "p.F252I",
+        "p.Phe1782Ile",
+        "p.Phe252Ile",
+        "p.F619I",
+        "p.F1714I"
+      ],
+      "hgvsc": [
+        "c.1969T>A",
+        "c.5344T>A",
+        "c.754T>A",
+        "c.1855T>A",
+        "c.5140T>A",
+        "c.5281T>A",
+        "c.211T>A"
+      ]
+    },
+    "dbsnp": {
+      "rsid": "rs1567760717"
+    }
+  }
+}
