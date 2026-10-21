@@ -4,7 +4,7 @@ priority: 2
 
 # 2303 — Share one Rust test HTTP server
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
