@@ -1,10 +1,12 @@
 # 2351 — Isolate synthetic Make gate fixtures
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 8e3643ced0cf3b1d7902a4ce38b88b334d531d9a, accept
+
+Landed: f907fc8
 
 ## Outcome
 
