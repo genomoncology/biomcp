@@ -216,6 +216,10 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
                 assert len(requests) > calls_before_permissions_change, "a retained connection must not bypass private-file checks"
             finally:
                 database.chmod(0o600)
+        invoke(env, "cache", "clear", "--yes")
+        calls_after_clear = len(requests)
+        assert mcp_gene(queries[0]) == expected
+        assert len(requests) > calls_after_clear, "normal cache clear must allow the retained manager to refetch"
     finally:
         client.close()
 
@@ -291,3 +295,44 @@ def test_cached_cli_reads_while_another_process_holds_an_uncommitted_write(tmp_p
         assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == expected
         assert len(requests) == calls, "a committed cache hit must not become a provider request"
         writer.rollback()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="replaces open cache files through Unix rename")
+@pytest.mark.parametrize("replacement", ["root", "database"])
+def test_initialized_mcp_refuses_rows_from_a_replaced_cache_path(tmp_path, gene_provider, monkeypatch, replacement):
+    from test_mcp_2026_protocol import RawStdioMcp
+
+    env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
+    for name in set(os.environ) - set(env):
+        monkeypatch.delenv(name)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    client = RawStdioMcp()
+    try:
+        client.call("initialize", "initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "cache-test", "version": "1"}})
+        client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+
+        def search(identifier):
+            result = client.call(identifier, "tools/call", {"name": "biomcp", "arguments": {"command": "--json search gene BRAF --limit 1"}})["result"]
+            assert not result.get("isError"), result
+            return json.loads(result["content"][0]["text"])
+
+        expected = search("before")
+        cache = tmp_path / "cache"
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            key, metadata, body = connection.execute("select key,metadata,body from entries where namespace='http'").fetchone()
+            payload = json.loads(body)
+            payload["hits"][0]["name"] = "stale displaced fixture"
+            body = json.dumps(payload).encode()
+            connection.execute("update entries set body=?,body_hash=?,bytes=? where key=?", (body, hashlib.sha256(body).hexdigest(), len(metadata) + len(body), key))
+        displaced = tmp_path / "displaced"
+        if replacement == "root":
+            cache.rename(displaced)
+        else:
+            displaced.mkdir()
+            for path in cache.glob("biomcp.db*"):
+                path.rename(displaced / path.name)
+        assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == expected
+        assert search("after") == expected, "a retained connection must never serve the displaced database"
+    finally:
+        client.close()

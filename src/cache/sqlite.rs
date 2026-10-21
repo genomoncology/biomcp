@@ -1,5 +1,6 @@
 //! Indexed reusable cache. SQLite serializes publication, eviction and blob reads.
 mod blobs;
+mod identity;
 mod maintenance;
 mod pool;
 pub(crate) use maintenance::{Maintenance, maintain};
@@ -77,7 +78,7 @@ impl Store {
         Ok(Self { connection, root })
     }
 
-    fn open_connection(root: &Path) -> Result<Connection> {
+    fn open_connection(root: &Path) -> Result<(Connection, identity::Identity)> {
         let path = root.join(DATABASE_NAME);
         let mut options = OpenOptions::new();
         options.read(true).write(true).create_new(true);
@@ -92,11 +93,13 @@ impl Store {
             }
             Err(error) => return Err(error),
         }
+        let identity = identity::Identity::capture(root)?;
         let connection = Connection::open_with_flags(
             &path,
             rusqlite::OpenFlags::default() | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
         )
         .map_err(sqlite_error)?;
+        identity.validate(root, &connection)?;
         connection
             .busy_timeout(Duration::from_millis(100))
             .map_err(sqlite_error)?;
@@ -131,7 +134,8 @@ impl Store {
                 .execute_batch(schema::SCHEMA)
                 .map_err(sqlite_error)?;
         }
-        Ok(connection)
+        identity.validate(root, &connection)?;
+        Ok((connection, identity))
     }
 
     pub(crate) fn transaction<T>(
@@ -192,7 +196,8 @@ impl Store {
     pub(crate) fn validate(&self) -> Result<()> {
         super::private::secure_managed_dir(&self.root)?;
         validate_database_file(&self.root.join(DATABASE_NAME), false)?;
-        validate_sidecars(&self.root)
+        validate_sidecars(&self.root)?;
+        pool::validate(&self.connection, &self.root)
     }
 
     pub(crate) fn connection(&self) -> pool::ConnectionAccess<'_> {

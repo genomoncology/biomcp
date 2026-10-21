@@ -4,37 +4,55 @@ use super::*;
 #[test]
 #[ignore = "invoked only as the evictor child of the shared-cache contract"]
 fn eviction_child_process() {
+    use std::io::{Read, Write};
     let Some(root) = std::env::var_os("BIOMCP_TEST_EVICTOR_ROOT") else {
         return;
     };
     let mut store = Store::open(Path::new(&root)).unwrap();
+    let address = std::env::var("BIOMCP_TEST_EVICTOR_CONTROL").unwrap();
+    let mut control = std::net::TcpStream::connect(address).unwrap();
+    publish_generation(&mut store, 1);
     crate::test_support::signal_ready_on_raw_stdout("EVICTOR_READY");
-    crate::test_support::block_until_stdin_closes();
-    for generation in 1_u8..=48 {
-        let body = vec![generation; blobs::INLINE_LIMIT + 1];
-        store
-            .put("http", "shared", "shared", &[generation], &body, None)
-            .unwrap();
+    let mut command = [0];
+    control.read_exact(&mut command).unwrap();
+    assert_eq!(command, [1]);
+    store.delete("http", "shared").unwrap();
+    publish_generation(&mut store, 2);
+    control.write_all(&[2]).unwrap();
+    control.read_exact(&mut command).unwrap();
+    assert_eq!(command, [2]);
+    for generation in 3_u8..=50 {
+        publish_generation(&mut store, generation);
         if generation % 2 == 0 {
             store.delete("http", "shared").unwrap();
         }
     }
+    publish_generation(&mut store, 51);
+    control.write_all(&[51]).unwrap();
+    control.read_exact(&mut command).unwrap();
+    assert_eq!(command, [3]);
+}
+
+fn publish_generation(store: &mut Store, generation: u8) {
+    let body = vec![generation; blobs::INLINE_LIMIT + 1];
+    store
+        .put("http", "shared", "shared", &[generation], &body, None)
+        .unwrap();
+}
+
+fn assert_generation(record: &Record, expected: u8) {
+    assert_eq!(record.metadata, [expected]);
+    assert_eq!(record.body.len(), blobs::INLINE_LIMIT + 1);
+    assert!(record.body.iter().all(|byte| *byte == expected));
 }
 
 #[test]
 fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
+    use std::io::{Read, Write};
     let root = crate::test_support::TempDirGuard::new("sqlite-process-eviction");
     let mut reader = Store::open(root.path()).unwrap();
-    reader
-        .put(
-            "http",
-            "shared",
-            "shared",
-            &[0],
-            &vec![0; blobs::INLINE_LIMIT + 1],
-            None,
-        )
-        .unwrap();
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap().to_string();
     let mut child = crate::test_support::SignaledChild::spawn(
         &std::env::current_exe().unwrap(),
         &[
@@ -43,11 +61,28 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
             "--ignored",
             "--nocapture",
         ],
-        [("BIOMCP_TEST_EVICTOR_ROOT", root.path().as_os_str())],
+        [
+            ("BIOMCP_TEST_EVICTOR_ROOT", root.path().as_os_str()),
+            (
+                "BIOMCP_TEST_EVICTOR_CONTROL",
+                std::ffi::OsStr::new(&address),
+            ),
+        ],
         "EVICTOR_READY",
     );
-    assert_eq!(reader.get("http", "shared").unwrap().unwrap().metadata, [0]);
-    child.release();
+    let (mut control, _) = listener.accept().unwrap();
+    let mut replacement = control.try_clone().unwrap();
+    let _hook = read::before_next_blob_read(move || {
+        replacement.write_all(&[1]).unwrap();
+        let mut acknowledgement = [0];
+        replacement.read_exact(&mut acknowledgement).unwrap();
+        assert_eq!(acknowledgement, [2]);
+    });
+    // The old snapshot selected generation1. Its blob is removed before open,
+    // so returning coherent generation2 requires the fresh-snapshot retry.
+    assert_generation(&reader.get("http", "shared").unwrap().unwrap(), 2);
+    assert!(child.child.try_wait().unwrap().is_none());
+    control.write_all(&[2]).unwrap();
     let mut hits = 0;
     let mut misses = 0;
     for _ in 0..192 {
@@ -56,19 +91,23 @@ fn separate_process_eviction_returns_only_coherent_bodies_or_misses() {
             .expect("eviction must yield a verified row or a miss")
         {
             Some(record) => {
-                assert_eq!(record.metadata.len(), 1);
-                assert_eq!(record.body.len(), blobs::INLINE_LIMIT + 1);
-                assert!(record.body.iter().all(|byte| *byte == record.metadata[0]));
+                assert_generation(&record, record.metadata[0]);
                 hits += 1;
             }
             None => misses += 1,
         }
     }
+    let mut acknowledgement = [0];
+    control.read_exact(&mut acknowledgement).unwrap();
+    assert_eq!(acknowledgement, [51]);
+    assert_generation(&reader.get("http", "shared").unwrap().unwrap(), 51);
+    assert!(child.child.try_wait().unwrap().is_none());
+    control.write_all(&[3]).unwrap();
+    child.release();
     assert!(
         child.child.wait().unwrap().success(),
         "evictor process failed"
     );
-    assert_eq!(hits + misses, 192);
     println!("cross-process verified hits={hits} misses={misses}");
     assert_eq!(
         reader

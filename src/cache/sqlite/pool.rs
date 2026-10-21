@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, MutexGuard, OnceLock, Weak};
 type Registry = HashMap<PathBuf, Weak<Mutex<ManagedConnection>>>;
 pub(super) type SharedConnection = Arc<Mutex<ManagedConnection>>;
 
-pub(super) struct ManagedConnection(Option<Connection>);
+pub(super) struct ManagedConnection(Option<Connection>, identity::Identity);
 
 impl Drop for ManagedConnection {
     fn drop(&mut self) {
@@ -39,16 +39,25 @@ pub(super) fn lock(connection: &SharedConnection) -> ConnectionAccess<'_> {
 
 pub(super) fn open(
     root: &Path,
-    create: impl FnOnce() -> Result<Connection>,
+    create: impl FnOnce() -> Result<(Connection, identity::Identity)>,
 ) -> Result<SharedConnection> {
     static CONNECTIONS: OnceLock<Mutex<Registry>> = OnceLock::new();
     let mut registry =
         crate::utils::sync::recover_poison(CONNECTIONS.get_or_init(Mutex::default).lock());
     if let Some(connection) = registry.get(root).and_then(Weak::upgrade) {
+        validate(&connection, root)?;
         return Ok(connection);
     }
     registry.retain(|_, connection| connection.strong_count() > 0);
-    let connection = Arc::new(Mutex::new(ManagedConnection(Some(create()?))));
+    let (connection, identity) = create()?;
+    let connection = Arc::new(Mutex::new(ManagedConnection(Some(connection), identity)));
     registry.insert(root.to_owned(), Arc::downgrade(&connection));
     Ok(connection)
+}
+
+pub(super) fn validate(connection: &SharedConnection, root: &Path) -> Result<()> {
+    let connection = crate::utils::sync::recover_poison(connection.lock());
+    connection
+        .1
+        .validate(root, connection.0.as_ref().expect("live cache connection"))
 }

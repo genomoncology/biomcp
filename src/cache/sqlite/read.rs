@@ -87,7 +87,13 @@ fn read_snapshot(
     };
     let body = match (body, blob) {
         (Some(body), None) => body,
-        (None, Some(blob)) => blobs::read(root, &blob)?,
+        (None, Some(blob)) => {
+            #[cfg(test)]
+            if let Some(action) = BEFORE_BLOB_READ.with_borrow_mut(Option::take) {
+                action();
+            }
+            blobs::read(root, &blob)?
+        }
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -109,4 +115,30 @@ fn read_snapshot(
         },
         last_access,
     )))
+}
+
+#[cfg(test)]
+thread_local! {
+    static BEFORE_BLOB_READ: std::cell::RefCell<Option<Box<dyn FnOnce()>>> = const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(super) struct BlobReadHook;
+
+#[cfg(test)]
+impl Drop for BlobReadHook {
+    fn drop(&mut self) {
+        BEFORE_BLOB_READ.with_borrow_mut(|action| {
+            action.take();
+        });
+    }
+}
+
+#[cfg(test)]
+pub(super) fn before_next_blob_read(action: impl FnOnce() + 'static) -> BlobReadHook {
+    BEFORE_BLOB_READ.with_borrow_mut(|slot| {
+        assert!(slot.is_none());
+        *slot = Some(Box::new(action));
+    });
+    BlobReadHook
 }
