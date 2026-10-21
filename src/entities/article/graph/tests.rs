@@ -937,7 +937,8 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
-    let mut env = TestEnv::scratch_cache_only();
+    // This proves bridge expiry, not cache I/O within the shortened budget.
+    let mut env = TestEnv::new();
     let cache = crate::test_support::TempDirGuard::new("citation-bridge-deadline");
     env.set_cache_root(cache.path());
     // The shrunk command budget makes the stalled bridge hit the absolute

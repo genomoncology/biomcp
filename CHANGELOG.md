@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
+
 - Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
 - Update certifi, urllib3, mkdocs-material, xxhash-rust and quinn-proto to their first patched security releases. (2308)
 
