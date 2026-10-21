@@ -24,14 +24,14 @@ out() { echo "docs_only=$1" >> "${GITHUB_OUTPUT:-/dev/null}"; }
 
 # Docs-only under sdlc/ is record and planning text only: the
 # tickets, records, decisions, designs, ideas, issues and planning
-# folders, and plan.md. Every other sdlc/ path is a program, gate
-# wrapper or configuration — sdlc/scripts, sdlc/project, sdlc/skills,
+# folders, archived records, and plan.md. Every other sdlc/ path is a program, gate
+# wrapper or configuration — sdlc/skills,
 # sdlc/pm.json, sdlc/release-checklist.md — and counts as a change
 # (2115). The text folders keep skipping because their readers run
 # in the repository-contracts job, which runs on every push.
 sdlc_record_text() {
   case "$1" in
-    sdlc/tickets/*|sdlc/records/*|sdlc/decisions/*|sdlc/designs/*|sdlc/ideas/*|sdlc/issues/*|sdlc/planning/*|sdlc/plan.md) return 0 ;;
+    sdlc/tickets/*|sdlc/records/*|sdlc/decisions/*|sdlc/designs/*|sdlc/ideas/*|sdlc/issues/*|sdlc/planning/*|sdlc/archive/*|sdlc/plan.md) return 0 ;;
   esac
   return 1
 }
@@ -91,7 +91,7 @@ while IFS= read -r path; do
     # (2026-10-07 review, finding 4).
     # sdlc/ narrows to record and planning text (2115): the folders
     # and file sdlc_record_text names stay docs-only, and every other
-    # sdlc/ path — the gate wrappers, the lifecycle programs, the
+    # sdlc/ path — the gate inputs, the
     # skills, pm.json, the release checklist — runs the full suite.
     notes/*|.github/*.md) ;;
     sdlc/*)

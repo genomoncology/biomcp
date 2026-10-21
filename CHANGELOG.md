@@ -100,36 +100,37 @@
 
 ### Internal
 
-- Link outside-in tests to caller features and check product-only source coverage in nightly and release qualification. (2319)
 - Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
-- Reject unreviewed fixed test waits and keep necessary timing controls and legacy wait risks in one explicit inventory. (2318)
-- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
-- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
-- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
-
-- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
 - Run the landing and main gates directly through repository Make targets in build jobs. (2317)
+- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
+- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
 - Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
-- Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
-- Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
-
 - Keep release steps in one document and reuse qualification after records-only changes. (2312)
 
+- Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
+
+- Remove obsolete pipeline scripts and their lifecycle tests, and classify archived planning and records as documentation. (2313)
+- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
+- Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 
+- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
 - Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
 
+- Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
 
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
+
+- Link outside-in tests to caller features and check product-only source coverage in nightly and release qualification. (2319)
 
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
@@ -147,6 +148,7 @@
 
 - Qualify concurrent CLI and MCP cache sharing with distinct stored requests and strict warm reuse after bounded admission. (2283)
 
+- Reject unreviewed fixed test waits and keep necessary timing controls and legacy wait risks in one explicit inventory. (2318)
 
 - Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
 - Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)

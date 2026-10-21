@@ -14,7 +14,7 @@ Reviews: revision aaf04b7, accept
 
 ## Outcome
 
-- Changes: `CHANGELOG.md` `Makefile` `tests/test_upstream_planning_analysis_docs.py` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md` `sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `src/cache/manager.rs` `src/cli/discover.rs` `src/cli/outcome/probe_tests.rs` `src/cli/tests/facade/cache.rs` `src/cli/update/tests.rs` `src/cli/worker.rs` `src/sources/gencc/tests.rs` `src/test_support.rs` `src/utils/sync.rs` `tests/test_routine_cargo_feature_contract.py` .
+- Changes: `CHANGELOG.md` `Makefile` `tests/test_upstream_planning_analysis_docs.py` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/archive/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` `sdlc/archive/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` `sdlc/archive/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` `sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md` `sdlc/archive/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `src/cache/manager.rs` `src/cli/discover.rs` `src/cli/outcome/probe_tests.rs` `src/cli/tests/facade/cache.rs` `src/cli/update/tests.rs` `src/cli/worker.rs` `src/sources/gencc/tests.rs` `src/test_support.rs` `src/utils/sync.rs` `tests/test_routine_cargo_feature_contract.py` .
 
 Gate repair claim: `tests/test_upstream_planning_analysis_docs.py` may adapt its spec-pr/spec-contracts recipe contract to the approved Python setup while retaining selected-binary and actual runner execution assertions. Gate2243/1792424083178-89156 failed only test_makefile_spec_split_contract_is_documented_and_executable;1353passed/10skipped. Root grants this exact additional test path; keep all other assertions.
 
@@ -23,10 +23,10 @@ Known test-reliability leftovers are gone: spec targets sync Python, no test ass
 
 ## Evidence
 
-1. Finding 17 of `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`: `make spec-pr` and `make spec-contracts` skip `sync-python-dev` (`Makefile` near lines 179-183; `make spec` has it).
-2. `sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` and `...-after-1263-and-1264.md`: `the_mcp_path_builds_no_one_shot_runtime` asserts a process-wide counter (`src/cli/outcome/probe_tests.rs` near lines 68 and 78-81) and can flake under plain `cargo test`. Keep the armed-window probe counter and drop the global assertion.
-3. `sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md`: about ten unbounded `recv` and `.join()` waits in test code under `src/` were left for a later ticket. Convert them to bounded waits as 2030 did.
-4. Small leftovers: add the "not for clinical use" note to the DepMap row in `docs/reference/sources.json`, and mark `sdlc/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` resolved, since its tests were deleted in e7e45eba5.
+1. Finding 17 of `sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`: `make spec-pr` and `make spec-contracts` skip `sync-python-dev` (`Makefile` near lines 179-183; `make spec` has it).
+2. `sdlc/archive/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` and `...-after-1263-and-1264.md`: `the_mcp_path_builds_no_one_shot_runtime` asserts a process-wide counter (`src/cli/outcome/probe_tests.rs` near lines 68 and 78-81) and can flake under plain `cargo test`. Keep the armed-window probe counter and drop the global assertion.
+3. `sdlc/archive/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md`: about ten unbounded `recv` and `.join()` waits in test code under `src/` were left for a later ticket. Convert them to bounded waits as 2030 did.
+4. Small leftovers: add the "not for clinical use" note to the DepMap row in `docs/reference/sources.json`, and mark `sdlc/archive/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` resolved, since its tests were deleted in e7e45eba5.
 
 ## Keeps
 

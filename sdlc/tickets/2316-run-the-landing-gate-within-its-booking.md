@@ -4,7 +4,7 @@ priority: 2
 
 # 2316 — Run the landing gate within its booking
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
