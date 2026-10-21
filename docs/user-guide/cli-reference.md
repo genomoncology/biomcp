@@ -890,7 +890,7 @@ returned on timeout. An incomplete zero-row result exits one and carries a
 bounded structured error; healthy empty and known offset-beyond-total pages
 remain successful.
 
-A failed visible metadata fallback adds `metadata_status` to each affected full or compact JSON row with `status: "incomplete"`, `missing_fields`, `source: "pubtator"`, and the existing `failure_class`. Markdown shows the same missing fields and cause on that row. The warning names its PMID and the same fields and cause. Fully recovered rows omit the status.
+A failed visible metadata fallback adds `metadata_status` to each affected full or compact JSON row with `status: "incomplete"`, `missing_fields`, `source: "pubtator"`, and the existing `failure_class`. `missing_fields` names absent or unconfirmed metadata and includes zero citation counts that require recovery. Markdown shows the same fields and cause on that row. The warning names its PMID and the same fields and cause. Fully recovered rows omit the status.
 
 ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
 
