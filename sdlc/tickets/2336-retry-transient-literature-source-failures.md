@@ -8,6 +8,8 @@ Reviews: revision 9fa4ff2c8b607d11381940248ea6874b079e2c1b, accept
 
 Reviews: revision 910f9b9ff36a3dc85baeccea320c5616c9962265, accept
 
+Reviews: revision 474a07136c26b55ea0ec80306a593d52ceb1c0bd, accept
+
 ## Outcome
 
 A literature search survives a transient Europe PMC, Semantic Scholar or PubTator3 failure where it can. After an HTTP 503, 502, 429 or timeout, BioMCP retries once with backoff, honoring Retry-After within the command's deadline. If the retry also fails, it returns every result the other routes found and names the failed route, its error class and that a retry ran. Dated, newer-paper searches get the same handling. No retry follows a 4xx other than 429, and provider pacing rules stay in force.
@@ -30,3 +32,4 @@ Restated outcome: reserve time for one real retry of an eligible literature requ
 - Fresh review reproduced admitted-retry cancellation loss, overflowing Retry-After, shared-pool refusal evidence loss and batch-enrichment projection loss (j2231 and j2248). Repairs retain the observer at the actual provider-leg boundary, preserve typed sanitized failures through projections, and retain the actual HTTP status including 422 and the existing PubTator 400/404 recovery behavior. Existing metadata-schema assertions are unchanged.
 - Full-gate failures remain evidence: j2185 exposed helper registration, j2200 invocation-deadline selection, j2252 the large-future stack overflow, and j2279 HTTP compatibility and harness integration. The stack repair boxes the backend future before nested scopes and retains normal stack limits. The helper inventory test now consumes the existing authoritative registry classification instead of copying it. Focused j2362 passed all 84 affected Python cases and 13 Rust cases with Clippy, Rustfmt and Ruff.
 - Fresh review accepts published runtime `2026f74c5c4f62f877c5100b7853c803ed2ed540`. Direct M5 `make landing-gate` job j2374 passed exit 0 at that exact revision, including routine Rust/Python, strict documentation and specifications. The subsequent ticket-only record/claim update changes no runtime source. Build copies touched M5 and Gator; final raw job receipts belong in the landing evidence archive before cleanup.
+- Land this ticket alone because no other ticket is accepted. The proposed dependent batch partner needs an authored-fixture correction and a fresh full routine gate, so it cannot join this accepted landing.
