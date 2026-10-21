@@ -26,6 +26,7 @@ from typing import Iterator
 # The replay fixture is also imported by standalone subprocess probes.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cache_fixture import set_cache_root  # noqa: E402
+from hang_guard import HANG_TIMEOUT  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPLAY_SERVER = REPO_ROOT / "tools" / "replay-server"
@@ -151,7 +152,7 @@ class ReplayEnvironment:
         self,
         binary: Path,
         argv: tuple[str, ...],
-        timeout: float = 120.0,
+        timeout: float = HANG_TIMEOUT,
         *,
         text: bool = True,
     ) -> ReplayRun:
@@ -228,7 +229,7 @@ def _standalone_replay_environment(
             if marker != "READY":
                 raise RuntimeError(f"replay server greeted unexpectedly: {ready.strip()!r}")
             provider_env = _read_env_file(env_file)
-            with urllib.request.urlopen(f"{origin}/healthz", timeout=5) as probe:
+            with urllib.request.urlopen(f"{origin}/healthz", timeout=HANG_TIMEOUT) as probe:
                 if probe.status != 200:
                     raise RuntimeError("replay server health probe failed")
             yield ReplayEnvironment(
@@ -243,10 +244,10 @@ def _standalone_replay_environment(
         finally:
             process.terminate()
             try:
-                process.wait(timeout=10)
+                process.wait(timeout=HANG_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
-                process.wait(timeout=10)
+                process.wait(timeout=HANG_TIMEOUT)
 
 
 class _ReplaySession:
@@ -269,7 +270,7 @@ class _ReplaySession:
             data=json.dumps({"root": str(root), "record": record}).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=HANG_TIMEOUT) as response:
             if response.status != 200:
                 raise RuntimeError("replay fixture selection failed")
         self.selection = (root, record)

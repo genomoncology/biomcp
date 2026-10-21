@@ -14,9 +14,9 @@ use std::process::{Child, Command, Stdio};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
+use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
 use serde_json::{Value, json};
-
-const RESPONSE_TIMEOUT: Duration = Duration::from_secs(60);
+use tokio::io::AsyncWriteExt as _;
 
 struct StdioMcp {
     child: Child,
@@ -69,7 +69,7 @@ impl StdioMcp {
     fn expect_response(&self, id: &str) -> Value {
         let line = self
             .lines
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .unwrap_or_else(|_| panic!("timed out waiting for response to {id}"));
         let frame: Value = serde_json::from_str(&line)
             .unwrap_or_else(|error| panic!("stdout line is not JSON ({error}): {line}"));
@@ -141,7 +141,7 @@ fn windows_stdio_stream_stays_json_through_a_managed_write() {
 
     client.drain_remaining();
     assert!(
-        started.elapsed() < Duration::from_secs(120), // watchdog: whole-contract upper bound, two minutes
+        started.elapsed() < biomcp_mcp_contract_client::hang_timeout(), // watchdog: whole-contract hang guard
         "contract took unexpectedly long"
     );
 }
@@ -188,88 +188,61 @@ struct GeneFixture {
     base: String,
     arrivals: mpsc::Receiver<()>,
     count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
-    hold: std::sync::Arc<(std::sync::Mutex<bool>, std::sync::Condvar)>,
-    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    server: Option<std::thread::JoinHandle<()>>,
+    hold: tokio::sync::watch::Sender<bool>,
+    server: TestHttpServer,
 }
 
 impl GeneFixture {
     fn start() -> Self {
         use std::sync::{
-            Arc, Condvar, Mutex,
-            atomic::{AtomicBool, AtomicUsize, Ordering},
+            Arc,
+            atomic::{AtomicUsize, Ordering},
         };
-        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("local MyGene fixture");
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let hold = Arc::new((Mutex::new(false), Condvar::new()));
+        let (hold, held) = tokio::sync::watch::channel(false);
         let count = Arc::new(AtomicUsize::new(0));
-        let stop = Arc::new(AtomicBool::new(false));
+        let counted = count.clone();
         let (sender, arrivals) = mpsc::channel();
-        let (gate, requests, stopped) = (hold.clone(), count.clone(), stop.clone());
-        let server = std::thread::spawn(move || {
-            let mut workers = Vec::new();
-            for incoming in listener.incoming() {
-                let mut stream = incoming.expect("fixture connection");
-                if stopped.load(Ordering::SeqCst) {
-                    break;
-                }
-                let (gate, requests, sender) = (gate.clone(), requests.clone(), sender.clone());
-                workers.push(std::thread::spawn(move || {
-                    stream.set_read_timeout(Some(RESPONSE_TIMEOUT)).unwrap();
-                    stream.set_write_timeout(Some(RESPONSE_TIMEOUT)).unwrap();
-                    let mut reader = BufReader::new(&mut stream);
-                    let mut line = String::new();
-                    reader.read_line(&mut line).expect("provider request");
-                    assert!(line.starts_with("GET /query?"), "unexpected local request: {line}");
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let requests = counted.clone();
+            let sender = sender.clone();
+            let mut gate = held.clone();
+            async move {
+                let Some(request) = read_request(&mut stream).await? else { return Ok(()); };
+                let request = String::from_utf8_lossy(&request);
+                let line = request.lines().next().unwrap_or_default();
+                assert!(line.starts_with("GET /query?"), "unexpected local request: {line}");
+                requests.fetch_add(1, Ordering::SeqCst);
+                sender.send(()).map_err(std::io::Error::other)?;
+                tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), async {
                     loop {
-                        line.clear();
-                        reader.read_line(&mut line).expect("request headers");
-                        if line == "\r\n" || line.is_empty() { break; }
+                        let blocked = *gate.borrow_and_update();
+                        if !blocked { break; }
+                        gate.changed().await.map_err(std::io::Error::other)?;
                     }
-                    requests.fetch_add(1, Ordering::SeqCst);
-                    sender.send(()).unwrap();
-                    let (lock, ready) = &*gate;
-                    let held = lock.lock().unwrap();
-                    let (held, timeout) = ready.wait_timeout_while(held, RESPONSE_TIMEOUT, |held| *held).unwrap();
-                    assert!(!timeout.timed_out() || !*held, "fixture replies were not released");
-                    drop(held);
-                    let body = include_bytes!("../testdata/sources/mygene/search_braf_20260811.json");
-                    write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: public, max-age=3600\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).unwrap();
-                    stream.write_all(body).expect("recorded provider reply");
-                }));
+                    Ok::<(), std::io::Error>(())
+                }).await.map_err(|_| std::io::Error::other("fixture replies were not released"))??;
+                let body = include_bytes!("../testdata/sources/mygene/search_braf_20260811.json");
+                let header = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: public, max-age=3600\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+                stream.write_all(header.as_bytes()).await?;
+                stream.write_all(body).await
             }
-            for worker in workers {
-                worker.join().expect("fixture request worker");
-            }
-        });
+        })
+        .expect("start MyGene fixture");
         Self {
-            base,
+            base: server.base.clone(),
             arrivals,
             count,
             hold,
-            stop,
-            server: Some(server),
+            server,
         }
     }
 
     fn hold_replies(&self, held: bool) {
-        *self.hold.0.lock().unwrap() = held;
-        self.hold.1.notify_all();
+        self.hold.send_replace(held);
     }
 
     fn count(&self) -> usize {
         self.count.load(std::sync::atomic::Ordering::SeqCst)
-    }
-}
-
-impl Drop for GeneFixture {
-    fn drop(&mut self) {
-        self.hold_replies(false);
-        self.stop.store(true, std::sync::atomic::Ordering::SeqCst);
-        let _ = std::net::TcpStream::connect(self.base.trim_start_matches("http://"));
-        if let Some(server) = self.server.take() {
-            server.join().expect("fixture server cleanup");
-        }
     }
 }
 
@@ -299,7 +272,7 @@ fn successful_output(process: ManagedChild) -> Value {
 
 fn successful_output_with_stderr(mut process: ManagedChild) -> (Value, String) {
     let child = &mut process.0;
-    let deadline = Instant::now() + RESPONSE_TIMEOUT;
+    let deadline = Instant::now() + biomcp_mcp_contract_client::hang_timeout();
     let status = loop {
         if let Some(status) = child.try_wait().expect("poll child") {
             break status;
@@ -475,7 +448,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     let downloads = cache.join("downloads");
     std::fs::create_dir(&downloads).unwrap();
     std::fs::write(downloads.join("keep"), b"outside HTTP cache").unwrap();
-    let provider = GeneFixture::start();
+    let mut provider = GeneFixture::start();
     let mut mcp = StdioMcp::with_provider(cache, &provider.base);
     mcp.send(&json!({"jsonrpc":"2.0", "id":"init", "method":"initialize",
         "params":{"protocolVersion":"2025-11-25", "capabilities":{},
@@ -490,7 +463,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     successful_output(spawn_gene(cache, &provider.base, "BRAF0"));
     provider
         .arrivals
-        .recv_timeout(RESPONSE_TIMEOUT)
+        .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
         .expect("initial provider request");
 
     // Hold distinct cold requests at the real provider boundary, so the two
@@ -502,7 +475,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     for _ in 0..3 {
         provider
             .arrivals
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("three concurrent provider requests");
     }
     provider.hold_replies(false);
@@ -555,7 +528,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     for _ in 0..2 {
         provider
             .arrivals
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("in-flight request before clear");
     }
     assert!(
@@ -607,4 +580,5 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
         before,
         "both surfaces must reuse the refilled cache"
     );
+    provider.server.finish().unwrap();
 }

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from cache_fixture import set_cache_root
 
 import json
@@ -149,7 +151,7 @@ class _RunningSemanticScholarServer:
     def __exit__(self, *exc: object) -> None:
         self.server.shutdown()
         self.server.server_close()
-        self.thread.join(timeout=5)
+        self.thread.join(timeout=HANG_TIMEOUT)
 
     @property
     def base_url(self) -> str:
@@ -189,7 +191,7 @@ def _run_article_citations(
             env=env,
             capture_output=True,
             text=True,
-            timeout=20,
+            timeout=HANG_TIMEOUT,
             check=False,
         )
 

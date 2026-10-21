@@ -558,3 +558,5 @@ with separate experiment IDs, and an absent metric prints as `-`.
 ../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.total' | mustmatch '3608'
 ../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.matched' | mustmatch '113'
 ```
+
+The opt-in `approval-history` section returns the full provider submission history with source classes, dates, and document links. `approvals`, `regulatory`, and `all` retain compact submission lists; `all` excludes full history. The captured-provider CLI replay in `tests/test_drug_regulatory_replay.py` owns this behavior contract.

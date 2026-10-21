@@ -66,8 +66,8 @@ def main() -> int:
     if doc_only:
         if any(path.startswith(b"spec/") for path in paths):
             env = os.environ.copy()
-            env["QUALITY_RATCHET_AUDITS"] = "spec_lint"
-            run(root, [str(root / "tools/check-quality-ratchet.sh")], env=env)
+            env["SEMANTIC_CONTRACTS_AUDITS"] = "spec_lint"
+            run(root, [str(root / "tools/check-semantic-contracts.sh")], env=env)
         docs_env = os.environ.copy()
         docs_env["NO_MKDOCS_2_WARNING"] = "1"
         run(

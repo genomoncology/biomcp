@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -86,20 +88,20 @@ def test_exact_name_searches_fulltext_with_source_specific_yields(
     ]
     try:
         result = subprocess.run(
-            command, capture_output=True, text=True, check=False, timeout=60,
+            command, capture_output=True, text=True, check=False, timeout=HANG_TIMEOUT,
         )
         initial_requests = list(requests)
         if not pmids:
             markdown_command = [arg for arg in command if arg not in ("--json", "--debug-plan")]
             markdown = subprocess.run(
-                markdown_command, capture_output=True, text=True, check=False, timeout=60,
+                markdown_command, capture_output=True, text=True, check=False, timeout=HANG_TIMEOUT,
             )
             assert markdown.returncode == 0, markdown.stderr + markdown.stdout
             assert "No articles found matching the filters." in markdown.stdout
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
     assert result.returncode == 0, result.stderr + result.stdout
     payload = json.loads(result.stdout)

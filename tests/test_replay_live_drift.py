@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import hashlib
 import json
 import runpy
@@ -91,7 +93,7 @@ def run_check(tmp_path, replay, *args, env_values=None):
         capture_output=True,
         text=True,
         env=env,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
     )
     assert process.stdout, process.stderr
     lines = [json.loads(line) for line in process.stdout.splitlines()]
@@ -601,7 +603,7 @@ def test_inventory_refuses_unknown_provider_identity(tmp_path):
         [*arguments, "--replay-dir", str(replay)],
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
         env=isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"),
     )
     rows = [json.loads(line) for line in process.stdout.splitlines()]

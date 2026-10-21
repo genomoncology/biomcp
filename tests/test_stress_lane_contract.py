@@ -35,8 +35,6 @@ def test_the_build_is_not_pinned_but_the_tests_are() -> None:
     assert "ROUTINE_TEST_ARCHIVE" in recipe, (
         "the recipe must fail loudly when the prepared archive is missing"
     )
-    pinned_count = recipe.count("taskset -c 0 tools/run-offline")
-    assert pinned_count >= 2, "both the cargo and pytest invocations must be pinned"
     guard_line = next(
         line for line in recipe.splitlines() if "ROUTINE_TEST_ARCHIVE" in line
     )
@@ -81,11 +79,5 @@ def test_the_repeat_count_defaults_to_three() -> None:
     assert 'repeat="$${BIOMCP_STRESS_REPEAT:-3}"' in recipe
 
 
-def test_the_lane_exercises_single_cpu_pinning() -> None:
-    """The lease readiness handshake must work with one available CPU."""
-    recipe = stress_recipe()
-    pins = re.findall(r"taskset\s+(?:-c|--cpus)[ =]\s*(\S+)", recipe)
-    assert len(pins) == 2, "both test invocations must exercise CPU affinity"
-    assert all(pin.isdecimal() for pin in pins), (
-        "the stress lane must pin each test invocation to exactly one CPU"
-    )
+# The executable Make recipe control in test_release_check_counterparts.py
+# checks that both invocations use the same single CPU allowed to the job.

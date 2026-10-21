@@ -10,7 +10,7 @@ Each variant row in `biomcp article entities <PMID>` prints a `get variant` comm
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 1).
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 1).
 
 - `src/transform/article/annotations.rs:73-94` prefers the rsID over the HGVS form for variant rows. `src/render/markdown/related/article_support.rs:90` prints `biomcp get variant <rsID>`.
 - For PMID 30738221, the G12A, G12D and G12V rows all print `biomcp get variant rs121913529`. `biomcp get variant rs121913529 -j` returns `chr12:g.25398284C>T p.Gly12Asp` (G12D). MyVariant lists three alleles under that rsID. Two of the three rows open the wrong variant.

@@ -11,7 +11,7 @@ const EUROPE_PMC_CURSOR_PAGE: &[u8] = include_bytes!(
 #[serial_test::serial(source_env)]
 #[tokio::test]
 async fn europepmc_relevance_offset_page_lines_up_with_cursor_page() {
-    let fixture = TestHttpFixture::spawn(|_| {
+    let mut fixture = TestHttpFixture::spawn(|_| {
         TestHttpReply::Bytes(test_http_response(
             "200 OK",
             "application/json",
@@ -50,4 +50,5 @@ async fn europepmc_relevance_offset_page_lines_up_with_cursor_page() {
         paged, unpage,
         "offset page 1 must return the same articles in the same order as cursor page 1"
     );
+    fixture.finish().unwrap();
 }

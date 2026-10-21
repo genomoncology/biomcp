@@ -1,3 +1,5 @@
+
+from hang_guard import HANG_TIMEOUT
 from pathlib import Path
 import subprocess
 import shlex
@@ -8,12 +10,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_python_contract_gate_uses_bounded_file_workers() -> None:
-    makefile = (ROOT / "Makefile").read_text()
+    dry_run = subprocess.run(
+        ["make", "-n", "test-contracts-prepared", "TEST_LANE_WORKERS=2"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
 
-    assert "PYTEST_WORKERS ?= 4" in makefile
-    assert "PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile" in makefile
-    assert "pytest tests/ -v $(PYTEST_XDIST_ARGS)" in makefile
-    assert "-n auto" not in makefile
+    pytest_line = next(line for line in dry_run.splitlines() if "pytest tests/" in line)
+    assert "pytest tests/ -v -n 2 --dist loadfile" in pytest_line
 
 
 def test_ci_reuses_the_canonical_python_contract_gate() -> None:
@@ -33,7 +39,7 @@ def test_ci_reuses_the_canonical_python_contract_gate() -> None:
 
 def test_python_contract_worker_count_has_a_one_worker_override() -> None:
     dry_run = subprocess.run(
-        ["make", "-n", "test-contracts", "PYTEST_WORKERS=1"],
+        ["make", "-n", "test-contracts", "TEST_LANE_WORKERS=1"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -49,7 +55,7 @@ def test_contract_gate_keeps_temporary_paths_in_the_worktree() -> None:
     # TMPDIR at its own /tmp, so the gate itself must carry the
     # routine lane's redirection into the worktree (2148).
     dry_run = subprocess.run(
-        ["make", "-n", "test-contracts", "PYTEST_WORKERS=1"],
+        ["make", "-n", "test-contracts", "TEST_LANE_WORKERS=1"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -88,7 +94,7 @@ def test_routine_python_selection_excludes_audits_long_and_release_cases(
     )
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-q", "-m", selection, str(tmp_path)],
-        cwd=tmp_path, capture_output=True, text=True, timeout=15,
+        cwd=tmp_path, capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "1 passed, 3 deselected" in result.stdout

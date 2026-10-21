@@ -1,6 +1,8 @@
 """The CLI shares an indexed cache without removing saved article files."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import hashlib
 import os
@@ -26,7 +28,7 @@ BINARY = Path(os.environ.get("BIOMCP_BIN", ROOT / "target/debug/biomcp"))
 
 def invoke(env, *args):
     result = subprocess.run([str(BINARY), "--json", *args], env=env, cwd=ROOT,
-                            capture_output=True, text=True, timeout=20)
+                            capture_output=True, text=True, timeout=HANG_TIMEOUT)
     assert result.returncode == 0, (result.stdout, result.stderr)
     return json.loads(result.stdout)
 
@@ -76,7 +78,7 @@ def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_pat
         assert (cache / name / "keep.txt").read_text() == "saved bytes"
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provider):
     env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
     first = invoke(env, "search", "gene", "BRAF", "--limit", "1")
@@ -135,7 +137,7 @@ def test_explicit_legacy_cleanup_preserves_saved_files_and_current_cache(tmp_pat
     assert (cache / "biomcp.db").is_file()
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path, gene_provider, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from http.server import BaseHTTPRequestHandler
@@ -251,7 +253,7 @@ def test_blob_cleanup_refuses_a_linked_directory_without_deleting_outside_files(
             (digest, digest, len(body)),
         )
     result = subprocess.run([str(BINARY), "--json", "cache", *command], env=env, cwd=ROOT,
-                            capture_output=True, text=True, timeout=20)
+                            capture_output=True, text=True, timeout=HANG_TIMEOUT)
     assert sentinel.is_file(), (result.stdout, result.stderr)
     assert sentinel.read_bytes() == body
     assert result.returncode != 0

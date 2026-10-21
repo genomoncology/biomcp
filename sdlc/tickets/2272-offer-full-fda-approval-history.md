@@ -4,11 +4,15 @@ priority: 3
 
 # 2272 — Offer full FDA approval history
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 287285f, accept
+
+Reviews: revision 91f8e94, accept
+
+Reviews: revision a2ce3a0, accept
 
 ## Outcome
 

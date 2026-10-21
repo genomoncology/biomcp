@@ -762,7 +762,7 @@ fn expired_open_budget_completes_publish_and_deferred_cleanup() {
     let retained = reader.state.active_generation.clone().unwrap();
     assert_eq!(reader.dataset.assertions().len(), 3);
     let live =
-        Store::open_until(std::time::Instant::now() + std::time::Duration::from_secs(30)).unwrap();
+        Store::open_until(std::time::Instant::now() + crate::test_support::hang_timeout()).unwrap();
     drop(publish(&live, "2026-01-02T00:00:00Z").unwrap());
     drop(publish(&live, "2026-01-03T00:00:00Z").unwrap());
     assert_eq!(std::fs::read_dir(&generations).unwrap().count(), 3);
@@ -1015,7 +1015,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             .unwrap()
     }
     async fn wait(child: &mut Child) {
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout();
         loop {
             if let Some(status) = child.try_wait().unwrap() {
                 assert!(status.success());
@@ -1026,7 +1026,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
         }
     }
     async fn wait_for(path: &Path, child: &mut Child) {
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout();
         while !path.exists() {
             assert!(
                 child.try_wait().unwrap().is_none(),
@@ -1166,7 +1166,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
                 .acquire(Duration::from_secs(20))
                 .await
         });
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout();
         while !entered.exists() {
             assert!(!leader.is_finished() && tokio::time::Instant::now() < deadline); // watchdog: bounded leader poll
             tokio::time::sleep(Duration::from_millis(5)).await;

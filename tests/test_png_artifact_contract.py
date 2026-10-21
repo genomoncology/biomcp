@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from pathlib import Path
 import shutil
 import subprocess
@@ -52,7 +54,7 @@ def test_png_smoke_reports_failed_command_output(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     result = subprocess.run(
         ["bash", "tools/check-png-artifact", str(binary)], cwd=tmp_path,
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 7, result.stdout + result.stderr
     assert "chart stdout failure" in result.stdout + result.stderr

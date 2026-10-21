@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -94,12 +96,12 @@ def test_graph_page_reports_provider_outcome(
     args += ["article", direction, "24200969", "--limit", "5"]
     try:
         result = subprocess.run(
-            args, env=env, capture_output=True, text=True, timeout=20
+            args, env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT
         )
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     if case in {
         "failure",
         "malformed",

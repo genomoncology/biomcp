@@ -5,7 +5,6 @@ use super::super::*;
 use crate::error::BioMcpError;
 use crate::sources::{HttpMethod, RequestBody};
 use reqwest::StatusCode;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
     SemanticScholarClient {
@@ -17,53 +16,24 @@ fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
 
 async fn author_fixture_client(
     responses: Vec<&'static str>,
-) -> (SemanticScholarClient, tokio::task::JoinHandle<Vec<String>>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind author fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let server = tokio::spawn(async move {
-        let mut requests = Vec::with_capacity(responses.len());
-        for body in responses {
-            let (mut stream, _) = listener.accept().await.expect("accept author request");
-            let mut request = Vec::new();
-            loop {
-                let mut chunk = [0_u8; 4096];
-                let read = stream.read(&mut chunk).await.expect("read author request");
-                if read == 0 {
-                    break;
-                }
-                request.extend_from_slice(&chunk[..read]);
-                let Some(header_end) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n")
-                else {
-                    continue;
-                };
-                let headers = String::from_utf8_lossy(&request[..header_end]);
-                let content_length = headers
-                    .lines()
-                    .find_map(|line| {
-                        line.to_ascii_lowercase()
-                            .strip_prefix("content-length: ")
-                            .and_then(|value| value.parse::<usize>().ok())
-                    })
-                    .unwrap_or(0);
-                if request.len() >= header_end + 4 + content_length {
-                    break;
-                }
-            }
-            requests.push(String::from_utf8_lossy(&request).into_owned());
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(),
-                body,
-            );
-            stream
-                .write_all(response.as_bytes())
-                .await
-                .expect("write author response");
+) -> (
+    SemanticScholarClient,
+    std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
+    let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let replies = std::sync::Mutex::new(responses.into_iter());
+    let server = crate::test_support::TestHttpServer::respond(move |request| {
+        captured.lock().expect("request lock").push(String::from_utf8_lossy(&request).into_owned());
+        let body = replies.lock().expect("reply lock").next();
+        async move {
+            let body = body.ok_or_else(|| std::io::Error::other("unexpected additional author request"))?;
+            Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).into_bytes())
         }
-        requests
-    });
+    })
+    .expect("start author fixture");
+    let base = server.base.clone();
     (
         SemanticScholarClient {
             client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
@@ -74,6 +44,7 @@ async fn author_fixture_client(
             base: std::borrow::Cow::Owned(base),
             api_key: Some("fixture-key".into()),
         },
+        requests,
         server,
     )
 }
@@ -379,7 +350,7 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
 
 #[tokio::test]
 async fn author_execution_methods_send_plans_and_decode_typed_responses() {
-    let (client, server) = author_fixture_client(vec![
+    let (client, requests, mut server) = author_fixture_client(vec![
         r#"{"total":1,"offset":0,"next":null,"data":[{"authorId":"search-id"}]}"#,
         r#"{"authorId":"detail-id"}"#,
         r#"[{"authorId":"batch-id"}]"#,
@@ -407,10 +378,8 @@ async fn author_execution_methods_send_plans_and_decode_typed_responses() {
     let full = client.author_papers("detail-id", 0, 1, true).await.unwrap();
     assert_eq!(full.data[0].paper_id.as_deref(), Some("paper-id"));
 
-    let requests = tokio::time::timeout(std::time::Duration::from_secs(5), server)
-        .await
-        .expect("author methods reached fixture server")
-        .expect("author fixture server");
+    server.finish().expect("author fixture server");
+    let requests = requests.lock().expect("request lock");
     assert!(requests[0].starts_with("GET /graph/v1/author/search?"));
     assert!(requests[1].starts_with("GET /graph/v1/author/detail-id?"));
     assert!(requests[2].starts_with("POST /graph/v1/author/batch?"));

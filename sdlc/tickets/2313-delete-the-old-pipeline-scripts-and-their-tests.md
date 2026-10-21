@@ -4,9 +4,13 @@ priority: 2
 
 # 2313 — Delete the old pipeline scripts and their tests
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
+
+Reviews: revision 74935ef, accept
+
+Reviews: revision 64c052d, accept
 
 ## Outcome
 
@@ -17,3 +21,5 @@ Milestone: 0.9.4
 ## Evidence
 
 They are leftovers of the old automated pipeline, kept alive by contract tests, and they cause nine pm lint findings. From Ian's process assessment of 2026-10-20.
+
+- Changes: `sdlc/project/success`, `sdlc/project/provenance.json`, `sdlc/project/tasks`, `sdlc/project/failure`, `sdlc/project/before`, `sdlc/project/health`, `sdlc/scripts/README.md`, `sdlc/scripts/spec`, `sdlc/scripts/clean`, `sdlc/scripts/test`, `sdlc/scripts/lint`, `tests/test_sdlc_project_lifecycle_contract.py`, `tests/test_sdlc_clean_contract.py`, `scripts/ci-classify-push.sh`, `tests/test_ci_classify_push_script.py`, `CHANGELOG.md`.

@@ -144,7 +144,7 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
             // The sender stays alive for the whole search: the Europe PMC reply is
             // only released when the test drops it.
             let (_release_tx, hold) = held_reply_gate();
-            let fixture =
+            let mut fixture =
                 TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
             let cache = TempDirGuard::new("article-search-deadline");
             let _env = deadline_env(&fixture, cache.path(), "4000");
@@ -152,7 +152,7 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
             // watchdog: the deadline must settle the search in real time; a broken
             // bound hangs here instead of returning partial rows.
             let page = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
             )
             .await
@@ -190,6 +190,7 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
                     .any(|timing| timing.source == Some(ArticleSource::EuropePmc)),
                 "per-source timings cover the held leg"
             );
+            fixture.finish().unwrap();
         },
     )
     .await
@@ -200,7 +201,7 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
 async fn failed_primaries_still_return_answered_rows() {
     let (_release_tx, hold) = held_reply_gate();
     // Both primaries fail fast; only the auxiliary sources answer.
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         let target = request
             .split_whitespace()
             .nth(1)
@@ -219,7 +220,7 @@ async fn failed_primaries_still_return_answered_rows() {
     let _env = deadline_env(&fixture, cache.path(), "60000");
 
     let page = tokio::time::timeout(
-        crate::test_support::watchdog(60),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
     )
     .await
@@ -256,17 +257,18 @@ async fn failed_primaries_still_return_answered_rows() {
             "{source:?} leg reports a failure status: {status:?}"
         );
     }
+    fixture.finish().unwrap();
 }
 
 #[serial_test::serial(source_env)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn healthy_federated_search_keeps_output_shape_and_records_timings() {
-    let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
+    let mut fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
     let cache = TempDirGuard::new("article-search-healthy");
     let _env = deadline_env(&fixture, cache.path(), "60000");
 
     let page = tokio::time::timeout(
-        crate::test_support::watchdog(60),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
     )
     .await
@@ -289,6 +291,7 @@ async fn healthy_federated_search_keeps_output_shape_and_records_timings() {
             "timing recorded for {source:?}"
         );
     }
+    fixture.finish().unwrap();
 }
 
 /// Grace the wall-clock assertions allow on top of the forced budget: covers
@@ -305,7 +308,7 @@ async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
             // Europe PMC page one answers with distinct rows; page two is held. The
             // deadline fires mid-flight with rows already accumulated.
             let (_release_tx, hold) = held_reply_gate();
-            let fixture =
+            let mut fixture =
                 TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
             let cache = TempDirGuard::new("article-search-deadline-single-source");
             let _env = deadline_env(&fixture, cache.path(), "1500");
@@ -315,7 +318,7 @@ async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
             let budget = std::time::Duration::from_millis(1500);
             let started = std::time::Instant::now();
             let page = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 10, 0, ArticleSourceFilter::EuropePmc),
             )
             .await
@@ -352,6 +355,7 @@ async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
                     .is_some_and(|message| message.contains("deadline")),
                 "the degradation names the deadline: {europepmc:?}"
             );
+            fixture.finish().unwrap();
         },
     )
     .await
@@ -367,7 +371,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
             // Every source fails or is held, so nothing answers and the terminal
             // error must name the deadline instead of a generic failure.
             let (_release_tx, hold) = held_reply_gate();
-            let fixture =
+            let mut fixture =
                 TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
             let cache = TempDirGuard::new("article-search-deadline-terminal");
             let _env = deadline_env(&fixture, cache.path(), "1200");
@@ -377,7 +381,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
             let budget = std::time::Duration::from_millis(1200);
             let started = std::time::Instant::now();
             let error = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 5, 0, ArticleSourceFilter::All),
             )
             .await
@@ -405,6 +409,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
                 "the public error names the deadline: {}",
                 projection.message
             );
+            fixture.finish().unwrap();
         },
     )
     .await
@@ -419,7 +424,7 @@ async fn construction_under_a_held_sqlite_writer_honors_the_deadline() {
     // slot. Without that reset the test passes only when it runs before
     // every other shared-client test — nextest gives each test a fresh
     // process, plain `cargo test` does not.
-    let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
+    let mut fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
     let cache = TempDirGuard::new("article-search-deadline-sqlite-lock");
     std::fs::create_dir_all(cache.path()).expect("cache root");
     let _env = deadline_env(&fixture, cache.path(), "1200");
@@ -433,7 +438,7 @@ async fn construction_under_a_held_sqlite_writer_honors_the_deadline() {
     let budget = std::time::Duration::from_millis(1200);
     let started = std::time::Instant::now();
     let result = tokio::time::timeout(
-        crate::test_support::watchdog_millis(60_000),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 3, 0, ArticleSourceFilter::PubMed),
     )
     .await
@@ -451,6 +456,7 @@ async fn construction_under_a_held_sqlite_writer_honors_the_deadline() {
     );
     held.execute_batch("ROLLBACK")
         .expect("release SQLite writer");
+    fixture.finish().unwrap();
 }
 
 #[test]
@@ -494,7 +500,7 @@ async fn deep_offset_is_refused_on_every_sort_before_any_request() {
     // answered `has_more: true` on an empty page.
     let requests = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&requests);
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         counter.fetch_add(1, Ordering::SeqCst);
         fixture_reply(request, None)
     })
@@ -522,6 +528,7 @@ async fn deep_offset_is_refused_on_every_sort_before_any_request() {
         0,
         "the window guard fires before any provider request"
     );
+    fixture.finish().unwrap();
 }
 
 #[serial_test::serial(source_env)]
@@ -535,7 +542,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
             // past the deadline: the terminal error must still name the deadline,
             // not the fast failure.
             let (_release_tx, hold) = held_reply_gate();
-            let fixture = TestHttpFixture::spawn(move |request| {
+            let mut fixture = TestHttpFixture::spawn(move |request| {
                 let target = request
                     .split_whitespace()
                     .nth(1)
@@ -561,7 +568,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
             let budget = std::time::Duration::from_millis(1200);
             let started = std::time::Instant::now();
             let error = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 5, 0, ArticleSourceFilter::All),
             )
             .await
@@ -582,6 +589,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
                 ),
                 other => panic!("expected a source-unavailable deadline error, got {other:?}"),
             }
+            fixture.finish().unwrap();
         },
     )
     .await

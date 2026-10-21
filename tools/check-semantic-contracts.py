@@ -1,0 +1,2943 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import ast
+import glob
+import io
+import json
+import re
+import shlex
+import subprocess
+import sys
+from pathlib import Path
+
+MUSTMATCH_JSON_RE = re.compile(r"(?:^|\|\s*)mustmatch\s+json\b")
+SHORT_LIKE_RE = re.compile(r'(?:^|\|\s*)mustmatch\s+like\s+("([^"]*)"|\'([^\']*)\')')
+MUSTMATCH_ASSERT_RE = re.compile(r"(?:^|[;&|]\s*)mustmatch\b")
+CAPTURED_PRINTF_MUSTMATCH_RE = re.compile(
+    r"\bprintf\b(?=[^|]*\"\$[A-Za-z_][A-Za-z0-9_]*\")[^|]*\|\s*mustmatch\b"
+)
+MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
+DEAD_CODE_EXCEPTION_INVENTORY = "tools/dead-code-exceptions.json"
+SECTION_OUTCOME_POLICY_LINE_CAP = 700
+SECTION_OUTCOME_POLICY_MODULES = ["src/entities/section_outcome.rs"]
+EXPERIMENT_RESULTS_GLOB = "architecture/experiments/**/results/**"
+CLI_SURFACE_CONTRACT_CHECKS = [
+    "public_flags_and_value_aliases_documented",
+    "list_and_reference_docs_cover_public_commands",
+    "runnable_helpers_are_discoverable_in_list_pages",
+    "json_entity_surfaces_include_next_commands_or_exception",
+    "copy_paste_examples_are_shell_safe",
+    "entities_do_not_depend_on_markdown_shell_quoting",
+    "trial_status_vocabulary_documented",
+    "author_entity_present_in_entity_tables",
+    "release_process_versions_match_package_metadata",
+]
+TRIAL_STATUS_HELP_PATH = "src/cli/trial/mod.rs"
+TRIAL_STATUS_HELP_RE = re.compile(
+    r"Filter by trial status \[values: (?P<values>[^\]]+)\]"
+)
+TRIAL_STATUS_DOC_SECTIONS = {
+    "docs/user-guide/trial.md": "### Status values",
+    "docs/reference/quick-reference.md": "## Trial status values",
+}
+TRIAL_STATUS_REFUSAL_FRAGMENTS = [
+    "bare `--status active`",
+    "ambiguous",
+    'NCI uses "active"',
+    "ClinicalTrials.gov uses it for one that has stopped accruing",
+    "Use `--status recruiting` for open and accruing",
+    "`--status active_not_recruiting` for enrolled and no longer accruing",
+    "active, not recruiting",
+]
+ENTITY_TABLE_PAGES = ["README.md", "docs/index.md"]
+ENTITY_TABLE_HEADING = "### Gettable entities"
+ENTITY_TABLE_REQUIRED_ENTITIES = ["author"]
+RELEASE_PROCESS_PAGE = "docs/reference/release-process.md"
+CLI_SURFACE_EXCEPTION_REGISTRY = "tools/cli-surface-contract-exceptions.json"
+CLI_SURFACE_REQUIRED_EXCEPTIONS = {
+    "biomcp --json list": "command_reference_payload",
+    "biomcp --json version": "release_identity_payload",
+}
+CLI_SURFACE_STATIC_TEXT_PATHS = [
+    "src/cli/commands.rs",
+    "src/cli/list/clinical.rs",
+    "src/cli/list/helpers.rs",
+    "src/cli/list/literature.rs",
+    "src/cli/list/molecular.rs",
+]
+CLI_SURFACE_STATIC_TEXT_GLOBS = [
+    "architecture/**/*.md",
+    "docs/**/*.md",
+    "spec/**/*.md",
+]
+AUDIT_NAMES = [
+    "test_waits",
+    "spec_lint",
+    "mcp_allowlist",
+    "source_registry",
+    "dead_code_allowances",
+    "paused_clock_io",
+    "section_outcome_policy_line_cap",
+    "experiment_results",
+    "renderer_next_command_source",
+    "terminal_output_boundaries",
+    "cli_surface_contract",
+    "remote_resource_bounds",
+    "source_state_registry",
+    "source_attributed_status_typing",
+    "external_error_logging",
+]
+TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
+    "src/render/human.rs": [
+        "fn sanitize_document(value: &str)",
+        "fn sanitize_inline(value: &str)",
+    ],
+    "src/cli/outcome.rs": [
+        "outcome.text = crate::render::human::sanitize_document(&outcome.text)",
+        "trusted_terminal_chart = is_charted_mcp_study_command",
+    ],
+    "src/cli/shared.rs": [
+        "sanitize_document(&message)",
+        "Err(err) => exit_human_clap_error(err, &args)",
+    ],
+    "src/main.rs": ["sanitize_human_diagnostic(&error.to_string())"],
+    "src/mcp/shell.rs": [
+        "sanitize_document(&text)",
+        "sanitize_document(&content)",
+        "sanitize_document(&message.into())",
+    ],
+    "src/render/chart.rs": [
+        "fn chart_text(value: &str)",
+        "sanitize_inline(value)",
+    ],
+}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run BioMCP's semantic contract audits and write JSON artifacts.",
+    )
+    parser.add_argument("--root-dir", type=Path, default=Path.cwd())
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--spec-glob", required=True)
+    parser.add_argument("--cli-file", type=Path, required=True)
+    parser.add_argument("--shell-file", type=Path, required=True)
+    parser.add_argument("--catalog-file", type=Path, required=True)
+    parser.add_argument("--sources-dir", type=Path, required=True)
+    parser.add_argument("--sources-mod", type=Path, required=True)
+    parser.add_argument("--health-file", type=Path, required=True)
+    parser.add_argument("--dead-code-exception-inventory", type=Path)
+    parser.add_argument(
+        "--audit",
+        action="append",
+        choices=AUDIT_NAMES,
+        help="Run only this named audit; repeat to select more than one.",
+    )
+    return parser.parse_args()
+
+
+def write_json(path: Path, payload: dict[str, object]) -> None:
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def run_json_command(
+    command: list[str], *, allowed_exit_codes: set[int]
+) -> dict[str, object]:
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    if proc.returncode not in allowed_exit_codes:
+        return {
+            "status": "error",
+            "command": command,
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "errors": [f"unexpected exit code {proc.returncode}"],
+        }
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        return {
+            "status": "error",
+            "command": command,
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "errors": [f"invalid JSON output: {exc}"],
+        }
+    payload["exit_code"] = proc.returncode
+    if proc.stderr:
+        payload["stderr"] = proc.stderr
+    return payload
+
+
+def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        ["git", "-C", str(root_dir), "ls-files", "--", "*.rs"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+class RustSourceSnapshot:
+    def __init__(
+        self,
+        sources: dict[str, str],
+        masked_sources: dict[str, str],
+        errors: list[str],
+    ) -> None:
+        self.sources = sources
+        self.masked_sources = masked_sources
+        self.errors = errors
+
+
+def load_rust_source_snapshot(root_dir: Path) -> RustSourceSnapshot:
+    tracked_files, errors = tracked_rust_files(root_dir)
+    sources: dict[str, str] = {}
+    masked_sources: dict[str, str] = {}
+    for relative_path in tracked_files:
+        path = root_dir / relative_path
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8")
+        sources[relative_path] = source
+        masked_sources[relative_path] = _mask_rust_non_code(source)
+    return RustSourceSnapshot(sources, masked_sources, errors)
+
+
+def _mask_rust_non_code(source: str) -> str:
+    """Replace Rust comments and literals with spaces while preserving newlines."""
+    masked = list(source)
+
+    def blank(start: int, end: int) -> None:
+        for position in range(start, end):
+            if masked[position] != "\n":
+                masked[position] = " "
+
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            end = source.find("\n", index + 2)
+            end = len(source) if end == -1 else end
+            blank(index, end)
+            index = end
+            continue
+
+        if source.startswith("/*", index):
+            end = index + 2
+            depth = 1
+            while end < len(source) and depth:
+                if source.startswith("/*", end):
+                    depth += 1
+                    end += 2
+                elif source.startswith("*/", end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+            blank(index, end)
+            index = end
+            continue
+
+        raw = re.match(r'(?:br|cr|r)(?P<hashes>#{0,255})"', source[index:])
+        if raw and (
+            index == 0 or not (source[index - 1].isalnum() or source[index - 1] == "_")
+        ):
+            terminator = '"' + raw.group("hashes")
+            content_start = index + raw.end()
+            closing = source.find(terminator, content_start)
+            end = len(source) if closing == -1 else closing + len(terminator)
+            blank(index, end)
+            index = end
+            continue
+
+        string_prefix = 1 if source[index : index + 2] in {'b"', 'c"'} else 0
+        if source[index] == '"' or string_prefix:
+            end = index + string_prefix + 1
+            while end < len(source):
+                if source[end] == "\\":
+                    end += 2
+                elif source[end] == '"':
+                    end += 1
+                    break
+                else:
+                    end += 1
+            blank(index, min(end, len(source)))
+            index = end
+            continue
+
+        char_literal = re.match(
+            r"(?:b)?'(?:\\(?:.|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]+\})|[^\\'\n])'",
+            source[index:],
+        )
+        if char_literal:
+            end = index + char_literal.end()
+            blank(index, end)
+            index = end
+            continue
+
+        index += 1
+
+    return "".join(masked)
+
+
+def _rust_attribute_spans(
+    source: str, *, masked_source: str | None = None
+) -> list[tuple[int, str]]:
+    masked = masked_source if masked_source is not None else _mask_rust_non_code(source)
+    spans: list[tuple[int, str]] = []
+    index = 0
+    while match := re.search(r"#(?:!)?\[", masked[index:]):
+        opening = index + match.start()
+        cursor = index + match.end()
+        depth = 1
+        while cursor < len(masked) and depth:
+            if masked[cursor] == "[":
+                depth += 1
+            elif masked[cursor] == "]":
+                depth -= 1
+            cursor += 1
+        spans.append((opening, masked[opening:cursor]))
+        index = cursor
+    return spans
+
+
+def _allows_dead_code(attribute: str) -> bool:
+    for match in re.finditer(r"\ballow\s*\(", attribute):
+        cursor = match.end()
+        depth = 1
+        while cursor < len(attribute) and depth:
+            if attribute[cursor] == "(":
+                depth += 1
+            elif attribute[cursor] == ")":
+                depth -= 1
+            cursor += 1
+        if depth == 0 and re.search(
+            r"\bdead_code\b", attribute[match.end() : cursor - 1]
+        ):
+            return True
+    return False
+
+
+def _dead_code_allowance_rows(snapshot: RustSourceSnapshot) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    occurrences: dict[tuple[str, str, str], int] = {}
+    reason_re = re.compile(r"^\s*//\s*dead-code reason:\s*(\S.*)$")
+    for relative_path, source in snapshot.sources.items():
+        if relative_path == "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs":
+            continue
+        lines = source.splitlines()
+        for opening, attribute in _rust_attribute_spans(
+            source, masked_source=snapshot.masked_sources[relative_path]
+        ):
+            if not _allows_dead_code(attribute):
+                continue
+            opening_line = source.count("\n", 0, opening)
+            end_line = opening_line + attribute.count("\n") + 1
+            item = next(
+                (
+                    line.strip()
+                    for line in lines[end_line:]
+                    if line.strip() and not line.lstrip().startswith(("#", "//"))
+                ),
+                "<end-of-file>",
+            )
+            scope = (
+                "file"
+                if attribute.startswith("#![")
+                else (
+                    "module"
+                    if re.match(r"(?:pub(?:\([^)]*\))?\s+)?mod\s+", item)
+                    else "item"
+                )
+            )
+            reason_match = reason_re.match(
+                lines[opening_line - 1] if opening_line else ""
+            )
+            key = (relative_path, scope, item)
+            occurrence = occurrences.get(key, 0) + 1
+            occurrences[key] = occurrence
+            rows.append(
+                {
+                    "path": relative_path,
+                    "line": opening_line + 1,
+                    "scope": scope,
+                    "item": item,
+                    "occurrence": occurrence,
+                    "reason": reason_match.group(1) if reason_match else None,
+                }
+            )
+    return rows
+
+
+def check_dead_code_allowances(
+    root_dir: Path,
+    snapshot: RustSourceSnapshot | None = None,
+    exception_path: Path | None = None,
+) -> dict[str, object]:
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
+
+    rows = _dead_code_allowance_rows(snapshot)
+    findings: list[dict[str, object]] = []
+    if exception_path is None:
+        for row in rows:
+            if row["reason"] is None:
+                findings.append(
+                    {
+                        "path": row["path"],
+                        "line": row["line"],
+                        "message": "dead-code allowance requires an adjacent concrete `dead-code reason:` comment",
+                    }
+                )
+        return {
+            "status": "fail" if findings else "pass",
+            "files_checked": len(snapshot.sources),
+            "allowances_checked": len(rows),
+            "finding_count": len(findings),
+            "findings": findings,
+            "errors": [],
+        }
+
+    try:
+        payload = json.loads(exception_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {"status": "error", "findings": [], "errors": [str(error)]}
+    if (
+        payload.get("schema") != "biomcp-dead-code-exceptions-v1"
+        or payload.get("generated_exclusions")
+        != ["src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"]
+        or not isinstance(payload.get("entries"), list)
+    ):
+        return {
+            "status": "error",
+            "findings": [],
+            "errors": ["invalid dead-code exception inventory"],
+        }
+    required = {
+        "path",
+        "scope",
+        "item",
+        "occurrence",
+        "owner",
+        "reason",
+        "removal_condition",
+    }
+    exceptions: dict[tuple[object, ...], dict[str, object]] = {}
+    errors: list[str] = []
+    for entry in payload["entries"]:
+        if not isinstance(entry, dict) or not required.issubset(entry):
+            errors.append(
+                "every dead-code exception needs path, scope, item, occurrence, owner, reason, and removal_condition"
+            )
+            continue
+        key = (entry["path"], entry["scope"], entry["item"], entry["occurrence"])
+        if key in exceptions:
+            errors.append(f"duplicate dead-code exception: {key}")
+        if not all(
+            isinstance(entry[field], str) and entry[field].strip()
+            for field in ("owner", "reason", "removal_condition")
+        ):
+            errors.append(f"dead-code exception metadata must be concrete: {key}")
+        exceptions[key] = entry
+
+    seen: set[tuple[object, ...]] = set()
+    for row in rows:
+        key = (row["path"], row["scope"], row["item"], row["occurrence"])
+        entry = exceptions.get(key)
+        if entry is None:
+            findings.append(
+                {
+                    **row,
+                    "message": "dead-code allowance is not in the reviewed exception inventory",
+                }
+            )
+            continue
+        seen.add(key)
+        if row["reason"] != entry["reason"]:
+            findings.append(
+                {
+                    **row,
+                    "message": "adjacent dead-code reason drifted from the reviewed exception",
+                }
+            )
+    for key in sorted(set(exceptions) - seen):
+        findings.append(
+            {
+                "path": key[0],
+                "scope": key[1],
+                "item": key[2],
+                "message": "dead-code exception is stale",
+            }
+        )
+
+    return {
+        "status": "error" if errors else ("fail" if findings else "pass"),
+        "files_checked": len(snapshot.sources),
+        "allowances_checked": len(rows),
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": errors,
+    }
+
+
+def tracked_experiment_result_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root_dir),
+            "ls-files",
+            "--",
+            EXPERIMENT_RESULTS_GLOB,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+def check_architecture_experiment_results(root_dir: Path) -> dict[str, object]:
+    tracked_files, errors = tracked_experiment_result_files(root_dir)
+    if errors:
+        return {
+            "status": "error",
+            "glob": EXPERIMENT_RESULTS_GLOB,
+            "errors": errors,
+        }
+
+    findings = [
+        {
+            "path": relative_path,
+            "message": (
+                "generated experiment result payloads must stay out of git; "
+                "keep writeups/scripts in architecture/experiments and store "
+                "run outputs as untracked local artifacts"
+            ),
+        }
+        for relative_path in tracked_files
+    ]
+    return {
+        "status": "fail" if findings else "pass",
+        "glob": EXPERIMENT_RESULTS_GLOB,
+        "files_checked": len(tracked_files),
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
+def _rust_production_text(text: str) -> str:
+    """Remove test-only Rust modules and comments from static-check input."""
+    cfg_test = re.compile(r"#\[cfg\(test\)\]\s*mod\s+\w+\s*\{")
+    while match := cfg_test.search(text):
+        brace = match.end() - 1
+        depth = 1
+        cursor = brace + 1
+        while cursor < len(text) and depth:
+            depth += (text[cursor] == "{") - (text[cursor] == "}")
+            cursor += 1
+        text = text[: match.start()] + (" " * (cursor - match.start())) + text[cursor:]
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    return re.sub(r"//[^\n]*", "", text)
+
+
+def check_paused_clock_io(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    """Guard explicit socket operations and spawned TCP servers under fake time.
+
+    This is a source convention check, not Rust lifetime or call-graph analysis.
+    """
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    findings: list[dict[str, object]] = []
+    test = re.compile(
+        r"#\[\s*tokio::test(?P<settings>[^\]]*)\]\s*"
+        r"(?:#\[[^\]]*\]\s*)*(?:async\s+)?fn\s+(?P<name>\w+)"
+    )
+    sockets = re.compile(
+        r"\b(?:TcpListener|TcpStream|MockServer|TestHttpFixture|TestHttpServer|Server)::|"
+        r"\bspawn_\w*(?:fixture|server)\w*\s*\("
+    )
+    socket_wait = re.compile(
+        r"\b(?:TcpListener::bind|TcpStream::connect)\s*\(|"
+        r"\.\s*(?:accept|read|read_exact|read_to_end|read_to_string|"
+        r"write|write_all|shutdown|send)\s*\("
+    )
+    for path, source in snapshot.masked_sources.items():
+        for match in test.finditer(source):
+            span = _brace_span(source, match.end())
+            if span is None:
+                continue
+            body = source[span[0] + 1:span[1] - 1]
+            if not sockets.search(body):
+                continue
+            reason = None
+            if re.search(r"\bstart_paused\s*=\s*true", match["settings"]):
+                reason = "start_paused permits automatic time advancement during real socket IO"
+            for pause in re.finditer(r"\b(?:tokio::)?time::pause\s*\(\s*\)", body):
+                before = body[:pause.start()]
+                after = body[pause.end():]
+                after = re.split(r"\b(?:tokio::)?time::resume\s*\(", after, maxsplit=1)[0]
+                if socket_wait.search(after) or sockets.search(after):
+                    reason = "real socket IO follows pause without resuming time"
+                servers = []
+                for server in re.finditer(r"\blet\s+(\w+)\s*=\s*tokio::spawn\s*\(", before):
+                    server_span = _brace_span(before, server.end())
+                    if server_span is None:
+                        continue
+                    server_body = before[server_span[0]:server_span[1]]
+                    if not (socket_wait.search(server_body) or sockets.search(server_body)):
+                        continue
+                    joined = re.search(rf"\b{server[1]}\s*\.\s*await\b", before[server_span[1]:])
+                    servers.append((server_span, bool(joined)))
+                    if not joined:
+                        reason = f"socket server {server[1]} remains unjoined when time pauses"
+                # Fixture wrappers own live servers even if the test itself
+                # performs no explicit read or send after pausing.
+                fixture_constructor = re.compile(
+                    r"(?:[\w:]+::)?(?P<kind>MockServer|TestHttpFixture|TestHttpServer|Server)::\w+\s*\(|"
+                    r"(?:[\w:]+::)?spawn_\w*(?:fixture|server)\w*\s*\("
+                )
+                fixture_bindings = []
+                for binding in re.finditer(r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*", before):
+                    start = binding.end()
+                    constructor = fixture_constructor.match(before, start)
+                    initializer_span = None
+                    if constructor is None and before[start:start + 1] == "{":
+                        initializer_span = _brace_span(before, start)
+                        if initializer_span is not None:
+                            constructor = fixture_constructor.search(
+                                before, initializer_span[0], initializer_span[1]
+                            )
+                    if constructor is not None:
+                        end = initializer_span[1] if initializer_span else constructor.end()
+                        fixture_bindings.append((binding, end, constructor["kind"], initializer_span))
+                for fixture, end, kind, initializer_span in fixture_bindings:
+                    if any(span[0] <= fixture.start() < span[1] for span, _ in servers):
+                        continue
+                    if any(
+                        outer_span and outer_span[0] <= fixture.start() < outer_span[1]
+                        for outer, _, _, outer_span in fixture_bindings if outer is not fixture
+                    ):
+                        continue
+                    if any(
+                        joined and re.search(rf"\b{fixture[1]}\b", before[span[0]:span[1]])
+                        for span, joined in servers
+                    ):
+                        continue
+                    tail = before[end:]
+                    dropped = re.search(rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", tail)
+                    # These two owned wrappers finish synchronously. No generic
+                    # finish-method or Rust lifetime inference is claimed.
+                    finished = kind in {"TestHttpServer", "TestHttpFixture"} and re.search(
+                        rf"\b{fixture[1]}\s*\.\s*finish\s*\(\s*\)", tail
+                    )
+                    if not (dropped or finished):
+                        reason = f"socket fixture {fixture[1]} remains live when time pauses"
+                # A request-read event is insufficient: direct sockets must
+                # close before pause, too. Ignore locals owned by server tasks.
+                bindings = re.compile(
+                    r"\blet\s+(?:mut\s+)?(?P<direct>\w+)\s*=\s*"
+                    r"(?:[\w:]+::)?(?:TcpListener::bind|TcpStream::connect)\s*\(|"
+                    r"\blet\s*\(\s*(?:mut\s+)?(?P<accepted>\w+)[^;]*?\.accept\s*\("
+                )
+                for binding in bindings.finditer(before):
+                    if any(span[0] <= binding.start() < span[1] for span, _ in servers):
+                        continue
+                    name = binding["direct"] or binding["accepted"]
+                    closed = re.search(rf"\bdrop\s*\(\s*{name}\s*\)", before[binding.end():])
+                    moved_and_joined = any(
+                        joined and re.search(rf"\b{name}\b", before[span[0]:span[1]])
+                        for span, joined in servers
+                    )
+                    if not closed and not moved_and_joined:
+                        reason = f"socket {name} remains live when time pauses"
+            if reason:
+                findings.append({
+                    "path": path,
+                    "line": source.count("\n", 0, match.start()) + 1,
+                    "test": match["name"],
+                    "message": reason,
+                })
+    return {
+        "status": "error" if snapshot.errors else "fail" if findings else "pass",
+        "findings": findings,
+        "errors": snapshot.errors,
+    }
+
+
+TEST_WAIT_EXCEPTIONS = "tools/test-wait-exceptions.json"
+
+
+def test_wait_rows(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Inventory explicit test delays, not production policy or quoted fixtures.
+
+    This is a source convention check. It does not resolve Rust macros or
+    interprocedural duration values. Scopes and call text keep each reviewed
+    exception local; moving or changing a wait requires reviewing its reason.
+    """
+    proc = subprocess.run(
+        ["git", "-C", str(root_dir), "ls-files", "--", "*.rs", "*.py"],
+        capture_output=True, text=True, check=False,
+    )
+    if proc.returncode:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    rows: list[dict[str, object]] = []
+    errors = list(snapshot.errors)
+
+    def add(path: str, scope: str, kind: str, expression: str) -> None:
+        expression = re.sub(r"\s+", " ", expression).strip()
+        occurrence = 1 + sum(
+            row["path"] == path and row["scope"] == scope
+            and row["kind"] == kind and row["expression"] == expression
+            for row in rows
+        )
+        rows.append(dict(path=path, scope=scope, kind=kind,
+                         expression=expression, occurrence=occurrence))
+
+    for relative in sorted(proc.stdout.splitlines()):
+        path = root_dir / relative
+        if not path.is_file():
+            continue
+        source = (snapshot.sources.get(relative, "") if relative.endswith(".rs")
+                  else path.read_text(encoding="utf-8"))
+        if relative.endswith(".py"):
+            if not relative.startswith("tests/"):
+                continue
+            try:
+                tree = ast.parse(source)
+            except SyntaxError as exc:
+                errors.append(f"{relative}: {exc}")
+                continue
+            sleep_names = {"sleep"} | {
+                alias.asname or alias.name
+                for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                and node.module in {"time", "asyncio"}
+                for alias in node.names if alias.name == "sleep"
+            }
+            parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+            for node in ast.walk(tree):
+                kind = None
+                waits: list[ast.expr] = []
+                if isinstance(node, ast.Call):
+                    name = (node.func.attr if isinstance(node.func, ast.Attribute)
+                            else node.func.id if isinstance(node.func, ast.Name) else "")
+                    if name in sleep_names:
+                        kind = "sleep"
+                        waits = node.args[:1] or [kw.value for kw in node.keywords]
+                    else:
+                        waits = [kw.value for kw in node.keywords if kw.arg == "timeout"]
+                        # The suite's outer pytest watchdog is not an IO readiness deadline.
+                        if ast.unparse(node.func) == "pytest.mark.timeout":
+                            continue
+                        position = {"settimeout": 0, "setdefaulttimeout": 0,
+                                    "set_timeout": 0, "join": 0, "wait": 0,
+                                    "communicate": 1, "select": 3, "poll": 0,
+                                    "wait_for": 1, "timeout": 0, "urlopen": 2,
+                                    "create_connection": 1}.get(name)
+                        if not waits and position is not None and len(node.args) > position:
+                            waits = [node.args[position]]
+                        if any(isinstance(arg, ast.Constant) and type(arg.value) in (int, float)
+                               for arg in waits):
+                            kind = "deadline"
+                elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                    left = node.left
+                    clock = (left.func.attr if isinstance(left, ast.Call) and isinstance(left.func, ast.Attribute)
+                             else left.func.id if isinstance(left, ast.Call) and isinstance(left.func, ast.Name) else "")
+                    if (clock in {"monotonic", "time", "perf_counter"}
+                        and isinstance(node.right, ast.Constant)
+                        and isinstance(node.right.value, (int, float))):
+                        kind = "deadline"
+                if kind:
+                    parent = parents.get(node)
+                    while parent and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        parent = parents.get(parent)
+                    scope = parent.name if parent else "<module>"
+                    if isinstance(node, ast.Call):
+                        expression = f"{ast.unparse(node.func)}({', '.join(ast.unparse(arg) for arg in waits)})"
+                    else:
+                        expression = ast.unparse(node)
+                    add(relative, scope, kind, expression)
+            continue
+
+        masked = snapshot.masked_sources.get(relative, "")
+        all_test = relative.startswith(("tests/", "crates/biomcp-mcp-contract-client/")) or bool(re.search(r"(?:^|/)(?:tests|test_support|[\w]+_tests)(?:/|\.rs$)", relative))
+        ranges: list[tuple[int, int]] = []
+        for annotation in re.finditer(r"#\[\s*(?:cfg\(test\)|(?:tokio::)?test(?:\([^\]]*\))?)\s*\]", masked):
+            span = _brace_span(masked, annotation.end())
+            if span:
+                ranges.append(span)
+        functions = []
+        for function in re.finditer(r"\bfn\s+(\w+)\s*(?:<[^;{}]*>)?\s*\(", masked):
+            span = _brace_span(masked, function.end())
+            if span:
+                functions.append((span, function[1]))
+        duration = r"(?:[\w:]+::)?Duration::from_(?:secs|millis|micros|nanos)(?:_f32|_f64)?\s*\(\s*[\d_]+(?:\.[\d_]+)?\s*\)"
+        pattern = re.compile(
+            r"\b(?P<sleep>sleep)\s*\(|"
+            r"\b(?P<timeout>timeout|connect_timeout|read_timeout|write_timeout|set_read_timeout|set_write_timeout)"
+            r"\s*\(\s*(?:Some\s*\(\s*)?" + duration + r"|"
+            r"\b(?P<instant>(?:[\w:]+::)?Instant::now\s*\(\s*\)\s*\+\s*" + duration + r")"
+        )
+        for match in pattern.finditer(masked):
+            if not all_test and not any(start <= match.start() < end for start, end in ranges):
+                continue
+            enclosing = [(end - start, name) for (start, end), name in functions
+                         if start <= match.start() < end]
+            scope = min(enclosing)[1] if enclosing else "<module>"
+            end = match.end()
+            if match["timeout"]:
+                # Only the delay is the selector, not the future or its body.
+                add(relative, scope, "deadline", masked[match.start():end] + ")")
+                continue
+            if not match["instant"]:
+                opening = masked.find("(", match.start())
+                depth = 1
+                end = opening + 1
+                while end < len(masked) and depth:
+                    depth += (masked[end] == "(") - (masked[end] == ")")
+                    end += 1
+            add(relative, scope, "sleep" if match["sleep"] else "deadline", masked[match.start():end])
+    return rows, errors
+
+
+def check_test_waits(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> dict[str, object]:
+    rows, errors = test_wait_rows(root_dir, snapshot)
+    inventory = root_dir / TEST_WAIT_EXCEPTIONS
+    try:
+        exceptions = json.loads(inventory.read_text(encoding="utf-8")) if inventory.exists() else []
+        if not isinstance(exceptions, list):
+            raise ValueError("expected an exception list")
+    except (OSError, ValueError) as exc:
+        return {"status": "error", "findings": [], "errors": [str(exc)]}
+    selectors = ["path", "scope", "kind", "expression", "occurrence"]
+    allowed: set[tuple[object, ...]] = set()
+    for entry in exceptions:
+        if (not isinstance(entry, dict) or set(entry) != set(selectors + ["reason"])
+            or not isinstance(entry.get("reason"), str) or not entry["reason"].strip()):
+            errors.append("each wait exception needs one exact selector and a concrete reason")
+            continue
+        if (any(not isinstance(entry[field], str) or not entry[field].strip()
+                for field in selectors[:-1])
+            or entry["kind"] not in {"sleep", "deadline"}
+            or type(entry["occurrence"]) is not int or entry["occurrence"] < 1):
+            errors.append("invalid wait exception selector")
+            continue
+        key = tuple(entry[field] for field in selectors)
+        if key in allowed:
+            errors.append(f"duplicate wait exception: {key}")
+        allowed.add(key)
+    actual = {tuple(row[field] for field in selectors) for row in rows}
+    findings = [{**row, "message": "unreviewed fixed test wait; wait for an event or explain its timing contract"}
+                for row in rows if tuple(row[field] for field in selectors) not in allowed]
+    findings.extend({"path": key[0], "scope": key[1], "message": "stale wait exception"}
+                    for key in sorted(allowed - actual))
+    return {"status": "error" if errors else "fail" if findings else "pass",
+            "waits_checked": len(rows), "findings": findings, "errors": errors}
+
+
+def check_renderer_next_command_source(root_dir: Path) -> dict[str, object]:
+    # A past change dropped author follow-ups, which earned this one-source guard.
+    forbidden = "next_commands: vec![]"
+    findings: list[dict[str, object]] = []
+    for path in sorted((root_dir / "src" / "render").rglob("*.rs")):
+        if forbidden in path.read_text(encoding="utf-8"):
+            findings.append(
+                {
+                    "path": path.relative_to(root_dir).as_posix(),
+                    "message": (
+                        "one-source policy violation: take next commands from the "
+                        "shared source used by JSON _meta.next_commands"
+                    ),
+                }
+            )
+    return {
+        "name": "renderer_next_command_source",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
+
+
+def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    checked_surfaces: list[str] = []
+
+    for relative_path, markers in TERMINAL_OUTPUT_BOUNDARY_SEAMS.items():
+        path = root_dir / relative_path
+        checked_surfaces.append(relative_path)
+        try:
+            text = _rust_production_text(path.read_text(encoding="utf-8"))
+        except OSError as exc:
+            findings.append(
+                {
+                    "path": relative_path,
+                    "message": f"required output boundary is unreadable: {exc}",
+                }
+            )
+            continue
+        for marker in markers:
+            if marker not in text:
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "marker": marker,
+                        "message": "required terminal-output sanitization seam is missing",
+                    }
+                )
+
+    src_dir = root_dir / "src"
+    for path in sorted(src_dir.rglob("*.rs")):
+        relative_path = path.relative_to(root_dir).as_posix()
+        checked_surfaces.append(relative_path)
+        if relative_path == "src/render/json.rs" or "tests" in path.parts:
+            continue
+        production_text = _rust_production_text(path.read_text(encoding="utf-8"))
+        for match in re.finditer(r"\bto_string_pretty\b", production_text):
+            findings.append(
+                {
+                    "path": relative_path,
+                    "line": production_text.count("\n", 0, match.start()) + 1,
+                    "message": "production pretty JSON must route through src/render/json.rs",
+                }
+            )
+
+    return {
+        "name": "terminal_output_boundaries",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": sorted(set(checked_surfaces)),
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
+def load_cli_surface_exceptions(
+    root_dir: Path,
+) -> tuple[list[dict[str, object]], list[str]]:
+    registry_path = root_dir / CLI_SURFACE_EXCEPTION_REGISTRY
+    try:
+        payload = json.loads(registry_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return [], [
+            f"failed to read exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"
+        ]
+    except json.JSONDecodeError as exc:
+        return [], [
+            f"invalid exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"
+        ]
+
+    errors: list[str] = []
+    if not isinstance(payload, dict):
+        return [], ["exception registry root must be a JSON object"]
+    if payload.get("schema") != "biomcp-cli-surface-contract-exceptions-v1":
+        errors.append(
+            "exception registry schema must be biomcp-cli-surface-contract-exceptions-v1"
+        )
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return [], errors + ["exception registry entries must be a list"]
+
+    by_command: dict[str, dict[str, object]] = {}
+    for index, entry in enumerate(entries):
+        prefix = f"entries[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+        command = entry.get("command")
+        exception = entry.get("exception")
+        reason = entry.get("reason")
+        owner_test = entry.get("owner_test")
+        if not isinstance(command, str) or not command.startswith("biomcp "):
+            errors.append(f"{prefix}.command must be a biomcp command string")
+            continue
+        if command in by_command:
+            errors.append(f"duplicate exception command: {command}")
+            continue
+        if not isinstance(exception, str) or not exception.strip():
+            errors.append(f"{prefix}.exception must be a non-empty string")
+        if not isinstance(reason, str) or not reason.strip():
+            errors.append(f"{prefix}.reason must be a non-empty string")
+        if not isinstance(owner_test, str) or not owner_test.startswith("tests/"):
+            errors.append(f"{prefix}.owner_test must point at a local test")
+        by_command[command] = entry
+
+    for command, exception in CLI_SURFACE_REQUIRED_EXCEPTIONS.items():
+        entry = by_command.get(command)
+        if entry is None:
+            errors.append(f"missing required CLI surface exception: {command}")
+        elif entry.get("exception") != exception:
+            errors.append(f"{command} exception must be {exception}")
+
+    return list(by_command.values()), errors
+
+
+def tracked_static_text_paths(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root_dir),
+            "ls-files",
+            "--",
+            *CLI_SURFACE_STATIC_TEXT_PATHS,
+            *CLI_SURFACE_STATIC_TEXT_GLOBS,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+
+    paths = sorted({line for line in proc.stdout.splitlines() if line})
+    # `git ls-files` includes a file deleted in the current worktree. Quality
+    # checks inspect the candidate tree, so a retired doc must not be read.
+    return [path for path in paths if (root_dir / path).is_file()], []
+
+
+def read_existing_text(
+    root_dir: Path, paths: list[str]
+) -> tuple[dict[str, str], list[str]]:
+    texts: dict[str, str] = {}
+    errors: list[str] = []
+    for relative in paths:
+        path = root_dir / relative
+        try:
+            texts[relative] = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            errors.append(f"failed to read {relative}: {exc}")
+    return texts, errors
+
+
+def documented_token_corpus(texts: dict[str, str]) -> str:
+    return "\n".join(texts.values()).lower()
+
+
+def check_public_flags_and_value_aliases_documented(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
+    rust_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((root_dir / "src" / "cli").glob("**/*.rs"))
+    )
+    alias_tokens = sorted(
+        {
+            match.group(1)
+            for match in re.finditer(r'visible_alias\s*=\s*"([^"]+)"', rust_text)
+        }
+        | {
+            match.group(1)
+            for match in re.finditer(r"visible_short_alias\s*=\s*'([^']+)'", rust_text)
+        }
+        | {
+            match.group(1)
+            for match in re.finditer(
+                r'#\[value\([^\]]*alias\s*=\s*"([^"]+)"', rust_text
+            )
+        }
+    )
+    corpus = documented_token_corpus(texts)
+    findings = [
+        {
+            "token": token,
+            "message": "public visible/value alias is accepted by clap but absent from help/list/docs/spec evidence",
+        }
+        for token in alias_tokens
+        if token.lower() not in corpus
+    ]
+    return {
+        "name": "public_flags_and_value_aliases_documented",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/cli/**/*.rs", *texts.keys()],
+        "tokens_checked": alias_tokens,
+        "findings": findings,
+    }
+
+
+def check_list_and_reference_docs_cover_public_commands(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
+    list_mod = (root_dir / "src" / "cli" / "list" / "mod.rs").read_text(
+        encoding="utf-8"
+    )
+    commands = sorted(
+        {
+            match.group(1)
+            for match in re.finditer(r'Some\("([a-z0-9-]+)"\)\s*=>', list_mod)
+            if match.group(1) not in {"_"}
+        }
+    )
+    docs_text = "\n".join(
+        texts.get(path, "")
+        for path in [
+            "architecture/ux/cli-reference.md",
+            "docs/user-guide/cli-reference.md",
+        ]
+    ).lower()
+    findings: list[dict[str, object]] = []
+    for command in commands:
+        command_words = command.replace("-", " ")
+        patterns = [
+            f"biomcp list {command}",
+            f"search {command}",
+            f"search {command_words}",
+            f"get {command}",
+            f"get {command_words}",
+            f"biomcp {command}",
+            f"biomcp {command_words}",
+        ]
+        if not any(pattern in docs_text for pattern in patterns):
+            findings.append(
+                {
+                    "command": command,
+                    "surface": "CLI reference docs",
+                    "message": "command/helper is missing from reference docs",
+                }
+            )
+    return {
+        "name": "list_and_reference_docs_cover_public_commands",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "src/cli/list/mod.rs",
+            "src/cli/list/*.rs",
+            "architecture/ux/cli-reference.md",
+            "docs/user-guide/cli-reference.md",
+        ],
+        "commands_checked": commands,
+        "findings": findings,
+    }
+
+
+def pascal_to_kebab(value: str) -> str:
+    return re.sub(r"(?<!^)([A-Z])", r"-\1", value).lower()
+
+
+def runnable_helper_commands(root_dir: Path) -> dict[str, list[str]]:
+    helper_files = {
+        "drug": root_dir / "src" / "cli" / "drug" / "mod.rs",
+        "disease": root_dir / "src" / "cli" / "disease" / "mod.rs",
+        "variant": root_dir / "src" / "cli" / "variant" / "mod.rs",
+    }
+    commands: dict[str, list[str]] = {}
+    for entity, path in helper_files.items():
+        text = path.read_text(encoding="utf-8")
+        enum_name = f"{entity.title()}Command"
+        match = re.search(
+            rf"pub enum {enum_name} \{{(?P<body>.*?)\n\}}", text, re.DOTALL
+        )
+        if match is None:
+            commands[entity] = []
+            continue
+        helpers = []
+        for variant in re.findall(
+            r"^    ([A-Z][A-Za-z0-9]*)\b", match.group("body"), re.MULTILINE
+        ):
+            if variant == "External":
+                continue
+            helpers.append(f"{entity} {pascal_to_kebab(variant)}")
+        commands[entity] = sorted(helpers)
+    return commands
+
+
+def check_runnable_helpers_are_discoverable_in_list_pages(
+    root_dir: Path,
+) -> dict[str, object]:
+    list_files = {
+        "drug": root_dir / "src" / "cli" / "list" / "clinical.rs",
+        "disease": root_dir / "src" / "cli" / "list" / "clinical.rs",
+        "variant": root_dir / "src" / "cli" / "list" / "molecular.rs",
+    }
+    findings: list[dict[str, object]] = []
+    commands = runnable_helper_commands(root_dir)
+    for entity, helper_commands in commands.items():
+        list_text = list_files[entity].read_text(encoding="utf-8").lower()
+        for command in helper_commands:
+            if command.lower() not in list_text:
+                findings.append(
+                    {
+                        "command": f"biomcp {command}",
+                        "surface": f"biomcp list {entity}",
+                        "message": "runnable helper command is missing from matching list page discovery text",
+                    }
+                )
+    return {
+        "name": "runnable_helpers_are_discoverable_in_list_pages",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "src/cli/drug/mod.rs",
+            "src/cli/disease/mod.rs",
+            "src/cli/variant/mod.rs",
+            "src/cli/list/clinical.rs",
+            "src/cli/list/molecular.rs",
+        ],
+        "commands_checked": commands,
+        "findings": findings,
+    }
+
+
+def check_json_next_commands(
+    root_dir: Path, exceptions: list[dict[str, object]]
+) -> dict[str, object]:
+    payloads = (
+        root_dir / "src" / "cli" / "shared" / "search_payloads.rs"
+    ).read_text(encoding="utf-8")
+    render_json = (root_dir / "src" / "render" / "json.rs").read_text(encoding="utf-8")
+    findings: list[dict[str, object]] = []
+    required_source_markers = [
+        "SearchJsonMeta",
+        "next_commands",
+        "search_json_with_meta",
+    ]
+    for marker in required_source_markers:
+        if marker not in payloads:
+            findings.append(
+                {
+                    "source": "src/cli/shared/search_payloads.rs",
+                    "marker": marker,
+                    "message": "search JSON metadata seam is missing",
+                }
+            )
+    for marker in [
+        "_meta",
+        "next_commands",
+        "to_entity_json_value",
+        "to_discover_json",
+    ]:
+        if marker not in render_json:
+            findings.append(
+                {
+                    "source": "src/render/json.rs",
+                    "marker": marker,
+                    "message": "entity/discover JSON metadata seam is missing",
+                }
+            )
+    return {
+        "name": "json_entity_surfaces_include_next_commands_or_exception",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "src/cli/shared/search_payloads.rs",
+            "src/render/json.rs",
+        ],
+        "applied_exceptions": [
+            entry
+            for entry in exceptions
+            if isinstance(entry.get("command"), str)
+            and "--json" in str(entry.get("command"))
+        ],
+        "findings": findings,
+    }
+
+
+def shell_has_unquoted_redirect(line: str) -> bool:
+    in_single = False
+    in_double = False
+    escaped = False
+    for char in line:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and not in_single:
+            escaped = True
+            continue
+        if char == "'" and not in_double:
+            in_single = not in_single
+            continue
+        if char == '"' and not in_single:
+            in_double = not in_double
+            continue
+        if char == ">" and not in_single and not in_double:
+            return True
+    return False
+
+
+def check_copy_paste_examples_are_shell_safe(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    for relative, text in texts.items():
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            stripped = line.strip()
+            if "biomcp " not in stripped or ">" not in stripped:
+                continue
+            if "→" in stripped:
+                continue
+            if not re.search(r"[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>", stripped):
+                continue
+            if shell_has_unquoted_redirect(stripped):
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": lineno,
+                        "text": stripped,
+                        "message": "copy-pasteable biomcp example contains an unquoted shell redirection metacharacter",
+                    }
+                )
+    return {
+        "name": "copy_paste_examples_are_shell_safe",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": list(texts.keys()),
+        "findings": findings,
+    }
+
+
+def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    patterns = {
+        "crate::render::markdown::quote_arg": re.compile(
+            r"crate::render::markdown::quote_arg"
+            r"|use\s+crate::render::markdown::quote_arg\s*;"
+            r"|use\s+crate::render::markdown::\{[^}]*\bquote_arg\b[^}]*\}",
+            flags=re.DOTALL,
+        ),
+        "crate::render::markdown::shell_quote_arg": re.compile(
+            r"crate::render::markdown::shell_quote_arg"
+            r"|use\s+crate::render::markdown::shell_quote_arg\s*;"
+            r"|use\s+crate::render::markdown::\{[^}]*\bshell_quote_arg\b[^}]*\}",
+            flags=re.DOTALL,
+        ),
+    }
+    entity_root = root_dir / "src" / "entities"
+    for path in sorted(entity_root.rglob("*.rs")):
+        text = path.read_text(encoding="utf-8")
+        relative = path.relative_to(root_dir).as_posix()
+        for pattern, regex in patterns.items():
+            for match in regex.finditer(text):
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": text.count("\n", 0, match.start()) + 1,
+                        "pattern": pattern,
+                        "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
+                    }
+                )
+    return {
+        "name": "entities_do_not_depend_on_markdown_shell_quoting",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/entities/**/*.rs"],
+        "findings": findings,
+    }
+
+
+FEATURE_CFG_RE = re.compile(
+    r'#\[cfg\((?:not\()?feature\s*=\s*"(?P<feature>[^"]+)"\)?\)\]'
+    r'|if\s+cfg!\(feature\s*=\s*"(?P<inline>[^"]+)"\)'
+)
+RUST_STRING_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+MIN_PROFILE_LITERAL_LEN = 12
+MIN_PROFILE_FRAGMENT_LEN = 8
+
+
+def _brace_span(text: str, start: int) -> tuple[int, int] | None:
+    """Span of the first brace-balanced block at or after `start`.
+
+    Returns None when a statement terminator arrives first, so a gated `use`
+    or `const` declaration does not swallow the next unrelated block.
+    """
+    open_at = text.find("{", start)
+    if open_at == -1:
+        return None
+    terminator = text.find(";", start)
+    if terminator != -1 and terminator < open_at:
+        return None
+    depth = 0
+    for index in range(open_at, len(text)):
+        character = text[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return open_at, index + 1
+    return None
+
+
+def feature_conditional_literals(root_dir: Path) -> dict[str, list[str]]:
+    """User-visible strings a binary emits only under some feature configurations.
+
+    A string produced inside `#[cfg(feature = ...)]`, `#[cfg(not(feature = ...))]`
+    or either arm of `if cfg!(feature = ...)` is true of one build and false of
+    another. Any spec page that both gate lanes execute must not assert one.
+    """
+    literals: dict[str, list[str]] = {}
+    source_root = root_dir / "src"
+    if not source_root.is_dir():
+        return literals
+    for path in sorted(source_root.rglob("*.rs")):
+        relative = path.relative_to(root_dir).as_posix()
+        # Test modules assert these strings; they do not emit them.
+        if "tests" in Path(relative).parts or path.name.endswith("tests.rs"):
+            continue
+        raw = path.read_text(encoding="utf-8")
+        text = raw
+        for match in FEATURE_CFG_RE.finditer(text):
+            spans = []
+            first = _brace_span(text, match.end())
+            if first is None:
+                continue
+            spans.append(first)
+            if match.group("inline"):
+                tail = text[first[1] : first[1] + 32]
+                if "else" in tail:
+                    second = _brace_span(text, first[1])
+                    if second is not None:
+                        spans.append(second)
+            for start, end in spans:
+                for literal in RUST_STRING_RE.finditer(raw[start:end]):
+                    value = literal.group(1)
+                    if len(value) >= MIN_PROFILE_LITERAL_LEN and " " in value:
+                        literals.setdefault(value, []).append(relative)
+    return literals
+
+
+def load_profile_independence_allowlist(root_dir: Path) -> set[str]:
+    path = root_dir / "tools" / "profile-independent-spec-allowlist.json"
+    if not path.is_file():
+        return set()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return set()
+    entries = payload.get("allowed_literals", [])
+    return {entry for entry in entries if isinstance(entry, str)}
+
+
+def dual_lane_spec_paths(root_dir: Path) -> list[str]:
+    """Spec pages both gate lanes run.
+
+    `make spec` runs these against the routine `--no-default-features` binary;
+    `make release-gate` re-runs the same pages against the release binary. The
+    list is read from the runner so it cannot drift from what actually executes.
+    """
+    runner = root_dir / "scripts" / "run-specs.sh"
+    if not runner.is_file():
+        return []
+    text = runner.read_text(encoding="utf-8")
+    paths: list[str] = []
+    for array in ("SPEC_ROUTINE_PATHS",):
+        match = re.search(rf"^{array}=\((?P<body>.*?)^\)", text, flags=re.M | re.S)
+        if match:
+            paths.extend(
+                line.strip()
+                for line in match.group("body").splitlines()
+                if line.strip() and line.strip().endswith(".md")
+            )
+    return sorted(set(paths))
+
+
+def unconditional_literals(root_dir: Path) -> set[str]:
+    """Strings the binary emits regardless of feature configuration."""
+    values: set[str] = set()
+    source_root = root_dir / "src"
+    if not source_root.is_dir():
+        return values
+    conditional = set(feature_conditional_literals(root_dir))
+    for path in sorted(source_root.rglob("*.rs")):
+        relative = path.relative_to(root_dir).as_posix()
+        if "tests" in Path(relative).parts or path.name.endswith("tests.rs"):
+            continue
+        for literal in RUST_STRING_RE.finditer(path.read_text(encoding="utf-8")):
+            value = literal.group(1)
+            if value not in conditional:
+                values.add(value)
+    return values
+
+
+def _asserted_fragments(line: str) -> list[str]:
+    """Text a spec line asserts as output, however it is quoted."""
+    fragments: list[str] = []
+    for quote in ("'", '"'):
+        parts = line.split(quote)
+        if len(parts) >= 3:
+            fragments.extend(parts[1:-1:2])
+    stripped = line.strip().strip("|").strip().strip("'\"").strip()
+    if stripped:
+        fragments.append(stripped)
+    return fragments
+
+
+def check_profile_independent_specs(root_dir: Path) -> dict[str, object]:
+    """Every dual-lane spec page must hold for both build profiles.
+
+    `release-gate` is the only lane that runs spec pages against the release
+    binary, and a flow permits one authoritative release-gate run per ticket.
+    Without this audit a build-specific assertion is invisible to the routine
+    gate, survives on main, and is discovered by whichever ticket next reaches
+    verification -- which then has no run left to prove the repair. Detecting it
+    here makes it a cheap, repeatable routine-gate failure instead.
+
+    A page asserts a *fragment* of what the binary prints, so the match runs that
+    way round: a fragment that appears inside a feature-conditional string and
+    inside no unconditional string is build-specific by construction.
+    """
+    allowlist = load_profile_independence_allowlist(root_dir)
+    conditional = {
+        value: sources
+        for value, sources in feature_conditional_literals(root_dir).items()
+        if value not in allowlist
+    }
+    unconditional = unconditional_literals(root_dir)
+    findings: list[dict[str, object]] = []
+    checked: list[str] = []
+    for relative in dual_lane_spec_paths(root_dir):
+        path = root_dir / relative
+        if not path.is_file():
+            continue
+        checked.append(relative)
+        seen: set[tuple[str, str]] = set()
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            for fragment in _asserted_fragments(line):
+                fragment = fragment.strip()
+                if len(fragment) < MIN_PROFILE_FRAGMENT_LEN or fragment in allowlist:
+                    continue
+                if any(fragment in value for value in unconditional):
+                    continue
+                for value, sources in conditional.items():
+                    if fragment in value and (relative, fragment) not in seen:
+                        seen.add((relative, fragment))
+                        findings.append(
+                            {
+                                "path": relative,
+                                "line": lineno,
+                                "fragment": fragment,
+                                "conditional_string": value,
+                                "emitted_by": sorted(set(sources)),
+                                "message": (
+                                    "spec page runs under both build profiles but asserts "
+                                    "output the binary emits only under some feature "
+                                    "configurations; prove build-specific behavior in a "
+                                    "native test covering both branches"
+                                ),
+                            }
+                        )
+    return {
+        "name": "dual_lane_spec_pages_are_profile_independent",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": checked,
+        "conditional_literal_count": len(conditional),
+        "findings": findings,
+    }
+
+
+def _normalized_page_text(root_dir: Path, relative: str) -> tuple[str, list[str]]:
+    try:
+        text = (root_dir / relative).read_text(encoding="utf-8")
+    except OSError as exc:
+        return "", [f"failed to read {relative}: {exc}"]
+    return " ".join(text.split()), []
+
+
+def trial_status_values(root_dir: Path) -> tuple[list[str], list[str]]:
+    try:
+        text = (root_dir / TRIAL_STATUS_HELP_PATH).read_text(encoding="utf-8")
+    except OSError as exc:
+        return [], [f"failed to read {TRIAL_STATUS_HELP_PATH}: {exc}"]
+    match = TRIAL_STATUS_HELP_RE.search(text)
+    if match is None:
+        return [], [
+            f"{TRIAL_STATUS_HELP_PATH} no longer states the --status vocabulary in its help text"
+        ]
+    return [value.strip() for value in match.group("values").split(",")], []
+
+
+def _document_section(text: str, heading: str) -> str | None:
+    marker = re.search(rf"^{re.escape(heading)}\s*$", text, flags=re.M)
+    if marker is None:
+        return None
+    level = len(heading) - len(heading.lstrip("#"))
+    body = text[marker.end() :]
+    next_heading = re.search(rf"^#{{1,{level}}} ", body, flags=re.M)
+    if next_heading is not None:
+        body = body[: next_heading.start()]
+    return body
+
+
+def check_trial_status_vocabulary_documented(root_dir: Path) -> dict[str, object]:
+    """The trial guide and quick reference must carry the shipped --status contract.
+
+    The vocabulary is read from the clap help text, so adding a status value in
+    Rust fails the gate until both docs pages list it. The scan is limited to the
+    status section: a value repeated in another section must not satisfy the
+    guard after the headline list drops it. The refusal fragments pin the
+    breaking 0.9.0 change and its replacement guidance, and the comma alias, to
+    prose rather than to a hand-copied table row.
+    """
+    values, errors = trial_status_values(root_dir)
+    findings: list[dict[str, object]] = [
+        {"path": TRIAL_STATUS_HELP_PATH, "message": error} for error in errors
+    ]
+    for relative, heading in TRIAL_STATUS_DOC_SECTIONS.items():
+        try:
+            page = (root_dir / relative).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append(
+                {"path": relative, "message": f"failed to read {relative}: {exc}"}
+            )
+            continue
+        section = _document_section(page, heading)
+        if section is None:
+            findings.append(
+                {
+                    "path": relative,
+                    "heading": heading,
+                    "message": "trial status section heading is missing",
+                }
+            )
+            continue
+        text = " ".join(section.split())
+        for value in values:
+            if value not in text:
+                findings.append(
+                    {
+                        "path": relative,
+                        "value": value,
+                        "message": "shipped --status value is missing from the status section",
+                    }
+                )
+        for fragment in TRIAL_STATUS_REFUSAL_FRAGMENTS:
+            if fragment not in text:
+                findings.append(
+                    {
+                        "path": relative,
+                        "fragment": fragment,
+                        "message": "the bare --status active refusal or its replacement guidance is missing from the status section",
+                    }
+                )
+    return {
+        "name": "trial_status_vocabulary_documented",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [TRIAL_STATUS_HELP_PATH, *TRIAL_STATUS_DOC_SECTIONS],
+        "status_values": values,
+        "findings": findings,
+    }
+
+
+def _entity_table_first_cells(text: str, heading: str) -> list[str] | None:
+    body = _document_section(text, heading)
+    if body is None:
+        return None
+    cells: list[str] = []
+    for line in body.splitlines():
+        match = re.match(r"^\|\s*`?([A-Za-z0-9-]+)`?\s*\|", line)
+        if match is None:
+            continue
+        cell = match.group(1)
+        if any(character.isalnum() for character in cell):
+            cells.append(cell.lower())
+    return cells
+
+
+def check_author_entity_present_in_entity_tables(root_dir: Path) -> dict[str, object]:
+    """Gettable entities must appear in the README and docs index tables.
+
+    The table row is the reader's only evidence that `get author` is a supported
+    command, so a missing row is a discovery failure rather than a wording nit.
+    """
+    findings: list[dict[str, object]] = []
+    checked: list[str] = []
+    for relative in ENTITY_TABLE_PAGES:
+        try:
+            text = (root_dir / relative).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append({"path": relative, "message": f"failed to read {relative}: {exc}"})
+            continue
+        checked.append(relative)
+        cells = _entity_table_first_cells(text, ENTITY_TABLE_HEADING)
+        if cells is None:
+            findings.append(
+                {
+                    "path": relative,
+                    "heading": ENTITY_TABLE_HEADING,
+                    "message": "entity table heading is missing",
+                }
+            )
+            continue
+        for entity in ENTITY_TABLE_REQUIRED_ENTITIES:
+            if entity not in cells:
+                findings.append(
+                    {
+                        "path": relative,
+                        "entity": entity,
+                        "message": "gettable entity is missing from the entity table",
+                    }
+                )
+    return {
+        "name": "author_entity_present_in_entity_tables",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": checked,
+        "required_entities": ENTITY_TABLE_REQUIRED_ENTITIES,
+        "findings": findings,
+    }
+
+
+def _toml_section_value(
+    root_dir: Path, relative: str, section: str, key: str = "version"
+) -> tuple[str, list[str]]:
+    try:
+        text = (root_dir / relative).read_text(encoding="utf-8")
+    except OSError as exc:
+        return "", [f"failed to read {relative}: {exc}"]
+    marker = re.search(rf"^\[{re.escape(section)}\]\s*$", text, flags=re.M)
+    if marker is None:
+        return "", [f"{relative} has no [{section}] section"]
+    body = text[marker.end() :]
+    next_section = re.search(r"^\[", body, flags=re.M)
+    if next_section is not None:
+        body = body[: next_section.start()]
+    value = re.search(rf'^{re.escape(key)}\s*=\s*"([^"]+)"', body, flags=re.M)
+    if value is None:
+        return "", [f"{relative} [{section}] has no {key}"]
+    return value.group(1), []
+
+
+def check_release_process_versions_match_package_metadata(
+    root_dir: Path,
+) -> dict[str, object]:
+    """Release-process version facts must match the committed package metadata.
+
+    The page names the private development candidate for both ecosystems. Reading
+    the versions from Cargo.toml and pyproject.toml keeps the page from keeping a
+    stale pair after the candidate advances.
+    """
+    cargo_version, cargo_errors = _toml_section_value(root_dir, "Cargo.toml", "package")
+    python_version, python_errors = _toml_section_value(
+        root_dir, "pyproject.toml", "project"
+    )
+    findings: list[dict[str, object]] = []
+    for error in [*cargo_errors, *python_errors]:
+        findings.append({"path": RELEASE_PROCESS_PAGE, "message": error})
+    text, read_errors = _normalized_page_text(root_dir, RELEASE_PROCESS_PAGE)
+    for error in read_errors:
+        findings.append({"path": RELEASE_PROCESS_PAGE, "message": error})
+    if not read_errors and not cargo_errors and not python_errors:
+        for label, version in (("Cargo", cargo_version), ("Python", python_version)):
+            fragment = f"{label} `{version}`"
+            if fragment not in text:
+                findings.append(
+                    {
+                        "path": RELEASE_PROCESS_PAGE,
+                        "fragment": fragment,
+                        "message": "release-process version fact does not match the committed package metadata",
+                    }
+                )
+    return {
+        "name": "release_process_versions_match_package_metadata",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["Cargo.toml", "pyproject.toml", RELEASE_PROCESS_PAGE],
+        "findings": findings,
+    }
+
+
+def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
+    exceptions, errors = load_cli_surface_exceptions(root_dir)
+    text_paths, path_errors = tracked_static_text_paths(root_dir)
+    errors.extend(path_errors)
+    texts, text_errors = read_existing_text(root_dir, text_paths)
+    errors.extend(text_errors)
+    if errors:
+        return {
+            "status": "error",
+            "exception_registry": CLI_SURFACE_EXCEPTION_REGISTRY,
+            "checks": CLI_SURFACE_CONTRACT_CHECKS,
+            "errors": errors,
+        }
+
+    check_payloads = [
+        check_public_flags_and_value_aliases_documented(root_dir, texts),
+        check_list_and_reference_docs_cover_public_commands(root_dir, texts),
+        check_runnable_helpers_are_discoverable_in_list_pages(root_dir),
+        check_json_next_commands(root_dir, exceptions),
+        check_copy_paste_examples_are_shell_safe(root_dir, texts),
+        check_entity_markdown_quoting_dependencies(root_dir),
+        check_profile_independent_specs(root_dir),
+        check_trial_status_vocabulary_documented(root_dir),
+        check_author_entity_present_in_entity_tables(root_dir),
+        check_release_process_versions_match_package_metadata(root_dir),
+    ]
+    statuses = [payload["status"] for payload in check_payloads]
+    status = "pass" if all(value == "pass" for value in statuses) else "fail"
+    findings = [
+        finding
+        for payload in check_payloads
+        for finding in payload.get("findings", [])
+        if isinstance(finding, dict)
+    ]
+    return {
+        "status": status,
+        "exception_registry": CLI_SURFACE_EXCEPTION_REGISTRY,
+        "checks": CLI_SURFACE_CONTRACT_CHECKS,
+        "checked_surfaces": sorted(
+            {
+                surface
+                for payload in check_payloads
+                for surface in payload.get("checked_surfaces", [])
+                if isinstance(surface, str)
+            }
+        ),
+        "applied_exceptions": exceptions,
+        "finding_count": len(findings),
+        "findings": findings,
+        "results": check_payloads,
+        "errors": [],
+    }
+
+
+def make_repo_compatibility_findings(
+    spec_path: Path, *, min_like_len: int = 10
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    text = spec_path.read_text(encoding="utf-8")
+
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if MUSTMATCH_JSON_RE.search(line):
+            findings.append(
+                {
+                    "line": lineno,
+                    "rule": "invalid-mustmatch-mode",
+                    "message": "uses unsupported `mustmatch json` syntax",
+                    "text": line.strip(),
+                }
+            )
+
+        match = SHORT_LIKE_RE.search(line)
+        if match is None:
+            continue
+        literal = match.group(2) if match.group(2) is not None else match.group(3)
+        if literal is not None and len(literal) < min_like_len:
+            findings.append(
+                {
+                    "line": lineno,
+                    "rule": "short-like-pattern",
+                    "message": (
+                        f'uses short `mustmatch like` literal "{literal}" '
+                        f"({len(literal)} chars)"
+                    ),
+                    "text": line.strip(),
+                }
+            )
+
+    return findings
+
+
+def make_captured_output_mustmatch_findings(spec_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    text = spec_path.read_text(encoding="utf-8")
+
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if CAPTURED_PRINTF_MUSTMATCH_RE.search(line):
+            findings.append(
+                {
+                    "line": lineno,
+                    "rule": "captured-output-mustmatch-pipe",
+                    "message": (
+                        "pipes captured command output into mustmatch via printf; "
+                        "pipe the command directly into mustmatch instead"
+                    ),
+                    "text": line.strip(),
+                }
+            )
+
+    return findings
+
+
+def _shell_segment_starts_nested_test_gate(tokens: list[str]) -> bool:
+    command_index = 0
+    while command_index < len(tokens) and re.match(
+        r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[command_index]
+    ):
+        command_index += 1
+    if command_index >= len(tokens):
+        return False
+
+    command = Path(tokens[command_index]).name
+    args = tokens[command_index + 1 :]
+    if command == "env":
+        nested_index = 0
+        while nested_index < len(args) and (
+            args[nested_index].startswith("-")
+            or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", args[nested_index])
+        ):
+            nested_index += 1
+        return _shell_segment_starts_nested_test_gate(args[nested_index:])
+    if command == "pytest":
+        return True
+    if command == "uv":
+        return any(Path(token).name == "pytest" for token in args)
+    if command == "cargo":
+        return "nextest" in args
+    if command in {"make", "gmake"}:
+        if "-n" in args or "--dry-run" in args:
+            return False
+        return any(token in {"test", "lint"} for token in args)
+    return command == "check-semantic-contracts.sh"
+
+
+def _shell_segment_preparation_owned_cargo(tokens: list[str]) -> str | None:
+    command_index = 0
+    while command_index < len(tokens) and re.match(
+        r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[command_index]
+    ):
+        command_index += 1
+    if command_index >= len(tokens):
+        return None
+
+    command = Path(tokens[command_index]).name
+    args = tokens[command_index + 1 :]
+    if command == "env":
+        nested_index = 0
+        while nested_index < len(args) and (
+            args[nested_index].startswith("-")
+            or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", args[nested_index])
+        ):
+            nested_index += 1
+        return _shell_segment_preparation_owned_cargo(args[nested_index:])
+    if command == "with-build-identity":
+        return _shell_segment_preparation_owned_cargo(args)
+    if command != "cargo":
+        return None
+
+    subcommand = next((arg for arg in args if not arg.startswith("-")), None)
+    if subcommand in {"run", "build", "rustc", "test", "tree", "metadata"}:
+        return subcommand
+    return None
+
+
+def _nested_test_gate_findings_for_lines(
+    lines: list[str], *, first_line: int
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    if not lines:
+        return findings
+    lexer = shlex.shlex(
+        io.StringIO("\n".join(lines)), posix=True, punctuation_chars=";&|"
+    )
+    lexer.whitespace_split = True
+    segment: list[str] = []
+    segment_line = first_line
+    try:
+        while True:
+            token = lexer.get_token()
+            at_end = token == lexer.eof
+            if at_end:
+                token = ";"
+            if token and all(character in ";|&" for character in token):
+                cargo_subcommand = _shell_segment_preparation_owned_cargo(segment)
+                if cargo_subcommand is not None:
+                    relative_line = max(
+                        0, min(len(lines) - 1, segment_line - first_line)
+                    )
+                    findings.append(
+                        {
+                            "line": segment_line,
+                            "rule": "nested-cargo-command",
+                            "message": (
+                                f"spec pages and fixture helpers must use prepared "
+                                f"artifacts instead of running `cargo {cargo_subcommand}`"
+                            ),
+                            "text": lines[relative_line].strip(),
+                        }
+                    )
+                if _shell_segment_starts_nested_test_gate(segment):
+                    relative_line = max(
+                        0, min(len(lines) - 1, segment_line - first_line)
+                    )
+                    findings.append(
+                        {
+                            "line": segment_line,
+                            "rule": "nested-test-gate",
+                            "message": (
+                                "routine specs must not launch test or lint gates "
+                                "owned by the canonical test lane"
+                            ),
+                            "text": lines[relative_line].strip(),
+                        }
+                    )
+                segment = []
+                segment_line = first_line + lexer.lineno - 1
+            else:
+                if not segment:
+                    segment_line = first_line + lexer.lineno - 1
+                segment.append(token)
+            if at_end:
+                break
+    except ValueError:
+        return []
+    cargo_command_re = re.compile(
+        r"\$\([^)]*(?:\S*/)?(?:with-build-identity\s+)?cargo\s+"
+        r"(?P<subcommand>run|build|rustc|test|tree|metadata)\b"
+    )
+    existing_cargo_lines = {
+        finding["line"]
+        for finding in findings
+        if finding["rule"] == "nested-cargo-command"
+    }
+    for offset, line in enumerate(lines):
+        match = cargo_command_re.search(line)
+        line_number = first_line + offset
+        if match is None or line_number in existing_cargo_lines:
+            continue
+        findings.append(
+            {
+                "line": line_number,
+                "rule": "nested-cargo-command",
+                "message": (
+                    "spec pages and fixture helpers must use prepared artifacts "
+                    f"instead of running `cargo {match.group('subcommand')}`"
+                ),
+                "text": line.strip(),
+            }
+        )
+    return findings
+
+
+def make_nested_test_gate_findings(spec_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    block_lines: list[str] = []
+    block_start = 0
+
+    inside_bash = False
+    for line_number, line in enumerate(
+        spec_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if line.startswith("```"):
+            if inside_bash:
+                findings.extend(
+                    _nested_test_gate_findings_for_lines(
+                        block_lines, first_line=block_start
+                    )
+                )
+                inside_bash = False
+                block_lines = []
+            else:
+                fence_tokens = line[3:].strip().split()
+                inside_bash = bool(fence_tokens) and fence_tokens[0] == "bash"
+                if inside_bash:
+                    block_start = line_number + 1
+            continue
+        if inside_bash:
+            block_lines.append(line)
+    if inside_bash:
+        findings.extend(
+            _nested_test_gate_findings_for_lines(block_lines, first_line=block_start)
+        )
+    return findings
+
+
+def make_nested_test_gate_script_findings(script_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    command_lines: list[str] = []
+    command_start = 1
+    for line_number, line in enumerate(
+        script_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if not command_lines:
+            command_start = line_number
+        command_lines.append(line)
+        if line.rstrip().endswith("\\"):
+            continue
+        findings.extend(
+            _nested_test_gate_findings_for_lines(
+                command_lines, first_line=command_start
+            )
+        )
+        command_lines = []
+    if command_lines:
+        findings.extend(
+            _nested_test_gate_findings_for_lines(
+                command_lines, first_line=command_start
+            )
+        )
+    return findings
+
+
+def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    text = spec_path.read_text(encoding="utf-8")
+
+    current_section: dict[str, object] | None = None
+    inside_fence = False
+    inside_bash = False
+    skipped_bash = False
+
+    def flush_section() -> None:
+        nonlocal current_section
+        if current_section is None:
+            return
+        named_runs = current_section["named_runs"]
+        named_expectations = current_section["named_expectations"]
+        assert isinstance(named_runs, set)
+        assert isinstance(named_expectations, set)
+        if named_runs & named_expectations:
+            current_section["has_mustmatch"] = True
+        if (
+            current_section["has_non_skipped_bash"]
+            and not current_section["has_mustmatch"]
+            and not current_section["opted_out"]
+        ):
+            findings.append(
+                {
+                    "line": current_section["line"],
+                    "rule": "missing-bash-mustmatch",
+                    "section": current_section["section"],
+                    "message": (
+                        "section has non-skipped bash blocks but no `mustmatch` "
+                        "assertion and no `<!-- mustmatch-lint: skip -->` opt-out"
+                    ),
+                    "text": current_section["text"],
+                }
+            )
+        current_section = None
+
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if inside_fence:
+            if line.strip() == "```":
+                inside_fence = False
+                inside_bash = False
+                skipped_bash = False
+                continue
+            if (
+                current_section is not None
+                and inside_bash
+                and not skipped_bash
+                and MUSTMATCH_ASSERT_RE.search(line)
+            ):
+                current_section["has_mustmatch"] = True
+            continue
+
+        if line.startswith("## "):
+            flush_section()
+            current_section = {
+                "line": lineno,
+                "rule": "missing-bash-mustmatch",
+                "section": line[3:].strip(),
+                "text": line.strip(),
+                "has_non_skipped_bash": False,
+                "has_mustmatch": False,
+                "opted_out": False,
+                "named_runs": set(),
+                "named_expectations": set(),
+            }
+            continue
+
+        if line.startswith("```"):
+            inside_fence = True
+            fence_tokens = line[3:].strip().split()
+            inside_bash = bool(fence_tokens) and fence_tokens[0] == "bash"
+            skipped_bash = inside_bash and "skip" in fence_tokens[1:]
+            if current_section is not None and inside_bash and not skipped_bash:
+                current_section["has_non_skipped_bash"] = True
+                if "run" in fence_tokens[1:]:
+                    for token in fence_tokens[1:]:
+                        if token.startswith("id="):
+                            named_runs = current_section["named_runs"]
+                            assert isinstance(named_runs, set)
+                            named_runs.add(token.removeprefix("id="))
+            if (
+                current_section is not None
+                and fence_tokens
+                and fence_tokens[0] == "text"
+            ):
+                for token in fence_tokens[1:]:
+                    if token.startswith("expect="):
+                        named_expectations = current_section["named_expectations"]
+                        assert isinstance(named_expectations, set)
+                        named_expectations.add(token.removeprefix("expect="))
+            continue
+
+        if current_section is not None and MUSTMATCH_LINT_SKIP in line:
+            current_section["opted_out"] = True
+
+    flush_section()
+    return findings
+
+
+def lint_spec_file(spec_path: Path) -> dict[str, object]:
+    payload = run_json_command(
+        [
+            "mustmatch",
+            "lint",
+            str(spec_path),
+            "--min-like-len",
+            "10",
+            "--json",
+        ],
+        allowed_exit_codes={0, 1},
+    )
+    if payload.get("status") == "error":
+        return payload
+
+    findings = payload.get("findings")
+    if not isinstance(findings, list):
+        return {
+            "status": "error",
+            "spec": str(spec_path),
+            "errors": ["mustmatch lint payload missing findings list"],
+        }
+
+    seen = {
+        (finding.get("line"), finding.get("rule"), finding.get("text"))
+        for finding in findings
+        if isinstance(finding, dict)
+    }
+    for finding in make_repo_compatibility_findings(spec_path):
+        key = (finding["line"], finding["rule"], finding["text"])
+        if key not in seen:
+            findings.append(finding)
+            seen.add(key)
+    for finding in make_missing_bash_mustmatch_findings(spec_path):
+        key = (finding["line"], finding["rule"], finding["text"])
+        if key not in seen:
+            findings.append(finding)
+            seen.add(key)
+    for finding in make_captured_output_mustmatch_findings(spec_path):
+        key = (finding["line"], finding["rule"], finding["text"])
+        if key not in seen:
+            findings.append(finding)
+            seen.add(key)
+    for finding in make_nested_test_gate_findings(spec_path):
+        key = (finding["line"], finding["rule"], finding["text"])
+        if key not in seen:
+            findings.append(finding)
+            seen.add(key)
+
+    payload["finding_count"] = len(findings)
+    payload["status"] = "fail" if findings else "pass"
+    return payload
+
+
+def resolve_spec_paths(spec_glob: str) -> list[Path]:
+    return sorted(
+        Path(path).resolve()
+        for path in glob.glob(spec_glob, recursive=True)
+        if Path(path).is_file()
+    )
+
+
+def lint_specs(
+    spec_paths: list[Path], spec_glob: str, root_dir: Path
+) -> dict[str, object]:
+    lint_results: list[dict[str, object]] = []
+    lint_errors: list[str] = []
+
+    for spec_path in spec_paths:
+        try:
+            payload = lint_spec_file(spec_path)
+        except Exception as exc:  # noqa: BLE001
+            lint_errors.append(f"{spec_path}: {exc}")
+            continue
+
+        if payload.get("status") == "error":
+            errors = payload.get("errors", [])
+            if isinstance(errors, list) and errors:
+                lint_errors.extend(
+                    f"{spec_path}: {error}"
+                    for error in errors
+                    if isinstance(error, str)
+                )
+            else:
+                lint_errors.append(f"{spec_path}: lint command failed")
+            continue
+
+        lint_results.append(payload)
+
+    helper_paths = sorted((root_dir / "spec" / "fixtures").glob("**/*.sh"))
+    for helper_path in helper_paths:
+        findings = make_nested_test_gate_script_findings(helper_path)
+        if findings:
+            lint_results.append(
+                {
+                    "status": "fail",
+                    "spec": str(helper_path),
+                    "finding_count": len(findings),
+                    "findings": findings,
+                }
+            )
+
+    finding_count = sum(
+        payload.get("finding_count", 0)
+        for payload in lint_results
+        if isinstance(payload.get("finding_count"), int)
+    )
+
+    if not spec_paths:
+        lint_status = "error"
+        lint_errors.append(f"no spec files matched {spec_glob!r}")
+    elif lint_errors:
+        lint_status = "error"
+    elif finding_count:
+        lint_status = "fail"
+    else:
+        lint_status = "pass"
+
+    return {
+        "status": lint_status,
+        "baseline_count": 0,
+        "finding_count": finding_count,
+        "files_checked": len(spec_paths),
+        "helpers_checked": len(helper_paths),
+        "results": lint_results,
+        "errors": lint_errors,
+    }
+
+
+def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
+    sources = root_dir / "src" / "sources"
+    findings: list[str] = []
+
+    def production_text(name: str) -> str:
+        path = sources / name
+        if not path.is_file():
+            return ""
+        return _rust_production_text(path.read_text(encoding="utf-8"))
+
+    shared = production_text("mod.rs")
+    database_path = root_dir / "src/cache/sqlite.rs"
+    database = _rust_production_text(database_path.read_text(encoding="utf-8")) if database_path.is_file() else ""
+    isolated_database = (
+        'DATABASE_NAME: &str = "biomcp.db"' in database
+        and "config.cache_root.join(crate::cache::sqlite::DATABASE_NAME)" in shared
+    )
+    client = shared.find("ClientBuilder::new(base_client)")
+    cache_attachments = (
+        shared.find(".with(Cache(", max(client, 0)),
+        shared.find(".with_arc(cache)", max(client, 0)),
+    )
+    cache = min((offset for offset in cache_attachments if offset >= 0), default=-1)
+    limiter = shared.find(".with(ResponseBodyLimitMiddleware", max(cache, 0))
+    if not isolated_database:
+        findings.append(
+            "src/sources/mod.rs: HTTP cache must use the isolated SQLite database"
+        )
+    if client < 0 or cache < client or limiter < cache:
+        findings.append(
+            "src/sources/mod.rs: response body limiter must remain inside the cache middleware"
+        )
+
+    cbioportal = production_text("cbioportal_download.rs")
+    compact_cbioportal = re.sub(r"\s+", "", cbioportal)
+    configured_limit = compact_cbioportal.find(
+        "max_archive_download_bytes:MAX_ARCHIVE_DOWNLOAD_BYTES"
+    )
+    declared_limit = compact_cbioportal.find(
+        ".content_length().is_some_and(|length|length>self.max_archive_download_bytesasu64)"
+    )
+    destination_create = compact_cbioportal.find("File::create(dest)")
+    if (
+        configured_limit < 0
+        or declared_limit < 0
+        or destination_create < 0
+        or declared_limit > destination_create
+    ):
+        findings.append(
+            "src/sources/cbioportal_download.rs: cBioPortal declared archive length must be rejected before destination creation"
+        )
+    download_accounting = compact_cbioportal.find(
+        "account_download_bytes(downloaded,chunk.len(),self.max_archive_download_bytes"
+    )
+    download_write = compact_cbioportal.find("file.write_all(&chunk)")
+    if (
+        "MAX_ARCHIVE_DOWNLOAD_BYTES" not in cbioportal
+        or download_accounting < 0
+        or download_write < 0
+        or download_accounting > download_write
+    ):
+        findings.append(
+            "src/sources/cbioportal_download.rs: cBioPortal compressed archive accounting is missing before write"
+        )
+    cbioportal_archive_limits = (
+        "max_entries:MAX_ARCHIVE_ENTRIES,"
+        "max_member_bytes:MAX_ARCHIVE_MEMBER_BYTES,"
+        "max_total_bytes:MAX_ARCHIVE_EXPANDED_BYTES,"
+        "max_metadata_bytes:MAX_ARCHIVE_METADATA_BYTES"
+    )
+    if (
+        "ArchiveBudget::new(limits)" not in cbioportal
+        or "entries()?.raw(true)" not in cbioportal
+        or cbioportal_archive_limits not in compact_cbioportal
+    ):
+        findings.append(
+            "src/sources/cbioportal_download.rs: cBioPortal archive expansion must use the shared raw archive budget"
+        )
+
+    pmc = production_text("pmc_oa.rs")
+    compact_pmc = re.sub(r"\s+", "", pmc)
+    pmc_archive_limits = (
+        "max_entries:MAX_ARCHIVE_ENTRIES,"
+        "max_member_bytes:MAX_ARCHIVE_ENTRY_BYTES,"
+        "max_total_bytes:MAX_ARCHIVE_EXPANDED_BYTES,"
+        "max_metadata_bytes:MAX_ARCHIVE_METADATA_BYTES"
+    )
+    if (
+        "ArchiveBudget::new(limits)" not in pmc
+        or "entries()?.raw(true)" not in pmc
+        or pmc_archive_limits not in compact_pmc
+    ):
+        findings.append(
+            "src/sources/pmc_oa.rs: PMC OA archive must use the shared raw archive budget"
+        )
+
+    for name in ("clinicaltrials.rs", "pubmed.rs"):
+        if "bytes.to_vec()" in production_text(name):
+            findings.append(
+                f"src/sources/{name}: bounded response buffer must be transferred without .to_vec()"
+            )
+
+    custom_limit_calls = (
+        (
+            "src/sources/ema.rs",
+            "with_response_body_limit(request,EMA_MAX_BODY_BYTES,EMA_API",
+        ),
+        (
+            "src/sources/europepmc.rs",
+            "with_response_body_limit(req,MAX_SUPPLEMENTARY_ZIP_BYTES,EUROPE_PMC_API",
+        ),
+        (
+            "src/sources/gtr.rs",
+            "with_response_body_limit(request,max_body_bytes,GTR_API",
+        ),
+        (
+            "src/sources/pmc_oa.rs",
+            "with_response_body_limit(request,MAX_ARCHIVE_ENTRY_BYTESasusize,PMC_OA_API",
+        ),
+        (
+            "src/sources/wikipathways.rs",
+            "with_response_body_limit(req,WIKIPATHWAYS_MAX_BODY_BYTES,WIKIPATHWAYS_API",
+        ),
+        (
+            "src/sources/who_ivd.rs",
+            "with_response_body_limit(request,WHO_IVD_MAX_BODY_BYTES,WHO_IVD_API",
+        ),
+        (
+            "src/sources/who_pq.rs",
+            "with_response_body_limit(request,max_body_bytes,WHO_PQ_API",
+        ),
+        (
+            "src/sources/cvx.rs",
+            "with_response_body_limit(request,max_body_bytes,CVX_API",
+        ),
+        (
+            "src/entities/article/fulltext.rs",
+            "with_response_body_limit(request,PDF_MAX_BODY_BYTES,ARTICLE_FULLTEXT_API",
+        ),
+    )
+    for relative, expected_call in custom_limit_calls:
+        path = root_dir / relative
+        text = (
+            _rust_production_text(path.read_text(encoding="utf-8"))
+            if path.is_file()
+            else ""
+        )
+        if expected_call not in re.sub(r"\s+", "", text):
+            findings.append(
+                f"{relative}: current custom response limit must be attached before send"
+            )
+
+    return {
+        "name": "remote_resource_bounds",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "shared response/cache middleware",
+            "cBioPortal and PMC OA archives",
+            "custom response limits",
+            "bounded response ownership transfers",
+        ],
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
+def _rust_section_values(path: Path, entity: str) -> set[str]:
+    text = path.read_text(encoding="utf-8")
+    marker = f"pub const {entity.upper()}_SECTION_NAMES"
+    start = text.find(marker)
+    if start < 0:
+        return set()
+    body_start = text.find("&[", start)
+    body_end = text.find("];", body_start)
+    body = text[body_start + 2 : body_end]
+    values = set(re.findall(r'"([^"]+)"', body))
+    for name in re.findall(r"\b[A-Z][A-Z0-9_]+\b", body):
+        match = re.search(rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text)
+        if match:
+            values.add(match.group(1))
+    return values
+
+
+def _rust_const_values(path: Path, constant: str) -> set[str]:
+    text = path.read_text(encoding="utf-8")
+    match = re.search(
+        rf"(?:pub(?:\(crate\))?\s+)?const\s+{re.escape(constant)}[^=]*=\s*&\[(.*?)\];",
+        text,
+        re.DOTALL,
+    )
+    if not match:
+        return set()
+    body = match.group(1)
+    values = set(re.findall(r'"([^"]+)"', body))
+    for name in re.findall(r"\b[A-Z][A-Z0-9_]+\b", body):
+        value = re.search(rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text)
+        if value:
+            values.add(value.group(1))
+    return values
+
+
+def _source_state_registry_rows(
+    root_dir: Path,
+) -> tuple[
+    dict[tuple[str, str], tuple[str, tuple[str, ...], str]],
+    dict[tuple[str, str], tuple[str, str | None]],
+    list[dict[str, str]],
+]:
+    text = (root_dir / "src/entities/source_state_registry.rs").read_text(
+        encoding="utf-8"
+    )
+    errors: list[dict[str, str]] = []
+    states: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
+    state_pattern = re.compile(
+        r'state\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*&\[(.*?)\]\s*,\s*Aggregation::(\w+)\s*,?\s*\)',
+        re.DOTALL,
+    )
+    for entity, key, label, provider_body, aggregation in state_pattern.findall(text):
+        identity = (entity, key)
+        if identity in states:
+            errors.append({"kind": "duplicate_state", "entity": entity, "section": key})
+        providers = tuple(re.findall(r'"([^"]+)"', provider_body))
+        states[identity] = (label, providers, aggregation.lower())
+
+    selectors: dict[tuple[str, str], tuple[str, str | None]] = {}
+    selector_pattern = re.compile(
+        r'selector\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*SelectorClass::(\w+)\s*,\s*(None|Some\("([^"]+)"\))\s*,?\s*\)',
+        re.DOTALL,
+    )
+    for (
+        entity,
+        selector,
+        selector_class,
+        canonical_expr,
+        canonical,
+    ) in selector_pattern.findall(text):
+        identity = (entity, selector)
+        if identity in selectors:
+            errors.append(
+                {"kind": "duplicate_selector", "entity": entity, "section": selector}
+            )
+        selectors[identity] = (
+            selector_class.lower(),
+            canonical if canonical_expr != "None" else None,
+        )
+    return states, selectors, errors
+
+
+def _source_state_architecture_rows(root_dir: Path) -> set[tuple[str, ...]]:
+    text = (root_dir / "architecture/technical/source-integration.md").read_text(
+        encoding="utf-8"
+    )
+    table = text.partition("<!-- source-state-registry:start -->")[2].partition(
+        "<!-- source-state-registry:end -->"
+    )[0]
+    rows = set()
+    for line in table.splitlines():
+        if not line.startswith("|"):
+            continue
+        columns = tuple(column.strip() for column in line.strip().strip("|").split("|"))
+        if len(columns) == 6 and columns[0] not in {"entity", "---"}:
+            rows.add(columns)
+    return rows
+
+
+def check_source_state_registry(root_dir: Path) -> dict[str, object]:
+    entity_paths = {
+        "adverse_event": "src/entities/adverse_event.rs",
+        "article": "src/entities/article/mod.rs",
+        "cell_line": "src/entities/cell_line.rs",
+        "diagnostic": "src/entities/diagnostic/mod.rs",
+        "disease": "src/entities/disease/mod.rs",
+        "drug": "src/entities/drug/mod.rs",
+        "gene": "src/entities/gene.rs",
+        "pathway": "src/entities/pathway.rs",
+        "pgx": "src/entities/pgx.rs",
+        "protein": "src/entities/protein.rs",
+        "trial": "src/entities/trial/mod.rs",
+        "variant": "src/entities/variant/get.rs",
+    }
+    state_rows, selector_rows, errors = _source_state_registry_rows(root_dir)
+    runtime_selectors = {
+        (entity, section)
+        for entity, relative in entity_paths.items()
+        for section in _rust_section_values(root_dir / relative, entity)
+    }
+    unmapped = sorted(runtime_selectors - set(selector_rows))
+    stale = sorted(set(selector_rows) - runtime_selectors)
+
+    for (entity, selector), (selector_class, canonical) in selector_rows.items():
+        if (
+            selector_class == "canonical"
+            and (entity, canonical or "") not in state_rows
+        ):
+            errors.append(
+                {
+                    "kind": "missing_canonical_state",
+                    "entity": entity,
+                    "section": selector,
+                }
+            )
+        elif selector_class == "alias" and (
+            canonical is None or (entity, canonical) not in runtime_selectors
+        ):
+            errors.append(
+                {"kind": "invalid_alias_target", "entity": entity, "section": selector}
+            )
+        elif selector_class in {"aggregate", "local"} and canonical is not None:
+            errors.append(
+                {
+                    "kind": "unexpected_canonical_target",
+                    "entity": entity,
+                    "section": selector,
+                }
+            )
+
+    runtime_key_lists = {
+        "adverse_event": (
+            "src/entities/adverse_event.rs",
+            "ADVERSE_EVENT_OUTCOME_KEYS",
+        ),
+        "article": ("src/entities/article/mod.rs", "ARTICLE_OUTCOME_KEYS"),
+        "gene": ("src/entities/gene.rs", "GENE_OUTCOME_KEYS"),
+        "pathway": ("src/entities/pathway.rs", "PATHWAY_OUTCOME_KEYS"),
+        "protein": ("src/entities/protein.rs", "PROTEIN_OUTCOME_KEYS"),
+    }
+    runtime_key_factories = {
+        "diagnostic": "src/entities/diagnostic/mod.rs",
+        "disease": "src/entities/disease/mod.rs",
+        "drug": "src/entities/drug/mod.rs",
+        "pgx": "src/entities/pgx.rs",
+        "variant": "src/entities/variant/mod.rs",
+    }
+    runtime_key_mismatches = []
+    for entity, (relative, constant) in runtime_key_lists.items():
+        expected = {key for row_entity, key in state_rows if row_entity == entity}
+        actual = _rust_const_values(root_dir / relative, constant)
+        runtime_key_mismatches.extend(
+            {"entity": entity, "section": key} for key in sorted(expected ^ actual)
+        )
+    for entity, relative in runtime_key_factories.items():
+        expected = {key for row_entity, key in state_rows if row_entity == entity}
+        source = re.sub(r"\s+", "", (root_dir / relative).read_text(encoding="utf-8"))
+        factory_call = f'SectionOutcomes::with_keys(&outcome_keys("{entity}"))'
+        if factory_call not in source:
+            runtime_key_mismatches.extend(
+                {"entity": entity, "section": key} for key in sorted(expected)
+            )
+
+    canonical_targets = {
+        (entity, canonical)
+        for (entity, _), (selector_class, canonical) in selector_rows.items()
+        if selector_class == "canonical" and canonical is not None
+    }
+    expected_architecture = {
+        (
+            entity,
+            key,
+            "canonical" if (entity, key) in canonical_targets else "outcome-only",
+            aggregation,
+            " / ".join(providers),
+            f"`{key}` outcome and provenance projection",
+        )
+        for (entity, key), (_, providers, aggregation) in state_rows.items()
+    }
+    architecture_mismatches = [
+        {"entity": row[0], "section": row[1]}
+        for row in sorted(
+            expected_architecture ^ _source_state_architecture_rows(root_dir)
+        )
+    ]
+
+    def records(rows: list[tuple[str, str]]) -> list[dict[str, str]]:
+        return [{"entity": entity, "section": section} for entity, section in rows]
+
+    findings = (
+        len(unmapped)
+        + len(stale)
+        + len(runtime_key_mismatches)
+        + len(architecture_mismatches)
+        + len(errors)
+    )
+    return {
+        "name": "source_state_registry",
+        "status": "fail" if findings else "pass",
+        "finding_count": findings,
+        "unmapped_sections": records(unmapped),
+        "stale_registry_entries": records(stale),
+        "runtime_key_mismatches": runtime_key_mismatches,
+        "architecture_mismatches": architecture_mismatches,
+        "errors": errors,
+    }
+
+
+def check_source_attributed_status_is_typed(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
+    allowlist_path = root_dir / "tools" / "source-status-typing-allowlist.json"
+    try:
+        allowlist = set(
+            json.loads(allowlist_path.read_text(encoding="utf-8")).get("entries", [])
+        )
+    except (OSError, json.JSONDecodeError):
+        allowlist = set()
+    findings: list[dict[str, object]] = []
+    for relative, source in snapshot.masked_sources.items():
+        if not relative.startswith("src/"):
+            continue
+        pattern = re.compile(
+            r"#\s*\[\s*derive\s*\((?P<derive>[^]]*)\)\s*\]\s*"
+            r"(?:#\s*\[[^]]*\]\s*)*struct\s+(?P<name>\w+)\s*\{(?P<body>[^}]*)\}",
+            re.S,
+        )
+        for match in pattern.finditer(source):
+            if "Serialize" not in match.group("derive"):
+                continue
+            name = match.group("name")
+            key = f"{relative}::{name}"
+            body = match.group("body")
+            if key in allowlist or not re.search(
+                r"\b(?:source|provider|api|route)\s*:", body
+            ):
+                continue
+            if re.search(r"\bstatus\s*:\s*String\b", body):
+                findings.append(
+                    {
+                        "path": relative,
+                        "message": f"{name} serializes a source-attributed status as String",
+                    }
+                )
+    return {
+        "name": "source_attributed_status_typing",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
+
+
+def check_external_error_logging(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    """Reject raw Debug projection of errors caught at external-source boundaries."""
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
+    findings: list[dict[str, object]] = []
+    error_arm = re.compile(
+        r"Err\s*\(\s*(?P<binding>[A-Za-z_][A-Za-z0-9_]*)\s*\)\s*=>"
+        r"(?P<body>.{0,800}?)"
+        r"(?:trace|debug|info|warn|error)!\s*\((?P<fields>.{0,500}?)\)\s*[,;]",
+        re.S,
+    )
+    for relative, source in snapshot.masked_sources.items():
+        if not (
+            relative.startswith("src/sources/")
+            or relative.startswith("src/entities/article/")
+        ):
+            continue
+        for match in error_arm.finditer(source):
+            binding = re.escape(match.group("binding"))
+            if re.search(rf"(?:\?|=\s*\?)\s*{binding}\b", match.group("fields")):
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": source.count("\n", 0, match.start()) + 1,
+                        "message": "external error uses raw Debug logging; project it through the approved safe helper",
+                    }
+                )
+    return {
+        "name": "external_error_logging",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    selected_audits = list(dict.fromkeys(args.audit or AUDIT_NAMES))
+    payloads: dict[str, dict[str, object]] = {}
+    dead_code_exception_inventory = args.dead_code_exception_inventory or (
+        args.root_dir / DEAD_CODE_EXCEPTION_INVENTORY
+    )
+    rust_snapshot = (
+        load_rust_source_snapshot(args.root_dir)
+        if {
+            "dead_code_allowances",
+            "test_waits",
+            "paused_clock_io",
+            "source_attributed_status_typing",
+            "external_error_logging",
+        }.intersection(selected_audits)
+        else None
+    )
+
+    if "spec_lint" in selected_audits:
+        payloads["spec_lint"] = lint_specs(
+            resolve_spec_paths(args.spec_glob), args.spec_glob, args.root_dir
+        )
+        write_json(args.output_dir / "semantic-contracts-lint.json", payloads["spec_lint"])
+
+    if "mcp_allowlist" in selected_audits:
+        payloads["mcp_allowlist"] = run_json_command(
+            [
+                sys.executable,
+                str(args.root_dir / "tools" / "check-mcp-allowlist.py"),
+                "--cli-file",
+                str(args.cli_file),
+                "--shell-file",
+                str(args.shell_file),
+                "--catalog-file",
+                str(args.catalog_file),
+                "--json",
+            ],
+            allowed_exit_codes={0, 1},
+        )
+        write_json(
+            args.output_dir / "semantic-contracts-mcp-allowlist.json",
+            payloads["mcp_allowlist"],
+        )
+
+    if "source_registry" in selected_audits:
+        payloads["source_registry"] = run_json_command(
+            [
+                sys.executable,
+                str(args.root_dir / "tools" / "check-source-registry.py"),
+                "--sources-dir",
+                str(args.sources_dir),
+                "--sources-mod",
+                str(args.sources_mod),
+                "--health-file",
+                str(args.health_file),
+                "--json",
+            ],
+            allowed_exit_codes={0, 1},
+        )
+        write_json(
+            args.output_dir / "semantic-contracts-source-registry.json",
+            payloads["source_registry"],
+        )
+
+    simple_audits = {
+        "test_waits": ("semantic-contracts-test-waits.json", lambda: check_test_waits(args.root_dir, rust_snapshot)),
+        "paused_clock_io": (
+            "semantic-contracts-paused-clock-io.json",
+            lambda: check_paused_clock_io(args.root_dir, rust_snapshot),
+        ),
+        "dead_code_allowances": (
+            "semantic-contracts-dead-code-allowances.json",
+            lambda: check_dead_code_allowances(
+                args.root_dir, rust_snapshot, dead_code_exception_inventory
+            ),
+        ),
+        "experiment_results": (
+            "semantic-contracts-experiment-results.json",
+            lambda: check_architecture_experiment_results(args.root_dir),
+        ),
+        "renderer_next_command_source": (
+            "semantic-contracts-renderer-next-command-source.json",
+            lambda: check_renderer_next_command_source(args.root_dir),
+        ),
+        "terminal_output_boundaries": (
+            "semantic-contracts-terminal-output-boundaries.json",
+            lambda: check_terminal_output_boundaries(args.root_dir),
+        ),
+        "cli_surface_contract": (
+            "semantic-contracts-cli-surface-contract.json",
+            lambda: check_cli_surface_contract(args.root_dir),
+        ),
+        "remote_resource_bounds": (
+            "semantic-contracts-remote-resource-bounds.json",
+            lambda: check_remote_resource_bounds(args.root_dir),
+        ),
+        "source_state_registry": (
+            "semantic-contracts-source-state-registry.json",
+            lambda: check_source_state_registry(args.root_dir),
+        ),
+        "source_attributed_status_typing": (
+            "semantic-contracts-source-status-typing.json",
+            lambda: check_source_attributed_status_is_typed(
+                args.root_dir, rust_snapshot
+            ),
+        ),
+        "external_error_logging": (
+            "semantic-contracts-external-error-logging.json",
+            lambda: check_external_error_logging(args.root_dir, rust_snapshot),
+        ),
+    }
+    for audit_name, (artifact_name, check) in simple_audits.items():
+        if audit_name not in selected_audits:
+            continue
+        payloads[audit_name] = check()
+        write_json(args.output_dir / artifact_name, payloads[audit_name])
+
+    if "section_outcome_policy_line_cap" in selected_audits:
+        policy_module_lines = {
+            relative: len(
+                (args.root_dir / relative).read_text(encoding="utf-8").splitlines()
+            )
+            for relative in SECTION_OUTCOME_POLICY_MODULES
+        }
+        oversized_policy_modules = [
+            {"path": path, "lines": lines, "cap": SECTION_OUTCOME_POLICY_LINE_CAP}
+            for path, lines in policy_module_lines.items()
+            if lines > SECTION_OUTCOME_POLICY_LINE_CAP
+        ]
+        payloads["section_outcome_policy_line_cap"] = {
+            "status": "fail" if oversized_policy_modules else "pass",
+            "cap": SECTION_OUTCOME_POLICY_LINE_CAP,
+            "files": policy_module_lines,
+            "oversized_files": oversized_policy_modules,
+        }
+        write_json(
+            args.output_dir / "semantic-contracts-section-outcome-policy-line-cap.json",
+            payloads["section_outcome_policy_line_cap"],
+        )
+
+    statuses = [payload.get("status") for payload in payloads.values()]
+    if "error" in statuses:
+        summary_status = "error"
+    elif all(status == "pass" for status in statuses):
+        summary_status = "pass"
+    else:
+        summary_status = "fail"
+
+    summary_payload = {
+        "status": summary_status,
+        "audits": selected_audits,
+    }
+    for audit_name, payload in payloads.items():
+        summary_name = "lint" if audit_name == "spec_lint" else audit_name
+        summary_payload[summary_name] = (
+            payload if audit_name == "spec_lint" else {"status": payload.get("status")}
+        )
+    write_json(args.output_dir / "semantic-contracts-summary.json", summary_payload)
+    return 0 if summary_status == "pass" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
+.PHONY: build test lint check-semantic-contracts full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: landing-gate main-gate repo-audit installed-wheel-smoke
-.PHONY: output-footprint
+.PHONY: feature-coverage output-footprint nightly-checks
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= dev
@@ -11,7 +11,7 @@ FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FUL
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
 export UV_PROJECT_ENVIRONMENT := $(CURDIR)/.venv
-PYTEST_WORKERS ?= 4
+PYTEST_WORKERS = $(TEST_LANE_WORKERS)
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 # Cargo maps the dev profile to target/debug; every other profile name is
 # its own directory under target/.
@@ -49,26 +49,18 @@ prepare-test: prepare-routine-test-tmp
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 	$(MAKE) prepare-test-contracts
 
-# Each lane gets a bounded share of the host; callers can tune these after
-# measuring their workload. CPU discovery also works on supported non-Linux hosts.
-TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(4, max(1, (os.cpu_count() or 1) // 2)))')
-NEXTEST_JOBS ?= $(TEST_LANE_WORKERS)
+# The measured routine booking (8 GiB disk / 7 GiB memory) covers two
+# workers in each sequential phase. Change this allowance with the booking,
+# never from the shared host's CPU count.
+TEST_LANE_WORKERS ?= 2
+export CARGO_BUILD_JOBS = $(TEST_LANE_WORKERS)
+NEXTEST_JOBS = $(TEST_LANE_WORKERS)
 NEXTEST_JOBS_ARG = -j $(NEXTEST_JOBS)
 
 test:
 	$(MAKE) prepare-test
-	@set -eu; \
-	logs="$$(mktemp -d)"; rust_pid=; python_pid=; \
-	trap 'kill $$rust_pid $$python_pid 2>/dev/null || true; rm -rf "$$logs"' EXIT; \
-	trap 'exit 130' INT; trap 'exit 143' TERM; \
-	$(MAKE) test-rust >"$$logs/rust" 2>&1 & rust_pid=$$!; \
-	$(MAKE) test-python >"$$logs/python" 2>&1 & python_pid=$$!; \
-	rust_status=0; python_status=0; \
-	wait $$rust_pid || rust_status=$$?; rust_pid=; \
-	wait $$python_pid || python_status=$$?; python_pid=; \
-	printf '\n=== Rust lane (exit %s) ===\n' "$$rust_status"; cat "$$logs/rust"; \
-	printf '\n=== Python lane (exit %s) ===\n' "$$python_status"; cat "$$logs/python"; \
-	test "$$rust_status" -eq 0 && test "$$python_status" -eq 0
+	$(MAKE) test-rust
+	$(MAKE) test-python
 
 # Both lanes consume the artifacts prepared once by `make test`. Each can
 # also run independently against an existing prepared build.
@@ -100,7 +92,8 @@ test-long: prepare-test
 lint: sync-python-dev
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
-	tools/check-quality-ratchet.sh
+	tools/check-semantic-contracts.sh
+	uv run --no-project python tools/check-feature-coverage.py links
 
 # Keep commands in recipes so even make -j preserves the landing order.
 # The existing landing gate runs on the merge candidate; main adds the
@@ -120,6 +113,9 @@ main-gate:
 installed-wheel-smoke: sync-python-dev
 	bash scripts/check-linux-wheel.sh
 
+nightly-checks:
+	bash scripts/run-nightly-checks.sh
+
 repo-audit: sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "repo_audit and not release_gate"
 
@@ -132,30 +128,29 @@ full-feature-check:
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
 
-# The marker set alone (ticket 2125): the packaged-crate cold
-# compile behind -m release_gate and any later check that joins it.
-# The release workflow's release-gate job runs this target before it
-# builds any archive; `make release-gate` still runs the same
-# selection after the full suite with the dev build's binary on
-# BIOMCP_BIN.
+# Nightly and both release entry points share the outside-in floor check.
+# Routine lint only validates links and never builds with instrumentation.
+feature-coverage:
+	NEXTEST_TEST_THREADS="$(TEST_LANE_WORKERS)" bash scripts/collect-feature-coverage.sh
+
 release-gate-markers:
 	$(MAKE) repo-audit
 	$(MAKE) sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
+	$(MAKE) feature-coverage
 
 release-gate: lint
 	$(MAKE) test
 	$(MAKE) test-long
-	$(MAKE) repo-audit
-	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
+	$(MAKE) release-gate-markers BIOMCP_BIN="$(SPEC_RUN_BIN)"
 	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 # Release lint remains unconditional even when a caller carries landing scope.
 release-gate: override BIOMCP_ADVISORY_SCOPE = always
 
-check-quality-ratchet:
-	@bash tools/check-quality-ratchet.sh
+check-semantic-contracts:
+	@bash tools/check-semantic-contracts.sh
 
 output-footprint:
 	$(SPEC_BUILD)
@@ -235,9 +230,10 @@ stress: prepare-routine-test-tmp
 	@set -euo pipefail; \
 	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \
+	cpu="$$(python3 -c 'import os; print(min(os.sched_getaffinity(0)))')"; \
 	for round in $$(seq 1 "$$repeat"); do \
-	  echo "=== stress round $$round/$$repeat (one CPU, 4 workers, timeout scale $$scale) ==="; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
+	  echo "=== stress round $$round/$$repeat (CPU $$cpu, 4 workers, timeout scale $$scale) ==="; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c "$$cpu" tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
 	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelled_publication_settles_and_the_previous_generation_survives)'; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c "$$cpu" tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
 	done

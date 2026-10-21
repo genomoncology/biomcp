@@ -28,7 +28,7 @@ def _run_quality_ratchet_on_spec(tmp_path: Path, markdown: str) -> dict[str, obj
             "run",
             "--no-project",
             "python",
-            str(REPO_ROOT / "tools" / "check-quality-ratchet.py"),
+            str(REPO_ROOT / "tools" / "check-semantic-contracts.py"),
             "--root-dir",
             str(REPO_ROOT),
             "--output-dir",
@@ -55,7 +55,7 @@ def _run_quality_ratchet_on_spec(tmp_path: Path, markdown: str) -> dict[str, obj
         capture_output=True,
         text=True,
     )
-    return json.loads((output_dir / "quality-ratchet-lint.json").read_text(encoding="utf-8"))
+    return json.loads((output_dir / "semantic-contracts-lint.json").read_text(encoding="utf-8"))
 
 
 def _lint_rules(payload: dict[str, object]) -> set[str]:

@@ -3,8 +3,6 @@
 use super::super::*;
 use crate::test_support::TempDirGuard;
 use std::borrow::Cow;
-use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[test]
 fn archive_download_accounting_accepts_exact_limit_and_rejects_overflow() {
@@ -25,37 +23,26 @@ fn archive_download_accounting_accepts_exact_limit_and_rejects_overflow() {
 
 #[tokio::test]
 async fn archive_download_rejects_declared_oversize_before_creating_destination() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind test listener");
-    let address = listener.local_addr().expect("test listener address");
-    let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.expect("accept request");
-        let mut request = [0_u8; 1024];
-        let _ = stream.read(&mut request).await.expect("read request");
-        stream
-            .write_all(
-                b"HTTP/1.1 200 OK\r\nContent-Length: 2147483649\r\nConnection: close\r\n\r\n",
-            )
-            .await
-            .expect("write declared oversized response");
-    });
+    let mut server = crate::test_support::TestHttpServer::respond(|_| async {
+        Ok(b"HTTP/1.1 200 OK\r\nContent-Length: 2147483649\r\nConnection: close\r\n\r\n".to_vec())
+    })
+    .expect("start download fixture");
 
     let root = TempDirGuard::new("study-download-declared-oversize");
     let destination = root.path().join("archive.tar.gz");
-    let base = format!("http://{address}");
+    let base = server.base.clone();
     let client = CBioPortalDownloadClient {
         client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
             &base,
             |builder| {
                 builder
-                    .connect_timeout(Duration::from_secs(1))
-                    .timeout(Duration::from_secs(2))
+                    .connect_timeout(crate::test_support::hang_timeout())
+                    .timeout(crate::test_support::hang_timeout())
             },
         )
         .expect("test client"),
         base: Cow::Owned(base),
-        download_idle_timeout: Duration::from_secs(1),
+        download_idle_timeout: crate::test_support::hang_timeout(),
         max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
     };
 
@@ -71,41 +58,30 @@ async fn archive_download_rejects_declared_oversize_before_creating_destination(
     );
     assert!(format!("{err:?}").contains("resource limit"));
     assert!(!destination.exists());
-    server.await.expect("test server should finish");
+    server.finish().expect("test server should finish");
 }
 
 #[tokio::test]
 async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind test listener");
-    let address = listener.local_addr().expect("test listener address");
-    let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.expect("accept request");
-        let mut request = [0_u8; 1024];
-        let _ = stream.read(&mut request).await.expect("read request");
-        stream
-            .write_all(
-                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n0\r\n\r\n",
-            )
-            .await
-            .expect("write chunked oversized response");
-    });
+    let mut server = crate::test_support::TestHttpServer::respond(|_| async {
+        Ok(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n0\r\n\r\n".to_vec())
+    })
+    .expect("start download fixture");
 
     let root = TempDirGuard::new("study-download-chunked-oversize");
-    let base = format!("http://{address}");
+    let base = server.base.clone();
     let client = CBioPortalDownloadClient {
         client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
             &base,
             |builder| {
                 builder
-                    .connect_timeout(Duration::from_secs(1))
-                    .timeout(Duration::from_secs(2))
+                    .connect_timeout(crate::test_support::hang_timeout())
+                    .timeout(crate::test_support::hang_timeout())
             },
         )
         .expect("test client"),
         base: Cow::Owned(base),
-        download_idle_timeout: Duration::from_secs(1),
+        download_idle_timeout: crate::test_support::hang_timeout(),
         max_archive_download_bytes: 3,
     };
 
@@ -123,5 +99,5 @@ async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file(
         0,
         "outer download flow should remove the partial archive"
     );
-    server.await.expect("test server should finish");
+    server.finish().expect("test server should finish");
 }

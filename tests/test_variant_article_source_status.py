@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -59,7 +61,7 @@ def test_variant_article_markdown_uses_json_source_plan_and_states(
             command += ["variant", "articles", "BRCA1 F1761I", "--verify-identity",
                         "--limit", "10", "--offset", str(offset)]
             result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                    capture_output=True, text=True, timeout=60)
+                                    capture_output=True, text=True, timeout=HANG_TIMEOUT)
             assert result.returncode == (1 if scenario == "disabled" else 0), result.stdout + result.stderr
             outputs[surface] = result.stderr if scenario == "disabled" and surface == "markdown" else result.stdout
         requests = replay.request_log_entries(since=before)

@@ -107,7 +107,7 @@ pub(crate) struct Store { root: PathBuf, root_dir: File, generations_dir: File, 
 impl Store {
     #[cfg(test)]
     pub(crate) fn open() -> Result<Self, StoreError> {
-        Self::open_until(std::time::Instant::now() + std::time::Duration::from_secs(2))
+        Self::open_until(std::time::Instant::now() + crate::test_support::hang_timeout())
     }
     #[rustfmt::skip]
     pub(crate) fn open_until(deadline: std::time::Instant) -> Result<Self, StoreError> {

@@ -36,7 +36,7 @@ RUST_TESTS = (
 
 def runbook_check() -> int:
     spec = importlib.util.spec_from_file_location(
-        "quality_ratchet", ROOT / "tools/check-quality-ratchet.py"
+        "quality_ratchet", ROOT / "tools/check-semantic-contracts.py"
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

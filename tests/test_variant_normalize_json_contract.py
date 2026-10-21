@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -53,12 +55,12 @@ def test_variant_normalize_json_no_result_emits_parseable_non_empty_stdout() -> 
             capture_output=True,
             text=True,
             check=False,
-            timeout=300,
+            timeout=HANG_TIMEOUT,
         )
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip(), "successful JSON normalize command must not emit empty stdout"

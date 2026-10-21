@@ -5,6 +5,8 @@ were checked through molecule.json on 2026-10-19. The replies below are authored
 """
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -86,7 +88,7 @@ def development_cli(tmp_path, monkeypatch):
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
 
     def run(*args):
-        result = subprocess.run([binary, "--json", *args], capture_output=True, text=True, timeout=90)
+        result = subprocess.run([binary, "--json", *args], capture_output=True, text=True, timeout=HANG_TIMEOUT)
         return result, json.loads(result.stdout)
 
     try:

@@ -57,7 +57,7 @@ fn map_drugsfda_approvals_extracts_key_fields() {
     }))
     .expect("response should parse");
 
-    let rows = map_drugsfda_approvals(resp);
+    let rows = map_drugsfda_approvals(resp, false);
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].application_number, "NDA021304");
     assert_eq!(rows[0].openfda_brand_names, vec!["DrugX"]);

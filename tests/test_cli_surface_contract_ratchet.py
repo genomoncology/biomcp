@@ -9,13 +9,13 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-quality-ratchet.sh"
+WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-semantic-contracts.sh"
 EXCEPTION_REGISTRY = REPO_ROOT / "tools" / "cli-surface-contract-exceptions.json"
-QUALITY_RATCHET_TOOL = REPO_ROOT / "tools" / "check-quality-ratchet.py"
+SEMANTIC_CONTRACTS_TOOL = REPO_ROOT / "tools" / "check-semantic-contracts.py"
 
 
 def _load_quality_ratchet_module():
-    spec = importlib.util.spec_from_file_location("check_quality_ratchet", QUALITY_RATCHET_TOOL)
+    spec = importlib.util.spec_from_file_location("check_quality_ratchet", SEMANTIC_CONTRACTS_TOOL)
     assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -27,8 +27,8 @@ def _load_quality_ratchet_module():
 def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None:
     output_dir = tmp_path / "ratchet-output"
     env = os.environ.copy()
-    env["QUALITY_RATCHET_OUTPUT_DIR"] = str(output_dir)
-    env["QUALITY_RATCHET_AUDITS"] = "cli_surface_contract"
+    env["SEMANTIC_CONTRACTS_OUTPUT_DIR"] = str(output_dir)
+    env["SEMANTIC_CONTRACTS_AUDITS"] = "cli_surface_contract"
 
     result = subprocess.run(
         ["bash", str(WRAPPER_SCRIPT)],
@@ -40,7 +40,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
     )
 
     assert result.returncode == 0, result.stderr
-    summary_path = output_dir / "quality-ratchet-summary.json"
+    summary_path = output_dir / "semantic-contracts-summary.json"
     assert summary_path.exists(), "quality ratchet did not write summary artifact"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
 
@@ -50,7 +50,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
     )
     assert summary["cli_surface_contract"]["status"] == "pass"
 
-    detail_path = output_dir / "quality-ratchet-cli-surface-contract.json"
+    detail_path = output_dir / "semantic-contracts-cli-surface-contract.json"
     assert detail_path.exists(), "whole-surface CLI contract artifact is missing"
     detail = json.loads(detail_path.read_text(encoding="utf-8"))
     assert detail["status"] == "pass"

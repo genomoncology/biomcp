@@ -1,6 +1,8 @@
 """CPIC section requests use provider column names and retain paging/errors."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -63,7 +65,7 @@ def test_pgx_sections_use_supported_columns_for_pages_and_report_provider_errors
     def run(offset: int):
         return subprocess.run([binary, "--json", "get", "pgx", "CYP2D6", section,
                                "--limit", "1", "--offset", str(offset)],
-                              env=env, text=True, capture_output=True, timeout=30, check=False)
+                              env=env, text=True, capture_output=True, timeout=HANG_TIMEOUT, check=False)
 
     try:
         for offset in (0, 1):
@@ -84,4 +86,4 @@ def test_pgx_sections_use_supported_columns_for_pages_and_report_provider_errors
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)

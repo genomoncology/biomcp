@@ -1,6 +1,8 @@
 """CLI regressions against authored controls; no captured licensed payloads."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import gzip
 import json
 import os
@@ -91,7 +93,7 @@ def suspect_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     def run(*args, json_output=True):
         command = [binary, *(["--json"] if json_output else []), *args]
-        result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=HANG_TIMEOUT)
         assert result.returncode == 0, result.stderr + result.stdout
         return json.loads(result.stdout) if json_output else result.stdout
 
@@ -100,7 +102,7 @@ def suspect_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
 
 def test_aspirin_keeps_selected_source_name_without_absorbing_combo_ingredient(suspect_cli):

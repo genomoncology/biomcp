@@ -4,11 +4,19 @@ priority: 2
 
 # 2315 — Run release-only checks before the release
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Depends on: 2316, 2319
+
+Changes: `tests/feature-links.json`, `Makefile`, `scripts/run-nightly-checks.sh`, `tests/test_release_check_counterparts.py`, `tests/test_ci_workflow_contract.py`, `tests/test_stress_lane_contract.py`, `CHANGELOG.md`.
+
+Reviews: revision 4e49bcc, accept
+
+Reviews: revision a55c944, accept
+
+Reviews: revision 6d64484, accept
 
 ## Outcome
 

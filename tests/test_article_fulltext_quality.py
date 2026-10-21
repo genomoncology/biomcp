@@ -1,6 +1,8 @@
 """Saved fulltext headings determine the section quality flag."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -80,11 +82,11 @@ def test_fulltext_section_quality_agrees_with_saved_sections(heading: bool, tmp_
     command = ["get", "article", identifier, "fulltext"]
     try:
         result = subprocess.run([binary, "--json", "--no-cache", *command],
-                                env=env, capture_output=True, text=True, timeout=60, check=False)
+                                env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     assert not missed, missed
     payload = json.loads(result.stdout)

@@ -1,5 +1,5 @@
 # 2076: clippy replaces the deleted size and wait ratchet scripts
-# (tools/check-quality-ratchet.py's size and line-cap audits,
+# (tools/check-semantic-contracts.py's source contract audits,
 # tools/check-test-wait-ratchet.py). The threshold is the longest
 # function on main when this lint landed, measured the way clippy
 # counts (the lines between the braces):

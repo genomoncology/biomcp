@@ -443,13 +443,13 @@ rg -nP '[c]argo run(?![^\n]*--profile)[^\n]*--example' ../../spec/entity ../../s
 
 ## Repository Lint Keeps The Quality Ratchet
 
-Dropping `make check` must not orphan the quality-ratchet policy that used to run
+Dropping `make check` must not orphan the semantic-contracts policy that used to run
 through that target. The standard `make lint` gate should continue to run the
 repo lint script and the ratchet script.
 
 ```bash
 make -C ../.. -n lint 2>&1 | mustmatch like "./bin/lint
-tools/check-quality-ratchet.sh"
+tools/check-semantic-contracts.sh"
 ```
 
 ## Repository Release Gate Adds One Full-Feature Proof
