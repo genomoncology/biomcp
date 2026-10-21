@@ -133,9 +133,10 @@ full-feature-check:
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
 
-# Nightly and both release entry points share the outside-in floor check.
+# Nightly and both release entry points share the Linux-only region floor check.
 # Routine lint only validates links and never builds with instrumentation.
 feature-coverage:
+	@echo "Collect outside-in Rust region coverage on a Linux host."
 	NEXTEST_TEST_THREADS="$(TEST_LANE_WORKERS)" bash scripts/collect-feature-coverage.sh
 
 release-gate-markers:

@@ -78,3 +78,65 @@ def test_advisory_bootstrap_rejects_an_unsupported_platform(tmp_path: Path) -> N
     assert result.returncode != 0
     assert "No pinned advisory scanner" in result.stderr
     assert not Path(env["CURL_LOG"]).exists()
+
+
+def _cargo_fixture(tmp_path: Path) -> tuple[Path, dict[str, str]]:
+    root, env = _fixture(tmp_path)
+    policy = root / ".github/workflows/ci.yml"
+    policy.parent.mkdir(parents=True)
+    shutil.copyfile(REPO_ROOT / ".github/workflows/ci.yml", policy)
+    tools = Path(env["BIOMCP_TOOL_DIR"])
+    tools.mkdir()
+    for name, version in [("shellcheck", "0.10.0"), ("actionlint", "1.7.12")]:
+        _write_executable(tools / name, f"#!/bin/sh\necho {name} {version}\n")
+    return root, env
+
+
+@pytest.mark.parametrize("system,arch,target", [
+    ("Linux", "x86_64", "x86_64-unknown-linux-musl"),
+    ("Darwin", "arm64", "aarch64-apple-darwin"),
+])
+@pytest.mark.parametrize("cached_version", [None, "0.19.40"])
+def test_cargo_deny_download_matches_policy_and_rejects_lookalike_cached_versions(
+    tmp_path: Path, system: str, arch: str, target: str, cached_version: str | None,
+) -> None:
+    root, env = _cargo_fixture(tmp_path)
+    env |= {"TEST_SYSTEM": system, "TEST_ARCH": arch}
+    if cached_version:
+        _write_executable(Path(env["BIOMCP_TOOL_DIR"]) / "cargo-deny",
+                          f"#!/bin/sh\necho cargo-deny {cached_version}\n")
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools"], cwd=root, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    command = Path(env["CURL_LOG"]).read_text()
+    assert f"https://github.com/EmbarkStudios/cargo-deny/releases/download/0.19.4/cargo-deny-0.19.4-{target}.tar.gz" in command
+    assert "--proto =https --tlsv1.2" in command
+
+
+def test_cargo_deny_rejects_corrupt_download_and_unreviewed_policy(tmp_path: Path) -> None:
+    root, env = _cargo_fixture(tmp_path)
+    env["CURL_STATUS"] = "0"
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools"], cwd=root, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "checksum mismatch for cargo-deny" in result.stderr
+    assert not (Path(env["BIOMCP_TOOL_DIR"]) / "cargo-deny").exists()
+    policy = root / ".github/workflows/ci.yml"
+    policy.write_text(policy.read_text().replace("CARGO_DENY_VERSION: 0.19.4", "CARGO_DENY_VERSION: 0.19.5"))
+    Path(env["CURL_LOG"]).unlink()
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools"], cwd=root, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "No pinned cargo-deny archive for policy 0.19.5" in result.stderr
+    assert not Path(env["CURL_LOG"]).exists()
+
+
+def test_cargo_deny_reuses_only_the_exact_policy_version_without_network(tmp_path: Path) -> None:
+    root, env = _cargo_fixture(tmp_path)
+    _write_executable(Path(env["BIOMCP_TOOL_DIR"]) / "cargo-deny",
+                      "#!/bin/sh\necho cargo-deny 0.19.4\n")
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools"], cwd=root, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == env["BIOMCP_TOOL_DIR"]
+    assert not Path(env["CURL_LOG"]).exists()

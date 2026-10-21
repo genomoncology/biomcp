@@ -108,10 +108,9 @@ def test_the_offline_sandbox_loads_scoped_apparmor_before_any_lane_runs() -> Non
     )
     for contract in expected:
         assert contract in sandbox
-    # nextest installs as a prebuilt binary; the sandbox still
-    # loads before any cargo install runs in the same action.
+    # Pinned gate binaries install only after the sandbox self-test.
     assert ACTION.index("tools/run-offline -- true") < ACTION.index(
-        "cargo install cargo-deny"
+        "tools/bootstrap-lint-tools"
     )
     # Every lane enters the namespace only after the action's own
     # sandbox self-test, so its gate runs after the lane-setup step.

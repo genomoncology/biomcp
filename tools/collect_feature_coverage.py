@@ -13,12 +13,39 @@ from pathlib import Path
 from feature_coverage import coverage_report, inventory
 
 
-def collect(root: Path, baseline: bool) -> int:
-    import tomllib
+def instrumented_environment(show: str, ordinary: dict[str, str], profile: Path) -> dict[str, str]:
+    instrumented = ordinary.copy()
+    for line in show.splitlines():
+        if "=" not in line:
+            continue
+        key, value = line.removeprefix("export ").split("=", 1)
+        if key.isidentifier() and key.isupper():
+            words = shlex.split(value.rstrip(";"))
+            instrumented[key] = words[0] if words else ""
+    # MCP tests deliberately terminate servers. Continuous counters survive
+    # SIGTERM instead of losing every request served before the signal.
+    relocation = "-Cllvm-args=-runtime-counter-relocation"
+    wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"
+    if wrapper_flags in instrumented:
+        instrumented[wrapper_flags] += "\x1f" + relocation
+    elif "CARGO_ENCODED_RUSTFLAGS" in instrumented:
+        instrumented["CARGO_ENCODED_RUSTFLAGS"] += "\x1f" + relocation
+    elif "RUSTFLAGS" in instrumented:
+        instrumented["RUSTFLAGS"] += " " + relocation
+    else:
+        raise ValueError("llvm-cov exported no supported instrumentation flags")
+    instrumented["LLVM_PROFILE_FILE"] = str(profile)
+    return instrumented
 
+
+def collect(root: Path, baseline: bool) -> int:
     output = root / ".cache/feature-coverage"
     output.mkdir(parents=True, exist_ok=True)
     (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "reason": "collection has not finished"}) + "\n")
+    if sys.platform != "linux":
+        raise ValueError("outside-in feature coverage requires a Linux host")
+    import tomllib
+
     links, config, errors = inventory(root)
     if errors:
         raise ValueError("\n".join(errors))
@@ -66,30 +93,7 @@ def collect(root: Path, baseline: bool) -> int:
         return 1
     show = subprocess.check_output(["cargo", "llvm-cov", "show-env"], cwd=root, env=ordinary, text=True)
     (output / "show-env.txt").write_text(show)
-    instrumented = ordinary.copy()
-    for line in show.splitlines():
-        if "=" not in line:
-            continue
-        key, value = line.removeprefix("export ").split("=", 1)
-        if key.isidentifier() and key.isupper():
-            words = shlex.split(value.rstrip(";"))
-            instrumented[key] = words[0] if words else ""
-    # MCP tests deliberately terminate servers. Continuous counters survive
-    # SIGTERM instead of losing every request served before the signal.
-    if sys.platform not in {"linux", "darwin"}:
-        raise ValueError("outside-in continuous profiling requires Linux or macOS")
-    if sys.platform == "linux":
-        relocation = "-Cllvm-args=-runtime-counter-relocation"
-        wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"
-        if wrapper_flags in instrumented:
-            instrumented[wrapper_flags] += "\x1f" + relocation
-        elif "CARGO_ENCODED_RUSTFLAGS" in instrumented:
-            instrumented["CARGO_ENCODED_RUSTFLAGS"] += "\x1f" + relocation
-        elif "RUSTFLAGS" in instrumented:
-            instrumented["RUSTFLAGS"] += " " + relocation
-        else:
-            raise ValueError("llvm-cov exported no supported instrumentation flags")
-    instrumented["LLVM_PROFILE_FILE"] = str(target / "outside-%c%p.profraw")
+    instrumented = instrumented_environment(show, ordinary, target / "outside-%c%p.profraw")
     # Compile only binaries/examples and selected integration targets. cfg(test)
     # library/unit artifacts are never built or included as test consumers.
     rust_args = [arg for path in sorted(config["rust"]) for arg in ("--test", Path(path).stem)]
@@ -140,10 +144,10 @@ def collect(root: Path, baseline: bool) -> int:
     if any(statuses.values()):
         (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "collections": statuses}, indent=2) + "\n")
         return 1
-    lcov = output / "outside.lcov"
-    if run("llvm-report", ["cargo", "llvm-cov", "report", "--lcov", "--output-path", str(lcov)], ordinary):
+    report = output / "outside.json"
+    if run("llvm-report", ["cargo", "llvm-cov", "report", "--json", "--output-path", str(report)], ordinary):
         return 1
-    result = coverage_report(root, lcov, statuses, 0 if baseline else floor)
+    result = coverage_report(root, report, statuses, 0 if baseline else floor)
     result["source"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     result["collection"] = {
         "cargo_features": "all-features", "rust_integration_targets": list(config["rust"]),
@@ -155,7 +159,7 @@ def collect(root: Path, baseline: bool) -> int:
         result["initial_floor_input"] = result["outside_in_percent"]
     (output / "coverage.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "unobserved_files", "collection", "item_accounting", "excluded_test_sources"}}, indent=2))
-    print(f"Unreached product lines and exact collection selection: {output / 'coverage.json'}")
+    print(f"Unreached product regions and exact collection selection: {output / 'coverage.json'}")
     return int(result["status"] != "pass")
 
 
