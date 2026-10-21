@@ -108,8 +108,6 @@
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
-- Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
-
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
@@ -118,6 +116,8 @@
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
 - Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
+
+- Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
 
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
