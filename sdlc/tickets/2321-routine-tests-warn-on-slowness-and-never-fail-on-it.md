@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 48dfff3, accept
 
+Reviews: revision ef77957, accept
+
 ## Outcome
 
 BioMCP's routine gate fails on wrong behavior and on a hung test, never on a slow one. Per-test timeouts in nextest and pytest become hang catchers (for example 120 seconds), and test waits run up to them in place of short fixed limits. A small reporter prints one warning line for each test slower than 5 seconds, naming the test, its time and the machine's one-minute load, and changes no exit code. Product timing contracts that BioMCP promises, such as provider deadlines and the MCP handshake timer, stay as asserted bounds.
