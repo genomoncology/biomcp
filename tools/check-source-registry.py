@@ -15,6 +15,7 @@ HELPER_MODULES = {
     # The disabled-source registry is shared state over the source
     # inventory, not a provider client.
     "disable",
+    "literature_retry",
     "pmc_article",
     "ordinary_url_policy",
     "provider_url_policy",

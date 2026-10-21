@@ -694,7 +694,7 @@
     "^src/sources/(gwas)(?:/|\\.rs$)": "gwas",
     "^src/sources/(ca_bundle)(?:/|\\.rs$)": "operator-tls",
     "^src/sources/(disable|mod|ordinary_url_policy|provider_url_policy|request_plan_transport)(?:/|\\.rs$)": "source-policy",
-    "^src/sources/(rate_limit)(?:/|\\.rs$)": "provider-retry",
+    "^src/sources/(literature_retry|rate_limit)(?:/|\\.rs$)": "provider-retry",
     "^src/(?:cli|entities|transform)/(article|author|diagnostic|disease|drug|gene|pathway|pgx|phenotype|protein|study|trial|variant|gwas|adverse_event|cell_line|pharmacodb|discover|section_outcome|source_state_registry)(?:/|\\.rs$)": "@entity",
     "^src/cli/(cache|worker)(?:/|\\.rs$)": "cache",
     "^src/cli/(health)(?:/|\\.rs$)": "health",
