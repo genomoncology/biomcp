@@ -21,6 +21,10 @@ The low workflow long-suite claim has no actual marked product cases in this sna
 
 Sampled strengths include shared CLI/MCP execution, exact variant identity rejection, truthful article incompleteness, exact PMID/MED metadata recovery, outbound destination validation, MCP mutation restrictions, credential-safe cache publication, retained cache identity checks and migration locking. Rehearsal separates qualification from publication and checks native installed wheels and platform compatibility. The review did not execute exhaustive provider/clinical correctness, native Windows permissions, race stress or final installed artifacts. Apart from the single pagination probe it ran no duplicate full gate, live collection, credential access or publication. Preserve unaffected review scope and review the corrections before rebinding the final verdict.
 
+## Correction review
+
+The same independent lead reviewed the complete four-correction diff and callers at candidate `94a02bfa0a4f51bf84d052f483ccfcf7ce50e3b8`, tree `1549f7071d47e2e4f5f3356ecc43ad10658a8d95`, and closed all four original medium findings. Fresh per-ticket reviewers inspected the changed code, scripts and workflow selection. Their source-bound routine, hostile-output, actual installed-wheel and native Windows proof is retained in tickets 2338–2341. The unsupported workflow long-suite claim is corrected. This incremental acceptance preserves the earlier unaffected review scope; it is not final release admission. The additional region-coverage correction, actual batch gate, final qualification and complete untagged rehearsal remain required.
+
 ## Qualification binding
 
 The earlier release source and rehearsal remain historical evidence in [the prior admission](2258-release-admission.md). They do not qualify the expanded product source. The final direct main gate, fresh-clone offline Linux proof, authorized keyed five-record check and complete untagged rehearsal must name their actual new source. Final job receipts and publication limits will be recorded here after execution.
