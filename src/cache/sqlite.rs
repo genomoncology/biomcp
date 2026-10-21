@@ -1,5 +1,11 @@
 //! Indexed reusable cache. SQLite serializes publication, eviction and blob reads.
 mod blobs;
+mod identity;
+mod maintenance;
+mod pool;
+pub(crate) use maintenance::{Maintenance, maintain};
+mod read;
+pub(crate) use read::read_record;
 pub(crate) mod request_key;
 mod schema;
 mod upgrade;
@@ -43,8 +49,9 @@ pub(crate) fn sqlite_error(error: rusqlite::Error) -> io::Error {
     io::Error::new(kind, error)
 }
 
+#[derive(Clone)]
 pub(crate) struct Store {
-    connection: Connection,
+    connection: pool::SharedConnection,
     root: PathBuf,
 }
 
@@ -57,11 +64,23 @@ pub(crate) struct Record {
 
 impl Store {
     pub(crate) fn open(root: &Path) -> Result<Self> {
+        let _span = super::timing::Span::new("open");
         super::private::secure_managed_dir(root)?;
         // macOS exposes its temporary directory through /var, an ancestor
         // symlink. Resolve ancestors after rejecting a linked cache root so
         // SQLite's NOFOLLOW flag can protect the actual database path.
         let root = fs::canonicalize(root)?;
+        let path = root.join(DATABASE_NAME);
+        if path.exists() || fs::symlink_metadata(&path).is_ok() {
+            validate_database_file(&path, false)?;
+        }
+        validate_sidecars(&root)?;
+        upgrade::remove_legacy_stores(&root)?;
+        let connection = pool::open(&root, || Self::open_connection(&root))?;
+        Ok(Self { connection, root })
+    }
+
+    fn open_connection(root: &Path) -> Result<(Connection, identity::Identity)> {
         let path = root.join(DATABASE_NAME);
         let mut options = OpenOptions::new();
         options.read(true).write(true).create_new(true);
@@ -76,23 +95,21 @@ impl Store {
             }
             Err(error) => return Err(error),
         }
-        for suffix in ["-wal", "-shm", "-journal"] {
-            let sidecar = root.join(format!("{DATABASE_NAME}{suffix}"));
-            if sidecar.exists() || fs::symlink_metadata(&sidecar).is_ok() {
-                match validate_database_file(&sidecar, true) {
-                    Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-                    result => result?,
-                }
-            }
-        }
+        let identity = identity::Identity::capture(root)?;
         let connection = Connection::open_with_flags(
             &path,
             rusqlite::OpenFlags::default() | rusqlite::OpenFlags::SQLITE_OPEN_NOFOLLOW,
         )
         .map_err(sqlite_error)?;
+        identity.validate(root, &connection)?;
         connection
             .busy_timeout(Duration::from_millis(100))
             .map_err(sqlite_error)?;
+        if super::timing::enabled() {
+            connection
+                .busy_handler(Some(super::timing::busy_handler))
+                .map_err(sqlite_error)?;
+        }
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(sqlite_error)?;
@@ -119,35 +136,33 @@ impl Store {
                 .execute_batch(schema::SCHEMA)
                 .map_err(sqlite_error)?;
         }
-        upgrade::remove_legacy_stores(&root)?;
         if version == 1 {
-            upgrade::discard_credential_capable_cache(&connection, &root)?;
+            upgrade::discard_credential_capable_cache(&connection, root)?;
         }
-        Ok(Self { connection, root })
+        identity.validate(root, &connection)?;
+        Ok((connection, identity))
     }
 
     pub(crate) fn transaction<T>(
         &mut self,
         action: impl FnOnce(&Transaction<'_>, &Path) -> Result<T>,
     ) -> Result<T> {
-        // Blob readers take the same short writer lease as publishers. WAL readers
-        // alone cannot prevent an evictor unlinking a referenced external file.
-        let tx = self
-            .connection
+        // Publication, accounting and blob collection share the writer lease.
+        // Snapshot readers instead revalidate a concurrently removed blob.
+        let begin = super::timing::Span::new("begin");
+        let mut connection = self.connection();
+        let tx = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(sqlite_error)?;
+        drop(begin);
         let result = action(&tx, &self.root)?;
         tx.commit().map_err(sqlite_error)?;
         Ok(result)
     }
 
-    pub(crate) fn get(&mut self, namespace: &str, key: &str) -> Result<Option<Record>> {
-        self.transaction(|tx, root| read_record(tx, root, namespace, key))
-    }
-
     pub(crate) fn variants(&mut self, namespace: &str, base: &str) -> Result<Vec<Record>> {
-        let mut statement = self
-            .connection
+        let connection = self.connection();
+        let mut statement = connection
             .prepare("SELECT key,metadata FROM entries WHERE namespace=?1 AND base_key=?2")
             .map_err(sqlite_error)?;
         statement
@@ -183,58 +198,16 @@ impl Store {
         self.collect_blobs()
     }
 
-    pub(crate) fn connection(&self) -> &Connection {
-        &self.connection
+    pub(crate) fn validate(&self) -> Result<()> {
+        super::private::secure_managed_dir(&self.root)?;
+        validate_database_file(&self.root.join(DATABASE_NAME), false)?;
+        validate_sidecars(&self.root)?;
+        pool::validate(&self.connection, &self.root)
     }
-}
 
-pub(crate) fn read_record(
-    tx: &Transaction<'_>,
-    root: &Path,
-    namespace: &str,
-    key: &str,
-) -> Result<Option<Record>> {
-    let record = tx
-        .query_row(
-            "SELECT metadata, body, blob, body_hash FROM entries WHERE namespace=?1 AND key=?2",
-            params![namespace, key],
-            |r| {
-                Ok((
-                    r.get::<_, Vec<u8>>(0)?,
-                    r.get::<_, Option<Vec<u8>>>(1)?,
-                    r.get::<_, Option<String>>(2)?,
-                    r.get::<_, String>(3)?,
-                ))
-            },
-        )
-        .optional()
-        .map_err(sqlite_error)?;
-    let Some((metadata, body, blob, body_hash)) = record else {
-        return Ok(None);
-    };
-    let body = match (body, blob) {
-        (Some(body), None) => body,
-        (None, Some(blob)) => blobs::read(root, &blob)?,
-        _ => {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "invalid cache body",
-            ));
-        }
-    };
-    if format!("{:x}", Sha256::digest(&body)) != body_hash {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "cache body integrity",
-        ));
+    pub(crate) fn connection(&self) -> pool::ConnectionAccess<'_> {
+        pool::lock(&self.connection)
     }
-    let now = now_ms();
-    tx.execute("UPDATE entries SET last_access=?3 WHERE namespace=?1 AND key=?2 AND last_access<=?3-3600000", params![namespace, key, now]).map_err(sqlite_error)?;
-    Ok(Some(Record {
-        key: key.to_owned(),
-        metadata,
-        body,
-    }))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -308,8 +281,8 @@ fn remove_unreferenced(tx: &Transaction<'_>, _root: &Path, blob: &str) -> Result
 
 impl Store {
     pub(crate) fn collect_blobs(&mut self) -> Result<()> {
-        let tx = self
-            .connection
+        let mut connection = self.connection();
+        let tx = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(sqlite_error)?;
         let digests = {
@@ -340,81 +313,8 @@ impl Store {
     }
 }
 
-#[derive(Clone, Copy)]
-pub(crate) enum Maintenance {
-    Startup,
-    Pressure,
-    Clean,
-}
-
-pub(crate) fn maintain(
-    store: &mut Store,
-    config: &super::ResolvedCacheConfig,
-    max_age: Option<Duration>,
-    max_size: Option<u64>,
-    dry_run: bool,
-    mode: Maintenance,
-) -> Result<super::CleanReport> {
-    let now = now_ms();
-    let space = super::inspect_filesystem_space(&config.cache_root).map_err(io::Error::other)?;
-    let mut report=store.transaction(|tx, root| {
-        let last: i64 = tx.query_row("SELECT last_clean FROM cache_meta WHERE id=1", [], |r|r.get(0)).map_err(sqlite_error)?;
-        let due = match mode {Maintenance::Startup=>now.saturating_sub(last)>=86_400_000,Maintenance::Pressure=>false,Maintenance::Clean=>true};
-        let age = max_age.or(if due { Some(config.max_age) } else { None });
-        let cutoff = age.map(|age|now.saturating_sub(age.as_millis().min(i64::MAX as u128) as i64));
-        let mut total: u64 = tx.query_row("SELECT optional_bytes FROM cache_meta WHERE id=1",[],|r|read_u64(r,0)).map_err(sqlite_error)?;
-        let limit = max_size.unwrap_or(config.max_size);
-        let expired = if due {
-            let mut statement = tx.prepare("SELECT namespace,key FROM entries WHERE (namespace!='capture' AND expires IS NOT NULL AND expires<=?1) OR (namespace='http' AND ?2 IS NOT NULL AND created<=?2)").map_err(sqlite_error)?;
-            statement.query_map(params![now,cutoff],|r|Ok((r.get::<_,String>(0)?,r.get::<_,String>(1)?))).map_err(sqlite_error)?
-                .collect::<std::result::Result<Vec<_>,_>>().map_err(sqlite_error)?
-        } else { Vec::new() };
-        let mut selected = expired;
-        let mut planned: u64 = 0;
-        for (namespace,key) in &selected {
-            planned += tx.query_row("SELECT bytes FROM entries WHERE namespace=?1 AND key=?2",params![namespace,key],|r|read_u64(r,0)).map_err(sqlite_error)?;
-        }
-        total=total.saturating_sub(planned);
-        let mut limits=config.clone();limits.max_size=limit;
-        let estimated_space=super::FilesystemSpace{available_bytes:space.available_bytes.saturating_add(planned),total_bytes:space.total_bytes};
-        let evaluation=super::evaluate_cache_usage(super::CacheUsage{referenced_blob_bytes:total,orphan_blob_bytes:0},&limits,estimated_space);
-        let target=evaluation.effective_max_size;
-        let mut selected_set=selected.iter().cloned().collect::<std::collections::HashSet<_>>();
-        if total>target {
-            let mut statement=tx.prepare("SELECT namespace,key,bytes FROM entries WHERE namespace!='capture' ORDER BY last_access").map_err(sqlite_error)?;
-            let rows=statement.query_map([],|r|Ok((r.get::<_,String>(0)?,r.get::<_,String>(1)?,read_u64(r,2)?))).map_err(sqlite_error)?;
-            for row in rows {
-                if total<=target { break; }
-                let (namespace,key,bytes)=row.map_err(sqlite_error)?;
-                if !selected_set.insert((namespace.clone(),key.clone())) {continue;}
-                selected.push((namespace,key)); total=total.saturating_sub(bytes);planned+=bytes;
-            }
-        }
-        let mut capture_bytes=0;
-        for (namespace,key) in &selected {
-            if namespace=="capture" {
-                capture_bytes+=tx.query_row("SELECT bytes FROM entries WHERE namespace=?1 AND key=?2",params![namespace,key],|r|read_u64(r,0)).map_err(sqlite_error)?;
-            }
-            if !dry_run { delete_record(tx,root,namespace,key)?; }
-        }
-        if !dry_run && due && matches!(mode,Maintenance::Startup) { tx.execute("UPDATE cache_meta SET last_clean=?1 WHERE id=1",[now]).map_err(sqlite_error)?; }
-        Ok(super::CleanReport { dry_run,orphans_removed:0,entries_removed:selected.len(),bytes_freed:planned,provider_capture_bytes_freed:capture_bytes,errors:Vec::new() })
-    })?;
-    if matches!(mode, Maintenance::Clean) {
-        let captures = super::provider_capture::ProviderCaptureStore::new(&config.cache_root);
-        let freed = captures.clean_in_store(store, dry_run)?;
-        report.provider_capture_bytes_freed = freed;
-        report.bytes_freed = report.bytes_freed.saturating_add(freed);
-    }
-    if !dry_run {
-        store.collect_blobs()?;
-        if report.bytes_freed > 0 {
-            store.release_space()?;
-        }
-    }
-    Ok(report)
-}
-
+#[cfg(test)]
+mod stress_tests;
 #[cfg(test)]
 mod tests;
 
@@ -503,16 +403,29 @@ impl Store {
     pub(crate) fn release_space(&self) -> Result<()> {
         // SQLite yields one row per reclaimed page. Step the pragma to
         // completion; execute_batch stops after its first yielded row.
-        let mut vacuum = self
-            .connection
+        let connection = self.connection();
+        let mut vacuum = connection
             .prepare("PRAGMA incremental_vacuum")
             .map_err(sqlite_error)?;
         let mut pages = vacuum.query([]).map_err(sqlite_error)?;
         while pages.next().map_err(sqlite_error)?.is_some() {}
         drop(pages);
         drop(vacuum);
-        self.connection
+        connection
             .execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
             .map_err(sqlite_error)
     }
+}
+
+fn validate_sidecars(root: &Path) -> Result<()> {
+    for suffix in ["-wal", "-shm", "-journal"] {
+        let sidecar = root.join(format!("{DATABASE_NAME}{suffix}"));
+        if sidecar.exists() || fs::symlink_metadata(&sidecar).is_ok() {
+            match validate_database_file(&sidecar, true) {
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                result => result?,
+            }
+        }
+    }
+    Ok(())
 }

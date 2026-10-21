@@ -9,6 +9,7 @@ pub(crate) mod manager;
 mod private;
 mod provider_capture;
 pub(crate) mod sqlite;
+mod timing;
 
 pub(crate) use citation_evidence::{read_citation_evidence, write_citation_evidence};
 pub(crate) use clean::CleanReport;

@@ -91,6 +91,10 @@ run `biomcp gencc sync` for an explicit revalidation. If BioMCP cannot secure
 the default data root, set `BIOMCP_GENCC_DIR` to an absolute private directory
 whose parent already exists; relative paths and linked components are rejected.
 
+If the cache directory or database is replaced while an MCP server runs, BioMCP bypasses that retained cache connection. Restart the server to open and upgrade the replacement. Normal `cache clear` keeps the database and does not require a restart.
+
+To inspect local cache costs, run a cached command with `RUST_LOG=biomcp::cache::timing=debug`. Diagnostic lines name the cache stage and report `elapsed_us` and `busy_calls`. They contain no request URLs, cache keys, headers, response bodies or local paths. Collect normal command timings separately because diagnostic output adds work.
+
 ## 3) ClinicalTrials.gov API v2 quirks
 
 ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.

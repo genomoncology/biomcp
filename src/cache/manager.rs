@@ -1,6 +1,6 @@
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 
 use async_trait::async_trait;
@@ -69,6 +69,7 @@ type Observer = Arc<dyn Fn(&Path, &str) + Send + Sync>;
 #[derive(Clone)]
 pub(crate) struct SqliteCacheManager {
     config: ResolvedCacheConfig,
+    store: Arc<OnceLock<sqlite::Store>>,
     observe_get: Observer,
     after_put: Observer,
 }
@@ -78,8 +79,10 @@ pub(crate) type SizeAwareCacheManager = SqliteCacheManager;
 
 impl SqliteCacheManager {
     pub(crate) fn new(_path: PathBuf, config: ResolvedCacheConfig) -> Result<Self, BioMcpError> {
+        let shared_store = Arc::new(OnceLock::new());
         if !crate::sources::cache_is_bypassed() {
             let mut store = sqlite::Store::open(&config.cache_root)?;
+            let startup = super::timing::Span::new("startup_maintenance");
             sqlite::maintain(
                 &mut store,
                 &config,
@@ -88,12 +91,25 @@ impl SqliteCacheManager {
                 false,
                 sqlite::Maintenance::Startup,
             )?;
+            drop(startup);
+            let _ = shared_store.set(store);
         }
         Ok(Self {
             config,
+            store: shared_store,
             observe_get: Arc::new(|_, _| {}),
             after_put: Arc::new(|_, _| {}),
         })
+    }
+
+    fn store(&self) -> io::Result<sqlite::Store> {
+        if let Some(store) = self.store.get() {
+            store.validate()?;
+            return Ok(store.clone());
+        }
+        let store = sqlite::Store::open(&self.config.cache_root)?;
+        let _ = self.store.set(store.clone());
+        Ok(self.store.get().expect("initialized cache store").clone())
     }
 
     pub(crate) async fn new_with_deadline(
@@ -123,6 +139,7 @@ impl SqliteCacheManager {
         let _ = path;
         Self {
             config,
+            store: Arc::default(),
             observe_get: Arc::new(observe_get),
             after_put: Arc::new(after_put),
         }
@@ -137,10 +154,11 @@ impl CacheManager for SqliteCacheManager {
         }
         let key = key.to_owned();
         let config = self.config.clone();
+        let manager = self.clone();
         let context = sqlite::request_key::current();
         (self.observe_get)(&config.cache_root.join(sqlite::DATABASE_NAME), &key);
         let mut value = tokio::task::spawn_blocking(move || -> io::Result<_> {
-            let mut store = sqlite::Store::open(&config.cache_root)?;
+            let mut store = manager.store()?;
             let records = if let Some(context) = &context {
                 store.variants("http", &context.base)?
             } else {
@@ -236,12 +254,13 @@ impl CacheManager for SqliteCacheManager {
         }
         let body = response.body.clone();
         let config = self.config.clone();
+        let manager = self.clone();
         let publication = crate::sources::current_cache_publication_state().unwrap_or_default();
         // Await committed publication and its bounded cleanup before returning to a
         // short-lived runtime. An armed publication uses the existing safe-return scope.
         publication.arm();
         let operation = tokio::task::spawn_blocking(move || -> io::Result<()> {
-            let mut store = sqlite::Store::open(&config.cache_root)?;
+            let mut store = manager.store()?;
             store.put("http", &key, &base, &metadata, &body, None)?;
             sqlite::maintain(
                 &mut store,
@@ -265,11 +284,11 @@ impl CacheManager for SqliteCacheManager {
         if crate::sources::cache_is_bypassed() {
             return Ok(());
         }
-        let config = self.config.clone();
+        let manager = self.clone();
         let key = key.to_owned();
         let context = sqlite::request_key::current();
         tokio::task::spawn_blocking(move || -> io::Result<()> {
-            let mut store = sqlite::Store::open(&config.cache_root)?;
+            let mut store = manager.store()?;
             if let Some(context) = context {
                 for row in store.variants("http", &context.base)? {
                     store.delete("http", &row.key)?;
