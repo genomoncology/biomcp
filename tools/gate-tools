@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Host prerequisites. Installer-owned pins are read from their declarations.
-# Portable utilities require their POSIX.1-2008 interface, not a vendor release.
+# Portable utilities use POSIX.1-2008 and BSD command interfaces.
 set -u
 root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
 export PATH="${BIOMCP_TOOL_DIR:-$root/.cache/tools/bin}:$PATH"
@@ -77,13 +77,15 @@ require bash 3.2 min --version
 require jq 1.6 min --version
 require curl 7.68 min --version
 require rg 13.0 min --version
+require docker 20.10 min --version
+if [[ "$OSTYPE" == darwin* ]]; then require lsof 4.9 min -v; fi
 if [[ "$OSTYPE" == linux* ]]; then require bwrap 0.4 min --version; fi
 require shellcheck "$(lint_pin shellcheck)" exact --version
 require actionlint "$(lint_pin actionlint)" exact --version
 require xz 5.2 min --version
 require sha256sum GNU-compatible portable
-for utility in awk sed grep find sort head tail wc tr cut dirname basename cat cp mv rm mkdir chmod mktemp uname id stat env tee touch tar install cc ar gzip diff cmp readlink; do
-  require "$utility" POSIX.1-2008 portable
+for utility in awk sed grep find sort head tail wc tr cut dirname basename cat cp mv rm mkdir chmod mktemp uname id stat env tee touch tar install cc ar gzip cmp seq sleep ps; do
+  require "$utility" POSIX.1-2008/BSD portable
 done
 if ((${#errors[@]})); then
   printf '%s\n' "${errors[@]}" >&2

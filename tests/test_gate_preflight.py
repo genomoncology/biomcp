@@ -25,7 +25,7 @@ def test_gate_lists_all_missing_tools_before_python_sync(tmp_path: Path) -> None
     )
     output = result.stdout + result.stderr
     assert result.returncode != 0
-    for name in ("python3", "cargo", "uv", "mustmatch", "git", "jq", "curl"):
+    for name in ("python3", "cargo", "uv", "mustmatch", "git", "jq", "curl", "docker", "seq", "sleep", "ps"):
         assert f"missing: {name}" in output, output
     assert "uv sync" not in output
 
