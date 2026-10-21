@@ -253,10 +253,44 @@ def test_release_entry_points_collect_coverage_once(tmp_path: Path, goal: str) -
         '#!/bin/sh\nprintf "coverage:%s:%s\\n" "$CARGO_BUILD_JOBS" "$NEXTEST_TEST_THREADS"\n'
     )
     overlay = tmp_path / "cheap.mk"
-    overlay.write_text("lint test test-long prepare-test prepare-routine-test-tmp repo-audit sync-python-dev full-feature-check spec:\n\t@:\n")
+    overlay.write_text("gate-preflight lint test test-long prepare-test prepare-routine-test-tmp repo-audit sync-python-dev full-feature-check spec:\n\t@:\n")
     command = ["make", "--no-print-directory", "-f", str(ROOT / "Makefile"), "-f", str(overlay)]
     result = subprocess.run([*command, goal, "TEST_LANE_WORKERS=2", "MAKE=" + " ".join(command)],
                             cwd=tmp_path, text=True, capture_output=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.splitlines().count("coverage:2:2") == 1
     assert result.stdout.splitlines().count("marker-check") == 1
+
+
+def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path) -> None:
+    import os
+    import shlex
+    import shutil
+
+    root = tree(tmp_path)
+    (root / "tests/test_unclassified.py").write_text("def test_new(): pass\n")
+    tools = root / "tools"
+    tools.mkdir()
+    for name in ("check-feature-coverage.py", "feature_coverage.py"):
+        shutil.copy2(ROOT / "tools" / name, tools / name)
+    shutil.copy2(ROOT / "Makefile", root / "Makefile")
+    overlay = root / "fixture.mk"
+    overlay.write_text("gate-preflight:\n\t@:\n")
+    uv = tools / "uv"
+    uv.write_text(
+        "#!/bin/sh\n"
+        "if [ \"$1\" = sync ]; then touch prepared; exit 99; fi\n"
+        "shift 3\n"
+        f"exec {shlex.quote(sys.executable)} \"$@\"\n"
+    )
+    uv.chmod(0o755)
+    env = {key: value for key, value in os.environ.items()
+           if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "MAKELEVEL", "MAKEFILES")}
+    env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+    result = subprocess.run(
+        ["make", "-f", "Makefile", "-f", str(overlay), "lint"],
+        cwd=root, env=env, capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "unclassified test module tests/test_unclassified.py" in result.stderr
+    assert not (root / "prepared").exists()

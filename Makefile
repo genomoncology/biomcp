@@ -94,11 +94,11 @@ test-long: prepare-test
 	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
 lint: gate-preflight
+	uv run --no-project python tools/check-feature-coverage.py links
 	$(MAKE) sync-python-dev
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-semantic-contracts.sh
-	uv run --no-project python tools/check-feature-coverage.py links
 
 # Keep commands in recipes so even make -j preserves the landing order.
 # The existing landing gate runs on the merge candidate; main adds the

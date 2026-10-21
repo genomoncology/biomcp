@@ -10,7 +10,7 @@ BioMCP's lint passes under -D warnings on current stable Rust, and every build m
 
 - Proof: make lint passes on the newest stable rustc and on the declared toolchain; the release workflow and pm jobs build with the declared toolchain; on a machine missing a declared tool, the gate fails first and lists every missing tool.
 
-Changes: `.github/actions/lane-setup/action.yml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `AGENTS.md`, `CHANGELOG.md`, `Cargo.toml`, `Makefile`, `rust-toolchain.toml`, `src/entities/article/variant_search.rs`, `tests/test_dependency_advisory_gate.py`, `tests/test_gate_preflight.py`, `tests/feature-links.json`, `tests/test_release_check_counterparts.py`, `tests/test_release_workflow_provenance.py`, `tools/gate-tools`, `tools/rust-toolchain-version`.
+Changes: `.github/actions/lane-setup/action.yml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `AGENTS.md`, `CHANGELOG.md`, `Cargo.toml`, `Makefile`, `rust-toolchain.toml`, `src/entities/article/variant_search.rs`, `tests/test_dependency_advisory_gate.py`, `tests/test_gate_preflight.py`, `tests/feature-links.json`, `tests/test_ci_workflow_contract.py`, `tests/test_upstream_planning_analysis_docs.py`, `tests/test_feature_coverage.py`, `tests/test_routine_cargo_feature_contract.py`, `tests/test_release_check_counterparts.py`, `tests/test_release_workflow_provenance.py`, `tools/gate-tools`, `tools/rust-toolchain-version`.
 
 ## Evidence
 
