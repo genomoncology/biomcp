@@ -32,9 +32,12 @@ After the required fixes land and pass review, qualify the exact new 0.9.4 sourc
 
 - Proof: the new source passes the required final local main and fresh Linux checks and every required job in one complete untagged rehearsal, including native installed-wheel checks, both containers and rehearsal-complete. Retained raw evidence and the fresh completion review name the actual revisions and limits. No earlier source pass substitutes for these new runs.
 
-Changes: `sdlc/tickets/2330-qualify-expanded-0-9-4-candidate.md`, `sdlc/records/2330-expanded-release-admission.md`.
+Changes: `sdlc/tickets/2330-qualify-expanded-0-9-4-candidate.md`, `sdlc/records/2330-expanded-release-admission.md`, `tools/check-replay-live`, `tests/test_replay_live_drift.py`.
 
 ## Evidence
+
+- PM reply to m3391 says the unavailable keyed live proof does not hold release. Start the complete untagged rehearsal after fresh Linux j3192 passes. During rehearsal, make one further five-record keyed retry at least ten minutes after j3464, honoring Retry-After and spacing requests by at least one second. Before that retry, improve only sanitized diagnostics to distinguish HTTP 429, Retry-After and actual field drift. Report structural field paths without response values. A provider shape change BioMCP parses needs its own product ticket; value-only changes follow fixture rules. If blocked again, retain the explicit release limit: Semantic Scholar live check rate limited even with a key; one recording drifted.
+- Main-gate j3186 passed at 0412ebeeb1a09341181b50d5a4bce20d8bb40cdb. Initial keyed job j3459 stopped before HTTP because system Python lacked tomllib. Same-source j3464 used the prepared interpreter and failed with one checked drift, four blocked and zero passed. No raw response or credential material was inspected or stored. Final qualification source remains fixed while the narrowly reviewed diagnostic change is prepared separately on this admission branch; its retry must identify the actual tooling revision or patch rather than claim it ran unchanged main.
 
 - PM m2994 relays Ian's 2026-10-21 decision to include 2324, 2327, 2328 and 2329 before publishing 0.9.4. PM m3064 subsequently adds 2326 and 2333; the earlier exclusion of 2326 is superseded.
 - The earlier source cdb9f4a1bbb37195b512c42351638a3cffe0870d and its successful rehearsal 39593499234 remain historical evidence. They are no longer the release candidate, and their local qualification reuse approvals do not carry over to product changes.
