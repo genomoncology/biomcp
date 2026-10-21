@@ -8,12 +8,77 @@ use super::{Drug, DrugApproval};
 use crate::error::BioMcpError;
 use crate::sources::openfda::{DrugsFdaOpenFda, DrugsFdaProduct, DrugsFdaResult, OpenFdaClient};
 
+// This bridge is one reviewed product identity, not a naming heuristic.
+// The FDA NDC and DailyMed records connect both full ingredient names.
+// See the exact-product decision and its BLENREP source citations.
+const BLENREP_NAME: &str = "belantamab mafodotin";
+const BLENREP_BRAND: &str = "BLENREP";
+const BLENREP_APPLICATION: &str = "BLA761440";
+const BLENREP_PRODUCT: &str = "001";
+const BLENREP_NDC: &str = "0173-0913";
+const BLENREP_INGREDIENT: &str = "BELANTAMAB MAFODOTIN-BLMF";
+
+pub(super) struct Identity {
+    brands: Vec<String>,
+    blenrep_ndc_confirmed: bool,
+}
+
+impl Identity {
+    pub(super) fn from_hits(drug: &Drug, hits: &[crate::sources::mychem::MyChemHit]) -> Self {
+        use crate::sources::mychem::MyChemNdcField;
+        let blenrep_ndc_confirmed = equals(&drug.name, BLENREP_NAME)
+            && hits.iter().filter_map(|hit| hit.ndc.as_ref()).any(|ndc| {
+                let rows = match ndc {
+                    MyChemNdcField::One(row) => std::slice::from_ref(row),
+                    MyChemNdcField::Many(rows) => rows.as_slice(),
+                };
+                rows.iter().any(|row| {
+                    row.nonproprietaryname
+                        .as_deref()
+                        .is_some_and(|name| equals(name, BLENREP_NAME))
+                        && row
+                            .proprietaryname
+                            .as_deref()
+                            .is_some_and(|brand| equals(brand, BLENREP_BRAND))
+                        && row.applicationnumber.as_deref() == Some(BLENREP_APPLICATION)
+                        && row.productndc.as_deref() == Some(BLENREP_NDC)
+                        && same_ingredient_set(
+                            &row.substancename.clone().into_vec(),
+                            &[BLENREP_NAME.to_string()],
+                        )
+                })
+            });
+        Self {
+            brands: drug.brand_names.clone(),
+            blenrep_ndc_confirmed,
+        }
+    }
+}
+
+pub(super) struct Lookup {
+    pub(super) approvals: Vec<DrugApproval>,
+    pub(super) unconfirmed: Vec<DrugApproval>,
+}
+
+fn reviewed_product_matches(product: &DrugsFdaProduct) -> bool {
+    product.product_number.as_deref() == Some(BLENREP_PRODUCT)
+        && product
+            .brand_name
+            .as_deref()
+            .is_some_and(|brand| equals(brand, BLENREP_BRAND))
+        && product.active_ingredients.len() == 1
+        && product.active_ingredients[0]
+            .name
+            .as_deref()
+            .is_some_and(|name| equals(name, BLENREP_INGREDIENT))
+}
+
 pub(super) async fn fetch(
     drug: &Drug,
     label_response: Option<&serde_json::Value>,
-    identity_brands: &[String],
+    identity: &Identity,
     full_history: bool,
-) -> Result<Vec<DrugApproval>, BioMcpError> {
+) -> Result<Lookup, BioMcpError> {
     let names = std::iter::once(drug.name.as_str())
         .chain(drug.brand_names.iter().map(String::as_str))
         .filter(|name| !name.trim().is_empty())
@@ -34,13 +99,26 @@ pub(super) async fn fetch(
         .collect::<Vec<_>>()
         .join(" OR ");
     let Some(mut response) = OpenFdaClient::new()?.drugsfda_search(&query, 8, 0).await? else {
-        return Ok(Vec::new());
+        return Ok(Lookup {
+            approvals: Vec::new(),
+            unconfirmed: Vec::new(),
+        });
     };
-    let linked_labels = linked_label_identities(drug, label_response, identity_brands);
+    let found = response.results.clone();
+    let linked_labels = linked_label_identities(drug, label_response, &identity.brands);
     response
         .results
-        .retain_mut(|row| filter_row(row, drug, &linked_labels, identity_brands));
-    Ok(map_drugsfda_approvals(response, full_history))
+        .retain_mut(|row| filter_row(row, drug, &linked_labels, identity));
+    let (approvals, unconfirmed) = if response.results.is_empty() {
+        response.results = found;
+        (Vec::new(), map_drugsfda_approvals(response, full_history))
+    } else {
+        (map_drugsfda_approvals(response, full_history), Vec::new())
+    };
+    Ok(Lookup {
+        approvals,
+        unconfirmed,
+    })
 }
 
 struct LabelIdentity {
@@ -204,7 +282,7 @@ fn filter_row(
     row: &mut DrugsFdaResult,
     drug: &Drug,
     labels: &[LabelIdentity],
-    identity_brands: &[String],
+    identity: &Identity,
 ) -> bool {
     if row.products.is_empty() {
         return !crate::transform::drug::card_names_combination(&drug.name)
@@ -217,7 +295,17 @@ fn filter_row(
             });
     }
     let metadata = row.openfda.as_ref();
-    row.products
-        .retain(|product| product_matches(product, metadata, drug, labels, identity_brands));
+    let reviewed_blenrep = identity.blenrep_ndc_confirmed
+        && row.application_number.as_deref() == Some(BLENREP_APPLICATION)
+        && row
+            .products
+            .iter()
+            .filter(|product| reviewed_product_matches(product))
+            .count()
+            == 1;
+    row.products.retain(|product| {
+        (reviewed_blenrep && reviewed_product_matches(product))
+            || product_matches(product, metadata, drug, labels, &identity.brands)
+    });
     !row.products.is_empty()
 }
