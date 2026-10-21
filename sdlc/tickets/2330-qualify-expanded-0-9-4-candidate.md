@@ -13,6 +13,7 @@ Depends on: 2327
 Depends on: 2328
 Depends on: 2329
 Depends on: 2331
+Depends on: 2332
 
 ## Outcome
 
@@ -30,3 +31,4 @@ Changes: `sdlc/tickets/2330-qualify-expanded-0-9-4-candidate.md`, `sdlc/records/
 - Preserve historical measurements at their measured sources; this ticket makes no new speed claim. The cache performance ticket stays outside this release unless Ian changes its milestone.
 - No tag, public release, package upload, deployment or announcement is authorized. The final handoff names the exact source rather than an advanced administrative HEAD.
 - PM m3019 authorizes a read-only live check of exactly five Semantic Scholar recordings using the inherited S2_API_KEY, paced at one second. No agent inspects, prints, copies, records or stores credentials; logs and fixtures contain no credentials or authorization headers. KEGG stays uncalled. After actual success, remove the Semantic Scholar unverified limit from the release handoff. Ticket 2331 supplies the narrowly supported checker path before this admission.
+- PM m3026 adds 2332 to 0.9.4 before admission: keep credentials out of cache metadata and logs, retire legacy stores and clean BioMCP-owned caches on the authorized machines. The live check waits for that reviewed fix.
