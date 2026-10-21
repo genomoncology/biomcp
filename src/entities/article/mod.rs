@@ -487,6 +487,7 @@ pub enum ArticleAssetSourceOutcome {
     Data,
     Degraded,
     HealthyAbsent,
+    SourceListedNone,
     SourceUnavailable,
     TimedOut,
 }

@@ -1651,6 +1651,11 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ARTICLE_XML, "application/xml")
             return
 
+        # Recorded HTTP 200 empty XML container from PMC7992806.
+        if decoded_path in {"/PMC123459/supplementaryFiles", "/PMC123457/supplementaryFiles"}:
+            send_bytes(self, 200, source_bytes("europepmc/pmc7992806-empty-supplementary.xml"), "application/xml")
+            return
+
         # Authored provider failure control: no package at the other routes.
         if decoded_path == "/PMC123458/supplementaryFiles":
             send_text(self, 503, "authored Europe PMC outage", "text/plain")
