@@ -23,6 +23,8 @@
 
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
+- Allow explicitly authorized, paced Semantic Scholar recording checks with inherited authentication and safe diagnostics. (2331)
+
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
 
