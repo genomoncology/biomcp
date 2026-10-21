@@ -39,3 +39,7 @@ The release admission record names the exact candidate, final Linux job, success
 Final gate:
 
 Pending the remaining accepted source landings and assessment work. The final job and rehearsal identifiers will be recorded here when they complete.
+
+## Progress
+
+- 2026-10-20 landed 368a8ac8f5074d9f78bae5ee5a9b0ff232313572; next: Land remaining accepted release work, complete final qualification and rehearse without publication
