@@ -122,7 +122,7 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
     ["search", "trial", "--condition", "diabetes", "--limit", "1", "-j"],
     ["--json", "get", "article", "32794606"],
 ])
-@pytest.mark.parametrize("output", ["{garbage", '{} trailing text', "[]"])
+@pytest.mark.parametrize("output", ["{garbage", '{} trailing text', "[]", "{}\0"])
 def test_installed_smoke_rejects_invalid_json_objects(
     tmp_path: Path, command: list[str], output: str,
 ) -> None:
