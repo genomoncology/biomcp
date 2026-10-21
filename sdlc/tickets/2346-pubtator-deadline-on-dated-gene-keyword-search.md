@@ -1,10 +1,12 @@
 # 2346 — Finish dated gene and keyword PubTator searches
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 2beae50a0ed124d3ab0956241829e3e7eaf57c1b, accept
+
+Landed: 6651cfe
 
 ## Outcome
 
