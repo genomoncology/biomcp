@@ -34,21 +34,21 @@ expected="$2"
 smoke_python="$3"
 
 require_json_object() {
-  if ! printf '%s' "$output" | "$smoke_python" -c '
+  if ! "$smoke_python" -c '
 import json, sys
 
 def reject_constant(value):
     raise ValueError("invalid JSON constant: " + value)
 
 try:
-    value = json.load(sys.stdin, parse_constant=reject_constant)
+    value = json.loads(sys.stdin.buffer.read().decode("utf-8"), parse_constant=reject_constant)
     if not isinstance(value, dict):
         raise ValueError("expected an object")
 except ValueError as error:
     print("JSON object required from: biomcp " + sys.argv[1] + ": " + str(error), file=sys.stderr)
     sys.exit(1)
-' "$*"; then
-    printf '%s\n' "$output" >&2
+' "$*" < "$smoke_stdout"; then
+    cat "$smoke_stdout" >&2
     return 1
   fi
 }
@@ -63,17 +63,16 @@ if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp $expected" ]; then
   exit 1
 fi
 smoke_stderr="$(mktemp)"
-trap 'rm -f "$smoke_stderr"' EXIT
-output="$("$BIOMCP" cache stats --json 2>"$smoke_stderr")" || {
-  printf '%s\n' "$output" >&2
+smoke_stdout="$(mktemp)"
+trap 'rm -f "$smoke_stderr" "$smoke_stdout"' EXIT
+"$BIOMCP" cache stats --json >"$smoke_stdout" 2>"$smoke_stderr" || {
+  cat "$smoke_stdout" >&2
   cat "$smoke_stderr" >&2
   echo "installed wheel cache stats failed" >&2
   exit 1
 }
 cat "$smoke_stderr" >&2
 require_json_object cache stats --json
-
-
 
 require_exit() {
   sleep 1
@@ -101,16 +100,16 @@ require_exit() {
 require_json() {
   sleep 1
   status=0
-  output="$("$BIOMCP" "$@" 2>"$smoke_stderr")" || status=$?
+  "$BIOMCP" "$@" >"$smoke_stdout" 2>"$smoke_stderr" || status=$?
   cat "$smoke_stderr" >&2
   if [ "$status" -ne 0 ]; then
-    printf '%s\n' "$output" >&2
+    cat "$smoke_stdout" >&2
     echo "json mode must exit 0 from: biomcp $* (exit $status)" >&2
     return 1
   fi
   require_json_object "$@" || return 1
-  if printf '%s\n' "$output" | grep -q "skill asset"; then
-    printf '%s\n' "$output" >&2
+  if grep -q "skill asset" "$smoke_stdout"; then
+    cat "$smoke_stdout" >&2
     echo "skill asset error from: biomcp $*" >&2
     return 1
   fi
