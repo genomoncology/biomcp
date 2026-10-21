@@ -135,6 +135,8 @@
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
 - Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)
+
+- Add a local nightly target for stress, optimized panic recovery, protobuf generation, long tests, repository audit, full-feature output, installed wheels and feature coverage, and reject release checks without an earlier counterpart or a platform boundary. (2315)
 - Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
 - Require changelog citations for shipped changes and reject tracked scratch files in the local lint gate, including stable release candidates with dated changelog sections. (2291)
 

@@ -627,6 +627,8 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
 # executables (verified by reading them). They need no built binary or
 # real cargo, so the docs-only lane may run them.
 FAKE_TOOL_FIXTURE_MODULES = {
+    # The nightly entry point receives fixture make/cargo/taskset executables.
+    "test_release_check_counterparts.py",
     # Failure controls provide their own temporary BIOMCP_BIN executable.
     "test_demo_scripts.py",
     "test_measure_mcp_tools.py",
