@@ -28,6 +28,10 @@ Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, 
 
 ## Evidence
 
+Keep: /Users/ian/workspace/experiments/2081-biomcp-2258-research-fixture-retention — Retain release fixture evidence while this parent remains open; transfer final raw evidence to the overflow store before cleanup.
+
+Keep: /Users/ian/workspace/experiments/2102-biomcp-2258-final-live-replay — Retain the accepted release evidence while this parent remains open; transfer final raw evidence to the overflow store before cleanup.
+
 The release admission record names the exact candidate, final Linux job, successful full untagged release workflow, and unexercised publication operations. Historical measurements stay bound to their measured source under the PM ruling; no measurement refresh or final-source speed claim is required. Disabled sources stay explicitly unverified. The execution trail lives in pm job logs and the owning retained raw evidence.
 
 Final gate:
