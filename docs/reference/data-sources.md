@@ -80,7 +80,7 @@ All HTTP-based sources share a common client with:
 - Disk cache: `<cache_root>/biomcp.db` under the resolved cache root (`~/.cache/biomcp/biomcp.db` on Linux)
 - Response bodies: bounded inside the cache before materialization (8 MiB by default, with source-specific request limits where documented)
 
-The SQLite store starts independently of older file stores. It does not import or delete them. `cache stats` reports their sizes, and `cache clean-legacy` removes them only on explicit request after older processes are stopped. Saved downloads survive this cleanup.
+BioMCP removes retired reusable cache stores automatically when it opens the cache. It never imports their request indexes. The upgrade also discards older SQLite entries and large response blobs because they may retain authentication data. Saved downloads and article sessions remain. Stop older processes before upgrading so they cannot recreate retired stores. `cache clean-legacy --yes` remains available for explicit cleanup.
 
 Ordinary HTTP provider clients connect directly and ignore ambient
 `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` settings. Built-in provider bases

@@ -2,6 +2,7 @@
 mod blobs;
 pub(crate) mod request_key;
 mod schema;
+mod upgrade;
 
 use std::fs::{self, OpenOptions};
 use std::io;
@@ -95,7 +96,7 @@ impl Store {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(sqlite_error)?;
-        if version > 1 {
+        if version > 2 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "unsupported cache schema",
@@ -117,6 +118,10 @@ impl Store {
             connection
                 .execute_batch(schema::SCHEMA)
                 .map_err(sqlite_error)?;
+        }
+        upgrade::remove_legacy_stores(&root)?;
+        if version == 1 {
+            upgrade::discard_credential_capable_cache(&connection, &root)?;
         }
         Ok(Self { connection, root })
     }

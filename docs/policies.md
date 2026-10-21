@@ -41,7 +41,7 @@ HTTP entries expire at configured `max_age_secs` (one day by default); article s
 
 BioMCP creates managed directories for the current user only. Unix directories use mode `0700` and files use `0600`; Windows uses a current-user ACL. Opening repairs the managed root without changing unrelated ancestors. Existing Unix SQLite files with broader permissions are refused rather than reopened for repair. Symlinks and hardlinked database or blob files are rejected. Optional-cache failures fall through to provider retrieval with a local-cache diagnostic. These controls do not govern upstream copies.
 
-The new store does not import or delete legacy cache stores. Older binaries continue using their own stores until upgraded. `cache stats` names legacy sizes; after upgrading and stopping older processes, `cache clean-legacy --yes` explicitly removes retired stores while preserving downloads, the database, blobs and sessions.
+BioMCP removes retired reusable cache stores automatically when it opens the cache. It never imports their request indexes. The upgrade also discards older SQLite entries and large response blobs because they may retain authentication data. Saved downloads and article sessions remain. Stop older processes before upgrading so they cannot recreate retired stores. `cache clean-legacy --yes` remains available for explicit cleanup.
 
 For an invocation that should leave no managed request state, use
 `--no-cache`. It bypasses both HTTP cache reads/writes and article sessions;
