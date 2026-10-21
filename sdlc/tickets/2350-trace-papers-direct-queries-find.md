@@ -8,6 +8,8 @@ Depends on: 2353
 Depends on: 2354
 Depends on: 2355
 
+Reviews: revision d13912251a9a5631f2e58bad269e2ff10895c6fb, accept
+
 ## Outcome
 
 For each of research's 42 direct-only candidates, starting with BRCA1 PMIDs 10486320 and 31788995, record whether an equivalent BioMCP query should find it, and why BioMCP missed it: fields, aliases, dates, page size or ranking. File one fix ticket per cause that applies to more than one paper. Fix every cause that applies to more than one paper in 0.9.4; Ian moved this in on 2026-10-21.
