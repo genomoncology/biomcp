@@ -108,6 +108,8 @@
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
+- Keep release steps in one document and reuse qualification after records-only changes. (2312)
+
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
