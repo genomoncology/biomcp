@@ -10,6 +10,7 @@
 
 - Point agent guidance to the embedded skill commands and documentation site, and remove the unused guide-copy packaging path. (2338)
 - Reject malformed or non-object JSON in installed-wheel checks and verify rendered and installed agent guidance. (2339)
+- Replace Windows managed-directory permissions with exact current-user access and pass private permissions to new children. (2340)
 - Recover omitted default variant article routes through grouped queries and shared provider work, with a bounded discovery allowance and explicit remaining omissions. Preserve lexical selection and identity checks. (2337)
 
 - Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
