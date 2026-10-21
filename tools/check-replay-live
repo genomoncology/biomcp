@@ -227,7 +227,14 @@ def main(argv: list[str] | None = None) -> int:
             for key, entry in entries:
                 provider = recording_provider(key, entry, routes)
                 method, url, _, _ = request_metadata(key, entry, provider, routes)
-                if (method, urlsplit(url).path) not in {
+                parsed = urlsplit(url)
+                declared = urlsplit(routes[provider])
+                if parsed.scheme != "https" or (parsed.scheme, parsed.netloc) != (
+                    declared.scheme,
+                    declared.netloc,
+                ):
+                    raise ValueError("keyed check requires the declared HTTPS origin")
+                if (method, parsed.path) not in {
                     ("GET", "/graph/v1/paper/search"),
                     ("POST", "/graph/v1/paper/batch"),
                 }:

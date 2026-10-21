@@ -8,6 +8,7 @@ import hashlib
 import json
 import runpy
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -33,6 +34,8 @@ def provider():
             self.server.requests.append((time.monotonic(), dict(self.headers)))
             self.send_response(self.server.status)
             self.send_header("Content-Type", self.server.content_type)
+            if self.server.redirect_to:
+                self.send_header("Location", self.server.redirect_to)
             if self.server.retry_after:
                 self.send_header("Retry-After", "30")
             self.end_headers()
@@ -54,6 +57,7 @@ def provider():
     server.content_type = "application/json; charset=utf-8"
     server.body = RECORDED
     server.retry_after = False
+    server.redirect_to = None
     thread = threading.Thread(target=server.serve_forever)
     thread.start()
     try:
@@ -88,13 +92,48 @@ def run_check(tmp_path, replay, *args, env_values=None):
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     env.pop("BIOMCP_DISABLE_KEGG", None)
     env.update(env_values or {})
+    command = [sys.executable, str(CHECKER)]
+    if "--keyed-semantic-scholar" in args:
+        # Exercise the real command and its URL checks. Only the transport is
+        # redirected to the fixture after validation, so no live key or call is used.
+        copied = tmp_path / "canonical-replay"
+        shutil.copytree(replay, copied)
+        replay = copied
+        upstream = json.loads((replay / "manifest.json").read_text())["routes"]
+        origin = next(iter(upstream.values()))["upstream"].split("/graph/", 1)[0]
+        for entry in upstream.values():
+            entry["upstream"] = entry["upstream"].replace(
+                origin, "https://api.semanticscholar.org", 1
+            )
+        (replay / "manifest.json").write_text(
+            json.dumps({"schema_version": 1, "routes": upstream})
+        )
+        launcher = tmp_path / "fixture-transport.py"
+        launcher.write_text(
+            "import runpy, sys, urllib.request\n"
+            "build_opener = urllib.request.build_opener\n"
+            "def fixture_opener(*handlers):\n"
+            "    delegate = build_opener(*handlers)\n"
+            "    class Transport:\n"
+            "        def open(self, request, **kwargs):\n"
+            f"            url = request.full_url.replace('https://api.semanticscholar.org', {origin!r}, 1)\n"
+            "            local = urllib.request.Request(url, data=request.data, "
+            "headers=dict(request.header_items()), method=request.method)\n"
+            "            return delegate.open(local, **kwargs)\n"
+            "    return Transport()\n"
+            "urllib.request.build_opener = fixture_opener\n"
+            f"runpy.run_path({str(CHECKER)!r}, run_name='__main__')\n"
+        )
+        command = [sys.executable, str(launcher)]
+    before = {p: p.read_bytes() for p in replay.rglob("*") if p.is_file()}
     process = subprocess.run(
-        [sys.executable, str(CHECKER), "--replay-dir", str(replay), *args],
+        [*command, "--replay-dir", str(replay), *args],
         capture_output=True,
         text=True,
         env=env,
         timeout=HANG_TIMEOUT,
     )
+    assert before == {p: p.read_bytes() for p in replay.rglob("*") if p.is_file()}
     assert process.stdout, process.stderr
     lines = [json.loads(line) for line in process.stdout.splitlines()]
     return process, lines[:-1], lines[-1]["summary"]
@@ -664,6 +703,33 @@ def s2_recordings(tmp_path, origin, count=5):
     return replay
 
 
+def test_keyed_s2_refuses_loopback_destination(tmp_path, provider):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    process = subprocess.run(
+        [
+            sys.executable,
+            str(CHECKER),
+            "--replay-dir",
+            str(replay),
+            "--live",
+            "--source",
+            "semantic-scholar",
+            "--keyed-semantic-scholar",
+        ],
+        env={
+            **isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"),
+            "S2_API_KEY": "fake-s2-marker",
+        },
+        capture_output=True,
+        text=True,
+        timeout=HANG_TIMEOUT,
+    )
+    assert process.returncode != 0
+    assert not server.requests
+    assert "fake-s2-marker" not in process.stdout + process.stderr
+
+
 def test_explicit_keyed_s2_checks_only_five_recordings_and_paces(tmp_path, provider):
     server, origin = provider
     replay = s2_recordings(tmp_path, origin)
@@ -693,14 +759,18 @@ def test_explicit_keyed_s2_checks_only_five_recordings_and_paces(tmp_path, provi
 )
 def test_keyed_s2_refuses_invalid_admission_before_requests(tmp_path, provider, fault):
     server, origin = provider
-    replay = s2_recordings(tmp_path, origin, count=4 if fault == "count" else 5)
+    replay = s2_recordings(
+        tmp_path, "https://api.semanticscholar.org", count=4 if fault == "count" else 5
+    )
     if fault in {"endpoint", "body"}:
         manifest_path = replay / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
         for key, entry in manifest["routes"].items():
             if key.startswith("POST"):
                 if fault == "endpoint":
-                    entry["upstream"] = origin + "/graph/v1/paper/write"
+                    entry["upstream"] = (
+                        "https://api.semanticscholar.org/graph/v1/paper/write"
+                    )
                 else:
                     entry["request_body"] = '{"token":"fake-s2-marker"}'
         manifest_path.write_text(json.dumps(manifest))
@@ -762,3 +832,23 @@ def test_keyed_s2_respects_source_disabling(tmp_path, provider):
     assert process.returncode == 0
     assert summary["disabled"] == 5
     assert not server.requests
+
+
+def test_keyed_s2_does_not_forward_authentication_on_redirect(tmp_path, provider):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    server.status = 302
+    server.redirect_to = origin + "/stolen-key"
+    process, _, summary = run_check(
+        tmp_path,
+        replay,
+        "--live",
+        "--source",
+        "semantic-scholar",
+        "--keyed-semantic-scholar",
+        env_values={"S2_API_KEY": "fake-s2-marker"},
+    )
+    assert process.returncode == 1
+    assert summary["drift"] == 5
+    assert len(server.requests) == 5
+    assert "fake-s2-marker" not in process.stdout + process.stderr
