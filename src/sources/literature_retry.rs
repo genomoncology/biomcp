@@ -26,6 +26,7 @@ struct State {
     terminal: bool,
     invocation_deadline: bool,
     http_status: Option<u16>,
+    sent_request: Option<String>,
 }
 #[derive(Clone, Default)]
 pub(crate) struct Observation(Arc<Mutex<State>>);
@@ -67,6 +68,40 @@ impl Observation {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .sends += 1;
+    }
+    // Only the admitted PubTator request is exposed. Never retain its origin,
+    // authorization headers, api_key, or arbitrary provider query parameters.
+    fn record_pubtator_request(&self, request: &Request) {
+        let fields: std::collections::BTreeMap<_, _> = request
+            .url()
+            .query_pairs()
+            .filter(|(key, _)| {
+                matches!(
+                    key.as_ref(),
+                    "text" | "query" | "page" | "size" | "sort" | "limit" | "pmids" | "full"
+                )
+            })
+            .collect();
+        let description = format!(
+            "request={} {} {}",
+            request.method(),
+            request.url().path(),
+            serde_json::to_string(&fields).expect("string query fields serialize")
+        );
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .sent_request = Some(description);
+    }
+    pub(crate) fn append_sent_request(&self, message: &mut String) {
+        let state = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(request) = state.sent_request.as_ref() {
+            message.push_str("; ");
+            message.push_str(request);
+        }
     }
     pub(crate) fn get(&self) -> Option<Failure> {
         let state = self
@@ -302,6 +337,12 @@ impl Middleware for ObserveTransport {
                     .min(budget),
             );
             observation.admit();
+            if extensions
+                .get::<crate::error::SourceContext>()
+                .is_some_and(|context| context.provider() == SourceProvider::PUBTATOR3)
+            {
+                observation.record_pubtator_request(&req);
+            }
         }
         next.run(req, extensions).await
     }
