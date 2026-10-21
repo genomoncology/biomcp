@@ -23,6 +23,7 @@ BioMCP supports multiple input forms:
 - SPDI: `NC_000010.11:87925511:G:A`
 - versioned RefSeq deletion: `NC_000010.11:g.87925512del`
 - transcript coding HGVS: `NM_000249.4:c.678-14_678-3del` (intronic offsets resolve through ClinVar's coding aliases when normalization services refuse)
+- protein frameshift: `FANCL p.T367fs`, `FANCL p.T367Nfs*13` (the supplied residue and termination details stay distinct; a protein spelling never establishes a DNA allele)
 - gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`, `EGFR E746_A750del`
 
 ClinVar-style names that keep the gene in parentheses, such as

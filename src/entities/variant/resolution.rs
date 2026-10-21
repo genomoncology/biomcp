@@ -512,7 +512,7 @@ Supported formats:\n\
 - HGVS genomic: chr7:g.140453136A>T\n\
 - Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n\
 - Transcript HGVS: NM_004333.6:c.1799T>A\n\
-- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del"
+- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del, FANCL p.T367fs, FANCL p.T367Nfs*13"
     )))
 }
 
@@ -652,6 +652,7 @@ pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
 
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     normalize_protein_range_deletion(protein_alias_body(value))
+        .or_else(|| normalize_protein_frameshift(protein_alias_body(value)))
         .or_else(|| normalize_protein_substitution(value))
 }
 
@@ -683,6 +684,34 @@ pub(crate) fn normalize_protein_substitution(value: &str) -> Option<String> {
     }
 
     Some(format!("{from}{pos}{to}"))
+}
+
+fn normalize_protein_frameshift(value: &str) -> Option<String> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let caps = RE
+        .get_or_init(|| {
+            Regex::new(
+                r"^([A-Z][a-z]{0,2})([1-9]\d*)(?:([A-Z][a-z]{0,2}))?fs(?:(?:\*|Ter)([1-9]\d*|\?))?$",
+            )
+            .expect("valid regex")
+        })
+        .captures(value)?;
+    let reference = amino_acid_one_letter(&caps[1])?;
+    let alternate = match caps.get(3) {
+        Some(residue) => amino_acid_one_letter(residue.as_str())?.to_string(),
+        None => String::new(),
+    };
+    // An immediate stop (fsTer1) is a nonsense change, not a frameshift.
+    if caps.get(4).is_some_and(|distance| distance.as_str() == "1") {
+        return None;
+    }
+    let termination = caps
+        .get(4)
+        .map(|distance| format!("*{}", distance.as_str()))
+        .unwrap_or_default();
+    // Retain every supplied component. A short frameshift spelling does not
+    // establish the new residue, termination distance, transcript or DNA allele.
+    Some(format!("{reference}{}{alternate}fs{termination}", &caps[2]))
 }
 
 fn protein_range_deletion_re() -> &'static Regex {
