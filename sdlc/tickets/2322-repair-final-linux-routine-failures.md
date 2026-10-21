@@ -14,7 +14,7 @@ The two Rust cases that failed in fresh Linux qualification pass under the same 
 
 - Proof: Reproduce both original failures on `b91c4d46bb33741e76065dbe81e3b406d0e1596c` through a Yellow build job with the qualification's actual compiler and isolation settings. Demonstrate the repair against those same cases and relevant controls before the normal candidate gate. Final release qualification remains owned by 2258.
 
-Changes: `src/cli/stale_json_note_tests.rs`, `src/entities/article/graph/tests.rs`, `src/test_support/**`, `sdlc/tickets/2322-repair-final-linux-routine-failures.md`, `sdlc/records/2322-linux-routine-repair.md`, `CHANGELOG.md`. Correct this claim when the actual files are known.
+Changes: `src/cli/stale_json_note_tests.rs`, `src/entities/article/graph/tests.rs`, `sdlc/tickets/2322-repair-final-linux-routine-failures.md`, `sdlc/records/2322-linux-routine-repair.md`, `CHANGELOG.md`. Correct this claim when the actual files are known.
 
 ## Evidence
 
