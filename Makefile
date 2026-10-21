@@ -35,6 +35,10 @@ SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locke
 sync-python-dev:
 	uv sync --extra dev --no-install-project
 
+.PHONY: gate-preflight
+gate-preflight:
+	bash tools/gate-tools
+
 build:
 	$(CARGO_WITH_IDENTITY) build --release
 
@@ -89,7 +93,8 @@ test-long: prepare-test
 	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml" --profile long --no-tests=pass
 	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
-lint: sync-python-dev
+lint: gate-preflight
+	$(MAKE) sync-python-dev
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-semantic-contracts.sh

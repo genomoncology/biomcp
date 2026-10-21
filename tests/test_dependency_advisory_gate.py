@@ -67,6 +67,7 @@ def _make_fixture(root: Path, env: dict[str, str]) -> None:
     # Retain production gate orchestration and lint. Replace unrelated heavy
     # boundaries with recorders so these controls compile no native code.
     makefile = (REPO_ROOT / "Makefile").read_text()
+    _write_executable(root / "tools/gate-tools", "#!/usr/bin/env bash\n")
     makefile += '\n' + '\n'.join(
         f'{target}:\n\t@echo {target} >> "$$GATE_LOG"'
         for target in ("test", "test-long", "repo-audit", "full-feature-check", "spec", "installed-wheel-smoke", "feature-coverage")
