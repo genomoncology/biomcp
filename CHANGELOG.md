@@ -8,7 +8,6 @@
 
 ### Fixes
 
-- Keep authentication values out of reusable cache entries. The first cached command after upgrade deletes credential-capable 0.9.3 stores and older database entries. (2332)
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Keep authentication values out of reusable cache entries. The first cached command after upgrade deletes credential-capable 0.9.3 stores and older database entries. (2332)
