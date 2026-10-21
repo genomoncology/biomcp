@@ -1,6 +1,6 @@
 # 2324 — Run the landing gate on any build machine
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 

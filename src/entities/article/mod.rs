@@ -795,6 +795,14 @@ pub struct ArticleBatchEntitySummary {
     pub mutations: Vec<AnnotationCount>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ArticleMetadataStatus {
+    pub status: &'static str,
+    pub missing_fields: Vec<&'static str>,
+    pub source: &'static str,
+    pub failure_class: &'static str,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleSearchResult {
     pub pmid: String,

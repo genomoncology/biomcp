@@ -45,6 +45,7 @@ fn warning_drug() -> Drug {
         label_set_id: Some("warning-set-123".to_string()),
         shortage: None,
         approvals: None,
+        unconfirmed_approvals: Vec::new(),
         fda_orphan_designations: None,
         us_label_effective_date: None,
         us_safety_warnings: Some("Immune-mediated adverse reactions.".to_string()),

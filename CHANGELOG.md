@@ -24,12 +24,16 @@
 
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
+- Allow explicitly authorized, paced Semantic Scholar recording checks with inherited authentication and safe diagnostics. (2331)
+
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
 
 - Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
 
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
+
+- Confirm the exact BLENREP approval product from coherent source identity records, preserve product numbers and ingredients, and show unconfirmed provider records separately with full requested approval history. (2328)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
 
@@ -41,6 +45,8 @@
 - Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
 
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
 
 - Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
 

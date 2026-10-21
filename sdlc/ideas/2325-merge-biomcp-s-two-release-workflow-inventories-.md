@@ -1,6 +1,7 @@
 # Merge BioMCP's two release workflow inventories (counterpart list and provenance step lists); in 2323 a reviewer updated one and missed the other, causing 42 failures
 
-Status: open.
+Status: closed.
+Promoted: 2333
 
 Kind: idea
 When: when 0.9.5 work starts
