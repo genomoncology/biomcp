@@ -148,6 +148,11 @@ pub(super) fn article_search_deadline_error(
 /// Whether the propagated error is the invocation deadline itself, unwrapping
 /// the source-context envelope provider sends add on failure.
 pub(in crate::entities::article) fn is_search_deadline_error(error: &BioMcpError) -> bool {
+    if crate::sources::literature_retry::failure(error)
+        .is_some_and(|failure| failure.invocation_deadline)
+    {
+        return true;
+    }
     let mut current = error;
     loop {
         match current {

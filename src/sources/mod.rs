@@ -10,11 +10,13 @@ use http_cache_reqwest::{Cache, CacheMode, CacheOptions, HttpCache, HttpCacheOpt
 use reqwest::header::{CACHE_CONTROL, CONTENT_LENGTH, HeaderMap, HeaderValue, RETRY_AFTER};
 use reqwest::{ResponseBuilderExt, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Middleware, Next, RequestBuilder};
-use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
+
 use serde::de::DeserializeOwned;
 use tracing::warn;
 
 use crate::error::{BioMcpError, SourceContext};
+
+const HTTP_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// One monotonic ceiling shared by every provider operation in a variant-
 /// literature invocation. It is never retained by a global client.
 #[derive(Clone, Debug)]
@@ -403,7 +405,16 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
         self,
         context: SourceContext,
     ) -> Result<reqwest::Response, BioMcpError> {
-        let request = attach_variant_article_deadline(self);
+        let observation = literature_retry::applies(context.provider())
+            .then(literature_retry::current_observation);
+        let request = match observation.as_ref() {
+            Some(observation) => {
+                observation.start();
+                self.with_extension(observation.clone())
+            }
+            None => self,
+        };
+        let request = attach_variant_article_deadline(request);
         let response = match current_variant_article_deadline() {
             Some(deadline) => {
                 let publication = CachePublicationState::default();
@@ -412,10 +423,28 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
                 deadline
                     .run_with_safe_return(send, publication.marker())
                     .await
-                    .map_err(reqwest_middleware::Error::middleware)?
+                    .unwrap_or_else(|error| {
+                        Err(match observation.as_ref() {
+                            Some(observation) => reqwest_middleware::Error::middleware(
+                                observation.deadline_timeout(),
+                            ),
+                            None => reqwest_middleware::Error::middleware(error),
+                        })
+                    })
             }
             None => request.send().await,
         };
+        // The cache wrapper may stringify middleware errors. Rebuild only a
+        // terminal decision from this request, never an earlier transient reply.
+        let response = response.map_err(|error| {
+            match observation
+                .as_ref()
+                .and_then(literature_retry::Observation::terminal)
+            {
+                Some(failure) => reqwest_middleware::Error::middleware(failure),
+                None => error,
+            }
+        });
         let mut response = response.map_err(BioMcpError::from).map_err(|error| {
             let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
                 SourceContext::narrow(context.provider())
@@ -443,6 +472,8 @@ impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
         Ok(response)
     }
 }
+
+pub(crate) mod literature_retry;
 
 mod archive_budget;
 
@@ -1221,7 +1252,8 @@ impl Middleware for RetryAfterTooManyRequestsMiddleware {
         next: Next<'_>,
     ) -> reqwest_middleware::Result<reqwest::Response> {
         let response = next.run(req, extensions).await?;
-        if response.status() == StatusCode::TOO_MANY_REQUESTS
+        if extensions.get::<literature_retry::Observation>().is_none()
+            && response.status() == StatusCode::TOO_MANY_REQUESTS
             && let Some(retry_after_floor) = parse_retry_after_header(response.headers())
         {
             let duration = {
@@ -1531,13 +1563,11 @@ fn finish_http_client(
 
     let (base_client, bundle) = ordinary_url_policy::http_client_builder(provider_policy)?;
     let base_client = base_client
-        .timeout(Duration::from_secs(30))
+        .timeout(HTTP_REQUEST_TIMEOUT)
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(default_headers);
     let base_client = ca_bundle::build(base_client, bundle)?;
-
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
     let builder = ClientBuilder::new(base_client);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
@@ -1550,10 +1580,7 @@ fn finish_http_client(
             .with(crate::cache::http::RestoreCacheUrl),
         None => builder,
     };
-    let builder = builder.with(RetryTransientMiddleware::new_with_policy_and_strategy(
-        retry_policy,
-        NoTrustFailureStrategy,
-    ));
+    let builder = builder.with(literature_retry::LiteratureRetryMiddleware);
     let builder = match kind {
         SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
@@ -1562,6 +1589,7 @@ fn finish_http_client(
     };
     Ok(builder
         .with(rate_limit::RateLimitMiddleware::new())
+        .with(literature_retry::ObserveTransport)
         .with(ResponseBodyLimitMiddleware)
         .build())
 }
@@ -2894,7 +2922,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sqlite_initialization_preserves_legacy_cache_and_markers() {
+    async fn sqlite_initialization_removes_legacy_cache_and_preserves_markers() {
         let root = TempDirGuard::new("sqlite-legacy-coexistence");
         let legacy = root.path().join("http-cacache");
         std::fs::create_dir(&legacy).unwrap();
@@ -2906,7 +2934,7 @@ mod tests {
         };
         assert!(cache.initialize(None).await.unwrap().is_some());
         assert!(root.path().join("biomcp.db").is_file());
-        assert_eq!(std::fs::read(legacy.join("keep")).unwrap(), b"legacy bytes");
+        assert!(!legacy.exists());
         assert_eq!(
             std::fs::read(root.path().join(".body-limit-cache-v1")).unwrap(),
             b"old marker"

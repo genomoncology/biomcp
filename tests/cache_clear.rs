@@ -118,7 +118,7 @@ fn cache_clear_without_tty_refuses_with_plain_stderr_even_under_json() {
 }
 
 #[test]
-fn cache_clear_yes_preserves_legacy_http_tree() {
+fn cache_clear_yes_retires_legacy_http_tree() {
     let root = temp_dir("delete-http-only");
     let cache_home = root.path().join("cache-home");
     let config_home = root.path().join("config-home");
@@ -144,7 +144,7 @@ fn cache_clear_yes_preserves_legacy_http_tree() {
         "stdout:\n{}",
         result.stdout
     );
-    assert!(http_dir.exists(), "legacy HTTP cache should remain");
+    assert!(!http_dir.exists(), "legacy HTTP cache should be removed");
     assert!(downloads_dir.is_dir(), "downloads sibling should remain");
     assert_eq!(
         fs::read(downloads_dir.join("keep.bin")).expect("downloads file should survive"),
@@ -269,8 +269,8 @@ fn cache_clear_tty_accepts_after_confirmation() {
         "unexpected PTY output:\n{output}"
     );
     assert!(
-        http_dir.exists(),
-        "legacy cache remains after current-cache clear"
+        !http_dir.exists(),
+        "legacy cache should be removed on cache initialization"
     );
 }
 
@@ -326,7 +326,7 @@ fn cache_clear_yes_preserves_downloads_sibling() {
         result.stdout,
         result.stderr
     );
-    assert!(http_dir.exists(), "legacy HTTP cache should remain");
+    assert!(!http_dir.exists(), "legacy HTTP cache should be removed");
     assert!(downloads_dir.is_dir(), "downloads dir should remain");
     assert!(
         downloads_dir.join("keep.bin").is_file(),

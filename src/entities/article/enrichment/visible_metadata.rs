@@ -34,12 +34,16 @@ fn failure_status(
         .status
         .map(|status| format!(" (HTTP {status})"))
         .unwrap_or_default();
+    let mut message = format!("{operation}: {}{http_status}", failure.message);
+    if let Some(failure) = crate::sources::literature_retry::failure(error) {
+        message.push_str(&format!(": {failure}"));
+    }
     ArticleSourceStatus {
         source,
         enabled: true,
         auth_mode: None,
         status: Some(ArticleSourceAvailability::Degraded),
-        message: Some(format!("{operation}: {}{http_status}", failure.message)),
+        message: Some(message),
     }
 }
 

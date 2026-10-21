@@ -77,7 +77,7 @@ biomcp cache clean --max-age 7d
 If targeted cleanup still does not recover the cache, use
 `biomcp cache clear --yes` to remove reusable entries from the database and ten-minute article sessions. It preserves saved provider captures, `downloads/` and explicit exports. The database remains available for subsequent requests.
 
-`cache stats` reports legacy store sizes by name. After upgrading and stopping older binaries, use `biomcp cache clean-legacy` to remove those stores explicitly. This command also preserves saved downloads and the current database.
+BioMCP removes retired reusable cache stores automatically when it opens the cache. It never imports their request indexes. The upgrade also discards older SQLite entries and large response blobs because they may retain authentication data. Saved downloads and article sessions remain. Stop older processes before upgrading so they cannot recreate retired stores. `cache clean-legacy --yes` remains available for explicit cleanup.
 
 If a cache command reports that it cannot secure managed local state, inspect
 the configured root for symlinks, hard links, unsupported file types, or an ACL
@@ -90,6 +90,10 @@ dataset. Check `biomcp health --api GenCC` for the quota-exempt HEAD probe and
 run `biomcp gencc sync` for an explicit revalidation. If BioMCP cannot secure
 the default data root, set `BIOMCP_GENCC_DIR` to an absolute private directory
 whose parent already exists; relative paths and linked components are rejected.
+
+If the cache directory or database is replaced while an MCP server runs, BioMCP bypasses that retained cache connection. Restart the server to open and upgrade the replacement. Normal `cache clear` keeps the database and does not require a restart.
+
+To inspect local cache costs, run a cached command with `RUST_LOG=biomcp::cache::timing=debug`. Diagnostic lines name the cache stage and report `elapsed_us` and `busy_calls`. They contain no request URLs, cache keys, headers, response bodies or local paths. Collect normal command timings separately because diagnostic output adds work.
 
 ## 3) ClinicalTrials.gov API v2 quirks
 

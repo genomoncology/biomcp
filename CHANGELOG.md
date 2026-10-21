@@ -8,7 +8,22 @@
 
 ### Fixes
 
+- Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
+
+- Keep cached responses usable during concurrent cache updates, avoid repeated database opens and skip cleanup transactions when maintenance is not due. (2326)
+
+- Accept protein frameshift and versioned RefSeq duplication spellings in variant commands, preserve their complete supplied identity, and constrain genomic provider lookups to the reference build. (2334)
+
+- Expand strict coding-alias discovery in default variant article searches while preserving the existing lexical queries, identity checks, and work budgets. Keep omitted aliases visible. (2327)
+- Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
+
+- Keep authentication values out of reusable cache entries. The first cached command after upgrade deletes credential-capable 0.9.3 stores and older database entries. (2332)
+
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
+
+- Keep release step order, body pins and counterpart coverage in one inventory, and report a missed inventory update once. (2333)
+
+- Point reversed entity search and get help requests to their exact commands while preserving registered command aliases. (2335)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
 
@@ -21,12 +36,16 @@
 
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
+- Allow explicitly authorized, paced Semantic Scholar recording checks with inherited authentication and safe diagnostics. (2331)
+
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
 
 - Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
 
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
+
+- Confirm the exact BLENREP approval product from coherent source identity records, preserve product numbers and ingredients, and show unconfirmed provider records separately with full requested approval history. (2328)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
 
@@ -38,6 +57,8 @@
 - Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
 
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
 
 - Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
 

@@ -17,6 +17,8 @@ pub(crate) struct VariantArticleProviderUnit<'a> {
     started: Instant,
     _permit: tokio::sync::OwnedSemaphorePermit,
     completed: bool,
+    // The federated leg owns this state outside its timeout future.
+    observation: crate::sources::literature_retry::Observation,
 }
 
 impl<'a> VariantArticleProviderUnit<'a> {
@@ -34,6 +36,7 @@ impl<'a> VariantArticleProviderUnit<'a> {
             started,
             _permit: permit,
             completed: false,
+            observation: crate::sources::literature_retry::current_observation(),
         }
     }
 
@@ -65,8 +68,9 @@ impl<'a> VariantArticleProviderUnit<'a> {
 impl Drop for VariantArticleProviderUnit<'_> {
     fn drop(&mut self) {
         if !self.completed {
+            let failure = self.observation.get().map(|_| self.observation.timeout());
             self.execution
-                .record_cancelled(&self.route, &self.source, self.started);
+                .record_cancelled(&self.route, &self.source, self.started, failure);
         }
     }
 }

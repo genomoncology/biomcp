@@ -80,6 +80,9 @@
         "test_author_surface_docs_describe_the_shipped_provider_exact_slice": "Source/documentation or harness contract, not an outside product invocation."
       }
     },
+    "tests/test_cache_credentials.py": {
+      "feature": "cache"
+    },
     "tests/test_cache_invalid_settings.py": {
       "feature": "cache"
     },
@@ -136,6 +139,9 @@
         "test_discovery_requires_structured_drug_identity": "drug",
         "test_diagnostic_synonym_and_literal_matching_explain_missing_resolution": "diagnostic"
       }
+    },
+    "tests/test_literature_transient_retries.py": {
+      "feature": "provider-retry"
     },
     "tests/test_mcp_2026_protocol.py": {
       "feature": "mcp-stdio"
@@ -213,6 +219,9 @@
     "tests/test_variant_article_gene_aliases.py": {
       "feature": "variant"
     },
+    "tests/test_variant_article_metadata_status.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_article_paper_anchors.py": {
       "feature": "variant"
     },
@@ -229,6 +238,9 @@
       "feature": "variant"
     },
     "tests/test_variant_transcript_allele_guard.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_frameshift_inputs.py": {
       "feature": "variant"
     },
     "tests/test_variant_transcript_lookup.py": {
@@ -364,6 +376,9 @@
         "live_cli_smoke_get_variant_braf_v600e_returns_variant_information": "variant",
         "live_cli_smoke_get_article_returns_article_information": "article"
       }
+    },
+    "tests/reversed_help_contract.rs": {
+      "feature": "cli-controls"
     }
   },
   "spec": {
@@ -626,7 +641,8 @@
     "src/entities/trial/search/eligibility/keep_paths.rs": "Test-only module declared under cfg(test) in src/entities/trial/search/eligibility.rs.",
     "tests/test_advisory_bootstrap.py": "Build tooling installation contract; does not drive the shipped product.",
     "tests/test_dependency_advisories.py": "Dependency policy scanner contract; does not drive the shipped product.",
-    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product."
+    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product.",
+    "tests/test_gate_preflight.py": "Build host prerequisite contract; does not drive the shipped product."
   },
   "accounting_cases": {
     "gene": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol",
@@ -687,7 +703,7 @@
     "^src/sources/(gwas)(?:/|\\.rs$)": "gwas",
     "^src/sources/(ca_bundle)(?:/|\\.rs$)": "operator-tls",
     "^src/sources/(disable|mod|ordinary_url_policy|provider_url_policy|request_plan_transport)(?:/|\\.rs$)": "source-policy",
-    "^src/sources/(rate_limit)(?:/|\\.rs$)": "provider-retry",
+    "^src/sources/(literature_retry|rate_limit)(?:/|\\.rs$)": "provider-retry",
     "^src/(?:cli|entities|transform)/(article|author|diagnostic|disease|drug|gene|pathway|pgx|phenotype|protein|study|trial|variant|gwas|adverse_event|cell_line|pharmacodb|discover|section_outcome|source_state_registry)(?:/|\\.rs$)": "@entity",
     "^src/cli/(cache|worker)(?:/|\\.rs$)": "cache",
     "^src/cli/(health)(?:/|\\.rs$)": "health",

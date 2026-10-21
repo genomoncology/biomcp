@@ -14,8 +14,8 @@
 {% if count == 0 -%}
 No articles found matching the filters.
 
-| Identifier | Title | Source(s) | Date | Why | Cit. |
-|---|---|---|---|---|---|
+| Identifier | Title | Source(s) | Date | Why | Cit. |{% if has_metadata_status %} Metadata status |{% endif %}
+|---|---|---|---|---|---|{% if has_metadata_status %}---|{% endif %}
 
 Try broader search terms or check spelling.
 {% else -%}
@@ -30,10 +30,10 @@ Found {{ count }} article{% if count != 1 %}s{% endif %}
 Ranking: {{ ranking_policy }}
 {% endif %}
 
-| Identifier | Title | Source(s) | Date | Why | Cit. |
-|---|---|---|---|---|---|
+| Identifier | Title | Source(s) | Date | Why | Cit. |{% if has_metadata_status %} Metadata status |{% endif %}
+|---|---|---|---|---|---|{% if has_metadata_status %}---|{% endif %}
 {% for article in rows -%}
-|{{ article.identifier }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.sources }}|{{ article.date | default("-") }}|{{ article.why }}|{{ article.citation_count | default("-") }}|
+|{{ article.identifier }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.sources }}|{{ article.date | default("-") }}|{{ article.why }}|{{ article.citation_count | default("-") }}|{% if has_metadata_status %}{{ article.metadata_status | default("-") }}|{% endif %}
 {% endfor %}
 {% if index_date_footer %}
 

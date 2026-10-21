@@ -9,6 +9,9 @@ This plan says what BioMCP builds next, why, and in what order. Read status from
 3. Process fixes from Ian's 2026-10-20 assessment that make the release path cheaper: one release document, release-only checks run earlier, the landing gate booking its real need, and removal of leftover pipeline scripts and re-stamping checkers.
 4. Full FDA approval history (2272), adopted with its recorded provider replies and normal source review.
 5. Feature coverage linked to outside-in behavior, with one valid baseline and a nightly/release floor. Complete records cleanup (2306) before the release rehearsal.
+6. Fixes Ian moved in from 0.9.5 after research's 0.9.4 recheck: the Rust toolchain pin and declared gate tools (2324, landed alone because it changes the gate), recovery of papers from dropped coding spellings (2327), BLENREP approvals for belantamab mafodotin (2328) and PubTator3 row status (2329).
+7. Then the cache hot path (2326), the credential cleanup (2332) and the merged release inventory (2333), which Ian moved in to clear every known issue.
+8. Fresh admission (2330) after all of these: final main check, Linux offline run and full untagged rehearsal on the new candidate. Ian publishes.
 
 Exit: every 0.9.4 ticket lands or is withdrawn, main passes its full local check, the Linux fresh-clone offline run passes, and one full manual release rehearsal passes on final main without a tag. Ian then authorizes the tag.
 

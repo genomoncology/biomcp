@@ -8,6 +8,37 @@ use std::sync::{
 };
 use std::time::Instant;
 
+// Keep atomic budget updates available on the declared minimum Rust version.
+// AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
+trait AtomicBudgetUpdate {
+    fn update_budget(
+        &self,
+        set: AtomicOrdering,
+        fetch: AtomicOrdering,
+        f: impl FnMut(usize) -> Option<usize>,
+    ) -> Result<usize, usize>;
+}
+
+impl AtomicBudgetUpdate for AtomicUsize {
+    fn update_budget(
+        &self,
+        set: AtomicOrdering,
+        fetch: AtomicOrdering,
+        mut f: impl FnMut(usize) -> Option<usize>,
+    ) -> Result<usize, usize> {
+        let mut previous = self.load(fetch);
+        loop {
+            let Some(next) = f(previous) else {
+                return Err(previous);
+            };
+            match self.compare_exchange_weak(previous, next, set, fetch) {
+                Ok(value) => return Ok(value),
+                Err(value) => previous = value,
+            }
+        }
+    }
+}
+
 use crate::entities::variant::{
     CarNormalizationItem, CarNormalizationStatus, NormalizedVariantAliases,
     RequestedVariantIdentity, VariantArticleResolution, VariantArticleResolutionContext,
@@ -46,12 +77,14 @@ use super::search::{
     acquire_federated_article_rows_with_context,
 };
 use super::{
-    ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
-    ArticleSourceAvailability, ArticleVariantIntent, MAX_FEDERATED_FETCH_RESULTS,
+    ArticleMetadataStatus, ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult,
+    ArticleSort, ArticleSource, ArticleSourceAvailability, ArticleVariantIntent,
+    MAX_FEDERATED_FETCH_RESULTS,
 };
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
 const MAX_EXACT_ALIASES: usize = 10;
+const MAX_RESOLVED_ALIASES: usize = 16;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -129,6 +162,8 @@ pub struct VariantArticleRow {
     pub provenance: Vec<VariantArticleProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VariantArticleIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -261,6 +296,7 @@ struct VariantArticleCallEvent {
     pages: usize,
     reason_code: Option<&'static str>,
     disabled_reason: Option<String>,
+    retry_attempted: bool,
 }
 
 /// One alias's yield from one source, as the route observed it before the
@@ -309,6 +345,7 @@ pub(crate) struct VariantArticleExecutionContext {
     query_aliases: Vec<String>,
     boolean_gene_aliases: Arc<Mutex<Vec<String>>>,
     boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
+    lexical_aliases: Arc<Mutex<Option<Vec<String>>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
     attempted_alias_sources: Arc<Mutex<BTreeSet<(String, String)>>>,
     boolean_query_omissions: Arc<Mutex<BTreeSet<(String, String)>>>,
@@ -359,6 +396,7 @@ impl VariantArticleExecutionContext {
             query_aliases: Vec::new(),
             boolean_gene_aliases: Arc::new(Mutex::new(Vec::new())),
             boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
+            lexical_aliases: Arc::new(Mutex::new(None)),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
             attempted_alias_sources: Arc::new(Mutex::new(BTreeSet::new())),
             boolean_query_omissions: Arc::new(Mutex::new(BTreeSet::new())),
@@ -439,11 +477,12 @@ impl VariantArticleExecutionContext {
             .limit
             .saturating_sub(verification_consumed);
         let target = count.min(available_for_verification);
-        let _ = self.allocation.identity_verification_reserved.fetch_update(
-            AtomicOrdering::SeqCst,
-            AtomicOrdering::SeqCst,
-            |current| (current < target).then_some(target),
-        );
+        let _ = self
+            .allocation
+            .identity_verification_reserved
+            .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                (current < target).then_some(target)
+            });
     }
 
     pub(crate) fn deadline_exhausted(&self) -> bool {
@@ -507,6 +546,14 @@ impl VariantArticleExecutionContext {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
             RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
         });
+    }
+
+    fn lexical_aliases(&self, selected: &[String]) -> Vec<String> {
+        self.lexical_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .unwrap_or_else(|| selected.to_vec())
     }
 
     fn for_alias(&self, alias: &str) -> Self {
@@ -595,7 +642,7 @@ impl VariantArticleExecutionContext {
             let reserve = |budget: &SharedWorkBudget| {
                 budget
                     .consumed
-                    .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                    .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                         (current < budget.limit).then(|| current + 1)
                     })
                     .is_ok()
@@ -620,7 +667,7 @@ impl VariantArticleExecutionContext {
             && self
                 .allocation
                 .identity_verification_consumed
-                .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                     (current
                         < self
                             .allocation
@@ -640,7 +687,7 @@ impl VariantArticleExecutionContext {
         let reserve = |budget: &SharedWorkBudget| {
             budget
                 .consumed
-                .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                     ((identity_verification || current.saturating_add(reserved) < budget.limit)
                         && current < budget.limit)
                         .then(|| current + 1)
@@ -717,6 +764,7 @@ impl VariantArticleExecutionContext {
                 pages,
                 reason_code,
                 disabled_reason: None,
+                retry_attempted: false,
             });
     }
 
@@ -728,10 +776,13 @@ impl VariantArticleExecutionContext {
         error: &BioMcpError,
     ) {
         let disabled_reason = crate::sources::disable::unavailable_disabled_reason(error);
+        let retry_failure = crate::sources::literature_retry::failure(error);
         let (status, reason_code) = if self.deadline.is_exhausted() {
             ("timed_out", "invocation_deadline")
         } else if disabled_reason.is_some() {
             ("unavailable", "source_disabled")
+        } else if let Some(failure) = retry_failure {
+            ("unavailable", failure.class)
         } else if variant_article_error_is_provider_timeout(error) {
             ("unavailable", "provider_timeout")
         } else if matches!(
@@ -763,10 +814,17 @@ impl VariantArticleExecutionContext {
                 pages: 0,
                 reason_code: Some(reason_code),
                 disabled_reason: disabled_reason.map(str::to_string),
+                retry_attempted: retry_failure.is_some_and(|failure| failure.retry_attempted),
             });
     }
 
-    pub(crate) fn record_cancelled(&self, route: &str, source: &str, started: Instant) {
+    pub(crate) fn record_cancelled(
+        &self,
+        route: &str,
+        source: &str,
+        started: Instant,
+        failure: Option<crate::sources::literature_retry::Failure>,
+    ) {
         let (status, reason_code) = if self.deadline_exhausted() {
             ("timed_out", "invocation_deadline")
         } else {
@@ -781,8 +839,9 @@ impl VariantArticleExecutionContext {
                 status: status.into(),
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages: 0,
-                reason_code: Some(reason_code),
+                reason_code: Some(failure.map_or(reason_code, |failure| failure.class)),
                 disabled_reason: None,
+                retry_attempted: failure.is_some_and(|failure| failure.retry_attempted),
             });
     }
 
@@ -802,6 +861,7 @@ impl VariantArticleExecutionContext {
                     "logical_work_cap"
                 }),
                 disabled_reason: None,
+                retry_attempted: false,
             });
     }
 
@@ -1033,6 +1093,7 @@ impl VariantArticleExecutionContext {
                 pages: 0,
                 reason_code: Some("no_variant_entity"),
                 disabled_reason: None,
+                retry_attempted: false,
             });
     }
 }
@@ -1243,6 +1304,8 @@ pub struct CompactVariantArticleRow {
     pub is_retracted: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VariantArticleIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1488,6 +1551,14 @@ fn aggregate_source_status(
     }
 }
 
+fn name_retry_failure(status: &mut VariantArticleSourceStatus) {
+    if status.reason_codes.contains(&"rate_limited") {
+        let detail = status.detail.get_or_insert_default();
+        detail.push_str("; ");
+        detail.push_str(crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX);
+    }
+}
+
 /// Keep the configured disable setting beside the shared status ledger.
 fn name_disabled_source<'a>(
     status: &mut VariantArticleSourceStatus,
@@ -1541,6 +1612,10 @@ fn provider_statuses_for_route(
                 .filter_map(|event| event.reason_code)
                 .collect();
             let mut status = aggregate_source_status(route, &source, work, reasons);
+            if events.iter().any(|event| event.retry_attempted) {
+                status.reason_codes.push("retry_attempted");
+            }
+            name_retry_failure(&mut status);
             name_disabled_source(&mut status, events.into_iter());
             status
         })
@@ -1626,6 +1701,10 @@ fn terminal_reconciled_statuses(
                 });
             }
             let mut status = aggregate_source_status(&route, &source, work, reasons);
+            if matching.iter().any(|event| event.retry_attempted) {
+                status.reason_codes.push("retry_attempted");
+            }
+            name_retry_failure(&mut status);
             name_disabled_source(&mut status, matching.into_iter());
             if planned == 0 && started == 0 {
                 status.status = VariantArticleSourceStatusKind::Ok;
@@ -1966,6 +2045,29 @@ async fn resolve_search_context(
     ) && context.available
     {
         truncated |= expand_gene_symbol_aliases(&context, &mut aliases, execution).await;
+    }
+    // Save the original source/CAR and gene-symbol selection before strict
+    // coding discovery changes either its ordinary or Boolean provider plans.
+    *execution
+        .lexical_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(aliases.clone());
+    if strategy == VariantArticleStrategy::Union {
+        let boolean_variants = execution
+            .boolean_variant_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        if boolean_variants.is_empty() {
+            (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
+        } else {
+            let (expanded, cut) = coding_discovery_aliases(&context, &boolean_variants);
+            *execution
+                .boolean_variant_aliases
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = expanded;
+            truncated |= cut;
+        }
     }
     Ok((context, canonical_equivalence, aliases, truncated))
 }
@@ -2309,6 +2411,36 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     (aliases, truncated)
 }
 
+/// Add bounded coding discovery without evicting the lexical route's old queries.
+fn coding_discovery_aliases(
+    context: &VariantArticleResolutionContext,
+    legacy: &[String],
+) -> (Vec<String>, bool) {
+    if context.requested.is_authoritative_refseq() {
+        return (legacy.to_vec(), false);
+    }
+    let mut aliases = all_exact_aliases(context);
+    let mut ordered = Vec::new();
+    if !aliases.is_empty() {
+        ordered.push(aliases.remove(0));
+    }
+    let (coding, other): (Vec<_>, Vec<_>) = aliases.into_iter().partition(|alias| {
+        alias
+            .split_once(' ')
+            .is_some_and(|(_, change)| change.starts_with("c."))
+    });
+    ordered.extend(coding);
+    ordered.extend(other);
+    for alias in legacy {
+        if !ordered.contains(alias) {
+            ordered.push(alias.clone());
+        }
+    }
+    let truncated = ordered.len() > MAX_RESOLVED_ALIASES;
+    ordered.truncate(MAX_RESOLVED_ALIASES);
+    (ordered, truncated)
+}
+
 fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -2481,7 +2613,7 @@ fn alias_coverage(
             );
         }
         if resolved {
-            planned.extend(selected.iter().cloned());
+            planned.extend(execution.lexical_aliases(selected));
         } else {
             planned.extend(fallback_aliases(input, context).0);
         }
@@ -2520,16 +2652,16 @@ fn alias_coverage(
                 "strategy_does_not_query_alias"
             } else if execution.deadline_exhausted() {
                 "invocation_deadline"
-            } else if execution.route_stopped("strict")
-                || execution.route_stopped("exact_lexical")
-                || execution.route_stopped("exact_name")
-            {
-                "logical_work_cap"
             } else if let Some(reason) = setup_failures
                 .get(&alias)
                 .and_then(|reasons| reasons.first())
             {
                 reason
+            } else if execution.route_stopped("strict")
+                || execution.route_stopped("exact_lexical")
+                || execution.route_stopped("exact_name")
+            {
+                "logical_work_cap"
             } else {
                 "no_provider_query_available"
             };
@@ -3383,12 +3515,15 @@ fn pmid_seed(pmid: String) -> ArticleSearchResult {
 fn select_hydrated_source_hit(
     hits: Vec<crate::sources::myvariant::MyVariantHit>,
     source_key: Option<&str>,
+    build: Option<crate::entities::variant::GenomeBuild>,
 ) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
     hits.into_iter()
         .filter(|hit| {
             source_key.is_none_or(|key| {
-                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
-                    .normalized_key()
+                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit_with_build(
+                    hit, build,
+                )
+                .normalized_key()
                     == key
             })
         })
@@ -3429,10 +3564,19 @@ async fn citation_candidates(
                 return Ok((Vec::new(), true));
             }
         };
+        // Unqualified MyVariant requests already use GRCh37. Carry a
+        // resolved non-default build through hydration and identity checking.
+        let build = context.source_identity.as_ref().and_then(|identity| {
+            identity
+                .genome_build
+                .parse()
+                .ok()
+                .filter(|build| *build != crate::entities::variant::GenomeBuild::Grch37)
+        });
         let result = client
-            .get_all(&retained_hit.id)
+            .get_all(&retained_hit.id, build)
             .await
-            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
+            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref(), build));
         match result {
             Ok(hit) => (Some(hit), Some(unit)),
             Err(error) => {
@@ -3608,17 +3752,20 @@ fn rank_candidates(candidates: &mut [ArticleCandidate]) {
 async fn enrich_candidates(
     candidates: &mut [ArticleCandidate],
     execution: &VariantArticleExecutionContext,
-) {
+) -> BTreeMap<String, ArticleMetadataStatus> {
     let mut rows = candidates
         .iter()
         .map(|candidate| candidate.row.clone())
         .collect::<Vec<_>>();
     let _ =
         enrich_article_search_rows_with_semantic_scholar_context(&mut rows, Some(execution)).await;
-    enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution)).await;
+    let (_, metadata_status) =
+        enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution))
+            .await;
     for (candidate, row) in candidates.iter_mut().zip(rows) {
         candidate.row = row;
     }
+    metadata_status
 }
 
 fn plan_queries(
@@ -3626,9 +3773,29 @@ fn plan_queries(
     context: &VariantArticleResolutionContext,
     route: &str,
     exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
 ) -> Vec<String> {
     match route {
-        "strict" | "exact_lexical" => exact_aliases.to_vec(),
+        "strict" => {
+            let mut aliases = Vec::new();
+            for plan in provider_variant_query_plan_with_gene_aliases(
+                input,
+                context,
+                VariantArticleStrategy::Lexical,
+                exact_aliases,
+                execution,
+            ) {
+                if plan.route == "strict" {
+                    for alias in plan.coverage_aliases {
+                        if !aliases.contains(&alias) {
+                            aliases.push(alias);
+                        }
+                    }
+                }
+            }
+            aliases
+        }
+        "exact_lexical" => execution.lexical_aliases(exact_aliases),
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -3985,7 +4152,8 @@ fn materialize_discovery_route_plans(
             "exact_lexical",
             source,
             exact_applicable.then(|| {
-                exact_aliases
+                execution
+                    .lexical_aliases(exact_aliases)
                     .iter()
                     .filter(|alias| {
                         !matches!(source, "pubmed" | "europepmc")
@@ -4156,7 +4324,7 @@ fn build_debug_plan(
             let queries = if route == "pubtator_variant" {
                 execution.pubtator_variant_queries()
             } else {
-                plan_queries(input, context, route, canonical_aliases)
+                plan_queries(input, context, route, canonical_aliases, execution)
             };
             let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
             for event in events.iter().filter(|event| event.route == route) {
@@ -4771,7 +4939,7 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
             let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
-                selected_exact_aliases.clone(),
+                execution.lexical_aliases(&selected_exact_aliases),
                 selected_exact_aliases_truncated,
                 &execution,
             )
@@ -5025,7 +5193,7 @@ async fn search_variant_articles_identity(
         .skip(offset)
         .take(limit)
         .collect::<Vec<_>>();
-    enrich_candidates(&mut visible_candidates, &execution).await;
+    let mut metadata_status = enrich_candidates(&mut visible_candidates, &execution).await;
     // Rebuild after every identity, enrichment, and LDH unit settles, retaining
     // only zero-work/skipped skeleton rows without real events.
     // Keep each route's specific applicability explanation while the terminal
@@ -5098,6 +5266,7 @@ async fn search_variant_articles_identity(
                 .into_iter()
                 .collect();
             VariantArticleRow {
+                metadata_status: metadata_status.remove(&candidate.row.pmid),
                 article: candidate.row,
                 requested_variant: context.requested.clone(),
                 matched_aliases,
@@ -5144,6 +5313,9 @@ async fn search_variant_articles_identity(
         &canonical_equivalence,
         &execution,
     );
+    let aliases_omitted = alias_coverage.iter().any(|row| row.reason == "alias_limit");
+    let complete = complete && !aliases_omitted;
+    let truncated = truncated || aliases_omitted;
     let debug_plan = include_debug_plan.then(|| {
         let mut plan = build_debug_plan(
             input,
@@ -5534,6 +5706,7 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         rank: row.rank,
         is_retracted: row.article.is_retracted,
         identity: row.identity,
+        metadata_status: row.metadata_status,
     }
 }
 
@@ -5817,6 +5990,66 @@ mod tests {
         let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_DISABLE_SOURCES", "mygene-info");
         env
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn cancelled_literature_leg_retains_an_admitted_retry() {
+        let sends = Arc::new(AtomicUsize::new(0));
+        let observed = sends.clone();
+        let admitted = Arc::new(tokio::sync::Notify::new());
+        let notify = admitted.clone();
+        let (_release, hold) = crate::entities::article::test_support::held_reply_gate();
+        let mut fixture = TestHttpFixture::spawn(move |_| {
+            if observed.fetch_add(1, AtomicOrdering::SeqCst) == 0 {
+                TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                ))
+            } else {
+                notify.notify_one();
+                TestHttpReply::Hold(hold.clone())
+            }
+        })
+        .await;
+        let mut env = TestEnv::scratch_cache_only();
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(60));
+        let execution = VariantArticleExecutionContext::single_with_deadline(deadline.clone());
+        let filters = article_filters();
+        crate::sources::with_variant_article_deadline(deadline,
+            crate::sources::literature_retry::within_leg(
+                crate::test_support::hang_timeout(),
+                crate::sources::literature_retry::Observation::default(),
+                async {
+                    // Cancel the real provider leg only after transport has
+                    // admitted its second send. The source timeout owns this
+                    // same drop boundary; no clock or network reply is faked.
+                    tokio::time::timeout(crate::test_support::hang_timeout(), async { tokio::select! {
+                        biased;
+                        _ = admitted.notified() => {},
+                        result = search_europepmc_page_with_context(&filters, 1, 0, Some(&execution), "exact_name", Some("BRAF V600E")) => {
+                            panic!("held retry unexpectedly completed: {}", result.is_ok());
+                        },
+                    }}).await.expect("provider leg did not admit retry");
+                }
+            )
+        ).await;
+        assert_eq!(sends.load(AtomicOrdering::SeqCst), 2);
+        let statuses = provider_statuses_for_route("exact_name", &execution.events());
+        let status = statuses
+            .iter()
+            .find(|row| row.source == "europepmc")
+            .expect("cancelled provider status");
+        assert!(status.reason_codes.contains(&"timeout"), "{status:?}");
+        assert!(
+            status.reason_codes.contains(&"retry_attempted"),
+            "{status:?}"
+        );
+        fixture.finish().unwrap();
     }
 
     fn resolved_context() -> VariantArticleResolutionContext {
@@ -8410,7 +8643,7 @@ mod tests {
 
     #[test]
     fn missing_confirmed_record_during_citation_hydration_is_unavailable() {
-        let error = select_hydrated_source_hit(Vec::new(), Some("missing"))
+        let error = select_hydrated_source_hit(Vec::new(), Some("missing"), None)
             .expect_err("a stale confirmed record must not become healthy empty coverage");
         assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     }
@@ -8479,6 +8712,7 @@ mod tests {
                 &context,
                 "pubtator_variant",
                 &[],
+                &VariantArticleExecutionContext::single(),
             )
             .is_empty()
         );
@@ -8880,6 +9114,7 @@ mod tests {
             pages: 1,
             reason_code: None,
             disabled_reason: None,
+            retry_attempted: false,
         };
         let unavailable = VariantArticleCallEvent {
             status: "unavailable".into(),
@@ -9340,6 +9575,7 @@ mod tests {
         candidate.row.is_retracted = None;
         candidate.row.abstract_snippet = Some("verbose".into());
         let compact = compact_row(VariantArticleRow {
+            metadata_status: None,
             article: candidate.row,
             requested_variant: RequestedVariantIdentity::default(),
             matched_aliases: vec!["BRAF V600E".into()],

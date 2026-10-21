@@ -157,7 +157,7 @@ executable provenance and PATH diagnostics.
 resolved cache path, total blob inventory, referenced blob bytes used for
 enforcement, HTTP entry count, article-session count, orphan count, age range,
 and the resolved cache limits including `min_disk_free`; under `--json`, it
-returns the same contract as a JSON object. It also names legacy store sizes without deleting those stores.
+returns the same contract as a JSON object. Opening the cache removes retired reusable stores before stats reports their sizes.
 
 `biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]`
 is the targeted maintenance command for the same cache family. It always removes
@@ -889,6 +889,8 @@ each entry includes bounded work counts and reason codes. Completed rows are
 returned on timeout. An incomplete zero-row result exits one and carries a
 bounded structured error; healthy empty and known offset-beyond-total pages
 remain successful.
+
+A failed visible metadata fallback adds `metadata_status` to each affected full or compact JSON row with `status: "incomplete"`, `missing_fields`, `source: "pubtator"`, and the existing `failure_class`. `missing_fields` names absent or unconfirmed metadata and includes zero citation counts that require recovery. Markdown shows the same fields and cause on that row. The warning names its PMID and the same fields and cause. Fully recovered rows omit the status.
 
 ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
 

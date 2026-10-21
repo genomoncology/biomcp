@@ -46,7 +46,7 @@ Cache runtime precedence is environment, then `cache.toml`, then the built-in de
 
 Saved article files remain readable at the returned `full_text_path` under `downloads/`. These files and explicit `--out` exports survive both `cache clean` and `cache clear`. Clearing the cache removes reusable database entries and article sessions. A later full-text request can recreate reusable text without removing a saved artifact.
 
-The new database starts empty and does not import, delete or maintain old-version cache stores. Older binaries continue writing their own stores until upgraded. After upgrading every process that uses the cache, run `biomcp cache clean-legacy` to remove `http/`, `http-cacache/`, `citation-evidence/` and `captures/`. This command asks for interactive confirmation; pass `--yes` for a noninteractive cleanup. It preserves saved `downloads/`, the current database and blobs, and sessions. Stop old processes before this explicit cleanup so they cannot recreate those stores.
+BioMCP removes retired reusable cache stores automatically when it opens the cache. It never imports their request indexes. The upgrade also discards older SQLite entries and large response blobs because they may retain authentication data. Saved downloads and article sessions remain. Stop older processes before upgrading so they cannot recreate retired stores. `cache clean-legacy --yes` remains available for explicit cleanup.
 
 BioMCP creates private managed directories and files. On Unix, directories have mode 0700 and files have mode 0600. SQLite owns database locking; linked database and blob files are refused. Normal cache lookups and size accounting do not walk response directories.
 

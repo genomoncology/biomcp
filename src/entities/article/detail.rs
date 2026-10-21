@@ -245,7 +245,12 @@ fn semantic_scholar_enrichment_from_paper(
 
 pub(super) fn is_pubtator_lag_error(err: &BioMcpError) -> bool {
     match err {
-        BioMcpError::WithSourceContext { source, .. } => is_pubtator_lag_error(source),
+        BioMcpError::WithSourceContext { context, source } => {
+            (context.provider() == crate::error::SourceProvider::PUBTATOR3
+                && crate::sources::literature_retry::failure(source)
+                    .is_some_and(|failure| matches!(failure.http_status, Some(400 | 404))))
+                || is_pubtator_lag_error(source)
+        }
         BioMcpError::Api { api, message } => {
             (api == "pubtator3" || api == crate::error::SourceProvider::PUBTATOR3.label())
                 && (message.contains("HTTP 400") || message.contains("HTTP 404"))
