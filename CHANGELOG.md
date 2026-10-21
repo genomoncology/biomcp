@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Report safe HTTP status and failure categories in recording diagnostics while withholding response values and credentials. (2330)
+
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)
 - Measure outside-in Rust coverage by executable source region so unrun closures remain visible on covered lines, and bootstrap the pinned license checker from verified release archives. (2342)
 
