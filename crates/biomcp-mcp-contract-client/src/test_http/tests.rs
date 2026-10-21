@@ -26,9 +26,7 @@ fn parallel_fixtures_serve_after_idle_partial_and_disconnected_clients() {
                     disconnected.write_all(b"GET /").unwrap();
                 }
                 let mut survivor = Client::connect(address).unwrap();
-                survivor
-                    .set_read_timeout(Some(hang_timeout()))
-                    .unwrap();
+                survivor.set_read_timeout(Some(hang_timeout())).unwrap();
                 survivor.write_all(b"GET /survivor HTTP/1.1\r\n").unwrap();
                 survivor.write_all(b"Host: localhost\r\n\r\n").unwrap();
                 let mut response = String::new();

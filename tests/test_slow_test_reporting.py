@@ -62,6 +62,7 @@ def test_python_slow_warning_preserves_test_result(
 @pytest.mark.parametrize("messages", [
     "PASS [6.000s] probe test_slow_case",
     "SLOW [> 6.000s] probe test_slow_case\\nSLOW [> 10.000s] probe test_slow_case\\nPASS [11.000s] probe test_slow_case",
+    "SLOW [> 5.000s] (───) probe test_slow_case\\nPASS [6.006s] (1/1) probe test_slow_case",
 ])
 def test_nextest_load_reporting_preserves_runner_exit(exit_code: int, messages: str) -> None:
     result = subprocess.run(

@@ -1,4 +1,4 @@
-# Routine timing reports slow cases without terminating them. Exhaustive
+# Routine timing warns at each period; termination catches hung tests. Exhaustive
 # cases use a long_suite_ name and run explicitly at release candidate.
 [profile.default]
 slow-timeout = { period = "5s", terminate-after = 24 }

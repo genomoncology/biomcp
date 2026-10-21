@@ -166,12 +166,6 @@ pub(crate) fn bounded_join<T>(worker: std::thread::JoinHandle<T>) -> std::thread
     worker.join()
 }
 
-/// A sub-second watchdog window under the same stretch, for the
-/// deadline-transition proofs whose semantic windows are milliseconds.
-pub(crate) fn watchdog_millis(millis: u64) -> Duration {
-    Duration::from_millis((millis as f64 * timeout_scale()).round() as u64)
-}
-
 fn timeout_scale() -> f64 {
     static SCALE: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
     *SCALE.get_or_init(|| {

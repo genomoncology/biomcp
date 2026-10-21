@@ -32,14 +32,15 @@ def main() -> int:
         for line in process.stdout:
             print(line, end="", flush=True)
             timing = re.match(r"\s*(?:SLOW|PASS|FAIL|TIMEOUT)\s+\[\s*>?\s*([0-9.]+)s\]\s+(.*)", line)
-            if timing and (float(timing.group(1)) > threshold or line.lstrip().startswith("SLOW")) and timing.group(2) not in warned:
-                warned.add(timing.group(2))
+            identity = re.sub(r"^\([^)]*\)\s+", "", timing.group(2)) if timing else ""
+            if timing and (float(timing.group(1)) > threshold or line.lstrip().startswith("SLOW")) and identity not in warned:
+                warned.add(identity)
                 try:
                     load = f"{os.getloadavg()[0]:.2f}"
                 except (AttributeError, OSError):
                     load = "unavailable"
                 print(
-                    f"WARNING slow test {timing.group(2)} ({timing.group(1)}s); load (1 min): {load}",
+                    f"WARNING slow test {identity} ({timing.group(1)}s); load (1 min): {load}",
                     flush=True,
                 )
         status = process.wait()
