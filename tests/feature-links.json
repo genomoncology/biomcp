@@ -714,29 +714,213 @@
     "^src/entities/": "source-policy"
   },
   "source_cases": {
-    "^src/(?:cache/citation_evidence|entities/article/citation_evidence|cli/article/citation_evidence|transform/article/jats/citation_evidence)(?:/|\\.rs$)": {
+    "^src/(?:cache/citation_evidence|entities/article/(?:graph/)?citation_evidence|cli/article/citation_evidence|transform/article/jats/(?:citation_evidence|refs/citation))(?:/|\\.rs$)": {
       "feature": "article",
       "case": "spec/entity/article.md::block-100"
     },
-    "^src/utils/fs_lock\\.rs$": {
+    "^src/(?:cli/article/session|entities/article/(?:variant_search|search|backends|candidates|route|routing))(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "tests/test_variant_article_exact_fulltext.py::test_exact_name_searches_fulltext_with_source_specific_yields"
+    },
+    "^src/sources/(pmc_oa|pmc_article|figshare)(?:/|\\.rs$)": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/render/markdown/drug(?:_regulatory)?(?:/|\\.rs$)": {
+      "feature": "drug",
+      "case": "tests/test_drug_regulatory_replay.py::test_safety_displays_the_source_label_effective_date"
+    },
+    "^src/render/markdown/related/article_support\\.rs$": {
+      "feature": "article",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-article-20516115-markdown]"
+    },
+    "^src/sources/(quickgo|string|hpa)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
+    },
+    "^src/sources/(openfda|fda_orphan)(?:/|\\.rs$)": {
+      "feature": "drug",
+      "case": "tests/test_drug_regulatory_replay.py::test_regulatory_rolls_up_data_empty_and_unavailable_parts"
+    },
+    "^src/render/markdown/pharmacodb(?:/|\\.rs$)": {
+      "feature": "cell-line",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-cell-line-cvcl0064-variants-xrefs-markdown]"
+    },
+    "^src/(?:cli/chart|render/chart)(?:/|\\.rs$)": {
+      "feature": "study",
+      "case": "spec/entity/study.md::block-18"
+    },
+    "^src/render/markdown/cell_line(?:/|\\.rs$)": {
+      "feature": "cell-line",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-cell-line-cvcl0064-variants-xrefs-markdown]"
+    },
+    "^src/render/markdown/article(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-article-20516115-markdown]"
+    },
+    "^src/render/markdown/disease(?:/|\\.rs$)": {
+      "feature": "disease",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-disease-mondo0005105-markdown]"
+    },
+    "^src/render/markdown/protein(?:/|\\.rs$)": {
+      "feature": "protein",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-protein-p15056-markdown]"
+    },
+    "^src/render/markdown/pathway(?:/|\\.rs$)": {
+      "feature": "pathway",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-pathway-r-hsa-5673001-genes-events-markdown]"
+    },
+    "^src/render/markdown/variant(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-variant-braf-v600e-markdown]"
+    },
+    "^src/render/markdown/adverse_event\\.rs$": {
+      "feature": "adverse-event",
+      "case": "tests/adverse_event_route_contract.rs::broad_device_markdown_names_death_or_injury"
+    },
+    "^src/sources/(clingen_cspec)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "spec/entity/clingen-cspec.md::block-1"
+    },
+    "^src/sources/(clingen_erepo)(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "spec/entity/clingen-erepo.md::block-1"
+    },
+    "^src/render/markdown/author(?:/|\\.rs$)": {
+      "feature": "author",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-author-orcid-4299-3018-markdown]"
+    },
+    "^src/entities/article/graph(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "spec/entity/article-graph-live.md::block-1"
+    },
+    "^src/sources/(nih_reporter)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-erbb2-funding-markdown]"
+    },
+    "^src/sources/(opentargets)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-egfr-druggability-markdown]"
+    },
+    "^src/render/markdown/gene(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
+    },
+    "^src/render/markdown/diagnostic\\.rs$": {
+      "feature": "diagnostic",
+      "case": "spec/entity/diagnostic.md::block-5"
+    },
+    "^src/cli/shared/search_payloads\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[search-gene-braf-json]"
+    },
+    "^src/render/markdown/pgx(?:/|\\.rs$)": {
+      "feature": "pgx",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-pgx-cyp2d6-guidelines-markdown]"
+    },
+    "^src/render/markdown/discovery\\.rs$": {
+      "feature": "discovery",
+      "case": "spec/surface/discover.md::block-1"
+    },
+    "^src/render/markdown/funding\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-erbb2-funding-markdown]"
+    },
+    "^src/cache/provider_capture\\.rs$": {
+      "feature": "gene",
+      "case": "spec/entity/clingen-cspec.md::block-1"
+    },
+    "^src/entities/article/batch\\.rs$": {
+      "feature": "article",
+      "case": "tests/article_batch_outcome.rs::fixture_backed_batches_match_independent_literal_goldens"
+    },
+    "^src/render/markdown/study\\.rs$": {
+      "feature": "study",
+      "case": "spec/entity/study.md::block-2"
+    },
+    "^src/sources/(gencc)(?:/|\\.rs$)": {
       "feature": "gene",
       "case": "spec/entity/gene.md::block-10"
     },
-    "^src/utils/date\\.rs$": {
-      "feature": "article",
-      "case": "tests/article_usage_stderr.rs::invalid_article_date_is_clean_usage_error"
+    "^src/cli/outcome/mcp_chart\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "tests/rmcp_client_contract.rs::rmcp_child_process_client_verifies_stdio_chart_contract"
     },
     "^src/utils/(query|serde)\\.rs$": {
       "feature": "gene",
       "case": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol"
     },
-    "^src/utils/sync\\.rs$": {
-      "feature": "cache",
-      "case": "tests/test_cache_persistent_size.py::test_concurrent_short_processes_do_not_lose_size_reservations"
+    "^src/cli/system/who_sync\\.rs$": {
+      "feature": "source-policy",
+      "case": "tests/test_disable_sources_replay_walk.py::test_every_disabled_source_id_stops_its_own_requests"
     },
     "^src/utils/download\\.rs$": {
       "feature": "output-safety",
       "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/cli/list(?:/|\\.rs$)": {
+      "feature": "cli-reference",
+      "case": "tests/test_json_list_contract.py::test_json_list_outputs_are_parseable_reference_objects"
+    },
+    "^src/cli/mcp_config\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "spec/surface/mcp.md::block-4"
+    },
+    "^src/cli/debug_plan\\.rs$": {
+      "feature": "article",
+      "case": "spec/entity/article.md::block-5"
+    },
+    "^src/utils/fs_lock\\.rs$": {
+      "feature": "gene",
+      "case": "spec/entity/gene.md::block-10"
+    },
+    "^src/transform/mod\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/render/json\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/cache/clean\\.rs$": {
+      "feature": "cache",
+      "case": "tests/test_cache_persistent_size.py::test_explicit_cleanup_previews_then_removes_committed_cache_bytes"
+    },
+    "^src/cache/clear\\.rs$": {
+      "feature": "cache",
+      "case": "tests/cache_clear.rs::cache_clear_yes_json_reports_machine_shape"
+    },
+    "^src/utils/date\\.rs$": {
+      "feature": "article",
+      "case": "tests/article_usage_stderr.rs::invalid_article_date_is_clean_usage_error"
+    },
+    "^src/utils/sync\\.rs$": {
+      "feature": "cache",
+      "case": "tests/test_cache_persistent_size.py::test_concurrent_short_processes_do_not_lose_size_reservations"
+    },
+    "^src/cli/update\\.rs$": {
+      "feature": "install-update",
+      "case": "tests/golden/live/test_install_update.py::test_published_install_checks_and_updates_to_latest_release"
+    },
+    "^src/cli/shared\\.rs$": {
+      "feature": "cli-controls",
+      "case": "tests/cli_global_modifiers.rs::json_help_forms_are_success_objects_on_stdout"
+    },
+    "^src/cli/types\\.rs$": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/utils/mod\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "tests/rmcp_client_contract.rs::rmcp_stdio_recovers_from_tool_panic_on_the_same_session"
+    },
+    "^src/cli/(?:commands|shared/get_notes|worker|outcome|response_contract|system|mod)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/render/(?:markdown|human|mod)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
     }
   }
 }
