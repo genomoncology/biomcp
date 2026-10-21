@@ -4,6 +4,18 @@ set -euo pipefail
 # Run the installed artifact without the caller's configuration or credentials.
 BIOMCP="$1"
 expected="$2"
+# Prefer the wheel's interpreter; GitHub's Python setup also supplies a PATH fallback.
+smoke_python=""
+for candidate in "$(dirname "$BIOMCP")/python" "$(dirname "$BIOMCP")/../python.exe" python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    smoke_python="$(command -v "$candidate")"
+    break
+  fi
+done
+if [ -z "$smoke_python" ]; then
+  echo "installed wheel smoke requires Python to parse JSON" >&2
+  exit 1
+fi
 smoke_root="$(mktemp -d)"
 trap 'rm -rf "$smoke_root"' EXIT
 mkdir "$smoke_root/home"
@@ -16,9 +28,30 @@ env -i USERNAME="${USERNAME:-}" PATH="$PATH" SYSTEMROOT="${SYSTEMROOT:-}" WINDIR
   HOME="$smoke_home" USERPROFILE="$smoke_home" \
   LOCALAPPDATA="$smoke_home/AppData/Local" APPDATA="$smoke_home/AppData/Roaming" \
   BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar \
-  bash --noprofile --norc -euo pipefail -s -- "$BIOMCP" "$expected" <<'SMOKE'
+  bash --noprofile --norc -euo pipefail -s -- "$BIOMCP" "$expected" "$smoke_python" <<'SMOKE'
 BIOMCP="$1"
 expected="$2"
+smoke_python="$3"
+
+require_json_object() {
+  if ! printf '%s' "$output" | "$smoke_python" -c '
+import json, sys
+
+def reject_constant(value):
+    raise ValueError("invalid JSON constant: " + value)
+
+try:
+    value = json.load(sys.stdin, parse_constant=reject_constant)
+    if not isinstance(value, dict):
+        raise ValueError("expected an object")
+except ValueError as error:
+    print("JSON object required from: biomcp " + sys.argv[1] + ": " + str(error), file=sys.stderr)
+    sys.exit(1)
+' "$*"; then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+}
 
 printed="$("$BIOMCP" --version 2>&1)" || {
   printf '%s\n' "$printed" >&2
@@ -29,19 +62,18 @@ if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp $expected" ]; then
   echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2
   exit 1
 fi
-stats="$("$BIOMCP" cache stats --json 2>&1)" || {
-  printf '%s\n' "$stats" >&2
+smoke_stderr="$(mktemp)"
+trap 'rm -f "$smoke_stderr"' EXIT
+output="$("$BIOMCP" cache stats --json 2>"$smoke_stderr")" || {
+  printf '%s\n' "$output" >&2
+  cat "$smoke_stderr" >&2
   echo "installed wheel cache stats failed" >&2
   exit 1
 }
-case "$stats" in
-  "{"*) ;;
-  *) echo "cache stats must print a JSON object, got: $stats" >&2; exit 1 ;;
-esac
+cat "$smoke_stderr" >&2
+require_json_object cache stats --json
 
 
-smoke_stderr="$(mktemp)"
-trap 'rm -f "$smoke_stderr"' EXIT
 
 require_exit() {
   sleep 1
@@ -76,10 +108,7 @@ require_json() {
     echo "json mode must exit 0 from: biomcp $* (exit $status)" >&2
     return 1
   fi
-  case "$output" in
-    "{"*) ;;
-    *) printf '%s\n' "$output" >&2; echo "json mode must print an object from: biomcp $*" >&2; return 1 ;;
-  esac
+  require_json_object "$@" || return 1
   if printf '%s\n' "$output" | grep -q "skill asset"; then
     printf '%s\n' "$output" >&2
     echo "skill asset error from: biomcp $*" >&2
@@ -137,6 +166,18 @@ output="$("$BIOMCP" skill article-follow-up 2>&1)" || status=$?
 printf '%s\n' "$output" | sed -n '1,20p'
 if [ "$status" -ne 0 ] || ! printf '%s\n' "$output" | grep -q "Article follow-up via citations and recommendations"; then
   echo "skill article-follow-up must show its content (exit $status): #287 regression: $output" >&2
+  exit 1
+fi
+require_exit 0 skill render
+rendered_skill="$output"
+if ! grep -q '^# BioMCP CLI' <<< "$rendered_skill"; then
+  echo "skill render must show the BioMCP CLI guidance" >&2
+  exit 1
+fi
+require_exit 0 skill install "$HOME/smoke-agent"
+installed_skill="$HOME/smoke-agent/skills/biomcp/SKILL.md"
+if [ ! -f "$installed_skill" ] || [ "$(cat "$installed_skill")" != "$rendered_skill" ]; then
+  echo "skill install must write the rendered BioMCP CLI guidance" >&2
   exit 1
 fi
 status=0

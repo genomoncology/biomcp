@@ -63,6 +63,13 @@ elif args == ['skill', 'list']:
     print('article-follow-up')
 elif args == ['skill', 'article-follow-up']:
     print('Article follow-up via citations and recommendations')
+elif args == ['skill', 'render']:
+    print('wrong skill' if FAULT == 'skill-render' else '# BioMCP CLI')
+elif args[:2] == ['skill', 'install']:
+    target = pathlib.Path(args[2]) / 'skills' / 'biomcp'
+    target.mkdir(parents=True)
+    (target / 'SKILL.md').write_text('wrong skill' if FAULT == 'skill-install' else '# BioMCP CLI\\n')
+    print('Installed BioMCP skills')
 elif args == ['chart', 'bar']:
     print('Bar Chart')
 elif FAULT == 'panic':
@@ -80,7 +87,9 @@ else:
 @pytest.mark.parametrize("fault,details", [
     ("cold-root", ("missing cache ancestor", "cache stderr detail")),
     ("json", ("json stdout detail", "json stderr detail")),
-    ("json-shape", ("json shape stdout detail", "json mode must print an object")),
+    ("json-shape", ("json shape stdout detail", "JSON object required")),
+    ("skill-render", ("skill render must show the BioMCP CLI guidance",)),
+    ("skill-install", ("skill install must write the rendered BioMCP CLI guidance",)),
     ("panic", ("panic stdout detail", "panic stderr detail")),
     ("faers", ("unexpected FAERS response", "expected a successful FAERS not-found response")),
     ("", ()),
