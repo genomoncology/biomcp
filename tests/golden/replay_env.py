@@ -10,8 +10,6 @@ accept a loopback base override.
 
 from __future__ import annotations
 
-from hang_guard import HANG_TIMEOUT
-
 import json
 import os
 import shlex
@@ -28,6 +26,7 @@ from typing import Iterator
 # The replay fixture is also imported by standalone subprocess probes.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cache_fixture import set_cache_root  # noqa: E402
+from hang_guard import HANG_TIMEOUT  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPLAY_SERVER = REPO_ROOT / "tools" / "replay-server"
@@ -153,7 +152,7 @@ class ReplayEnvironment:
         self,
         binary: Path,
         argv: tuple[str, ...],
-        timeout: float = 120.0,
+        timeout: float = HANG_TIMEOUT,
         *,
         text: bool = True,
     ) -> ReplayRun:

@@ -27,7 +27,7 @@ def test_failed_replay_case_keeps_cache_and_log_while_passing_case_cleans_up(
 import json, os, subprocess
 from pathlib import Path
 import pytest
-from replay_env import replay_environment, retained_cache_env
+from replay_env import replay_environment, retained_cache_env, HANG_TIMEOUT
 
 @pytest.fixture
 def replayed_case(request):
@@ -37,7 +37,7 @@ def replayed_case(request):
         result = subprocess.run(
             [os.environ["BIOMCP_BIN"], "search", "gene", "BRAF", "--limit", "1"],
             env=retained_cache_env(run, replay.provider_env, replay.origin),
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=HANG_TIMEOUT,
         )
         assert result.returncode == 0, result.stderr
         assert replay.request_log_entries()
