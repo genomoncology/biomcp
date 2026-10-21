@@ -4,7 +4,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-- Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_alias_coverage.py`, `tests/fixtures/article/coding-aliases/authored.json`, `CHANGELOG.md`.
+- Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_alias_coverage.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/test_variant_article_source_status.py`, `tests/transcript_alias_replay.py`, `tests/fixtures/article/coding-aliases/authored.json`, `CHANGELOG.md`.
 
 ## Outcome
 

@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Search resolved coding aliases before alternate protein forms, recover their article matches within the existing invocation budget, and keep alias and work limits visible. (2327)
+- Expand strict coding-alias discovery in default variant article searches while preserving the existing lexical queries, identity checks, and work budgets. Keep omitted aliases visible. (2327)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 

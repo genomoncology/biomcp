@@ -1961,6 +1961,9 @@ async fn resolve_search_context(
     } else {
         exact_aliases_with_equivalence(&context, &canonical_equivalence)
     };
+    if strategy == VariantArticleStrategy::Union {
+        (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
+    }
     if !matches!(
         strategy,
         VariantArticleStrategy::Exact | VariantArticleStrategy::Annotation
@@ -2310,9 +2313,47 @@ fn variant_source_gene(context: &VariantArticleResolutionContext) -> Option<&str
 
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     let mut aliases = all_exact_aliases(context);
-    let truncated = aliases.len() > MAX_RESOLVED_ALIASES;
-    aliases.truncate(MAX_RESOLVED_ALIASES);
+    let truncated = aliases.len() > MAX_EXACT_ALIASES;
+    aliases.truncate(MAX_EXACT_ALIASES);
     (aliases, truncated)
+}
+
+/// Add bounded coding discovery without evicting the lexical route's old queries.
+fn coding_discovery_aliases(
+    context: &VariantArticleResolutionContext,
+    legacy: &[String],
+) -> (Vec<String>, bool) {
+    if context.requested.is_authoritative_refseq() {
+        return (legacy.to_vec(), false);
+    }
+    let mut aliases = all_exact_aliases(context);
+    let mut ordered = Vec::new();
+    if !aliases.is_empty() {
+        ordered.push(aliases.remove(0));
+    }
+    let (coding, other): (Vec<_>, Vec<_>) = aliases.into_iter().partition(|alias| {
+        alias
+            .split_once(' ')
+            .is_some_and(|(_, change)| change.starts_with("c."))
+    });
+    ordered.extend(coding);
+    ordered.extend(other);
+    for alias in legacy {
+        if !ordered.contains(alias) {
+            ordered.push(alias.clone());
+        }
+    }
+    let truncated = ordered.len() > MAX_RESOLVED_ALIASES;
+    ordered.truncate(MAX_RESOLVED_ALIASES);
+    (ordered, truncated)
+}
+
+fn lexical_aliases(context: &VariantArticleResolutionContext, selected: &[String]) -> Vec<String> {
+    if selected.len() > MAX_EXACT_ALIASES {
+        exact_aliases(context).0
+    } else {
+        selected.to_vec()
+    }
 }
 
 fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
@@ -2390,15 +2431,7 @@ fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     {
         ordered.push(primary);
     }
-    // Query resolved coding forms before alternate protein spellings so the
-    // invocation work budget cannot starve them behind repeated protein searches.
-    let (coding, other): (Vec<_>, Vec<_>) = aliases.into_iter().partition(|alias| {
-        alias
-            .split_once(' ')
-            .is_some_and(|(_, change)| change.starts_with("c."))
-    });
-    ordered.extend(coding);
-    ordered.extend(other);
+    ordered.extend(aliases);
     ordered
 }
 
@@ -2495,7 +2528,7 @@ fn alias_coverage(
             );
         }
         if resolved {
-            planned.extend(selected.iter().cloned());
+            planned.extend(lexical_aliases(context, selected));
         } else {
             planned.extend(fallback_aliases(input, context).0);
         }
@@ -3642,7 +3675,8 @@ fn plan_queries(
     exact_aliases: &[String],
 ) -> Vec<String> {
     match route {
-        "strict" | "exact_lexical" => exact_aliases.to_vec(),
+        "strict" => exact_aliases.to_vec(),
+        "exact_lexical" => lexical_aliases(context, exact_aliases),
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -3999,7 +4033,7 @@ fn materialize_discovery_route_plans(
             "exact_lexical",
             source,
             exact_applicable.then(|| {
-                exact_aliases
+                lexical_aliases(context, exact_aliases)
                     .iter()
                     .filter(|alias| {
                         !matches!(source, "pubmed" | "europepmc")
@@ -4785,7 +4819,7 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
             let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
-                selected_exact_aliases.clone(),
+                lexical_aliases(&context, &selected_exact_aliases),
                 selected_exact_aliases_truncated,
                 &execution,
             )
@@ -8153,8 +8187,8 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
-                "BRAF c.1799T>A",
                 "BRAF V600E",
+                "BRAF c.1799T>A",
                 "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
                 "rs113488022",
@@ -8190,8 +8224,8 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
-                "BRAF c.1799T>A",
                 "BRAF V600E",
+                "BRAF c.1799T>A",
                 "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
                 "rs113488022",

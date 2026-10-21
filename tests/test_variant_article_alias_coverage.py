@@ -22,7 +22,7 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/coding-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported"])
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical"])
 def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path) -> None:
     control = json.loads(FIXTURE.read_text())
     hit = control["hit"]
@@ -114,7 +114,9 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
                "--no-cache"]
     if surface not in ("markdown", "disabled-markdown"):
         command.append("--json")
-    command += ["variant", "articles", "ABCC8 R1437Q", "--strategy", "lexical", "--limit", "5"]
+    command += ["variant", "articles", "ABCC8 R1437Q", "--limit", "5"]
+    if surface in ("complete", "lexical"):
+        command += ["--strategy", "lexical"]
     if surface == "batch":
         request = tmp_path / "input.json"
         request.write_text(json.dumps([{"gene": "ABCC8", "protein": "R1437Q"}]))
@@ -123,8 +125,6 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface in ("debug", "batch", "reported"):
         command.append("--debug-plan")
     if surface == "reported":
-        strategy_index = command.index("--strategy")
-        del command[strategy_index:strategy_index + 2]
         command.append("--verify-identity")
     try:
         result = subprocess.run(command, env=env, cwd=REPO_ROOT,
@@ -134,6 +134,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
     assert not misses, misses
+    assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
     if surface in ("markdown", "disabled-markdown"):
         text = result.stderr if disabled else result.stdout
         assert "ABCC8 c.4310G>A" in text
@@ -151,7 +152,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     assert {row["alias"] for row in coverage} >= {f"ABCC8 {form}" for form in forms}
     for alias in ("ABCC8 c.4310G>A", "ABCC8 c.4373G>A"):
         row = next(row for row in coverage if row["alias"] == alias)
-        omitted = surface == "cap"
+        omitted = surface in ("cap", "lexical")
         assert row["planned"] is not omitted, row
         assert row["attempted"] is not (omitted or disabled), row
         assert row["reason"] == ("alias_limit" if omitted else
@@ -159,13 +160,13 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         sent = any(alias.split(" ", 1)[1] in json.dumps(query)
                    for path, query in requests if path == "/search")
         assert sent is not (omitted or disabled), (alias, requests)
-    if not disabled and surface != "cap":
+    if not disabled and surface not in ("cap", "lexical"):
         assert {row["pmid"] for row in payload["results"]} == {"99000001", "99000002"}
         assert all(row["match_reason"] == "unverified_alias_match" for row in payload["results"])
         if surface == "complete":
             assert payload["complete"] is True, json.dumps(payload["source_status"])
             assert payload["truncated"] is False, payload
-    if surface == "cap":
+    if surface in ("cap", "lexical"):
         assert any(row["reason"] == "alias_limit" for row in coverage)
         assert payload["complete"] is False, payload
         assert payload["truncated"] is True, payload
@@ -175,7 +176,8 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     assert primary["disposition"] == ("omitted" if disabled else "attempted")
     assert primary["reason"] == ("source_disabled" if disabled else "provider_query_attempted")
     if disabled:
-        assert all(path.startswith("/v1/") or path in ("/allele", "/query") for path, _ in requests)
+        assert all(path.startswith("/v1/") or path in ("/allele", "/query", "/variant/autocomplete/")
+                   for path, _ in requests)
     else:
         assert any("R1437Q" in json.dumps(query) for _, query in requests)
     for path, query in requests:
@@ -185,8 +187,14 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
             assert len(query["term"][0]) <= 4096
     if surface in ("debug", "batch", "reported"):
         assert payload["debug_plan"]["alias_coverage"] == coverage
-        allocation = payload["debug_plan"]["work_allocation"]
+        plan = payload["debug_plan"]
+        lexical_queries = next(row["queries"] for row in plan["routes"]
+                               if row["route"] == "exact_lexical")
+        for alias in ("ABCC8 c.4310G>A", "ABCC8 c.4373G>A"):
+            assert alias not in lexical_queries
+            assert any(row["route"] == "strict" and row["query_alias"] == alias
+                       for row in plan["provider_queries"])
+        allocation = plan["work_allocation"]
         for work in (allocation["discovery"], allocation["exact_lexical"]["item"],
                      allocation["identity_verification"]["item"]):
             assert work["consumed"] <= work["limit"] == 50
-    assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
