@@ -15,7 +15,12 @@ struct SavedFulltext {
 }
 
 fn identity(id: &str) -> String {
-    id.trim().to_ascii_lowercase()
+    match super::detail::parse_article_id(id) {
+        super::detail::ArticleIdType::Pmc(id) => id.to_ascii_lowercase(),
+        super::detail::ArticleIdType::Pmid(id) => id.to_string(),
+        super::detail::ArticleIdType::Doi(id) => id.to_ascii_lowercase(),
+        super::detail::ArticleIdType::Invalid => id.trim().to_ascii_lowercase(),
+    }
 }
 
 fn locator_key(id: &str) -> String {

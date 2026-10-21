@@ -619,7 +619,14 @@ async fn save_resolved_fulltext(
     let cache_identifier = first_cache_identifier(article, requested_id);
     let path =
         download::save_atomic(&fulltext_cache_key(kind.clone(), cache_identifier), &text).await?;
-    super::fulltext_saved::remember(article, requested_id, cache_identifier, kind).await?;
+    if super::fulltext_saved::remember(article, requested_id, cache_identifier, kind)
+        .await
+        .is_err()
+    {
+        tracing::warn!(
+            "Unable to retain the optional full-text view locator; keeping the saved conversion"
+        );
+    }
     let outcome_source = source.source.clone();
     article.full_text_path = Some(path);
     article.full_text_note = None;
