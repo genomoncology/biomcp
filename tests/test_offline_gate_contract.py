@@ -442,7 +442,7 @@ def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
     contract = run_steps[-1]["run"]
     assert contract == (
         "cargo build --release --locked\n"
-        "cargo nextest run --release --test rmcp_client_contract"
+        "cargo nextest run --release --lib"
         " rmcp_stdio_recovers_from_tool_panic\n"
     ), "release-panic: the contract step must build release and run the panic test"
     assert "run-offline" not in contract, (
@@ -458,6 +458,6 @@ def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
     # live lane must not drift apart silently.
     verify = MAKEFILE.split("verify:\n", 1)[1].split("\nrelease-live-smoke:", 1)[0]
     assert (
-        "nextest run --release --test rmcp_client_contract"
+        "nextest run --release --lib"
         " rmcp_stdio_recovers_from_tool_panic" in verify
     ), "make verify must keep the release-mode panic contract"

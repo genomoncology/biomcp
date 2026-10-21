@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Remove the internal panic injection tool from shipped MCP servers and retain panic recovery checks in test-only builds. (2352)
+
 - Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)
