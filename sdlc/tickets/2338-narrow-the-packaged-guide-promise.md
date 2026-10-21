@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Reviews: revision d2e827f15c7b246df8c7f837e3c467b7d96db5e7, accept
 
+Reviews: revision 030fcc1d6f71ecf52fb88ac0e77d86276dac958d, accept
+
 ## Outcome
 
 BioMCP's published text promises only what its release packages actually ship. The executable embeds the agent skills, through `biomcp skill`, `biomcp skill render` and `biomcp skill install`, and the documentation lives at https://biomcp.org/. AGENTS.md, the README, the install docs and the packaged agent guide stop promising `share/biomcp/docs/` or `share/biomcp/skills/` and point to those commands and the site instead. Delete the unused release/package.py guide-copy path and its tests.
