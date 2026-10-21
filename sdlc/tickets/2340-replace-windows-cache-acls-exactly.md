@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 On Windows, first-encounter repair of BioMCP's saved-tree and cache directories leaves only the current user's access, as database repair already does. The repair replaces the protected DACL exactly, so a pre-existing explicit grant to Everyone or another user does not survive. Directories pass the same protection to new children. Share one permission policy between database and directory repair.
 
-- Changes: `src/cache/private.rs`, `tests/managed_state_permissions.rs`, `.github/workflows/ci.yml`, `CHANGELOG.md`.
+- Changes: `src/cache/private.rs`, `tests/managed_state_permissions.rs`, `.github/workflows/ci.yml`, `tests/test_ci_workflow_contract.py`, `CHANGELOG.md`.
 
 - Proof: a native Windows test seeds a directory with an explicit Everyone grant and an inherited grant, runs repair, and shows only the current user's access, with inheritance to new files; the existing database repair test still passes; the Windows CI lane runs both.
 

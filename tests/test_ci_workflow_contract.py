@@ -359,7 +359,7 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         )
 
 
-@pytest.mark.parametrize("failed_command", [0, 1, 2, 3])
+@pytest.mark.parametrize("failed_command", range(5))
 def test_windows_lock_proof_propagates_each_cargo_failure(
     tmp_path: Path, failed_command: int
 ) -> None:

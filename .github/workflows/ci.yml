@@ -402,7 +402,7 @@ jobs:
             Remove-Item Env:BIOMCP_WINDOWS_CONTRACT_BIN -ErrorAction SilentlyContinue
             Remove-Item $comparison -Recurse -Force -ErrorAction SilentlyContinue
           }
-      - name: Check cache permissions, lock contention and article-search deadlines
+      - name: Check cache-lock contention and article-search deadlines
         shell: bash
         run: |
           cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture
