@@ -8,6 +8,10 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 5663876, accept
+
+Reviews: revision 3e59bf8, accept
+
 ## Outcome
 
 The landing gate runs its Rust and Python parts one after the other, or books the cores and memory both need at once, with test workers set from the booking rather than the machine's core count.
