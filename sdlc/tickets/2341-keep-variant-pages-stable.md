@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 Broad variant search pages never repeat or skip a result across consecutive pages. BioMCP either pages in the same order the provider pages, or fetches enough to sort locally before applying the offset, and says which order it uses. Exact-identity search stays unchanged.
 
-- Changes: `src/entities/variant/search/mod.rs`, `tests/test_variant_search_pagination.py`, `tests/feature-links.json`, `tests/golden/cases/search-variant-braf-melanoma-limit3.json`, `tests/golden/cases/search-variant-braf-melanoma-limit3.md`, `docs/user-guide/variant.md`, `CHANGELOG.md`.
+- Changes: `src/entities/variant/search/mod.rs`, `tests/test_variant_search_pagination.py`, `tests/feature-links.json`, `tests/golden/cases/search-variant-braf-melanoma-limit3.{json,md}`, `tests/golden/cases/search-all-braf-melanoma*.{json,md}`, `docs/user-guide/variant.md`, `CHANGELOG.md`.
 
 - Proof: an outside-in replay test whose provider returns stable IDs 3, 2, 1 shows limit-1 pages 1, 2 and 3 returning each ID exactly once; a larger replay case shows the union of pages equals one unpaged result with no duplicates.
 
