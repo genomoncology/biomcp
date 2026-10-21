@@ -193,6 +193,21 @@ def execute_case(case, tmp_path, *, markdown=False):
                             "title": "Authored grouped control",
                         }
                     ]
+                if mode == "field-scope":
+                    # Authored applicability controls with rows selected from a
+                    # real union reply; not a captured reply to this query.
+                    captured = json.loads((REPO_ROOT / "tests/fixtures/article/field-scope/all-fields.json").read_text())
+                    rows = []
+                    for row in captured["resultList"]["result"]:
+                        matching = (
+                            row["pmid"] == "10486320" and "Pro1749Arg" in term
+                            or row["pmid"] == "31788995" and "5246C>G" in term
+                        )
+                        if metadata and row["pmid"] in term or (
+                            not metadata and "TITLE_ABS:" not in term
+                            and '"BRCA1"' in term and matching
+                        ):
+                            rows.append(row)
                 if metadata and mode in (
                     "unrelated-metadata",
                     "wrong-metadata-fallback",
