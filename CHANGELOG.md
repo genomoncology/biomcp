@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Confirm the exact BLENREP approval product from coherent source identity records, preserve product numbers and ingredients, and show unconfirmed provider records separately with full requested approval history. (2328)
+
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)

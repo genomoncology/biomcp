@@ -40,7 +40,7 @@ def replay(tmp_path: Path):
                     self.answer({}, 503)
                     return
                 rows = []
-                if name == "pembrolizumab":
+                if name == "pembrolizumab" or state.get("history_response"):
                     fixture = Path(__file__).resolve().parents[1] / "testdata/sources/openfda/drugsfda_keytruda_20261020.json"
                     self.answer(json.loads(fixture.read_text()))
                     return
@@ -293,6 +293,22 @@ def test_empty_approvals_explain_unverified_identity_without_ruling_out_approval
             assert "FDA approvals are not ruled out" in message
             assert message in markdown
         assert "No approvals found" not in markdown
+
+
+def test_unconfirmed_approval_history_preserves_full_provider_history(replay):
+    state, run = replay
+    state.update(name="belantamab mafodotin", history_response=True)
+    data, _ = run("approval-history")
+    assert data["approvals"] == []
+    assert len(data["unconfirmed_approvals"][0]["submissions"]) == 127
+    markdown = run("approval-history", markdown=True).stdout
+    assert "Unconfirmed provider records" in markdown
+    assert "EFFICACY" in markdown
+    assert "125514s128lbl.pdf" in markdown
+    assert "125514Orig1s128ltr.pdf" in markdown
+    for row in data["unconfirmed_approvals"][0]["submissions"]:
+        if row.get("submission_number"):
+            assert f"| {row['submission_number']} |" in markdown
 
 
 def test_approval_history_preserves_full_provider_submissions_and_documents(replay):

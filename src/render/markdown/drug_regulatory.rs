@@ -125,9 +125,6 @@ pub(super) fn render_approval_history_block(drug: &Drug) -> String {
     let Some(applications) = drug.approvals.as_deref() else {
         return String::new();
     };
-    if applications.is_empty() && !drug.unconfirmed_approvals.is_empty() {
-        return render_us_approvals_block("## Drugs@FDA Approval History", drug);
-    }
     let mut out = String::from("## Drugs@FDA Approval History\n\n");
     if let Some(message) = drug
         .section_outcomes
@@ -136,7 +133,13 @@ pub(super) fn render_approval_history_block(drug: &Drug) -> String {
     {
         let _ = writeln!(out, "{message}\n");
     }
-    for app in applications {
+    let records = if applications.is_empty() && !drug.unconfirmed_approvals.is_empty() {
+        out.push_str("### Unconfirmed provider records\n\n");
+        drug.unconfirmed_approvals.as_slice()
+    } else {
+        applications
+    };
+    for app in records {
         let _ = writeln!(out, "### {}\n", markdown_cell(&app.application_number));
         render_approval_products(&mut out, &app.products);
         out.push_str("| Submission Type | Number | Status | Date | Source Class | Documents |\n|---|---|---|---|---|---|\n");
