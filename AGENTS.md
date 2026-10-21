@@ -123,3 +123,7 @@ Everyday builds and tests use build jobs. GitHub Actions run for releases after 
 ## Source licensing
 
 State each source's terms plainly in its registry entry and on the licensing page. Label restricted terms as restricted. Users are responsible for their own licenses. BioMCP never buys a license or contacts a provider without Ian's approval.
+
+## Source keys
+
+The source keys live in `~/.zshenv.local` on each build machine: `ALPHAGENOME_API_KEY`, `S2_API_KEY`, `DISGENET_API_KEY`, `UMLS_API_KEY`, `NCI_API_KEY` and `NCBI_API_KEY`. They carry no financial risk and only raise bandwidth and rate limits. Use them for all BioMCP testing. Name a key; never write its value in the repo, a log or a fixture.
