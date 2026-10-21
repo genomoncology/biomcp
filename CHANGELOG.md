@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Isolate advisory test fixtures from inherited host scanner installations. (2343)
 - Measure outside-in Rust coverage by executable source region so unrun closures remain visible on covered lines, and bootstrap the pinned license checker from verified release archives. (2342)
 
 - Point agent guidance to the embedded skill commands and documentation site, and remove the unused guide-copy packaging path. (2338)
