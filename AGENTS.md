@@ -41,8 +41,8 @@ https://biomcp.org/:
   `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
   `cargo metadata`.
 
-- Unit/static layers run with `make test`: Rust nextest and the Python
-  CLI/MCP/docs contract lane run concurrently.
+- Unit/static layers run with `make test`: Rust nextest finishes before the Python
+  CLI/MCP/docs contract lane starts, even with `make -j`.
 
 ## Working
 
@@ -51,6 +51,8 @@ Run affected tests on the configured build machine, leaving `CARGO_INCREMENTAL` 
 ```
 cargo nextest run --no-default-features -E 'test(...)'
 ```
+
+The routine build job books 8 GiB disk and 7 GiB memory. The Makefile's `TEST_LANE_WORKERS` sets the shared Cargo, nextest and pytest worker allowance for that booking. Keep the allowance and booking together when measuring a different job shape. Run `make test TEST_LANE_WORKERS=1` for a smaller worker allowance.
 
 Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
 
