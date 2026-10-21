@@ -380,6 +380,7 @@ def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
 
     env = {
         "CARGO_DENY_LOG": str(log_file),
+        "BIOMCP_TOOL_DIR": str(repo_root / "tools"),
         "BIOMCP_ADVISORY_SCOPE": "landing",
         "OSV_LOG": str(tmp_path / "osv.log"),
         "UV_LOG": str(tmp_path / "uv.log"),
