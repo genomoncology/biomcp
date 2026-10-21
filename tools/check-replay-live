@@ -163,6 +163,24 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def keyed_shape_drift(expected: dict, actual: dict) -> list[str]:
+    # Paths come only from the committed recording, never new live field names.
+    # Type labels come from the parser's fixed vocabulary, never body values.
+    kinds = {"null", "boolean", "object", "array", "number", "string", "element"}
+    details = []
+    for path, types in sorted(expected.items()):
+        if path in actual and types == actual[path]:
+            continue
+        label = "[sensitive recorded path]" if SENSITIVE.search(path) else path
+        wanted = ",".join(sorted(types & kinds)) or "signature"
+        if path not in actual:
+            details.append(f"missing field {label}: expected {wanted}")
+        else:
+            live = ",".join(sorted(actual[path] & kinds)) or "signature"
+            details.append(f"changed type {label}: expected {wanted}; live {live}")
+    return details
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -249,7 +267,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "invalid inventory or policy configuration"}))
         return 2
     counts: Counter = Counter(total=len(entries))
-    stopped = set()
+    stopped = {}
     last_start = None
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     for index, (key, entry) in enumerate(entries, 1):
@@ -304,12 +322,18 @@ def main(argv: list[str] | None = None) -> int:
                         response = error
                     with response:
                         counts["checked"] += 1
-                        if response.status == 429 or response.headers.get(
-                            "Retry-After"
-                        ):
-                            stopped.add(provider)
+                        if args.keyed_semantic_scholar:
+                            result["http_status"] = response.status
+                        if response.status == 429:
+                            stopped[provider] = "HTTP 429"
+                        elif response.headers.get("Retry-After"):
+                            stopped[provider] = "Retry-After"
                         if response.status != entry["status"]:
-                            details.append("changed status")
+                            details.append(
+                                f"changed status: recorded {entry['status']}; live {response.status}"
+                                if args.keyed_semantic_scholar
+                                else "changed status"
+                            )
                         if response.headers.get("Content-Type", "").split(";", 1)[
                             0
                         ].strip().lower() != content_type.split(";", 1)[
@@ -327,7 +351,11 @@ def main(argv: list[str] | None = None) -> int:
                                 actual_body, response.headers.get("Content-Type", "")
                             )
                             if qualification == "structure":
-                                details.extend(shape_drift(expected, actual))
+                                details.extend(
+                                    keyed_shape_drift(expected, actual)
+                                    if args.keyed_semantic_scholar
+                                    else shape_drift(expected, actual)
+                                )
                                 added_paths = sorted(actual.keys() - expected.keys())
                             elif expected != actual:
                                 details.append("changed file signature")
@@ -344,13 +372,15 @@ def main(argv: list[str] | None = None) -> int:
                 else ["request or recording unavailable"]
             )
         if args.keyed_semantic_scholar:
-            # A provider can echo authentication into field names or errors.
-            # Keep keyed diagnostics fixed and never persist response material.
-            details = (
-                ["recording blocked" if state == "blocked" else "response drift"]
-                if details
-                else []
-            )
+            if state == "blocked":
+                details = [
+                    f"provider stopped after {stopped[provider]}"
+                    if provider in stopped
+                    else "recording blocked"
+                ]
+            if provider in stopped:
+                result["stop_reason"] = stopped[provider]
+            # New live keys can echo credentials; only recorded paths are safe.
             added_paths = []
         counts[state] += 1
         print(
