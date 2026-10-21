@@ -373,6 +373,9 @@
         "live_cli_smoke_get_variant_braf_v600e_returns_variant_information": "variant",
         "live_cli_smoke_get_article_returns_article_information": "article"
       }
+    },
+    "tests/reversed_help_contract.rs": {
+      "feature": "cli-controls"
     }
   },
   "spec": {

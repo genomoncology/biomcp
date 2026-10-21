@@ -19,6 +19,8 @@
 
 - Keep release step order, body pins and counterpart coverage in one inventory, and report a missed inventory update once. (2333)
 
+- Point reversed entity search and get help requests to their exact commands while preserving registered command aliases. (2335)
+
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
 
 - Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
