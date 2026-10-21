@@ -13,4 +13,5 @@ BioMCP's lint passes under -D warnings on current stable Rust, and every build m
 ## Evidence
 
 - The Gator early-signal gate j1104 for 2323 on 2026-10-21 failed lint: rustc 1.99.1 rejects four existing Atomic fetch_update uses as deprecated under -D warnings. Cargo.toml declares rust-version 1.89, and the repo has no rust-toolchain file.
+- Jarvis, 2026-10-21: Gator has 1.95.0, the M5's version, beside its default 1.99.1. Pin 1.95.0 first, then fix the deprecation and raise the pin.
 - Held out of 0.9.4 because a product source change after qualification would void the reused qualification runs.
