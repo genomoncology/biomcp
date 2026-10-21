@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 2beae50a0ed124d3ab0956241829e3e7eaf57c1b, accept
+
 ## Outcome
 
 A dated gene plus keyword article search completes its PubTator3 leg, or returns the other sources' results and names PubTator3 as timed out with the request it sent. Find why the leg exceeds the 12-second source guard when a simple PubTator3 search answers at once: query shape, page size, pagination or serial requests. Fix the cause within provider limits; do not just raise the guard.
