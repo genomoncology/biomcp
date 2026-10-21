@@ -859,7 +859,7 @@ fn leaked_cancellation_temps(root: &std::path::Path) -> Vec<String> {
 
 #[cfg(test)]
 async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
-    let deadline = tokio::time::Instant::now() + crate::test_support::watchdog(60);
+    let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout();
     loop {
         let leaked = leaked_cancellation_temps(root);
         if leaked.is_empty()

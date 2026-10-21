@@ -122,7 +122,7 @@ def _assert_stopped(identity: dict) -> None:
                 pass
         if port_closed and process_gone:
             return
-        pause.wait(HANG_TIMEOUT)
+        pause.wait(0.02)
 
 
 def _cleanup(runner: subprocess.Popen) -> None:
@@ -271,7 +271,7 @@ with replay_env.replay_session():
     for record, query in [(False, 'one'), (True, 'one'), (False, 'two')]:
         with replay_env.replay_environment(record=record) as replay:
             try:
-                response = urllib.request.urlopen(replay.origin + '/probe/value?' + query, timeout=5)
+                response = urllib.request.urlopen(replay.origin + '/probe/value?' + query, timeout=replay_env.HANG_TIMEOUT)
             except urllib.error.HTTPError as error:
                 response = error
             with response:

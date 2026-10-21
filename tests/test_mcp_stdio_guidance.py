@@ -257,7 +257,7 @@ def test_client_without_initialize_expires_startup_wait(
                 if not line:
                     return
                 responses.append(json.loads(line))
-                threading.Event().wait(HANG_TIMEOUT)
+                threading.Event().wait(0.05)
         except BrokenPipeError:
             pass  # Startup expiry closes the stream while the client stays open.
         except Exception as error:
