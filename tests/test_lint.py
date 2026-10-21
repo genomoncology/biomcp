@@ -332,7 +332,7 @@ def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 1
-    assert "cargo install cargo-deny --locked" in result.stdout
+    assert "tools/bootstrap-lint-tools" in result.stdout
     assert "[FAIL] Rust license lint (cargo-deny missing)" in result.stdout
 
 

@@ -13,6 +13,31 @@ from pathlib import Path
 from feature_coverage import coverage_report, inventory
 
 
+def instrumented_environment(show: str, ordinary: dict[str, str], profile: Path) -> dict[str, str]:
+    instrumented = ordinary.copy()
+    for line in show.splitlines():
+        if "=" not in line:
+            continue
+        key, value = line.removeprefix("export ").split("=", 1)
+        if key.isidentifier() and key.isupper():
+            words = shlex.split(value.rstrip(";"))
+            instrumented[key] = words[0] if words else ""
+    # MCP tests deliberately terminate servers. Continuous counters survive
+    # SIGTERM instead of losing every request served before the signal.
+    relocation = "-Cllvm-args=-runtime-counter-relocation"
+    wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"
+    if wrapper_flags in instrumented:
+        instrumented[wrapper_flags] += "\x1f" + relocation
+    elif "CARGO_ENCODED_RUSTFLAGS" in instrumented:
+        instrumented["CARGO_ENCODED_RUSTFLAGS"] += "\x1f" + relocation
+    elif "RUSTFLAGS" in instrumented:
+        instrumented["RUSTFLAGS"] += " " + relocation
+    else:
+        raise ValueError("llvm-cov exported no supported instrumentation flags")
+    instrumented["LLVM_PROFILE_FILE"] = str(profile)
+    return instrumented
+
+
 def collect(root: Path, baseline: bool) -> int:
     output = root / ".cache/feature-coverage"
     output.mkdir(parents=True, exist_ok=True)
@@ -68,28 +93,7 @@ def collect(root: Path, baseline: bool) -> int:
         return 1
     show = subprocess.check_output(["cargo", "llvm-cov", "show-env"], cwd=root, env=ordinary, text=True)
     (output / "show-env.txt").write_text(show)
-    instrumented = ordinary.copy()
-    for line in show.splitlines():
-        if "=" not in line:
-            continue
-        key, value = line.removeprefix("export ").split("=", 1)
-        if key.isidentifier() and key.isupper():
-            words = shlex.split(value.rstrip(";"))
-            instrumented[key] = words[0] if words else ""
-    # MCP tests deliberately terminate servers. Continuous counters survive
-    # SIGTERM instead of losing every request served before the signal.
-    if sys.platform == "linux":
-        relocation = "-Cllvm-args=-runtime-counter-relocation"
-        wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"
-        if wrapper_flags in instrumented:
-            instrumented[wrapper_flags] += "\x1f" + relocation
-        elif "CARGO_ENCODED_RUSTFLAGS" in instrumented:
-            instrumented["CARGO_ENCODED_RUSTFLAGS"] += "\x1f" + relocation
-        elif "RUSTFLAGS" in instrumented:
-            instrumented["RUSTFLAGS"] += " " + relocation
-        else:
-            raise ValueError("llvm-cov exported no supported instrumentation flags")
-    instrumented["LLVM_PROFILE_FILE"] = str(target / "outside-%c%p.profraw")
+    instrumented = instrumented_environment(show, ordinary, target / "outside-%c%p.profraw")
     # Compile only binaries/examples and selected integration targets. cfg(test)
     # library/unit artifacts are never built or included as test consumers.
     rust_args = [arg for path in sorted(config["rust"]) for arg in ("--test", Path(path).stem)]

@@ -78,6 +78,6 @@ asyncio_mode = "auto"
 tmp_path_retention_policy = "all"
 
 [tool.biomcp.feature-coverage]
-# Initial valid outside-in collection at 5188be473: 64881 / 111574 product lines.
-floor = 58.15064441536558
+# Linux source-region baseline from the outside-in collection at e5c05f8b1 (2342).
+floor = 57.62664906096368
 llvm-cov-version = "0.9.1"

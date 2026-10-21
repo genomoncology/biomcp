@@ -111,7 +111,6 @@ runs:
       if: ${{ inputs.lint-tools == 'true' }}
       shell: bash
       run: |
-        cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
         # make lint prepares declared Python tools in this checkout.
         tools/bootstrap-lint-tools >> "$GITHUB_PATH"
     - name: Record exact tool versions

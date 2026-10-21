@@ -32,6 +32,11 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   exit 1
 }
 
+export PATH="${BIOMCP_TOOL_DIR:-$repo_root/.cache/tools/bin}:$PATH"
+if [ -n "${CARGO_HOME:-${HOME:-}}" ]; then
+  export PATH="$PATH:${CARGO_HOME:-$HOME/.cargo}/bin"
+fi
+
 if [ "$PWD" != "$repo_root" ]; then
   printf '[FAIL] bin/lint must run from the repo root: %s\n' "$repo_root" >&2
   exit 1
@@ -141,7 +146,7 @@ if [ -f Cargo.toml ]; then
       skip 'Dependency advisory lint (dependency inputs unchanged since origin/main)'
     fi
   else
-    printf 'Install cargo-deny with: cargo install cargo-deny --locked\n'
+    printf 'Install pinned lint tools with: tools/bootstrap-lint-tools\n'
     fail 'Rust license lint (cargo-deny missing)'
   fi
 else
