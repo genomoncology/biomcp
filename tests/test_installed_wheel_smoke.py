@@ -33,6 +33,9 @@ elif args == ['cache', 'stats', '--json']:
     assert not (home / '.cache').exists()
     assert not (home / 'Library' / 'Caches').exists()
     assert not (home / 'AppData' / 'Local').exists()
+    if FAULT == 'windows-identity' and os.environ.get('USERNAME') != 'wheel-smoke-user':
+        print('I/O operation failed: no USERNAME')
+        sys.exit(1)
     if FAULT == 'cold-root':
         print('{"error":{"code":"io","message":"missing cache ancestor"}}')
         print('cache stderr detail', file=sys.stderr)
@@ -97,6 +100,28 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
         assert len(executable.with_suffix('.calls').read_text().splitlines()) == 2
 
 
+@pytest.mark.parametrize("username", ["wheel-smoke-user", None])
+def test_installed_smoke_preserves_windows_cache_acl_identity(
+    tmp_path: Path, username: str | None,
+) -> None:
+    # The Windows cache secures directories with USERNAME and icacls. Emulate
+    # that native boundary without claiming that this runs a Windows binary.
+    executable = fake_cli(tmp_path, "windows-identity")
+    env = os.environ.copy()
+    env.pop("USERNAME", None)
+    if username is not None:
+        env["USERNAME"] = username
+    result = subprocess.run(
+        ["bash", str(HELPER), str(executable), "0.9.4"],
+        env=env,
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == (0 if username else 1), result.stdout + result.stderr
+    if username is None:
+        assert "no USERNAME" in result.stdout + result.stderr
+        assert len(executable.with_suffix(".calls").read_text().splitlines()) == 2
+
+
 def test_main_and_release_use_the_shared_installed_wheel_smoke() -> None:
     makefile = (ROOT / "Makefile").read_text()
     main = makefile.split("main-gate:\n", 1)[1].split("\n\n", 1)[0]
@@ -110,6 +135,13 @@ def test_main_and_release_use_the_shared_installed_wheel_smoke() -> None:
     consumers = [step for step in steps if 'installed-wheel-smoke.sh' in step.get('run', '')]
     assert len(consumers) == 2
     assert {step['if'] for step in consumers} == {"runner.os == 'Linux'", "runner.os != 'Linux'"}
+    native = next(step for step in steps if step.get('shell') == 'pwsh')
+    assert native['if'] == "runner.os == 'Windows'"
+    assert '& $cli cache stats --json' in native['run']
+    assert '$LASTEXITCODE -ne 0' in native['run']
+    assert 'ConvertFrom-Json -ErrorAction Stop' in native['run']
+    assert "'USERNAME'" in native['run']
+    assert 'Remove-Item "Env:$($_.Name)"' in native['run']
     for entry in jobs['pypi-build']['strategy']['matrix']['include']:
         if 'container' in entry:
             matching = next(row for row in smoke['strategy']['matrix']['include'] if row['artifact'] == 'wheel-' + entry['target'])
