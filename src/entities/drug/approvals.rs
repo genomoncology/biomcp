@@ -60,12 +60,11 @@ pub(super) struct Lookup {
     pub(super) unconfirmed: Vec<DrugApproval>,
 }
 
-fn reviewed_product_matches(product: &DrugsFdaProduct) -> bool {
-    product.product_number.as_deref() == Some(BLENREP_PRODUCT)
-        && product
-            .brand_name
-            .as_deref()
-            .is_some_and(|brand| equals(brand, BLENREP_BRAND))
+fn reviewed_product_candidate(product: &DrugsFdaProduct) -> bool {
+    product
+        .brand_name
+        .as_deref()
+        .is_some_and(|brand| equals(brand, BLENREP_BRAND))
         && product.active_ingredients.len() == 1
         && product.active_ingredients[0]
             .name
@@ -300,11 +299,13 @@ fn filter_row(
         && row
             .products
             .iter()
-            .filter(|product| reviewed_product_matches(product))
+            .filter(|product| reviewed_product_candidate(product))
             .count()
             == 1;
     row.products.retain(|product| {
-        (reviewed_blenrep && reviewed_product_matches(product))
+        (reviewed_blenrep
+            && product.product_number.as_deref() == Some(BLENREP_PRODUCT)
+            && reviewed_product_candidate(product))
             || product_matches(product, metadata, drug, labels, &identity.brands)
     });
     !row.products.is_empty()

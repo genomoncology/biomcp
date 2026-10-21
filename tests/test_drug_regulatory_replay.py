@@ -54,7 +54,10 @@ def replay(tmp_path: Path):
                             {"application_number": "BLA999999", "products": [{"brand_name": "BLENREP",
                              "active_ingredients": [{"name": "unrelated"}]}]}]
                 if state["duplicate_product"] and rows:
-                    rows[0]["products"].append(dict(rows[0]["products"][0]))
+                    duplicate = dict(rows[0]["products"][0])
+                    if state["duplicate_product"] == "different_number":
+                        duplicate["product_number"] = "002"
+                    rows[0]["products"].append(duplicate)
                 if name == "daratumumab" and rows:
                     rows[1]["products"][0]["active_ingredients"].append({"name": "HYALURONIDASE-FIHJ"})
                     rows.append({"application_number": "BLA999998", "products": [{"active_ingredients": [{"name": "DARATUMUMAB-ABCD"}]}]})
@@ -199,6 +202,7 @@ def test_approvals_confirm_the_source_owned_blenrep_product_without_a_label(repl
     ({"substancename": ["BELANTAMAB MAFODOTIN", "unrelated"]}, False),
     ({"substancename": "BELANTAMAB MAFODOTIN-ABCD"}, False),
     ({}, True),
+    ({}, "different_number"),
 ])
 def test_approvals_leave_conflicting_or_ambiguous_product_identity_unconfirmed(replay, ndc_override, duplicate):
     state, run = replay
