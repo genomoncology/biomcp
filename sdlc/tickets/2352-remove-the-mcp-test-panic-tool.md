@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 4b1055bfc9b79b24ab1ad79e1292f820c9df22db, accept
+
 ## Outcome
 
 The released BioMCP binary contains no test-only MCP tool. The `__biomcp_test_panic` tool, which panics on purpose and is switched on by `BIOMCP_TEST_PANIC_TOOL=1`, moves behind a test-only build: `#[cfg(test)]`, or a non-default cargo feature that only the panic-recovery contract test enables. The MCP server's panic recovery stays proven by that test.
