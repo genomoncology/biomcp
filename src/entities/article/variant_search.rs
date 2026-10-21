@@ -3484,12 +3484,15 @@ fn pmid_seed(pmid: String) -> ArticleSearchResult {
 fn select_hydrated_source_hit(
     hits: Vec<crate::sources::myvariant::MyVariantHit>,
     source_key: Option<&str>,
+    build: Option<crate::entities::variant::GenomeBuild>,
 ) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
     hits.into_iter()
         .filter(|hit| {
             source_key.is_none_or(|key| {
-                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
-                    .normalized_key()
+                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit_with_build(
+                    hit, build,
+                )
+                .normalized_key()
                     == key
             })
         })
@@ -3530,10 +3533,19 @@ async fn citation_candidates(
                 return Ok((Vec::new(), true));
             }
         };
+        // Unqualified MyVariant requests already use GRCh37. Carry a
+        // resolved non-default build through hydration and identity checking.
+        let build = context.source_identity.as_ref().and_then(|identity| {
+            identity
+                .genome_build
+                .parse()
+                .ok()
+                .filter(|build| *build != crate::entities::variant::GenomeBuild::Grch37)
+        });
         let result = client
-            .get_all(&retained_hit.id)
+            .get_all(&retained_hit.id, build)
             .await
-            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
+            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref(), build));
         match result {
             Ok(hit) => (Some(hit), Some(unit)),
             Err(error) => {
@@ -8540,7 +8552,7 @@ mod tests {
 
     #[test]
     fn missing_confirmed_record_during_citation_hydration_is_unavailable() {
-        let error = select_hydrated_source_hit(Vec::new(), Some("missing"))
+        let error = select_hydrated_source_hit(Vec::new(), Some("missing"), None)
             .expect_err("a stale confirmed record must not become healthy empty coverage");
         assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     }

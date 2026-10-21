@@ -309,8 +309,9 @@ struct ProviderScan {
 fn provider_candidate(
     requested: &RequestedVariantIdentity,
     hit: MyVariantHit,
+    build: Option<super::GenomeBuild>,
 ) -> ProviderCandidate {
-    let identity = SourceVariantIdentity::from_myvariant_hit(&hit);
+    let identity = SourceVariantIdentity::from_myvariant_hit_with_build(&hit, build);
     let comparison = compare_variant_identity(requested, &identity);
     ProviderCandidate {
         hit,
@@ -508,8 +509,15 @@ async fn direct_provider_scan(
             available: false,
         };
     };
+    let coordinate = super::normalize_genomic_coordinate(input).ok().flatten();
+    let lookup = coordinate
+        .as_ref()
+        .map_or(input, |coordinate| coordinate.id.as_str());
+    let build = coordinate
+        .as_ref()
+        .and_then(|coordinate| coordinate.genome_build);
     let result = match MyVariantClient::new_with_deadline(execution.deadline()).await {
-        Ok(client) => client.get_all(input).await,
+        Ok(client) => client.get_all(lookup, build).await,
         Err(error) => Err(error),
     };
     match result {
@@ -517,7 +525,7 @@ async fn direct_provider_scan(
             let scan = ProviderScan {
                 candidates: hits
                     .into_iter()
-                    .map(|hit| provider_candidate(requested, hit))
+                    .map(|hit| provider_candidate(requested, hit, build))
                     .collect(),
                 exhaustive: true,
                 available: true,
@@ -641,7 +649,7 @@ async fn searched_provider_scan(
                 .hits
                 .into_iter()
                 .take(examined_count)
-                .map(|hit| provider_candidate(requested, hit)),
+                .map(|hit| provider_candidate(requested, hit, None)),
         );
         unit.record("ok", 1);
         provider_offset += examined_count;

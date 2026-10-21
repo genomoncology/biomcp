@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Accept protein frameshift and versioned RefSeq duplication spellings in variant commands, preserve their complete supplied identity, and constrain genomic provider lookups to the reference build. (2334)
+
 - Expand strict coding-alias discovery in default variant article searches while preserving the existing lexical queries, identity checks, and work budgets. Keep omitted aliases visible. (2327)
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 

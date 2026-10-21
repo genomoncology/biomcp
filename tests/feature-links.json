@@ -237,6 +237,9 @@
     "tests/test_variant_transcript_allele_guard.py": {
       "feature": "variant"
     },
+    "tests/test_variant_frameshift_inputs.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_transcript_lookup.py": {
       "feature": "variant"
     },

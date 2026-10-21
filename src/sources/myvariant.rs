@@ -801,9 +801,13 @@ impl MyVariantClient {
         })
     }
 
-    pub(crate) async fn get_all(&self, id: &str) -> Result<Vec<MyVariantHit>, BioMcpError> {
+    pub(crate) async fn get_all(
+        &self,
+        id: &str,
+        genome_build: Option<crate::entities::variant::GenomeBuild>,
+    ) -> Result<Vec<MyVariantHit>, BioMcpError> {
         let id = id.trim();
-        let plan = Self::get_plan(id, None)?;
+        let plan = Self::get_plan(id, genome_build)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let response = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
