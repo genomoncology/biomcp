@@ -17,7 +17,7 @@ import pytest
 from hang_guard import HANG_TIMEOUT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 
@@ -120,13 +120,12 @@ def test_literature_search_retries_one_transient_leg(
                  "BIOMCP_PUBTATOR_BASE": origin + "/pubtator",
                  "BIOMCP_PUBMED_BASE": origin + "/pubmed",
                  "BIOMCP_S2_BASE": origin + "/s2"}
-    env = isolated_command_env(tmp_path / "isolated", providers, origin)
+    env_factory = retained_cache_env if cached else isolated_command_env
+    env = env_factory(tmp_path / "isolated", providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     env.pop("BIOMCP_TEST_RETRY_SLEEP_OFF", None)
     if not str(failure).startswith("shared429"):
         env["S2_API_KEY"] = "fixture-only-key"
-    if cached:
-        env["BIOMCP_CACHE_MODE"] = "default"
     env["BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS"] = "3000"
     env["BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS"] = "2000"
     command = [os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),

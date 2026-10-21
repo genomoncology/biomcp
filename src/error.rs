@@ -465,10 +465,7 @@ impl BioMcpError {
     ) -> ExternalFailureProjection {
         let (class, status) = if let Some(failure) = crate::sources::literature_retry::failure(self)
         {
-            let status = failure
-                .class
-                .strip_prefix("http_")
-                .and_then(|value| value.parse::<u16>().ok());
+            let status = failure.http_status;
             (
                 if status.is_some() {
                     "http_status"

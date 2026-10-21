@@ -16,6 +16,7 @@ pub(crate) struct Failure {
     pub(crate) class: &'static str,
     pub(crate) retry_attempted: bool,
     pub(crate) invocation_deadline: bool,
+    pub(crate) http_status: Option<u16>,
 }
 
 #[derive(Default)]
@@ -24,6 +25,7 @@ struct State {
     sends: usize,
     terminal: bool,
     invocation_deadline: bool,
+    http_status: Option<u16>,
 }
 #[derive(Clone, Default)]
 pub(crate) struct Observation(Arc<Mutex<State>>);
@@ -34,17 +36,18 @@ impl Observation {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = State::default();
     }
-    fn set(&self, class: Option<&'static str>) {
+    fn set(&self, class: Option<&'static str>, http_status: Option<u16>) {
         let mut state = self
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.class = class;
+        state.http_status = http_status;
         state.terminal = false;
         state.invocation_deadline = false;
     }
-    fn finish(&self, class: &'static str) -> Failure {
-        self.set(Some(class));
+    fn finish(&self, class: &'static str, http_status: Option<u16>) -> Failure {
+        self.set(Some(class), http_status);
         self.0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -74,10 +77,11 @@ impl Observation {
             class,
             retry_attempted: state.sends > 1,
             invocation_deadline: state.invocation_deadline,
+            http_status: state.http_status,
         })
     }
     pub(super) fn deadline_timeout(&self) -> Failure {
-        self.finish("timeout");
+        self.finish("timeout", None);
         self.0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -85,7 +89,7 @@ impl Observation {
         self.get().expect("deadline failure has a class")
     }
     pub(crate) fn timeout(&self) -> Failure {
-        self.finish("timeout")
+        self.finish("timeout", None)
     }
 }
 
@@ -203,26 +207,30 @@ impl Middleware for LiteratureRetryMiddleware {
                 Err(error) if super::is_semantic_scholar_shared_pool_rate_limit_error(error) => {
                     // Refuse immediately, but retain an earlier admitted retry.
                     return Err(reqwest_middleware::Error::middleware(
-                        observation.finish("rate_limited"),
+                        observation.finish("rate_limited", None),
                     ));
                 }
                 // TLS/configuration failures retain their existing policies.
                 Err(_) => {
-                    observation.set(None);
+                    observation.set(None, None);
                     return response;
                 }
             };
-            observation.set(Some(class));
+            let http_status = response
+                .as_ref()
+                .ok()
+                .map(|response| response.status().as_u16());
+            observation.set(Some(class), http_status);
             let failure = observation.get().expect("failed response has a class");
             if attempt == 1 || !retryable {
                 return Err(reqwest_middleware::Error::middleware(
-                    observation.finish(failure.class),
+                    observation.finish(failure.class, failure.http_status),
                 ));
             }
             let delay = delay.unwrap_or_default().max(Duration::from_millis(100));
             if delay >= remaining(&deadline) {
                 return Err(reqwest_middleware::Error::middleware(
-                    observation.finish(failure.class),
+                    observation.finish(failure.class, failure.http_status),
                 ));
             }
             if !super::retry_sleep_disabled() {
@@ -250,6 +258,7 @@ pub(crate) fn failure(error: &BioMcpError) -> Option<Failure> {
                 class: "rate_limited",
                 retry_attempted: false,
                 invocation_deadline: false,
+                http_status: None,
             })
         }
         BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(error)) => {
