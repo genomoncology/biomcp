@@ -589,8 +589,6 @@
     "tests/test_replay_live_drift.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_replay_server_lifetime.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_routine_cargo_feature_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_sdlc_clean_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_sdlc_project_lifecycle_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_shell_workflow_lint_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_short_unix_socket_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_should_move_latest.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
