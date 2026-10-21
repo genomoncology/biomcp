@@ -208,6 +208,9 @@ impl SemanticScholarClient {
                     crate::error::RecoveryAction::ReviewSourceConfiguration,
                 )));
             }
+            Err(error) if crate::sources::literature_retry::failure(&error).is_some() => {
+                return Err(error);
+            }
             Err(_) => {
                 return Err(BioMcpError::Api {
                     api: SEMANTIC_SCHOLAR_API.to_string(),

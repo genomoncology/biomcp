@@ -272,7 +272,17 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
                     "batch article search enrichment",
                 );
                 status.status = Some(ArticleSourceAvailability::Unavailable);
-                status.message = Some("Semantic Scholar enrichment unavailable".to_string());
+                let mut message = "Semantic Scholar enrichment unavailable".to_string();
+                if let Some(failure) = crate::sources::literature_retry::failure(&err) {
+                    message.push_str(&format!(": {failure}"));
+                    if failure.class == "rate_limited" {
+                        message.push(' ');
+                        message.push_str(
+                            crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX,
+                        );
+                    }
+                }
+                status.message = Some(message);
                 break;
             }
         }

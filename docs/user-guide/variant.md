@@ -437,6 +437,8 @@ An incomplete provider route keeps available rows but sets `complete: false`,
 makes a provider request is reported as source-neutral `internal` /
 `not_attempted`, rather than attributing an outage to an uncalled provider.
 
+Transient Europe PMC, Semantic Scholar and PubTator requests retry once within the source and command deadlines. Failed routes name the final HTTP error or timeout in `reason_codes`; `retry_attempted` means a second provider request was admitted. An unauthenticated Semantic Scholar shared-pool rate refusal keeps its fast refusal and key guidance.
+
 A visible metadata fallback failure adds `metadata_status` only to affected rows, including compact batch rows. The object has `status: "incomplete"`, `missing_fields` (`abstract`, `citation_count`, or both), `source: "pubtator"`, and the existing provider `failure_class`. The warning names the same PMID, missing fields and failure class. `missing_fields` names absent or unconfirmed metadata. The existing recovery rule requests confirmation of zero citation counts. Covering Europe PMC records remain recovery and omit this object. Markdown shows the status beside each affected article. Page-level `complete` and `source_status` still describe the whole search.
 
 `--verify-identity` adds captured-evidence `identity` facts without filtering the

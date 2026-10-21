@@ -463,25 +463,38 @@ impl BioMcpError {
         provider: SourceProvider,
         operation: &'static str,
     ) -> ExternalFailureProjection {
-        let (class, status) = match self.underlying() {
-            Self::Http(error) | Self::HttpClientInit(error) => classify_reqwest_error(error),
-            Self::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => {
-                classify_reqwest_error(error)
+        let (class, status) = if let Some(failure) = crate::sources::literature_retry::failure(self)
+        {
+            let status = failure.http_status;
+            (
+                if status.is_some() {
+                    "http_status"
+                } else {
+                    failure.class
+                },
+                status,
+            )
+        } else {
+            match self.underlying() {
+                Self::Http(error) | Self::HttpClientInit(error) => classify_reqwest_error(error),
+                Self::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => {
+                    classify_reqwest_error(error)
+                }
+                Self::Api { message, .. } => {
+                    let status = message.strip_prefix("HTTP ").and_then(|rest| {
+                        rest.split_whitespace()
+                            .next()
+                            .and_then(|v| v.parse::<u16>().ok())
+                    });
+                    (status.map(|_| "http_status").unwrap_or("internal"), status)
+                }
+                Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
+                Self::Io(_) => ("local_io", None),
+                Self::SourceUnavailable { .. } | Self::SourceEndpointRetired { .. } => {
+                    ("unavailable", None)
+                }
+                _ => ("internal", None),
             }
-            Self::Api { message, .. } => {
-                let status = message.strip_prefix("HTTP ").and_then(|rest| {
-                    rest.split_whitespace()
-                        .next()
-                        .and_then(|v| v.parse::<u16>().ok())
-                });
-                (status.map(|_| "http_status").unwrap_or("internal"), status)
-            }
-            Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
-            Self::Io(_) => ("local_io", None),
-            Self::SourceUnavailable { .. } | Self::SourceEndpointRetired { .. } => {
-                ("unavailable", None)
-            }
-            _ => ("internal", None),
         };
         let message = match self.underlying() {
             Self::Io(error) => match error.raw_os_error() {
