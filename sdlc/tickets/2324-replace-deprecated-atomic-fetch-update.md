@@ -6,7 +6,7 @@ Milestone: 0.9.5
 
 ## Outcome
 
-BioMCP's lint passes under -D warnings on current stable Rust, and every build machine and release job uses one declared toolchain. Replace the four deprecated Atomic fetch_update calls with their supported form, keeping behavior. Declare the toolchain in the repo so a machine's rustup update cannot fail lint without a code change. Declare every host tool the gate needs, such as cargo-deny and mustmatch with their versions, and have the gate name all missing tools in its first step.
+BioMCP's lint passes under -D warnings on current stable Rust, and every build machine and release job uses one declared toolchain. Replace the four deprecated Atomic fetch_update calls with their supported form, keeping behavior. Declare the toolchain in the repo so a machine's rustup update cannot fail lint without a code change. Declare every host tool the gate needs, such as cargo-deny, mustmatch and the system python3 used outside uv, with their versions, and have the gate name all missing tools in its first step.
 
 - Proof: make lint passes on the newest stable rustc and on the declared toolchain; the release workflow and pm jobs build with the declared toolchain; on a machine missing a declared tool, the gate fails first and lists every missing tool.
 
