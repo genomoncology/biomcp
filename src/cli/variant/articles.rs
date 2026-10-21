@@ -149,6 +149,16 @@ pub(super) async fn handle(
         .flatten()
         .collect::<Vec<_>>()
         .join(", ");
+        let metadata_status = outcome
+            .response
+            .results
+            .iter()
+            .filter_map(|row| {
+                row.metadata_status
+                    .as_ref()
+                    .map(|status| (row.article.pmid.clone(), status.clone()))
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
         let render = |results: &[crate::entities::article::ArticleSearchResult],
                       header: Option<&str>| {
             crate::render::markdown::variant_article_search_markdown(
@@ -169,6 +179,7 @@ pub(super) async fn handle(
                     header,
                 },
                 &outcome.response.source_status,
+                &metadata_status,
             )
         };
         let mut markdown = if results.is_empty() && !outcome.response.results.is_empty() {
