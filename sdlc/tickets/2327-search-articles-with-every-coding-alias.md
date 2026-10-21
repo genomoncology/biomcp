@@ -4,13 +4,13 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-- Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_alias_coverage.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/test_variant_article_source_status.py`, `tests/transcript_alias_replay.py`, `tests/fixtures/article/coding-aliases/authored.json`, `CHANGELOG.md`.
-
 ## Outcome
 
 `biomcp variant articles` recovers the papers that each resolved coding spelling finds, not only discloses the spellings it left out. For ABCC8 R1437Q, the provider queries include c.4310G>A and c.4373G>A, or a follow-up query per dropped spelling merges its papers, within each provider's query length and rate limits. Disclosure stays for any spelling still left out, with its reason.
 
 - Proof: an outside-in replay test for ABCC8 R1437Q shows both coding spellings in provider queries and their papers in the merged result, with complete=true when nothing is dropped; a test with more aliases than the limit still reports alias_limit and truncated=true.
+
+Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_alias_coverage.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/test_variant_article_source_status.py`, `tests/transcript_alias_replay.py`, `tests/fixtures/article/coding-aliases/authored.json`, `CHANGELOG.md`.
 
 ## Evidence
 
