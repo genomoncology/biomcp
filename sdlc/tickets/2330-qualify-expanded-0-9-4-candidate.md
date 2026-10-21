@@ -16,6 +16,10 @@ Depends on: 2329
 Depends on: 2331
 Depends on: 2332
 Depends on: 2333
+Depends on: 2334
+Depends on: 2335
+Depends on: 2336
+Depends on: 2337
 
 ## Outcome
 
@@ -35,3 +39,4 @@ Changes: `sdlc/tickets/2330-qualify-expanded-0-9-4-candidate.md`, `sdlc/records/
 - PM m3019 authorizes a read-only live check of exactly five Semantic Scholar recordings using the inherited S2_API_KEY, paced at one second. No agent inspects, prints, copies, records or stores credentials; logs and fixtures contain no credentials or authorization headers. KEGG stays uncalled. After actual success, remove the Semantic Scholar unverified limit from the release handoff. Ticket 2331 supplies the narrowly supported checker path before this admission.
 - PM m3026 adds 2332 to 0.9.4 before admission: keep credentials out of cache metadata and logs, retire legacy stores and clean BioMCP-owned caches on the authorized machines. The live check waits for that reviewed fix.
 - PM m3064 also requires 2333 to unify the release workflow inventories without losing their existing protections. All required changes precede final qualification and the full rehearsal.
+- PM m3073 adds the four research-study fixes: 2334 frameshift parsing, 2335 reversed help, 2336 bounded literature retries and 2337 capped-route recovery. Sequence 2337 with 2327's mechanism. The exact study commands and minimized permitted replies come through the PM's sanitized handoff. Include all four before final admission.
