@@ -1,10 +1,12 @@
 # 2349 — Report empty supplement containers honestly
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision ec88f75df9c9965f2cf13a54019d1c80378cc5dc, accept
+
+Landed: ae6323a
 
 ## Outcome
 
