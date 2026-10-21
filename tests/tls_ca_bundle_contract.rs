@@ -285,6 +285,10 @@ async fn alphagenome_uses_operator_ca_bundle() {
                 "AlphaGenome",
                 "--fail-on-error",
             ]);
+        // Coverage is job-owned test instrumentation, not product configuration.
+        if let Some(profile) = std::env::var_os("LLVM_PROFILE_FILE") {
+            command.env("LLVM_PROFILE_FILE", profile);
+        }
         if configured {
             command.env("BIOMCP_CA_BUNDLE", &fixture.bundle);
         }

@@ -1,0 +1,928 @@
+{
+  "python": {
+    "tests/golden/live/test_install_update.py": {
+      "feature": "install-update"
+    },
+    "tests/golden/spec/test_cleanup_cli_behaviors.py": {
+      "feature": "article"
+    },
+    "tests/golden/spec/test_install_lifecycle.py": {
+      "feature": "install-update"
+    },
+    "tests/golden/spec/test_spec_page_golden.py": {
+      "feature": "@golden-calls"
+    },
+    "tests/golden/test_golden_output.py": {
+      "tests": {
+        "test_golden_output": "@golden",
+        "test_article_supplement_stdout_preserves_recorded_bytes": "article"
+      },
+      "internal": {
+        "test_replay_env_covers_every_provider_override": "Fixture coverage is not a product invocation."
+      }
+    },
+    "tests/golden/test_search_all_provider_failure.py": {
+      "feature": "search-all"
+    },
+    "tests/surface/test_semantic_scholar_retry_after_contract.py": {
+      "feature": "provider-retry"
+    },
+    "tests/surface/test_trial_help_contract.py": {
+      "tests": {
+        "test_get_trial_help_examples_reference_only_declared_options": "trial",
+        "test_get_trial_help_examples_place_options_before_sections": "trial",
+        "test_trial_capability_declarations_match_cli_and_typed_mcp": "trial"
+      },
+      "internal": {
+        "test_trial_capability_inventory_references_existing_contracts": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_article_abstract_fidelity.py": {
+      "feature": "article"
+    },
+    "tests/test_article_abstract_recovery.py": {
+      "feature": "article"
+    },
+    "tests/test_article_disease_filter.py": {
+      "feature": "article"
+    },
+    "tests/test_article_fulltext_license.py": {
+      "feature": "article"
+    },
+    "tests/test_article_fulltext_quality.py": {
+      "feature": "article"
+    },
+    "tests/test_article_metadata_recovery.py": {
+      "feature": "article"
+    },
+    "tests/test_article_preprint_fulltext.py": {
+      "feature": "article"
+    },
+    "tests/test_article_rsid_search.py": {
+      "feature": "article"
+    },
+    "tests/test_author_surface_docs.py": {
+      "tests": {
+        "test_rich_cli_json_and_markdown_are_well_formed": "author",
+        "test_rich_raw_mcp_matches_cli_byte_for_byte": "author",
+        "test_rich_malformed_provider_page_is_an_mcp_error_not_an_empty_page": "author",
+        "test_rich_hostile_paper_id_is_contained_and_never_a_command": "author",
+        "test_orcid_detail_json_is_identical_across_cli_raw_mcp_and_typed_get": "author",
+        "test_orcid_works_json_matches_raw_mcp_and_never_touches_person": "author",
+        "test_orcid_works_markdown_matches_raw_mcp_byte_for_byte": "author",
+        "test_orcid_credential_states_flow_identically_through_every_surface": "author",
+        "test_orcid_invalid_id_grammar_is_rejected_statically_on_both_commands": "author",
+        "test_orcid_rejected_credential_recovers_when_a_valid_token_returns": "author",
+        "test_orcid_works_first_page_keeps_continuation_and_terminal_page_has_none": "author",
+        "test_orcid_full_flag_is_rejected_across_cli_mcp_and_request_logs": "author"
+      },
+      "internal": {
+        "test_author_surface_docs_describe_the_shipped_provider_exact_slice": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_cache_invalid_settings.py": {
+      "feature": "cache"
+    },
+    "tests/test_cache_persistent_size.py": {
+      "feature": "cache"
+    },
+    "tests/test_cache_sqlite.py": {
+      "feature": "cache"
+    },
+    "tests/test_ctgov_trial_search_detail_reuse.py": {
+      "feature": "trial"
+    },
+    "tests/test_disable_sources_replay_walk.py": {
+      "tests": {
+        "test_every_disabled_source_id_stops_its_own_requests": "source-policy",
+        "test_disabled_local_health_names_the_setting_without_errors": "source-policy",
+        "test_disabled_preprint_source_stops_details_requests": "source-policy"
+      },
+      "internal": {
+        "test_walk_covers_every_source_id_in_the_registry": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_wheel_article_smoke_does_not_request_semantic_scholar": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_disease_name_outcomes.py": {
+      "feature": "disease"
+    },
+    "tests/test_drug_development_codes.py": {
+      "feature": "drug"
+    },
+    "tests/test_drug_regulatory_replay.py": {
+      "feature": "drug"
+    },
+    "tests/test_drug_target_species.py": {
+      "feature": "drug"
+    },
+    "tests/test_gwas_day_cache_contract.py": {
+      "feature": "gwas"
+    },
+    "tests/test_http_cache_fail_soft.py": {
+      "feature": "cache"
+    },
+    "tests/test_json_list_contract.py": {
+      "tests": {
+        "test_json_list_outputs_are_parseable_reference_objects": "cli-reference"
+      },
+      "internal": {
+        "test_public_docs_document_json_list_shape": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_live_suspect_regressions.py": {
+      "feature": "drug",
+      "tests": {
+        "test_discovery_preserves_exact_variant_before_fuzzy_chemical_and_vaccine": "variant",
+        "test_discovery_requires_structured_drug_identity": "drug",
+        "test_diagnostic_synonym_and_literal_matching_explain_missing_resolution": "diagnostic"
+      }
+    },
+    "tests/test_mcp_2026_protocol.py": {
+      "feature": "mcp-stdio"
+    },
+    "tests/test_mcp_http_surface.py": {
+      "feature": "mcp-http"
+    },
+    "tests/test_mcp_stdio_guidance.py": {
+      "feature": "mcp-stdio"
+    },
+    "tests/test_mcp_tool_catalog.py": {
+      "tests": {
+        "test_every_tool_schema_is_a_flat_object_root": "mcp-catalog",
+        "test_installed_binary_prints_the_complete_mcp_catalog": "mcp-catalog",
+        "test_real_tools_list_stays_within_context_budget": "mcp-catalog"
+      },
+      "internal": {
+        "test_rust_mcp_contract_uses_python_tools_list_byte_ceiling": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_mcp_measurement_fails_closed_without_valid_committed_tokenizer_cache": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_measurement_reads_catalog_from_a_direct_binary_command": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_measurement_reports_actionable_context_budget_failure": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_public_inventory_matches_typed_catalog": "Compares source/manifest/docs without invoking the product."
+      }
+    },
+    "tests/test_nci_filter_transport.py": {
+      "feature": "trial"
+    },
+    "tests/test_no_cache_managed_state.py": {
+      "feature": "no-cache"
+    },
+    "tests/test_pgx_cpic_sections.py": {
+      "feature": "pgx"
+    },
+    "tests/test_public_example_accessions.py": {
+      "tests": {
+        "test_runtime_help_uses_live_gtr_examples": "diagnostic",
+        "test_public_gtr_examples_resolve_against_live_gtr_bundle": "diagnostic",
+        "test_gtr_trademark_text_renders_without_changing_other_fields": "diagnostic"
+      },
+      "internal": {
+        "test_public_diagnostic_surfaces_use_live_gtr_accession": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_section_provider_credits.py": {
+      "feature": "source-policy"
+    },
+    "tests/test_skill_prompt_contract.py": {
+      "tests": {
+        "test_skill_prompt_render_install_and_slug_surfaces_match": "skills"
+      },
+      "internal": {
+        "test_workflow_ladder_sidecars_match_schema_and_playbooks": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_installed_output_schemas_allow_descriptive_workflow_meta": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_rust_sources_do_not_embed_workflow_ladder_commands": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_update_command_docs_contract.py": {
+      "tests": {
+        "test_update_help_has_no_unverified_install_escape_hatch": "install-update"
+      },
+      "internal": {
+        "test_list_and_docs_describe_only_verified_standalone_updates": "Source/documentation or harness contract, not an outside product invocation.",
+        "test_update_architecture_names_ownership_and_windows_installer_path": "Source/documentation or harness contract, not an outside product invocation."
+      }
+    },
+    "tests/test_variant_article_alias_coverage.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_disabled_sources.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_exact_fulltext.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_gene_aliases.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_paper_anchors.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_source_status.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_transcript_aliases.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_cgi_source.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_normalize_json_contract.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_transcript_allele_guard.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_transcript_lookup.py": {
+      "feature": "variant"
+    },
+    "tests/surface/test_article_graph_empty_contract.py": {
+      "feature": "article"
+    },
+    "tests/surface/test_public_entity_contract_docs.py": {
+      "tests": {
+        "test_public_docs_label_search_only_entities": "cli-reference"
+      },
+      "internal": {
+        "test_public_docs_do_not_imply_get_gwas_or_get_phenotype": "Tooling or source/documentation contract, not a product invocation.",
+        "test_spec_architecture_routes_public_search_only_surfaces": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
+    "tests/test_output_footprint_benchmark.py": {
+      "tests": {
+        "test_offline_corpus_is_deterministic_and_reports_real_token_counts": "output-safety"
+      },
+      "internal": {
+        "test_compact_ratchet_rejects_first_byte_above_each_ceiling": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tokenizer_vocabulary_is_available_offline": "Tooling or source/documentation contract, not a product invocation.",
+        "test_benchmark_env_points_every_provider_base_at_the_replay_server": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
+    "tests/test_python_lane_cache_isolation.py": {
+      "feature": "cache"
+    },
+    "tests/test_release_package.py": {
+      "tests": {
+        "test_wheel_installs_skills_without_network": "skills"
+      },
+      "internal": {
+        "test_native_archive_is_deterministic_minimal_and_executable": "Tooling or source/documentation contract, not a product invocation.",
+        "test_native_archives_carry_the_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_contains_binaries_and_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
+        "test_packaged_agent_index_maps_local_and_live_topics": "Tooling or source/documentation contract, not a product invocation.",
+        "test_development_wheel_uses_exact_pep440_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_artifact_record_binds_bytes_and_candidate_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_identity_metadata_and_record_are_fully_validated": "Tooling or source/documentation contract, not a product invocation.",
+        "test_wheel_duplicate_member_is_rejected": "Tooling or source/documentation contract, not a product invocation.",
+        "test_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_installed_command_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
+        "test_final_inspector_owns_complete_wheel_evidence": "Tooling or source/documentation contract, not a product invocation.",
+        "test_failed_final_inspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tampered_sbom_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_failed_platform_reinspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tampered_signing_evidence_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
+    "tests/test_public_installer_checksum.py": {
+      "tests": {
+        "test_installer_accepts_one_valid_checksum_record": "install-update",
+        "test_installer_refuses_unproven_checksum_before_destination_change": "install-update",
+        "test_installer_accepts_uppercase_checksum_hex": "install-update",
+        "test_installer_rejects_mismatched_checksum_without_touching_existing_destination": "install-update",
+        "test_installer_refuses_when_checksum_computation_is_unavailable_or_fails": "install-update",
+        "test_installer_uses_openssl_when_other_checksum_tools_are_unavailable": "install-update",
+        "test_installer_handles_checksum_download_failures_for_both_downloaders": "install-update",
+        "test_installer_smokes_destination_stage_before_replacing_existing_binary": "install-update",
+        "test_installer_never_edits_shell_startup_files": "install-update",
+        "test_installer_refuses_symlink_destination_without_changing_target": "install-update",
+        "test_pinned_install_reads_the_version_flag_against_a_staged_release": "install-update",
+        "test_pinned_install_falls_back_to_the_second_word_of_the_version_banner": "install-update",
+        "test_latest_install_receipt_carries_the_true_version": "install-update",
+        "test_pinned_install_still_refuses_a_version_mismatch": "install-update",
+        "test_installer_reads_existing_version_when_install_path_contains_spaces": "install-update"
+      },
+      "internal": {
+        "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_ci_proves_installer_identity_before_the_version_sync_check": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_public_installer_verifier_compares_deployed_bytes": "Compares installer source, documentation or workflow wiring without running the public installer."
+      }
+    }
+  },
+  "rust": {
+    "tests/adverse_event_route_contract.rs": {
+      "feature": "adverse-event"
+    },
+    "tests/article_asset_terminal.rs": {
+      "feature": "output-safety"
+    },
+    "tests/article_batch_outcome.rs": {
+      "feature": "article"
+    },
+    "tests/article_usage_stderr.rs": {
+      "feature": "article"
+    },
+    "tests/cache_clear.rs": {
+      "feature": "cache"
+    },
+    "tests/cli_global_modifiers.rs": {
+      "feature": "cli-controls"
+    },
+    "tests/disable_sources_cli.rs": {
+      "feature": "source-policy"
+    },
+    "tests/json_error_contract.rs": {
+      "feature": "output-safety",
+      "tests": {
+        "public_trial_design_error_path_preserves_the_typed_source_chain": null
+      },
+      "internal": {
+        "public_trial_design_error_path_preserves_the_typed_source_chain": "Direct typed error-chain API regression; does not invoke the shipped CLI or MCP surface."
+      }
+    },
+    "tests/managed_state_permissions.rs": {
+      "feature": "cache"
+    },
+    "tests/rmcp_client_contract.rs": {
+      "feature": "mcp-parity",
+      "tests": {
+        "mcp_health_names_local_datasets_without_local_paths": "health",
+        "request_counter_waits_for_complete_request_headers": null,
+        "openfda_fixture_waits_for_complete_request_headers": null
+      },
+      "internal": {
+        "request_counter_waits_for_complete_request_headers": "Readiness of the test fixture alone does not exercise the product.",
+        "openfda_fixture_waits_for_complete_request_headers": "Readiness of the test fixture alone does not exercise the product."
+      }
+    },
+    "tests/tls_ca_bundle_contract.rs": {
+      "feature": "operator-tls"
+    },
+    "tests/windows_stdio_contract.rs": {
+      "feature": "cache"
+    },
+    "tests/live_smoke.rs": {
+      "tests": {
+        "live_cli_smoke_get_gene_braf_returns_gene_information": "gene",
+        "live_cli_smoke_get_variant_braf_v600e_returns_variant_information": "variant",
+        "live_cli_smoke_get_article_returns_article_information": "article"
+      }
+    }
+  },
+  "spec": {
+    "spec/entity/article-assets-live.md": {
+      "feature": "article"
+    },
+    "spec/entity/article-entities.md": {
+      "feature": "article"
+    },
+    "spec/entity/article-graph-live.md": {
+      "feature": "article"
+    },
+    "spec/entity/article-text-fidelity.md": {
+      "feature": "article"
+    },
+    "spec/entity/article.md": {
+      "feature": "article"
+    },
+    "spec/entity/author.md": {
+      "feature": "author"
+    },
+    "spec/entity/cell-line.md": {
+      "feature": "cell-line"
+    },
+    "spec/entity/clingen-cspec.md": {
+      "feature": "gene"
+    },
+    "spec/entity/clingen-erepo.md": {
+      "feature": "variant"
+    },
+    "spec/entity/ddinter-live.md": {
+      "feature": "managed-data"
+    },
+    "spec/entity/diagnostic.md": {
+      "feature": "diagnostic"
+    },
+    "spec/entity/disease-live.md": {
+      "feature": "disease"
+    },
+    "spec/entity/disease-survival-fixture.md": {
+      "feature": "disease"
+    },
+    "spec/entity/disease.md": {
+      "feature": "disease"
+    },
+    "spec/entity/drug-interactions.md": {
+      "feature": "drug"
+    },
+    "spec/entity/drug-label-sections.md": {
+      "feature": "drug"
+    },
+    "spec/entity/drug.md": {
+      "feature": "drug"
+    },
+    "spec/entity/gene-discovery.md": {
+      "feature": "gene"
+    },
+    "spec/entity/gene.md": {
+      "feature": "gene"
+    },
+    "spec/entity/nih-reporter-live.md": {
+      "feature": "gene"
+    },
+    "spec/entity/pathway.md": {
+      "feature": "pathway"
+    },
+    "spec/entity/pgx.md": {
+      "feature": "pgx"
+    },
+    "spec/entity/phenotype.md": {
+      "feature": "phenotype"
+    },
+    "spec/entity/protein.md": {
+      "feature": "protein"
+    },
+    "spec/entity/section-outcomes.md": {
+      "feature": "source-policy"
+    },
+    "spec/entity/study.md": {
+      "feature": "study"
+    },
+    "spec/entity/trial-condition-search.md": {
+      "feature": "trial"
+    },
+    "spec/entity/trial-documents.md": {
+      "feature": "trial"
+    },
+    "spec/entity/trial-intervention-aliases.md": {
+      "feature": "trial"
+    },
+    "spec/entity/trial-numeric-filters.md": {
+      "feature": "trial"
+    },
+    "spec/entity/trial.md": {
+      "feature": "trial"
+    },
+    "spec/entity/vaers.md": {
+      "feature": "adverse-event"
+    },
+    "spec/entity/variant-article-identity.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-articles-corpus.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-articles-live.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-gene-first-routing.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-hotspots.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-input-forms.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-myvariant-live.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant-protein-change-resolution.md": {
+      "feature": "variant"
+    },
+    "spec/entity/variant.md": {
+      "feature": "variant"
+    },
+    "spec/surface/build-profile-live.md": {
+      "feature": "health"
+    },
+    "spec/surface/cli-contract-ratchet.md": {
+      "feature": "cli-reference"
+    },
+    "spec/surface/cli.md": {
+      "feature": "cli-reference"
+    },
+    "spec/surface/discover-live.md": {
+      "feature": "discovery"
+    },
+    "spec/surface/discover.md": {
+      "feature": "discovery"
+    },
+    "spec/surface/mcp.md": {
+      "feature": "mcp-parity"
+    },
+    "spec/surface/skills.md": {
+      "feature": "skills"
+    },
+    "spec/surface/trial-retirement.md": {
+      "feature": "trial"
+    }
+  },
+  "internal": {
+    "tests/surface/test_architecture_docs_parity_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_biomcp_ci_path_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_biomcp_verify_live.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_complexportal_fixture_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_mcp_live_gate_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_search_all_cli_structure.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_source_configuration_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_ticket_401_surface_ratchets.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_ticket_405_architecture_operator_contracts.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/surface/test_variant_normalization_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_alphagenome_proto_generation.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_article_fulltext_reason_docs.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_binary_asset_gitattributes_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_bioasq_benchmark_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_bioasq_ingest.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_biomcp_ci_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_build_identity_rebuild.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_build_identity_wrapper_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_capture_receipts.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_cbioportal_study_download_timeout_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_central_test_support_helpers.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_changelog_coverage_check.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_ci_classify_push_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_ci_workflow_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_citation_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_cli_surface_contract_ratchet.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_cross_entity_pivots_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_demo_scripts.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_directory_submission_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_docs_changelog_refresh.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_docs_live_revision_gate.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_docs_publication_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_documentation_consistency_audit_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_documentation_toolchain_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_feature_coverage.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_gencc_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_installed_wheel_smoke.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_lint.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_llms_txt_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_markdown_twins_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_measure_mcp_tools.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_measurement_coverage_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_measurement_summary_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_merge_conflict_markers.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_no_climb_tracked_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_offline_gate_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_png_artifact_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_prepare_spec_artifacts.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_provider_contract_fixture.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_provider_network_policy.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_public_install_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_public_landing_copy_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_public_search_all_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_public_skill_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_python_contract_parallelism.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_quality_ratchet_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_candidate.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_container.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_draft_notes.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_homebrew.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_mcpb.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_metadata_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_notes.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_promotion.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_signing.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_smoke_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_targets.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_versions_check.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_workflow_provenance.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_replay_case_state.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_replay_live_drift.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_replay_server_lifetime.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_routine_cargo_feature_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_shell_workflow_lint_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_short_unix_socket_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_should_move_latest.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_slow_test_reporting.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_small_rust_test_boundaries.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_source_child_stdio_guard.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_source_external_xml_guard.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_source_licensing_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_source_package_boundary.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_source_pages_docs_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_streamable_http_demo.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_stress_lane_contract.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_upstream_planning_analysis_docs.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_variant_article_live_canary.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_version_sync_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_wheel_glibc_floor_check.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_zero_coupling_ratchet.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/article_transform_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/fulltext_fixture_output_location.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/health_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/legacy_cache_helper_cleanup.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/list_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/package_build_identity.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/pgx_get_paging.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/plugin_manifest.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/pty_helpers.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/search_all_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/skill_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "tests/windows_lock_contract.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "spec/surface/build-profile.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
+    "spec/surface/docker-image.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
+    "spec/surface/homebrew.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
+    "src/sources/request_plan_transport.rs": "Test-only external module imported by the cfg(test) tests module in src/sources/mod.rs via #[path = \"../request_plan_transport.rs\"].",
+    "src/entities/trial/search/eligibility/keep_paths.rs": "Test-only module declared under cfg(test) in src/entities/trial/search/eligibility.rs.",
+    "tests/test_advisory_bootstrap.py": "Build tooling installation contract; does not drive the shipped product.",
+    "tests/test_dependency_advisories.py": "Dependency policy scanner contract; does not drive the shipped product.",
+    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product."
+  },
+  "accounting_cases": {
+    "gene": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol",
+    "variant": "tests/test_variant_transcript_lookup.py::test_transcript_lookup_refuses_unverified_or_conflicting_identity",
+    "drug": "tests/test_drug_development_codes.py::test_development_codes_resolve_the_same_identity_singly_and_in_batch",
+    "article": "tests/test_article_preprint_fulltext.py::test_preprint_text_and_named_failures_preserve_every_batch_item",
+    "author": "tests/test_author_surface_docs.py::test_orcid_works_first_page_keeps_continuation_and_terminal_page_has_none",
+    "disease": "tests/test_disease_name_outcomes.py::test_name_lookup_distinguishes_provider_failure_from_absence",
+    "protein": "tests/golden/test_golden_output.py::test_golden_output[get-protein-p15056-json]",
+    "pathway": "spec/entity/pathway.md::block-1",
+    "cell-line": "spec/entity/cell-line.md::block-1",
+    "pgx": "tests/test_pgx_cpic_sections.py::test_pgx_sections_use_supported_columns_for_pages_and_report_provider_errors",
+    "gwas": "tests/test_gwas_day_cache_contract.py::test_a_repeat_gwas_search_inside_a_day_makes_no_request",
+    "phenotype": "spec/entity/phenotype.md::block-1",
+    "diagnostic": "tests/test_public_example_accessions.py::test_gtr_trademark_text_renders_without_changing_other_fields",
+    "search-all": "tests/golden/spec/test_spec_page_golden.py::test_search_all_counts_only_keeps_the_same_provider_matrix",
+    "cache": "tests/test_cache_persistent_size.py::test_concurrent_short_processes_do_not_lose_size_reservations",
+    "source-policy": "tests/test_disable_sources_replay_walk.py::test_every_disabled_source_id_stops_its_own_requests",
+    "mcp-parity": "tests/rmcp_client_contract.rs::rmcp_child_process_client_verifies_stdio_core_contract",
+    "study": "spec/entity/study.md::block-2",
+    "health": "tests/rmcp_client_contract.rs::mcp_health_names_local_datasets_without_local_paths",
+    "cli-reference": "tests/test_json_list_contract.py::test_json_list_outputs_are_parseable_reference_objects",
+    "skills": "tests/test_skill_prompt_contract.py::test_skill_prompt_render_install_and_slug_surfaces_match",
+    "install-update": "tests/golden/spec/test_install_lifecycle.py::test_uninstall_refuses_unproven_ownership_without_removing_files",
+    "adverse-event": "tests/adverse_event_route_contract.rs::faers_subset_json_process_contract_is_bounded_and_truthful",
+    "output-safety": "tests/json_error_contract.rs::json_mode_invalid_argument_error_writes_json_stdout_and_exit_2",
+    "operator-tls": "tests/tls_ca_bundle_contract.rs::configured_bundle_reaches_the_private_ca_fixture",
+    "provider-retry": "tests/surface/test_semantic_scholar_retry_after_contract.py::test_authenticated_semantic_scholar_retry_waits_for_retry_after",
+    "trial": "tests/test_ctgov_trial_search_detail_reuse.py::test_combined_geo_and_eligibility_filters_fetch_one_detail_projection",
+    "discovery": "spec/surface/discover.md::block-1",
+    "cli-controls": "tests/cli_global_modifiers.rs::genuine_json_parse_error_remains_exit_two_error",
+    "managed-data": "spec/entity/ddinter-live.md::block-1",
+    "mcp-http": "tests/test_mcp_http_surface.py::test_http_routes_advertise_streamable_http_surface",
+    "mcp-stdio": "tests/test_mcp_stdio_guidance.py::test_pre_handshake_error_does_not_end_the_stream",
+    "mcp-catalog": "tests/test_mcp_tool_catalog.py::test_installed_binary_prints_the_complete_mcp_catalog"
+  },
+  "source_features": {
+    "^src/mcp/catalog\\.rs$": "mcp-catalog",
+    "^src/mcp/shell/http_server\\.rs$": "mcp-http",
+    "^src/mcp/shell/pre_session\\.rs$": "mcp-stdio",
+    "^src/sources/gtr(?:/|\\.rs$)": "diagnostic",
+    "^src/sources/orcid(?:/|\\.rs$)": "author",
+    "^src/sources/vaers(?:/|\\.rs$)": "adverse-event",
+    "^src/sources/(alphagenome|cancerhotspots|civic|clingen_allele_registry|clingen_erepo|clingen_ldh|dbsnp|gnomad|litvar|mutalyzer|myvariant|oncokb|variantvalidator)(?:/|\\.rs$)": "variant",
+    "^src/sources/(cbioportal|cbioportal_download|cbioportal_study)(?:/|\\.rs$)": "study",
+    "^src/sources/(cellosaurus|pharmacodb)(?:/|\\.rs$)": "cell-line",
+    "^src/sources/(chembl|ddinter|dgidb|fda_orphan|mychem|openfda|opentargets)(?:/|\\.rs$)": "drug",
+    "^src/sources/(clingen|clingen_cspec|complexportal|disgenet|enrichr|gencc|gprofiler|gtex|hpa|mygene|nih_reporter|quickgo|string)(?:/|\\.rs$)": "gene",
+    "^src/sources/(clinicaltrials|nci_cts)(?:/|\\.rs$)": "trial",
+    "^src/sources/(cpic|pharmgkb)(?:/|\\.rs$)": "pgx",
+    "^src/sources/(cvx|ema|who_ivd|who_pq)(?:/|\\.rs$)": "managed-data",
+    "^src/sources/(archive_budget|europepmc|figshare|litsense2|ncbi_efetch|ncbi_idconv|opencitations|pmc_article|pmc_oa|pubmed|pubtator|semantic_scholar)(?:/|\\.rs$)": "article",
+    "^src/sources/(mydisease|seer)(?:/|\\.rs$)": "disease",
+    "^src/sources/(hpo|monarch)(?:/|\\.rs$)": "phenotype",
+    "^src/sources/(interpro|uniprot)(?:/|\\.rs$)": "protein",
+    "^src/sources/(kegg|reactome|wikipathways)(?:/|\\.rs$)": "pathway",
+    "^src/sources/(medlineplus|ols4|umls)(?:/|\\.rs$)": "discovery",
+    "^src/sources/(gwas)(?:/|\\.rs$)": "gwas",
+    "^src/sources/(ca_bundle)(?:/|\\.rs$)": "operator-tls",
+    "^src/sources/(disable|mod|ordinary_url_policy|provider_url_policy|request_plan_transport)(?:/|\\.rs$)": "source-policy",
+    "^src/sources/(rate_limit)(?:/|\\.rs$)": "provider-retry",
+    "^src/(?:cli|entities|transform)/(article|author|diagnostic|disease|drug|gene|pathway|pgx|phenotype|protein|study|trial|variant|gwas|adverse_event|cell_line|pharmacodb|discover|section_outcome|source_state_registry)(?:/|\\.rs$)": "@entity",
+    "^src/cli/(cache|worker)(?:/|\\.rs$)": "cache",
+    "^src/cli/(health)(?:/|\\.rs$)": "health",
+    "^src/cli/(install|update)(?:/|\\.rs$)": "install-update",
+    "^src/cli/(skill)(?:/|\\.rs$)": "skills",
+    "^src/cli/(chart)(?:/|\\.rs$)": "study",
+    "^src/cli/(search_all|search_all_command)(?:/|\\.rs$)": "search-all",
+    "^src/cli/(outcome|response_contract)(?:/|\\.rs$)": "output-safety",
+    "^src/cli/(debug_plan)(?:/|\\.rs$)": "source-policy",
+    "^src/cache/citation_evidence(?:/|\\.rs$)": "article",
+    "^src/cache/": "cache",
+    "^src/mcp/": "mcp-parity",
+    "^src/render/chart(?:/|\\.rs$)": "study",
+    "^src/render/provenance(?:/|\\.rs$)": "source-policy",
+    "^src/(?:render|transform|utils)/": "output-safety",
+    "^src/error\\.rs$": "output-safety",
+    "^src/(?:main|lib)\\.rs$": "cli-controls",
+    "^src/gene\\.rs$": "gene",
+    "^src/next_command\\.rs$": "cli-reference",
+    "^src/(?:skill_assets|workflow_ladders)\\.rs$": "skills",
+    "^src/xml\\.rs$": "article",
+    "^src/cli/": "cli-controls",
+    "^src/entities/": "source-policy"
+  },
+  "source_cases": {
+    "^src/render/markdown/trial\\.rs$": {
+      "feature": "trial",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-trial-nct02576665-references-markdown]"
+    },
+    "^src/(?:cache/citation_evidence|sources/opencitations|entities/article/(?:graph/)?citation_evidence|cli/article/citation_evidence|transform/article/jats/(?:citation_evidence|refs/citation))(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "spec/entity/article.md::block-100"
+    },
+    "^src/(?:cli/article/session|entities/article/(?:variant_search|search|backends|candidates|route|routing))(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "tests/test_variant_article_exact_fulltext.py::test_exact_name_searches_fulltext_with_source_specific_yields"
+    },
+    "^src/sources/(pmc_oa|pmc_article|figshare)(?:/|\\.rs$)": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/render/markdown/drug(?:_regulatory)?(?:/|\\.rs$)": {
+      "feature": "drug",
+      "case": "tests/test_drug_regulatory_replay.py::test_safety_displays_the_source_label_effective_date"
+    },
+    "^src/render/markdown/related/article_support\\.rs$": {
+      "feature": "article",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-article-20516115-markdown]"
+    },
+    "^src/sources/(quickgo|string|hpa)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
+    },
+    "^src/sources/(openfda|fda_orphan)(?:/|\\.rs$)": {
+      "feature": "drug",
+      "case": "tests/test_drug_regulatory_replay.py::test_regulatory_rolls_up_data_empty_and_unavailable_parts"
+    },
+    "^src/render/markdown/pharmacodb(?:/|\\.rs$)": {
+      "feature": "cell-line",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-cell-line-cvcl0064-variants-xrefs-markdown]"
+    },
+    "^src/(?:cli/chart|render/chart)(?:/|\\.rs$)": {
+      "feature": "study",
+      "case": "spec/entity/study.md::block-18"
+    },
+    "^src/render/markdown/cell_line(?:/|\\.rs$)": {
+      "feature": "cell-line",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-cell-line-cvcl0064-variants-xrefs-markdown]"
+    },
+    "^src/render/markdown/article(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-article-20516115-markdown]"
+    },
+    "^src/render/markdown/disease(?:/|\\.rs$)": {
+      "feature": "disease",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-disease-mondo0005105-markdown]"
+    },
+    "^src/render/markdown/protein(?:/|\\.rs$)": {
+      "feature": "protein",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-protein-p15056-markdown]"
+    },
+    "^src/render/markdown/pathway(?:/|\\.rs$)": {
+      "feature": "pathway",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-pathway-r-hsa-5673001-genes-events-markdown]"
+    },
+    "^src/render/markdown/variant(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-variant-braf-v600e-markdown]"
+    },
+    "^src/render/markdown/adverse_event\\.rs$": {
+      "feature": "adverse-event",
+      "case": "tests/adverse_event_route_contract.rs::broad_device_markdown_names_death_or_injury"
+    },
+    "^src/sources/(clingen_cspec)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "spec/entity/clingen-cspec.md::block-1"
+    },
+    "^src/sources/(clingen_erepo)(?:/|\\.rs$)": {
+      "feature": "variant",
+      "case": "spec/entity/clingen-erepo.md::block-1"
+    },
+    "^src/render/markdown/author(?:/|\\.rs$)": {
+      "feature": "author",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-author-orcid-4299-3018-markdown]"
+    },
+    "^src/entities/article/graph(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "spec/entity/article-graph-live.md::block-1"
+    },
+    "^src/sources/(nih_reporter)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-erbb2-funding-markdown]"
+    },
+    "^src/sources/(opentargets)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-egfr-druggability-markdown]"
+    },
+    "^src/render/markdown/gene(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
+    },
+    "^src/render/markdown/diagnostic\\.rs$": {
+      "feature": "diagnostic",
+      "case": "spec/entity/diagnostic.md::block-5"
+    },
+    "^src/cli/shared/search_payloads\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[search-gene-braf-json]"
+    },
+    "^src/render/markdown/pgx(?:/|\\.rs$)": {
+      "feature": "pgx",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-pgx-cyp2d6-guidelines-markdown]"
+    },
+    "^src/render/markdown/discovery\\.rs$": {
+      "feature": "discovery",
+      "case": "spec/surface/discover.md::block-1"
+    },
+    "^src/render/markdown/funding\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-erbb2-funding-markdown]"
+    },
+    "^src/cache/provider_capture\\.rs$": {
+      "feature": "gene",
+      "case": "spec/entity/clingen-cspec.md::block-1"
+    },
+    "^src/entities/article/batch\\.rs$": {
+      "feature": "article",
+      "case": "tests/article_batch_outcome.rs::fixture_backed_batches_match_independent_literal_goldens"
+    },
+    "^src/render/markdown/study\\.rs$": {
+      "feature": "study",
+      "case": "spec/entity/study.md::block-2"
+    },
+    "^src/sources/(gencc)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "spec/entity/gene.md::block-10"
+    },
+    "^src/cli/outcome/mcp_chart\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "tests/rmcp_client_contract.rs::rmcp_child_process_client_verifies_stdio_chart_contract"
+    },
+    "^src/utils/(query|serde)\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol"
+    },
+    "^src/cli/system/who_sync\\.rs$": {
+      "feature": "source-policy",
+      "case": "tests/test_disable_sources_replay_walk.py::test_every_disabled_source_id_stops_its_own_requests"
+    },
+    "^src/utils/download\\.rs$": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/cli/list(?:/|\\.rs$)": {
+      "feature": "cli-reference",
+      "case": "tests/test_json_list_contract.py::test_json_list_outputs_are_parseable_reference_objects"
+    },
+    "^src/cli/mcp_config\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "spec/surface/mcp.md::block-4"
+    },
+    "^src/cli/debug_plan\\.rs$": {
+      "feature": "article",
+      "case": "spec/entity/article.md::block-5"
+    },
+    "^src/utils/fs_lock\\.rs$": {
+      "feature": "gene",
+      "case": "spec/entity/gene.md::block-10"
+    },
+    "^src/transform/mod\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/render/json\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/cache/clean\\.rs$": {
+      "feature": "cache",
+      "case": "tests/test_cache_persistent_size.py::test_explicit_cleanup_previews_then_removes_committed_cache_bytes"
+    },
+    "^src/cache/clear\\.rs$": {
+      "feature": "cache",
+      "case": "tests/cache_clear.rs::cache_clear_yes_json_reports_machine_shape"
+    },
+    "^src/utils/date\\.rs$": {
+      "feature": "article",
+      "case": "tests/article_usage_stderr.rs::invalid_article_date_is_clean_usage_error"
+    },
+    "^src/utils/sync\\.rs$": {
+      "feature": "cache",
+      "case": "tests/test_cache_persistent_size.py::test_concurrent_short_processes_do_not_lose_size_reservations"
+    },
+    "^src/cli/update\\.rs$": {
+      "feature": "install-update",
+      "case": "tests/golden/live/test_install_update.py::test_published_install_checks_and_updates_to_latest_release"
+    },
+    "^src/cli/shared\\.rs$": {
+      "feature": "cli-controls",
+      "case": "tests/cli_global_modifiers.rs::json_help_forms_are_success_objects_on_stdout"
+    },
+    "^src/cli/types\\.rs$": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    },
+    "^src/utils/mod\\.rs$": {
+      "feature": "mcp-parity",
+      "case": "tests/rmcp_client_contract.rs::rmcp_stdio_recovers_from_tool_panic_on_the_same_session"
+    },
+    "^src/cli/(?:commands|shared/get_notes|worker|outcome|response_contract|system|mod)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-json]"
+    },
+    "^src/render/(?:markdown|human|mod)(?:/|\\.rs$)": {
+      "feature": "gene",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-gene-braf-go-interactions-hpa-markdown]"
+    }
+  }
+}

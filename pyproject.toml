@@ -76,3 +76,8 @@ addopts = "-v"
 asyncio_mode = "auto"
 # Retain through every failure phase; conftest removes passing replay directories.
 tmp_path_retention_policy = "all"
+
+[tool.biomcp.feature-coverage]
+# Initial valid outside-in collection at 5188be473: 64881 / 111574 product lines.
+floor = 58.15064441536558
+llvm-cov-version = "0.9.1"

@@ -13,7 +13,7 @@ someone deliberately registers this repo — one command, run by Ian
 or his workspace agent, as the very last step — every file under
 `sdlc/` here is inert: tickets, scripts, all of it. Create freely.
 As extra belt-and-braces, tickets that exist but should not run yet
-can sit in `sdlc/tickets/drafts/`, which the factory never reads
+can sit in `sdlc/archive/tickets/drafts/`, which the factory never reads
 even after registration.
 
 ## The prep work, in order, each with its "done" check
@@ -50,7 +50,7 @@ the record, never guessed.
 The ready/blocked/draft tickets (666, 669, 671, 672, 673–677, 682,
 684, 686, 688–690, 499 — sixteen; 669/672 were missed in this
 document's first draft, 689/690 postdate it) become real sdlc
-tickets — but in `sdlc/tickets/drafts/`,
+tickets — but in `sdlc/archive/tickets/drafts/`,
 not the top level. Follow the `/ticket` skill (available in any
 workspace session): four-digit id keeping the March number, one
 behavior per ticket, frontmatter, plain language, a raise allowance

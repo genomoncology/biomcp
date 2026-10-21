@@ -115,6 +115,8 @@
 - Keep release steps in one document and reuse qualification after records-only changes. (2312)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
+
+- Remove obsolete pipeline scripts and their lifecycle tests, and classify archived planning and records as documentation. (2313)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
@@ -128,6 +130,8 @@
 - Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
 
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
+
+- Link outside-in tests to caller features and check product-only source coverage in nightly and release qualification. (2319)
 
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 

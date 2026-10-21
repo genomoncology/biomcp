@@ -37,7 +37,7 @@ def _binary() -> Path:
 
 def _registry():
     spec = importlib.util.spec_from_file_location(
-        "section_credit_registry", REPO_ROOT / "tools/check-quality-ratchet.py"
+        "section_credit_registry", REPO_ROOT / "tools/check-semantic-contracts.py"
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

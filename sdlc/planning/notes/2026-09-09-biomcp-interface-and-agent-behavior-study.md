@@ -56,7 +56,7 @@ The harness defers tool schemas — it presents names first and loads the full J
 
 The repository absorbed it. Records 1091 through 1100 in `repos/biomcp/sdlc/records/` cover the variant silent zero, the pharmacogenomics phenotype collapse, the false zero from a failed disease-label lookup, an unresolved filter reporting zero, `whyStopped` on stopped trials, one unavailable source discarding the working sections, the MCP schema not naming its sections, and a plain-text query field silently accepting filter syntax. Records 1104, 0899 and 0950 cover the adverse-event percent column and the genome-build labels.
 
-Six findings had no ticket. They are filed as an issue at `repos/biomcp/sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`: uniform provenance in the `_meta` envelope, protein-numbering tolerance on `--hgvsp`, a frozen replay mode for evaluation, suggestion ranking that prefers the user's own term, an abstention threshold on literature search, and UTF-8 double-encoding in the GTR bundle.
+Six findings had no ticket. They are filed as an issue at `repos/biomcp/sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`: uniform provenance in the `_meta` envelope, protein-numbering tolerance on `--hgvsp`, a frozen replay mode for evaluation, suggestion ranking that prefers the user's own term, an abstention threshold on literature search, and UTF-8 double-encoding in the GTR bundle.
 
 The St. Jude deck outline built on these findings, including its live-demo risk assessment, moved to `repos/mktg/notes/Presentations/st-jude-2026-paper-findings-deck-2026-09-01.md`.
 

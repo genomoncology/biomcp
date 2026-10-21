@@ -12,7 +12,7 @@ Milestone: 0.9.2
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 3). The reviewer ran a release build of main at `37631c357` against MyDisease.info.
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 3). The reviewer ran a release build of main at `37631c357` against MyDisease.info.
 
 - `src/sources/mydisease.rs:227`: the 1295 query now matches exact synonyms, which brings several diseases that share an abbreviation into one result set. `get disease` still picks one silently, and the tie-break favours records with no label because the shorter fallback name wins.
 - `get disease MF` shows MONDO:0020481, "Disease label unavailable", the Myotonia fluctuans definition, and genes CCR4, NR3C1, DHFR and TNFRSF8, which belong to mycosis fungoides.
@@ -136,7 +136,7 @@ curated abbreviation preferences.
 
 ## Second-review fix round (2026-10-07)
 
-Finding 14 of `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
+Finding 14 of `sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
 
 - Non-human records no longer count as holders: MONDO records descended
   from MONDO:0005583 (`non-human animal disease`) are excluded, so the
