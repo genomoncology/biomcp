@@ -10,6 +10,8 @@ Reviews: revision 66730a44f2277159303a076a57a8aeea4cbe66f6, accept
 
 Reviews: revision 629ec354b4c966a3cc710a4b40ca526f12154d85, accept
 
+Reviews: revision d51d921e75aca4ca0738f74e857b2889075be890, accept
+
 ## Outcome
 
 No credential BioMCP sends reaches disk or logs. That covers the NCBI api_key query parameter, other key or token query parameters, and authorization or x-api-key headers.
