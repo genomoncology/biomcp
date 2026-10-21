@@ -714,6 +714,10 @@
     "^src/entities/": "source-policy"
   },
   "source_cases": {
+    "^src/render/markdown/trial\\.rs$": {
+      "feature": "trial",
+      "case": "tests/golden/test_golden_output.py::test_golden_output[get-trial-nct02576665-references-markdown]"
+    },
     "^src/(?:cache/citation_evidence|sources/opencitations|entities/article/(?:graph/)?citation_evidence|cli/article/citation_evidence|transform/article/jats/(?:citation_evidence|refs/citation))(?:/|\\.rs$)": {
       "feature": "article",
       "case": "spec/entity/article.md::block-100"
