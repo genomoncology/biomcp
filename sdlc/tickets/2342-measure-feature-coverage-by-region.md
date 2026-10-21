@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 tools/collect_feature_coverage.py reports unrun Rust code by source region, not by line. It reads `cargo llvm-cov report --json` and lists every region with a zero count across all test binaries. A closure or branch that shares a line with code that ran then shows up as unrun. The floor and the unreached list use regions, with the baseline reset once and recorded.
 
-- Changes: `tools/feature_coverage.py`, `tools/collect_feature_coverage.py`, `tools/check-feature-coverage.py`, `tests/test_feature_coverage.py`, `pyproject.toml`, `CHANGELOG.md`.
+- Changes: `tools/feature_coverage.py`, `tools/collect_feature_coverage.py`, `tools/check-feature-coverage.py`, `tests/test_feature_coverage.py`, `pyproject.toml`, `CHANGELOG.md`, `Makefile`, `docs/reference/release-process.md`.
 
 - Proof: a fixture where a closure never runs on a line whose other code did run shows that closure in the unreached list; the nightly and release coverage targets pass with the reset region baseline.
 

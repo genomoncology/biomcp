@@ -14,11 +14,13 @@ from feature_coverage import coverage_report, inventory
 
 
 def collect(root: Path, baseline: bool) -> int:
-    import tomllib
-
     output = root / ".cache/feature-coverage"
     output.mkdir(parents=True, exist_ok=True)
     (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "reason": "collection has not finished"}) + "\n")
+    if sys.platform != "linux":
+        raise ValueError("outside-in feature coverage requires a Linux host")
+    import tomllib
+
     links, config, errors = inventory(root)
     if errors:
         raise ValueError("\n".join(errors))
@@ -76,8 +78,6 @@ def collect(root: Path, baseline: bool) -> int:
             instrumented[key] = words[0] if words else ""
     # MCP tests deliberately terminate servers. Continuous counters survive
     # SIGTERM instead of losing every request served before the signal.
-    if sys.platform not in {"linux", "darwin"}:
-        raise ValueError("outside-in continuous profiling requires Linux or macOS")
     if sys.platform == "linux":
         relocation = "-Cllvm-args=-runtime-counter-relocation"
         wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"

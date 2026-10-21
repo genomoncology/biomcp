@@ -32,6 +32,18 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
                           capture_output=True, text=True)
 
 
+
+def collector_command(tools: Path, platform: str, *args: str) -> list[str]:
+    # Vary only the collector's platform dependency. Changing sys.platform
+    # globally also changes lazy stdlib imports into unsupported host modules.
+    program = ("import runpy,sys,types; sys.path.insert(0," + repr(str(tools)) + "); "
+               "module=runpy.run_path(" + repr(str(tools / "collect_feature_coverage.py")) + "); "
+               "module['collect'].__globals__['sys']=types.SimpleNamespace(platform=" + repr(platform) + "); "
+               "sys.argv=" + repr(["collect_feature_coverage.py", *args]) + "; "
+               "raise SystemExit(module['main']())")
+    return [sys.executable, "-c", program]
+
+
 def test_every_outside_case_names_a_known_feature(tmp_path: Path) -> None:
     root = tree(tmp_path)
     assert run(root, "links").returncode == 0
@@ -184,7 +196,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     )
     cargo.chmod(0o755)
     result = subprocess.run(
-        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        collector_command(tools, "linux", "--baseline"),
         env=os.environ | {"PATH": str(commands) + os.pathsep + os.environ["PATH"]},
         text=True, capture_output=True,
     )
@@ -197,15 +209,14 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     assert "outside_in_percent" not in data
     flags, pattern = (root / "profile-env.txt").read_text().splitlines()
     assert instrumentation in flags
-    if sys.platform == "linux":
-        assert "-Cllvm-args=-runtime-counter-relocation" in flags
+    assert "-Cllvm-args=-runtime-counter-relocation" in flags
     assert Path(pattern).is_absolute()
     assert pattern == str(root / ".cache/feature-coverage/target/outside-%c%p.profraw")
     # Even errors before compilation must not leave yesterday's passing report.
     (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
     (root / "tests/test_unknown.py").write_text("def test_new(): pass\n")
     rejected = subprocess.run(
-        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        collector_command(tools, "linux", "--baseline"),
         text=True, capture_output=True,
     )
     assert rejected.returncode != 0
@@ -361,3 +372,27 @@ def test_empty_or_wrong_coverage_export_cannot_pass_a_zero_floor(tmp_path: Path,
     missing = run(root, "report", "--floor", "0")
     assert missing.returncode == 1
     assert "report requires --json and --statuses" in missing.stderr
+
+
+@pytest.mark.parametrize("platform", ["darwin", "win32"])
+def test_collection_requires_linux_before_preparing_or_building(tmp_path: Path, platform: str) -> None:
+    import shutil
+
+    root = tree(tmp_path)
+    tools = root / "tools"
+    tools.mkdir()
+    for name in ("collect_feature_coverage.py", "feature_coverage.py"):
+        shutil.copyfile(ROOT / "tools" / name, tools / name)
+    output = root / ".cache/feature-coverage"
+    output.mkdir(parents=True)
+    (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
+    # No pyproject or installed tools: reject the platform before reading
+    # collection settings, preparing dependencies or compiling anything.
+    result = subprocess.run(collector_command(tools, platform), text=True, capture_output=True)
+    assert result.returncode == 1
+    assert "outside-in feature coverage requires a Linux host" in result.stdout
+    assert not result.stderr
+    data = json.loads((output / "coverage.json").read_text())
+    assert data["status"] == "incomplete"
+    assert "outside_in_percent" not in data
+    assert not list(output.glob("*.command.json"))
