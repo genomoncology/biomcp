@@ -27,6 +27,12 @@ Depends on: 2341
 Depends on: 2342
 Depends on: 2343
 Depends on: 2344
+Depends on: 2345
+Depends on: 2346
+Depends on: 2347
+Depends on: 2348
+Depends on: 2349
+Depends on: 2351
 
 ## Outcome
 
@@ -75,3 +81,5 @@ Resolved tool interruption: On 2026-10-21 the live pm database reported schema 1
 - PM m3303 defines the region floor as Linux-only, measured on the approved Linux secondary host to match release coverage. Declare the supported platform in make feature-coverage and the release document, with an early clear unsupported-host failure. The first M5 instrumentation attempt produced no valid baseline and no reset; its incomplete receipts remain in 2342. Darwin profiling is outside this release and creates no new ticket. The one successful Linux baseline supplies this admission's floor; final product main checks remain separate.
 
 - PM m3309 adds bounded repairs to 2342: apply continuous-counter relocation on every platform, prove the previously failing integration case once on M5, and retain Darwin refusal if that attempt fails. Linux remains the authoritative region floor. The same lane fixes platform-test isolation and installs the existing pinned cargo-deny version through the lint bootstrap. Retain the actual probe result and installer proof without treating either as a second coverage baseline.
+
+- PM m3479 requires current-main disposition of 2345–2349 before rehearsal. Actual jobs j4144 and j4148 did not reproduce the reported coordinate/read failures; both tickets are withdrawn with archived proof. Jobs j4159, j4152 and j4166 confirm query grouping, missing typed-index explanation and empty-container classification respectively. PM reply m3485 approves 2351 in 0.9.4, incorporating 2343 isolation into one shared synthetic-Make helper. Product changes require a fresh final source qualification and complete rehearsal.
