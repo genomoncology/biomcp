@@ -271,28 +271,6 @@
     "tests/test_python_lane_cache_isolation.py": {
       "feature": "cache"
     },
-    "tests/test_release_package.py": {
-      "tests": {
-        "test_wheel_installs_skills_without_network": "skills"
-      },
-      "internal": {
-        "test_native_archive_is_deterministic_minimal_and_executable": "Tooling or source/documentation contract, not a product invocation.",
-        "test_native_archives_carry_the_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
-        "test_wheel_contains_binaries_and_complete_agent_surface": "Tooling or source/documentation contract, not a product invocation.",
-        "test_packaged_agent_index_maps_local_and_live_topics": "Tooling or source/documentation contract, not a product invocation.",
-        "test_development_wheel_uses_exact_pep440_identity": "Tooling or source/documentation contract, not a product invocation.",
-        "test_artifact_record_binds_bytes_and_candidate_identity": "Tooling or source/documentation contract, not a product invocation.",
-        "test_wheel_identity_metadata_and_record_are_fully_validated": "Tooling or source/documentation contract, not a product invocation.",
-        "test_wheel_duplicate_member_is_rejected": "Tooling or source/documentation contract, not a product invocation.",
-        "test_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
-        "test_installed_command_smoke_requires_exact_structured_identity": "Tooling or source/documentation contract, not a product invocation.",
-        "test_final_inspector_owns_complete_wheel_evidence": "Tooling or source/documentation contract, not a product invocation.",
-        "test_failed_final_inspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
-        "test_tampered_sbom_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
-        "test_failed_platform_reinspection_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation.",
-        "test_tampered_signing_evidence_leaves_no_success_record": "Tooling or source/documentation contract, not a product invocation."
-      }
-    },
     "tests/test_public_installer_checksum.py": {
       "tests": {
         "test_installer_accepts_one_valid_checksum_record": "install-update",
@@ -597,7 +575,6 @@
     "tests/test_release_promotion.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_signing.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_smoke_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
-    "tests/test_release_targets.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_versions_check.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_check_counterparts.py": "Release/build tooling contract; checks workflow counterparts, nightly command sequencing and stress affinity using fake build commands, without exercising the shipped product.",
     "tests/test_release_workflow_provenance.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",

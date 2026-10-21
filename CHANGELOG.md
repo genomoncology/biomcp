@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Point agent guidance to the embedded skill commands and documentation site, and remove the unused guide-copy packaging path. (2338)
+
 - Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
 
 - Keep cached responses usable during concurrent cache updates, avoid repeated database opens and skip cleanup transactions when maintenance is not due. (2326)
