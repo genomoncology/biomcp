@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import csv
 import gzip
 import json
@@ -96,7 +98,7 @@ def _runtime_help() -> str:
         shell=False,
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 0, (
         "biomcp get diagnostic --help failed\n"
@@ -163,7 +165,7 @@ def test_public_gtr_examples_resolve_against_live_gtr_bundle(tmp_path: Path) -> 
     assert EXPECTED_PUBLIC_GTR_COMMANDS <= commands
 
     for command in sorted(commands):
-        result = _run_biomcp_command(command, env=env, timeout=60)
+        result = _run_biomcp_command(command, env=env, timeout=HANG_TIMEOUT)
         combined_output = f"{result.stdout}\n{result.stderr}"
         assert result.returncode == 0, (
             f"{command} failed\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"

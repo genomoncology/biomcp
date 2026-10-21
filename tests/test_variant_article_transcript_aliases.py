@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -20,7 +22,7 @@ CAPTURE = REPO_ROOT / "tests/fixtures/article/transcript-aliases/replay"
 UNKNOWN_TRANSCRIPT = "source transcript not stated by the provider"
 
 
-@pytest.mark.parametrize("surface", ["json", "markdown", pytest.param("mcp", marks=pytest.mark.timeout(120))])
+@pytest.mark.parametrize("surface", ["json", "markdown", pytest.param("mcp", marks=pytest.mark.timeout(HANG_TIMEOUT))])
 def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
     surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -63,7 +65,7 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
             command += ["variant", "articles", "BRCA1 F1761I", "--strategy",
                         "union", "--verify-identity", "--limit", "10"]
             result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                    capture_output=True, text=True, timeout=60)
+                                    capture_output=True, text=True, timeout=HANG_TIMEOUT)
             assert result.returncode == 0, result.stdout + result.stderr
             if surface == "markdown":
                 payload = result.stdout

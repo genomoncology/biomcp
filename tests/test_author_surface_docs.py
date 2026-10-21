@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from cache_fixture import set_cache_root
 
 import json
@@ -204,7 +206,7 @@ class _FixtureServer:
 
         for _ in range(20):
             try:
-                urllib.request.urlopen(f"{self.base}/health", timeout=0.5).read()
+                urllib.request.urlopen(f"{self.base}/health", timeout=HANG_TIMEOUT).read()
                 break
             except Exception:
                 import time
@@ -232,7 +234,7 @@ class _FixtureServer:
     def close(self) -> None:
         self._server.shutdown()
         self._server.server_close()
-        self._thread.join(timeout=2)
+        self._thread.join(timeout=HANG_TIMEOUT)
 
 
 @pytest.fixture

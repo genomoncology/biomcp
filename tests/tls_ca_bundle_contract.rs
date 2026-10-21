@@ -16,7 +16,6 @@ use tokio::net::TcpListener;
 use tokio_rustls::TlsAcceptor;
 
 // Bound hung children without treating parallel process startup as a latency test.
-const STARTUP_WATCHDOG: Duration = Duration::from_secs(45);
 
 const FAERS_REPORT_PAGE: &str = r#"{
   "meta":{"results":{"skip":0,"limit":1,"total":1}},
@@ -637,12 +636,15 @@ fn server_command(
 }
 
 async fn stop_and_stderr(child: &mut tokio::process::Child) -> String {
-    let _ = tokio::time::timeout(Duration::from_secs(2), child.kill()).await;
-    let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
+    let _ = tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), child.kill()).await;
+    let _ = tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), child.wait()).await;
     let mut stderr = String::new();
     if let Some(mut pipe) = child.stderr.take() {
-        let _ =
-            tokio::time::timeout(Duration::from_secs(2), pipe.read_to_string(&mut stderr)).await;
+        let _ = tokio::time::timeout(
+            biomcp_mcp_contract_client::hang_timeout(),
+            pipe.read_to_string(&mut stderr),
+        )
+        .await;
     }
     stderr
 }
@@ -654,7 +656,7 @@ async fn stdio_rejects_invalid_explicit_bundle_before_session_acceptance() {
     let mut child = server_command(&["serve"], Some(&missing), None)
         .spawn()
         .expect("spawn stdio");
-    let status = tokio::time::timeout(STARTUP_WATCHDOG, child.wait())
+    let status = tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), child.wait())
         .await
         .expect("stdio exit deadline")
         .expect("stdio exit");
@@ -722,7 +724,7 @@ async fn stdio_bad_fallback_starts_and_warns_once_across_tool_calls() {
     let mut line = String::new();
     // watchdog: bounded total read budget — a slow line retries
     // within the budget instead of aborting the read loop.
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(45); // watchdog: bounded total read budget
+    let deadline = tokio::time::Instant::now() + biomcp_mcp_contract_client::hang_timeout(); // watchdog: bounded total read budget
     while !(seen_two && seen_three && seen_four) {
         let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
         if remaining.is_zero() {
@@ -754,7 +756,7 @@ async fn stdio_bad_fallback_starts_and_warns_once_across_tool_calls() {
     // short timeout raced the server's exit under load, and the
     // discarded partial read left the later find nothing (2026-09-28
     // review) — the warning count read 0 and the assert fired.
-    let _ = tokio::time::timeout(Duration::from_secs(10), child.wait()).await; // watchdog: bounded child exit wait
+    let _ = tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), child.wait()).await; // watchdog: bounded child exit wait
     let stderr = stop_and_stderr(&mut child).await;
     assert!(
         seen_two && seen_three && seen_four,
@@ -799,14 +801,14 @@ async fn http_rejects_invalid_explicit_bundle_before_bind() {
     )
     .spawn()
     .expect("spawn HTTP");
-    let status = tokio::time::timeout(STARTUP_WATCHDOG, child.wait())
+    let status = tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), child.wait())
         .await
         .expect("HTTP exit deadline")
         .expect("HTTP exit");
     assert!(!status.success());
     assert!(
         tokio::time::timeout(
-            Duration::from_secs(1),
+            biomcp_mcp_contract_client::hang_timeout(),
             tokio::net::TcpStream::connect(("127.0.0.1", port)),
         )
         .await
@@ -833,10 +835,10 @@ async fn http_bad_fallback_binds_and_warns_once() {
     )
     .spawn()
     .expect("spawn HTTP");
-    let deadline = Instant::now() + STARTUP_WATCHDOG;
+    let deadline = Instant::now() + biomcp_mcp_contract_client::hang_timeout();
     loop {
         if tokio::time::timeout(
-            Duration::from_secs(1),
+            biomcp_mcp_contract_client::hang_timeout(),
             tokio::net::TcpStream::connect(("127.0.0.1", port)),
         )
         .await

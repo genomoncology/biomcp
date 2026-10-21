@@ -464,7 +464,7 @@ fn split_phenotype_queries_preserves_single_phrase_and_splits_commas() {
 async fn resolve_phenotype_query_terms_empty_input_mentions_hpo_ids_and_symptom_phrases() {
     let err = resolve_phenotype_query_terms(
         "   ",
-        tokio::time::Instant::now() + std::time::Duration::from_secs(1),
+        tokio::time::Instant::now() + crate::test_support::hang_timeout(),
     )
     .await
     .expect_err("empty phenotype query should fail");

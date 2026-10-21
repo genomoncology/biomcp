@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -162,7 +164,7 @@ def test_failed_bubblewrap_preserves_bootstrap_error_and_status(tmp_path: Path) 
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=env,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
 
     assert completed.returncode == 23
@@ -217,7 +219,7 @@ def test_failed_verifier_preserves_isolation_error_and_status(tmp_path: Path) ->
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=env,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
 
     assert completed.returncode == 24
@@ -245,7 +247,7 @@ def test_verifier_creates_bootstrap_sentinel_before_isolation_checks(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=env,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
 
     assert sentinel.is_file()
@@ -299,7 +301,7 @@ print(json.dumps({
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=child_env,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     if (
         completed.returncode != 0
@@ -360,7 +362,7 @@ def test_outer_runner_preserves_child_failure_and_cleans_ownership_sentinel(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env={"PATH": os.environ["PATH"], "TMPDIR": str(tmp_path)},
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     assert completed.returncode == 37
     assert "offline ownership mapping:" in completed.stdout
@@ -384,7 +386,7 @@ def test_marker_cannot_bypass_outer_privilege_isolation() -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env={"PATH": os.environ["PATH"], "BIOMCP_OFFLINE_NETWORK": "1"},
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     assert completed.returncode != 0
     assert "offline privilege isolation failed: namespace uid/gid are not 0" in completed.stdout
@@ -403,7 +405,7 @@ def test_enclosed_runner_revalidates_privilege_and_network_state() -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env={"PATH": os.environ["PATH"], "BIOMCP_OFFLINE_NETWORK": "1"},
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     assert "reusing the verified enclosing namespace" in completed.stdout
     assert "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1" in completed.stdout

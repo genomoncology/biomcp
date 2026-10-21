@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from cache_fixture import set_cache_root
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -151,7 +153,7 @@ def test_failed_no_cache_request_leaves_no_managed_state(tmp_path: Path) -> None
         thread.join()
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_empty_and_interrupted_no_cache_requests_leave_no_state(tmp_path: Path) -> None:
     GeneHandler.status = 200
     GeneHandler.payload = {"total": 0, "hits": []}

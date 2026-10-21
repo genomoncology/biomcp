@@ -203,7 +203,7 @@ async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fal
     ] {
         let before = requests.load(Ordering::SeqCst);
         let page = tokio::time::timeout(
-            std::time::Duration::from_secs(10),
+            crate::test_support::hang_timeout(),
             search_name_query_with_region(query, 10, 0, DrugRegion::Eu, WhoProductTypeFilter::Both),
         )
         .await

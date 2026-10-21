@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import signal
@@ -16,7 +18,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
 from replay_env import isolated_command_env  # noqa: E402
 
-pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(120)]
+pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(HANG_TIMEOUT)]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
@@ -255,7 +257,7 @@ def test_client_without_initialize_expires_startup_wait(
                 if not line:
                     return
                 responses.append(json.loads(line))
-                threading.Event().wait(0.05)
+                threading.Event().wait(HANG_TIMEOUT)
         except BrokenPipeError:
             pass  # Startup expiry closes the stream while the client stays open.
         except Exception as error:

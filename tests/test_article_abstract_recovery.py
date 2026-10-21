@@ -1,6 +1,8 @@
 """Synthetic source replies exercise abstract recovery through the shipped CLI."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -108,11 +110,11 @@ def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: P
             + (["--full"] if surface == "search" else []))
     try:
         result = subprocess.run([binary, "--json", "--no-cache", *args], env=env,
-                                capture_output=True, text=True, timeout=30, check=False)
+                                capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     reply = json.loads(result.stdout)
     if surface == "compact":

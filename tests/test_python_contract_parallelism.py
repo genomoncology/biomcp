@@ -1,3 +1,5 @@
+
+from hang_guard import HANG_TIMEOUT
 from pathlib import Path
 import subprocess
 import shlex
@@ -88,7 +90,7 @@ def test_routine_python_selection_excludes_audits_long_and_release_cases(
     )
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-q", "-m", selection, str(tmp_path)],
-        cwd=tmp_path, capture_output=True, text=True, timeout=15,
+        cwd=tmp_path, capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "1 passed, 3 deselected" in result.stdout

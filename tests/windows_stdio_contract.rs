@@ -18,8 +18,6 @@ use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
 use serde_json::{Value, json};
 use tokio::io::AsyncWriteExt as _;
 
-const RESPONSE_TIMEOUT: Duration = Duration::from_secs(60);
-
 struct StdioMcp {
     child: Child,
     lines: mpsc::Receiver<String>,
@@ -71,7 +69,7 @@ impl StdioMcp {
     fn expect_response(&self, id: &str) -> Value {
         let line = self
             .lines
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .unwrap_or_else(|_| panic!("timed out waiting for response to {id}"));
         let frame: Value = serde_json::from_str(&line)
             .unwrap_or_else(|error| panic!("stdout line is not JSON ({error}): {line}"));
@@ -143,7 +141,7 @@ fn windows_stdio_stream_stays_json_through_a_managed_write() {
 
     client.drain_remaining();
     assert!(
-        started.elapsed() < Duration::from_secs(120), // watchdog: whole-contract upper bound, two minutes
+        started.elapsed() < biomcp_mcp_contract_client::hang_timeout(), // watchdog: whole-contract hang guard
         "contract took unexpectedly long"
     );
 }
@@ -215,7 +213,7 @@ impl GeneFixture {
                 assert!(line.starts_with("GET /query?"), "unexpected local request: {line}");
                 requests.fetch_add(1, Ordering::SeqCst);
                 sender.send(()).map_err(std::io::Error::other)?;
-                tokio::time::timeout(RESPONSE_TIMEOUT, async {
+                tokio::time::timeout(biomcp_mcp_contract_client::hang_timeout(), async {
                     loop {
                         let blocked = *gate.borrow_and_update();
                         if !blocked { break; }
@@ -274,7 +272,7 @@ fn successful_output(process: ManagedChild) -> Value {
 
 fn successful_output_with_stderr(mut process: ManagedChild) -> (Value, String) {
     let child = &mut process.0;
-    let deadline = Instant::now() + RESPONSE_TIMEOUT;
+    let deadline = Instant::now() + biomcp_mcp_contract_client::hang_timeout();
     let status = loop {
         if let Some(status) = child.try_wait().expect("poll child") {
             break status;
@@ -465,7 +463,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     successful_output(spawn_gene(cache, &provider.base, "BRAF0"));
     provider
         .arrivals
-        .recv_timeout(RESPONSE_TIMEOUT)
+        .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
         .expect("initial provider request");
 
     // Hold distinct cold requests at the real provider boundary, so the two
@@ -477,7 +475,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     for _ in 0..3 {
         provider
             .arrivals
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("three concurrent provider requests");
     }
     provider.hold_replies(false);
@@ -530,7 +528,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     for _ in 0..2 {
         provider
             .arrivals
-            .recv_timeout(RESPONSE_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("in-flight request before clear");
     }
     assert!(

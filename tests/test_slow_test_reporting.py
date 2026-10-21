@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from pathlib import Path
 import os
 import subprocess
@@ -47,33 +49,38 @@ def test_python_slow_warning_preserves_test_result(
         env={**os.environ, "PYTEST_ADDOPTS": "", "PYTHONPATH": pythonpath},
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
     )
     assert result.returncode == int(fails), result.stdout + result.stderr
-    assert "SLOW test_case.py::test_slow_case" in result.stdout
-    assert "load (1, 5, 15 min):" in result.stdout
+    assert "WARNING slow test test_case.py::test_slow_case" in result.stdout
+    assert "load (1 min):" in result.stdout
     if not load_available:
-        assert "load (1, 5, 15 min): unavailable" in result.stdout
+        assert "load (1 min): unavailable" in result.stdout
 
 
 @pytest.mark.parametrize("exit_code", [0, 1])
-def test_nextest_load_reporting_preserves_runner_exit(exit_code: int) -> None:
+@pytest.mark.parametrize("messages", [
+    "PASS [6.000s] probe test_slow_case",
+    "SLOW [> 6.000s] probe test_slow_case\\nSLOW [> 10.000s] probe test_slow_case\\nPASS [11.000s] probe test_slow_case",
+])
+def test_nextest_load_reporting_preserves_runner_exit(exit_code: int, messages: str) -> None:
     result = subprocess.run(
         [
             sys.executable,
             str(ROOT / "tools/report-slow-tests.py"),
             sys.executable,
             "-c",
-            "import sys; print('        SLOW [> 30.000s] probe test_slow_case', "
+            f"import sys; print('{messages}', "
             f"file=sys.stderr); sys.exit({exit_code})",
         ],
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=HANG_TIMEOUT,
     )
     assert result.returncode == exit_code
     assert "probe test_slow_case" in result.stdout
-    assert "load (1, 5, 15 min):" in result.stdout
+    assert "load (1 min):" in result.stdout
+    assert result.stdout.count("WARNING slow test") == 1
 
 
 def test_nextest_reporter_preserves_child_signal() -> None:
@@ -87,12 +94,12 @@ def test_nextest_reporter_preserves_child_signal() -> None:
         ],
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 143, result.stdout + result.stderr
 
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
     import signal
 

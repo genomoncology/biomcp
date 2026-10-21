@@ -46,7 +46,7 @@ async fn send_and_capture(
         .await
         .expect("send request plan");
     let captured = captured_rx
-        .recv_timeout(crate::test_support::watchdog(60))
+        .recv_timeout(crate::test_support::hang_timeout())
         .expect("fixture captures request");
     server.finish().unwrap();
     (captured, response)

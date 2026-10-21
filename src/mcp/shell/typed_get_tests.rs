@@ -654,7 +654,7 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     let env = NciTrialMcpEnv::set(&base);
 
     let typed = tokio::time::timeout(
-        std::time::Duration::from_secs(10),
+        crate::test_support::hang_timeout(),
         BioMcpServer::new().get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
             "entity":"trial", "id":"NCT05879926", "source":"nci",
             "sections":["all"], "json":true
@@ -664,7 +664,7 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     .expect("typed NCI get timeout")
     .unwrap();
     let raw = tokio::time::timeout(
-        std::time::Duration::from_secs(10),
+        crate::test_support::hang_timeout(),
         BioMcpServer::new().biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get trial NCT05879926 --source nci all".into(),
             json: true,

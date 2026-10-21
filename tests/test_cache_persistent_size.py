@@ -1,6 +1,8 @@
 """Short CLI invocations share the configured HTTP cache size budget."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -53,7 +55,7 @@ def run_gene(cache, base, index, limit=50000):
         [str(BINARY), "--json", "search", "gene", f"BRAF{index}", "--limit", "1"],
         cwd=ROOT, env=retained_cache_env(cache.parent, {"BIOMCP_MYGENE_BASE": base}, base,
             cache_dir=cache, max_size=limit),
-        capture_output=True, text=True, timeout=20,
+        capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 0, (result.stdout, result.stderr)
     assert json.loads(result.stdout)["results"]
@@ -92,12 +94,12 @@ def test_explicit_cleanup_previews_then_removes_committed_cache_bytes(tmp_path, 
     env = retained_cache_env(tmp_path, {}, gene_provider, cache_dir=cache)
     command = [str(BINARY), "--json", "cache", "clean", "--max-size", "1B"]
     preview = subprocess.run(command + ["--dry-run"], cwd=ROOT, env=env,
-                             capture_output=True, text=True, timeout=20)
+                             capture_output=True, text=True, timeout=HANG_TIMEOUT)
     assert preview.returncode == 0, (preview.stdout, preview.stderr)
     assert json.loads(preview.stdout)["errors"] == []
     assert content_bytes(cache) == stored_bytes
     cleaned = subprocess.run(command, cwd=ROOT, env=env,
-                             capture_output=True, text=True, timeout=20)
+                             capture_output=True, text=True, timeout=HANG_TIMEOUT)
     assert cleaned.returncode == 0, (cleaned.stdout, cleaned.stderr)
     assert json.loads(cleaned.stdout)["errors"] == []
     assert content_bytes(cache) == 0

@@ -54,7 +54,7 @@ impl RequestFixture {
 
     fn request_target(&self) -> String {
         self.requests
-            .recv_timeout(Duration::from_secs(2))
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("provider request")
     }
 

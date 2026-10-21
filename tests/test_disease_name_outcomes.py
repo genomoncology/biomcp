@@ -1,6 +1,8 @@
 """Name absence requires successful provider lookups."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -73,7 +75,7 @@ def test_name_lookup_distinguishes_provider_failure_from_absence(
     try:
         result = subprocess.run(
             [binary, "--json", "get", entity, "--name", "authored absent condition"],
-            capture_output=True, text=True, timeout=90,
+            capture_output=True, text=True, timeout=HANG_TIMEOUT,
         )
         assert result.returncode == 1, result.stderr + result.stdout
         payload = json.loads(result.stdout)

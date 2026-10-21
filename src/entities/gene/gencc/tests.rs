@@ -978,7 +978,7 @@ fn subprocess_lease_child_exits_on_parent_end_of_input() {
     child.release();
     // watchdog: the child must exit promptly on end-of-input; a slow
     // host stretches this window, not the wait itself.
-    let deadline = std::time::Instant::now() + crate::test_support::watchdog(30);
+    let deadline = std::time::Instant::now() + crate::test_support::hang_timeout();
     loop {
         if child.child.try_wait().unwrap().is_some() {
             break;

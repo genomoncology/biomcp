@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import copy
 import json
 import os
@@ -155,7 +157,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
                str(input_path), "--verify-identity", "--debug-plan", "--limit", "5"]
     try:
         result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=60)
+                                capture_output=True, text=True, timeout=HANG_TIMEOUT)
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)["items"][0]
         assert payload["canonical_equivalence"]["caid"] == requested_caid.rsplit("/", 1)[-1]
@@ -201,7 +203,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
         if case != "same_allele":
             confirmed = subprocess.run(command + ["--confirmed-only"], env=env,
                                        cwd=REPO_ROOT, capture_output=True, text=True,
-                                       timeout=60)
+                                       timeout=HANG_TIMEOUT)
             assert confirmed.returncode == (1 if case == "unresolved_anchor" else 0), (
                 confirmed.stdout + confirmed.stderr
             )
@@ -213,4 +215,4 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)

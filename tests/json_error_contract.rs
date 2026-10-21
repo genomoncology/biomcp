@@ -28,7 +28,7 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
         .spawn()
         .expect("spawn biomcp");
 
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let deadline = Instant::now() + biomcp_mcp_contract_client::hang_timeout();
     loop {
         if child.try_wait().expect("poll biomcp").is_some() {
             let output = child.wait_with_output().expect("collect biomcp output");
@@ -45,7 +45,7 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
                 .wait_with_output()
                 .expect("collect timed-out biomcp output");
             panic!(
-                "biomcp timed out after 10s\nargs: {args:?}\nstdout:\n{}\nstderr:\n{}",
+                "biomcp exceeded its test hang guard\nargs: {args:?}\nstdout:\n{}\nstderr:\n{}",
                 String::from_utf8_lossy(&output.stdout),
                 String::from_utf8_lossy(&output.stderr)
             );
@@ -54,7 +54,6 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
     }
 }
 
-const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
 // macOS configures only 127.0.0.1 on the loopback interface, so the
 // fixture binds the one address every Unix host offers.
 
@@ -105,7 +104,7 @@ impl CredentialRedactionFixture {
     fn requests(&self) -> Vec<CredentialFixtureRequest> {
         let first = self
             .request_rx
-            .recv_timeout(POST_CHILD_FIXTURE_RESULT_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("credential fixture should receive a request")
             .expect("credential fixture should serve valid requests");
         let mut requests = vec![first];
@@ -288,7 +287,7 @@ impl MyGeneFixture {
 
     fn received_request(&self) -> String {
         self.request_rx
-            .recv_timeout(POST_CHILD_FIXTURE_RESULT_TIMEOUT)
+            .recv_timeout(biomcp_mcp_contract_client::hang_timeout())
             .expect("fixture result should be available after biomcp exits")
             .expect("fixture should serve a valid request")
     }

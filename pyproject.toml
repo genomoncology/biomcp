@@ -74,6 +74,5 @@ strip = true
 testpaths = ["tests"]
 addopts = "-v"
 asyncio_mode = "auto"
-slow_test_warning_seconds = 30
 # Retain through every failure phase; conftest removes passing replay directories.
 tmp_path_retention_policy = "all"

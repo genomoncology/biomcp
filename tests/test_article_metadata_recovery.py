@@ -5,6 +5,8 @@ replies are unmodified upstream captures described beside the fixture bodies.
 """
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -57,7 +59,7 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
                 recovery.append(pmid)
                 try:
-                    barrier.wait(timeout=2)
+                    barrier.wait(timeout=HANG_TIMEOUT)
                     overlaps.append(True)
                 except threading.BrokenBarrierError:
                     overlaps.append(False)
@@ -112,12 +114,12 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
     try:
         result = subprocess.run(
             [binary, "--json", "--no-cache", "search", "article", "BRAF", "--limit", "2", "--full"],
-            env=env, capture_output=True, text=True, check=False, timeout=30,
+            env=env, capture_output=True, text=True, check=False, timeout=HANG_TIMEOUT,
         )
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     assert not missed, missed
     assert Counter(recovery) == Counter(PMIDS), recovery

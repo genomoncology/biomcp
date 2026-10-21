@@ -3,6 +3,8 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
+pub(crate) use biomcp_mcp_contract_client::hang_timeout;
+
 pub(crate) use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
 
 /// Capture warning output for the future without changing the process subscriber.
@@ -152,7 +154,7 @@ pub(crate) fn watchdog(seconds: u64) -> Duration {
 /// A timeout returns an error too, so cleanup may ignore it without panicking
 /// again while another assertion unwinds.
 pub(crate) fn bounded_join<T>(worker: std::thread::JoinHandle<T>) -> std::thread::Result<T> {
-    let deadline = std::time::Instant::now() + watchdog(60);
+    let deadline = std::time::Instant::now() + hang_timeout();
     while !worker.is_finished() {
         if std::time::Instant::now() >= deadline {
             return Err(Box::new(String::from(
@@ -243,7 +245,7 @@ impl SignaledChild {
         });
         let stdin = child.stdin.take().expect("piped stdin for signaled child");
         // watchdog: handshake failure means a broken child, not slow load.
-        match ready_rx.recv_timeout(watchdog(60)) {
+        match ready_rx.recv_timeout(hang_timeout()) {
             Ok(()) => Self {
                 child,
                 stdin: Some(stdin),

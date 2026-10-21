@@ -8,9 +8,16 @@ import re
 import signal
 import subprocess
 import sys
+from pathlib import Path
 
 
 def main() -> int:
+    config = (Path(__file__).resolve().parents[1] / ".config/nextest.toml").read_text()
+    default_profile = config.partition("[profile.default]")[2].partition("[profile.")[0]
+    warning_period = re.search(r'period\s*=\s*"([0-9.]+)s"', default_profile)
+    assert warning_period is not None, "configure the routine warning period in seconds"
+    threshold = float(warning_period.group(1))
+    warned: set[str] = set()
     with subprocess.Popen(
         sys.argv[1:], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     ) as process:
@@ -24,12 +31,17 @@ def main() -> int:
         assert process.stdout is not None
         for line in process.stdout:
             print(line, end="", flush=True)
-            if re.match(r"\s*SLOW\s+\[", line):
+            timing = re.match(r"\s*(?:SLOW|PASS|FAIL|TIMEOUT)\s+\[\s*>?\s*([0-9.]+)s\]\s+(.*)", line)
+            if timing and (float(timing.group(1)) > threshold or line.lstrip().startswith("SLOW")) and timing.group(2) not in warned:
+                warned.add(timing.group(2))
                 try:
-                    load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+                    load = f"{os.getloadavg()[0]:.2f}"
                 except (AttributeError, OSError):
                     load = "unavailable"
-                print(f"WARNING slow test; load (1, 5, 15 min): {load}", flush=True)
+                print(
+                    f"WARNING slow test {timing.group(2)} ({timing.group(1)}s); load (1 min): {load}",
+                    flush=True,
+                )
         status = process.wait()
         return status if status >= 0 else 128 - status
 

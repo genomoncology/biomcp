@@ -10,6 +10,8 @@ in `src/sources/gwas/tests/day_cache.rs`.
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -93,7 +95,7 @@ def _run_search_gwas(
         env=env,
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
         check=False,
     )
 
@@ -115,7 +117,7 @@ def test_a_repeat_gwas_search_inside_a_day_makes_no_request() -> None:
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
     first_payload = json.loads(first.stdout)
     second_payload = json.loads(second.stdout)

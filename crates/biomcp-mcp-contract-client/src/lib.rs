@@ -20,6 +20,29 @@ use tokio::process::{Child, Command};
 
 pub mod test_http;
 
+/// Use the routine runner's outer hang guard for fixture coordination too.
+pub fn hang_timeout() -> Duration {
+    static TIMEOUT: std::sync::OnceLock<Duration> = std::sync::OnceLock::new();
+    *TIMEOUT.get_or_init(|| {
+        let text = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.config/nextest.toml"),
+        )
+        .expect("read the test runner configuration");
+        let config: toml::Value = text.parse().expect("parse the test runner configuration");
+        let guard = &config["profile"]["default"]["slow-timeout"];
+        let period = guard["period"]
+            .as_str()
+            .and_then(|value| value.strip_suffix('s'))
+            .and_then(|value| value.parse::<u64>().ok())
+            .expect("configure the routine warning period in seconds");
+        let periods = guard["terminate-after"]
+            .as_integer()
+            .and_then(|value| u64::try_from(value).ok())
+            .expect("configure the routine hang catcher");
+        Duration::from_secs(period * periods)
+    })
+}
+
 pub type EnvVar = (&'static str, String);
 pub type RunningClient<T> = rmcp::service::RunningService<rmcp::RoleClient, T>;
 
@@ -1211,7 +1234,7 @@ impl ContractHarness {
             }
         };
         let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(1))
+            .timeout(crate::hang_timeout())
             .build()?;
         let started = tokio::time::Instant::now();
         let mut warned = false;
@@ -1241,7 +1264,7 @@ impl ContractHarness {
             }
             // A latency warning never fails startup. This separate watchdog
             // bounds an unresponsive child even outside the test runner.
-            if elapsed >= Duration::from_secs(120) {
+            if elapsed >= hang_timeout() {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(25)).await;

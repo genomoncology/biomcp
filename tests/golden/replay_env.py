@@ -10,6 +10,8 @@ accept a loopback base override.
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import shlex
@@ -228,7 +230,7 @@ def _standalone_replay_environment(
             if marker != "READY":
                 raise RuntimeError(f"replay server greeted unexpectedly: {ready.strip()!r}")
             provider_env = _read_env_file(env_file)
-            with urllib.request.urlopen(f"{origin}/healthz", timeout=5) as probe:
+            with urllib.request.urlopen(f"{origin}/healthz", timeout=HANG_TIMEOUT) as probe:
                 if probe.status != 200:
                     raise RuntimeError("replay server health probe failed")
             yield ReplayEnvironment(
@@ -243,10 +245,10 @@ def _standalone_replay_environment(
         finally:
             process.terminate()
             try:
-                process.wait(timeout=10)
+                process.wait(timeout=HANG_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
-                process.wait(timeout=10)
+                process.wait(timeout=HANG_TIMEOUT)
 
 
 class _ReplaySession:
@@ -269,7 +271,7 @@ class _ReplaySession:
             data=json.dumps({"root": str(root), "record": record}).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=HANG_TIMEOUT) as response:
             if response.status != 200:
                 raise RuntimeError("replay fixture selection failed")
         self.selection = (root, record)

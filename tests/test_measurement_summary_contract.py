@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import os
 import shutil
 import subprocess
@@ -142,7 +144,7 @@ esac
         env=env,
         text=True,
         capture_output=True,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     assert proc.returncode == (1 if status != "0" else 0), proc.stdout + proc.stderr
     if status != "0":
@@ -200,7 +202,7 @@ PYFAKE
         env=env,
         text=True,
         capture_output=True,
-        timeout=60,
+        timeout=HANG_TIMEOUT,
     )
     assert proc.returncode != 0, proc.stdout + proc.stderr
     assert "provider unavailable" in proc.stdout + proc.stderr
@@ -255,7 +257,7 @@ def test_build_measurement_fallback_is_executable(tmp_path: Path, bash: str) -> 
         env=env,
         text=True,
         capture_output=True,
-        timeout=10,
+        timeout=HANG_TIMEOUT,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
@@ -288,7 +290,7 @@ def test_census_retains_the_runner_exit_status(
         env=env,
         text=True,
         capture_output=True,
-        timeout=10,
+        timeout=HANG_TIMEOUT,
     )
     assert proc.returncode == (0 if status == 0 else 1), proc.stdout + proc.stderr
     if status != 0:
@@ -351,7 +353,7 @@ def test_checklist_rows_report_values_or_explicit_unavailability(
         env=dict(os.environ, HOME=str(home)),
         text=True,
         capture_output=True,
-        timeout=20,
+        timeout=HANG_TIMEOUT,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     lines = dict(

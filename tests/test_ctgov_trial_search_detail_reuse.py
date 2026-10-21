@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from cache_fixture import set_cache_root
 
 from contextlib import contextmanager
@@ -228,7 +230,7 @@ def _reference_trial_server():
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
 
 def _run_reference(
@@ -255,7 +257,7 @@ def _run_reference(
         env=set_cache_root(os.environ | {"BIOMCP_CTGOV_BASE": base}, cache),
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=HANG_TIMEOUT,
     )
 
 
