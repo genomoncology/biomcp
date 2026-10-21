@@ -1,12 +1,14 @@
 # 2339 — Parse installed-smoke JSON fully
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 7f8e8fc3bd8375b9849f297112b3cc22f5c39b83, accept
 
 Reviews: revision 327ea87767718fb1702279fe6a981db65cfd8f63, accept
+
+Landed: 1710986
 
 ## Outcome
 
