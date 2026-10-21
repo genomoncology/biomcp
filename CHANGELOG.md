@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
+
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)

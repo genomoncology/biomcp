@@ -1,6 +1,6 @@
 //! Article search-result enrichment and visible-row fallback helpers.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 mod abstracts;
 mod visible_metadata;
@@ -12,8 +12,9 @@ use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPap
 use super::candidates::finalize_article_candidates;
 use super::detail::{first_europepmc_hit, parse_pmid, resolve_variant_article_from_pmid};
 use super::{
-    Article, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming, ArticleSource,
-    ArticleSourceAvailability, ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
+    Article, ArticleMetadataStatus, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming,
+    ArticleSource, ArticleSourceAvailability, ArticleSourceStatus,
+    SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
 };
 
 /// The overall article-search deadline active on this task, when the caller
@@ -299,31 +300,62 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
 }
 
 /// Settle one visible-row fallback after the PubTator/Europe PMC resolve
-/// failed: a row Europe PMC still covers logs the failure at debug and
-/// takes the covering metadata, and only a row both sources failed warns.
+/// failed: merge Europe PMC metadata before reporting only fields that
+/// remain missing. Fully recovered rows retain the debug-only failure.
 fn settle_visible_row_metadata_fallback(
     row: &mut ArticleSearchResult,
     err: &crate::error::BioMcpError,
     europe_hit: Option<&crate::sources::europepmc::EuropePmcResult>,
-) {
-    match europe_hit {
-        Some(hit) => {
-            crate::error::debug_external_failure(
-                err,
-                crate::error::SourceProvider::PUBTATOR3,
-                "visible article metadata fallback",
-            );
-            merge_article_search_row_with_article_base(
-                row,
-                &crate::transform::article::from_europepmc_result(hit),
-            );
-        }
-        None => crate::error::warn_external_failure(
+) -> Option<ArticleMetadataStatus> {
+    if let Some(hit) = europe_hit {
+        crate::error::debug_external_failure(
             err,
             crate::error::SourceProvider::PUBTATOR3,
             "visible article metadata fallback",
-        ),
+        );
+        merge_article_search_row_with_article_base(
+            row,
+            &crate::transform::article::from_europepmc_result(hit),
+        );
     }
+    if crate::sources::disable::unavailable_disabled_reason(err).is_some() {
+        return None;
+    }
+    let mut missing_fields = Vec::new();
+    if row.normalized_abstract.trim().is_empty()
+        && row
+            .abstract_snippet
+            .as_deref()
+            .is_none_or(|text| text.trim().is_empty())
+    {
+        missing_fields.push("abstract");
+    }
+    if row.citation_count.is_none() {
+        missing_fields.push("citation_count");
+    }
+    if missing_fields.is_empty() {
+        return None;
+    }
+    let failure = err.external_failure(
+        crate::error::SourceProvider::PUBTATOR3,
+        "visible article metadata fallback",
+    );
+    tracing::warn!(
+        provider = failure.provider,
+        operation = failure.operation,
+        class = failure.class,
+        status = failure.status,
+        pmid = row.pmid,
+        missing_fields = ?missing_fields,
+        message = failure.message,
+        "External provider operation failed"
+    );
+    Some(ArticleMetadataStatus {
+        status: "incomplete",
+        missing_fields,
+        source: "pubtator",
+        failure_class: failure.class,
+    })
 }
 
 /// One budget-honoring Europe PMC lookup that can still cover a row the
@@ -375,13 +407,18 @@ async fn variant_visible_row_europe_fallback(
 pub(super) async fn enrich_visible_article_search_rows_with_article_base(
     rows: &mut [ArticleSearchResult],
 ) -> Vec<ArticleSourceStatus> {
-    enrich_visible_article_search_rows_with_article_base_context(rows, None).await
+    enrich_visible_article_search_rows_with_article_base_context(rows, None)
+        .await
+        .0
 }
 
 pub(super) async fn enrich_visible_article_search_rows_with_article_base_context(
     rows: &mut [ArticleSearchResult],
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
-) -> Vec<ArticleSourceStatus> {
+) -> (
+    Vec<ArticleSourceStatus>,
+    BTreeMap<String, ArticleMetadataStatus>,
+) {
     let lookup_positions = rows
         .iter()
         .enumerate()
@@ -396,9 +433,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         execution.set_route_unit_plan("enrichment", "europepmc", Some(0));
     }
     if lookup_positions.is_empty() {
-        return Vec::new();
+        return (Vec::new(), BTreeMap::new());
     }
     if let Some(execution) = execution {
+        let mut metadata_status = BTreeMap::new();
         let mut europe_fallback: Option<EuropePmcClient> = None;
         for (row_idx, pmid) in lookup_positions {
             let lookup_id = rows[row_idx].pmid.clone();
@@ -412,14 +450,21 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                     let hit =
                         variant_visible_row_europe_fallback(execution, &mut europe_fallback, pmid)
                             .await;
-                    settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref());
+                    if let Some(status) =
+                        settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref())
+                    {
+                        metadata_status.insert(rows[row_idx].pmid.clone(), status);
+                    }
                 }
             }
         }
-        return Vec::new();
+        return (Vec::new(), metadata_status);
     }
 
-    visible_metadata::enrich(rows, lookup_positions).await
+    (
+        visible_metadata::enrich(rows, lookup_positions).await,
+        BTreeMap::new(),
+    )
 }
 
 pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar_status(

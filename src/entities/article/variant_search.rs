@@ -46,8 +46,9 @@ use super::search::{
     acquire_federated_article_rows_with_context,
 };
 use super::{
-    ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
-    ArticleSourceAvailability, ArticleVariantIntent, MAX_FEDERATED_FETCH_RESULTS,
+    ArticleMetadataStatus, ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult,
+    ArticleSort, ArticleSource, ArticleSourceAvailability, ArticleVariantIntent,
+    MAX_FEDERATED_FETCH_RESULTS,
 };
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
@@ -129,6 +130,8 @@ pub struct VariantArticleRow {
     pub provenance: Vec<VariantArticleProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VariantArticleIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1243,6 +1246,8 @@ pub struct CompactVariantArticleRow {
     pub is_retracted: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VariantArticleIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -3608,17 +3613,20 @@ fn rank_candidates(candidates: &mut [ArticleCandidate]) {
 async fn enrich_candidates(
     candidates: &mut [ArticleCandidate],
     execution: &VariantArticleExecutionContext,
-) {
+) -> BTreeMap<String, ArticleMetadataStatus> {
     let mut rows = candidates
         .iter()
         .map(|candidate| candidate.row.clone())
         .collect::<Vec<_>>();
     let _ =
         enrich_article_search_rows_with_semantic_scholar_context(&mut rows, Some(execution)).await;
-    enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution)).await;
+    let (_, metadata_status) =
+        enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution))
+            .await;
     for (candidate, row) in candidates.iter_mut().zip(rows) {
         candidate.row = row;
     }
+    metadata_status
 }
 
 fn plan_queries(
@@ -5025,7 +5033,7 @@ async fn search_variant_articles_identity(
         .skip(offset)
         .take(limit)
         .collect::<Vec<_>>();
-    enrich_candidates(&mut visible_candidates, &execution).await;
+    let mut metadata_status = enrich_candidates(&mut visible_candidates, &execution).await;
     // Rebuild after every identity, enrichment, and LDH unit settles, retaining
     // only zero-work/skipped skeleton rows without real events.
     // Keep each route's specific applicability explanation while the terminal
@@ -5098,6 +5106,7 @@ async fn search_variant_articles_identity(
                 .into_iter()
                 .collect();
             VariantArticleRow {
+                metadata_status: metadata_status.remove(&candidate.row.pmid),
                 article: candidate.row,
                 requested_variant: context.requested.clone(),
                 matched_aliases,
@@ -5534,6 +5543,7 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         rank: row.rank,
         is_retracted: row.article.is_retracted,
         identity: row.identity,
+        metadata_status: row.metadata_status,
     }
 }
 
@@ -9340,6 +9350,7 @@ mod tests {
         candidate.row.is_retracted = None;
         candidate.row.abstract_snippet = Some("verbose".into());
         let compact = compact_row(VariantArticleRow {
+            metadata_status: None,
             article: candidate.row,
             requested_variant: RequestedVariantIdentity::default(),
             matched_aliases: vec!["BRAF V600E".into()],
