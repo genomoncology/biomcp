@@ -13,129 +13,25 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+import xml.etree.ElementTree as ET
 
 import pytest
 import yaml
+
+from release_workflow_inventory import (
+    COUNTERPARTS, LOCAL_COMMANDS, assert_step_inventory,
+    release_inventory_admission as release_inventory_admission,
+    release_inventory_state as release_inventory_state,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROVENANCE = "tests/test_release_workflow_provenance.py"
 
-# Each value names an actual local implementation or executable contract.
-# Setup, publication and native-artifact dispositions retain the full rehearsal;
-# they do not claim that a Linux source test proves another platform's artifact.
-COUNTERPARTS = {
-    "version-check": {
-        "Require the tag and committed versions to agree":
-            ("scripts/check-release-metadata.py", '"scripts/check-release-versions.py"'),
-        "Require the changelog to cover merged tickets":
-            ("scripts/check-release-metadata.py", '"scripts/check-changelog-coverage.py"'),
-    },
-    "release-gate": {
-        "Fetch the cargo registry for the offline marker set":
-            (PROVENANCE, "def test_the_release_gate_marker_job_and_make_run_the_same_selection("),
-        "Run the release-gate marker set": ("Makefile", "release-gate-markers:"),
-    },
-    "create-draft": {
-        "Render the release notes from the changelog":
-            ("release/release_notes.py", "def main("),
-        "Create the draft release":
-            ("tests/test_release_draft_notes.py", "def test_"),
-    },
-    "build": {
-        "Build release binary": (PROVENANCE, "def test_release_builders_use_admitted_version_and_actual_revision("),
-        "Build and package inside the manylinux 2_28 container":
-            (PROVENANCE, "def test_linux_floor_contract("),
-        "Package (macOS)": (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Package (Windows)": (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "publish-assets": {
-        "Upload release assets": (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "pypi-build": {
-        "Install pinned maturin": (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Build wheels": (PROVENANCE, "def test_release_builders_use_admitted_version_and_actual_revision("),
-        "Build wheels inside the manylinux 2_28 container":
-            (PROVENANCE, "def test_linux_floor_contract("),
-    },
-    "wheel-smoke": {
-        "Install the wheel into a clean venv":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-        # Native Windows execution belongs to the complete rehearsal; this
-        # contract checks its required command and isolated environment only.
-        "Check cold cache statistics in native Windows PowerShell":
-            ("tests/test_installed_wheel_smoke.py", "def test_main_and_release_use_the_shared_installed_wheel_smoke("),
-        "Run the wheel inside the manylinux 2_28 container":
-            ("scripts/check-linux-wheel.sh", "docker run"),
-        "Smoke the installed wheel on every shipped platform":
-            ("scripts/installed-wheel-smoke.sh", "--version"),
-    },
-    "docs-live": {
-        "Resolve the tag commit": (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Require the live documentation revision to equal or descend from the tag":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "pypi-publish": {
-        "Publish to PyPI with trusted publishing (production only)":
-            (PROVENANCE, "def test_pypi_publish_guard_runs_the_right_publisher_under_each_repository("),
-    },
-    "homebrew-tap": {
-        "Download checksums from the release":
-            (PROVENANCE, "def test_homebrew_guard_renders_and_checks_both_checksums_then_guards_the_push("),
-        "Update Homebrew tap (production only)":
-            (PROVENANCE, "def test_homebrew_guard_renders_and_checks_both_checksums_then_guards_the_push("),
-    },
-    "container-publish": {
-        "Resolve the image version and source revision":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Stage the released Linux executables":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Smoke the linux/amd64 image from the registry":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Smoke the linux/arm64 image from the registry":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "publish-release": {
-        "Move latest after both platform smokes pass":
-            (PROVENANCE, "def test_the_latest_step_fails_when_gh_fails("),
-        "Publish the GitHub release after every publisher succeeds":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "rehearsal-docs": {
-        "Validate the candidate documentation without deployment":
-            (PROVENANCE, "def test_rehearsal_builds_have_no_publication_permissions_or_credentials("),
-    },
-    "rehearsal-container": {
-        "Stage the checked Linux executables":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-        "Smoke the local platform image and retain it":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "rehearsal-payloads": {
-        "Validate release publication payloads without credentials":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-    "rehearsal-complete": {
-        "Record the limits of a successful rehearsal":
-            (PROVENANCE, "def test_pipeline_jobs_contract("),
-    },
-}
-
-# These commands have an earlier local caller. Other rows describe a native
-# artifact or publication boundary: their executable contracts run routinely,
-# and the complete nonpublishing rehearsal still executes the real platform
-# checks before a tag. Neither a source test nor nightly Linux replaces that.
-LOCAL_COMMANDS = {
-    ("version-check", "Require the tag and committed versions to agree"):
-        "scripts/check-release-versions.py",
-    ("version-check", "Require the changelog to cover merged tickets"):
-        "scripts/check-changelog-coverage.py",
-    ("release-gate", "Run the release-gate marker set"): "make release-gate-markers",
-    ("create-draft", "Render the release notes from the changelog"):
-        "release/release_notes.py",
-    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"):
-        "scripts/installed-wheel-smoke.sh",
-}
+# The shared release inventory assigns each run step its earlier executable
+# contract or its native-artifact/publication boundary. Rehearsal still executes
+# those real platform checks before a tag.
 
 # These actions prepare execution or transport/publish the already checked
 # artifacts. A new checking action needs a counterpart, just like a run step.
@@ -212,8 +108,6 @@ REUSED_WORKFLOWS = {
 ACTION_COUNTERPARTS["lane-setup", "Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
 
 # Toolchain setup reads the same declaration used by local Cargo commands.
-for job in ("release-gate", "build", "pypi-build"):
-    COUNTERPARTS[job]["Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
 CI_COUNTERPARTS["windows-contracts", "Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
 
 def assert_reused_steps(jobs: dict, root: Path, counterparts: dict, visited: set[str]) -> None:
@@ -273,6 +167,7 @@ def assert_counterparts(workflow: dict, root: Path) -> None:
 
 def test_release_commands_have_local_or_platform_counterparts() -> None:
     release = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())
+    assert_step_inventory(release)
     assert_counterparts(release, ROOT)
 
 
@@ -390,3 +285,66 @@ def test_stress_uses_one_cpu_available_to_the_job(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     expected = "-c " + str(selected)
     assert calls.read_text().splitlines() == [expected, expected]
+
+
+@pytest.mark.parametrize("mutation,selection", [
+    ("new-step", "both"), ("new-step", "provenance"),
+    ("if", "both"), ("shell", "both"), ("body", "both"), ("counterpart", "both"),
+])
+def test_release_inventory_admission_fails_once_without_hiding_semantic_changes(
+    tmp_path: Path, mutation: str, selection: str,
+) -> None:
+    """Structural drift has one owner; same-identity safety failures never skip."""
+    for child in ROOT.iterdir():
+        if child.name not in {".github", "tests"}:
+            (tmp_path / child.name).symlink_to(child, target_is_directory=child.is_dir())
+    shutil.copytree(ROOT / ".github", tmp_path / ".github")
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    for name in ("test_release_check_counterparts.py", "test_release_workflow_provenance.py",
+                 "release_workflow_inventory.py"):
+        source = ROOT / "tests" / name
+        if source.exists():
+            shutil.copy(source, tests / name)
+    for source in (ROOT / "tests").iterdir():
+        destination = tests / source.name
+        if not destination.exists():
+            destination.symlink_to(source, target_is_directory=source.is_dir())
+    workflow = tmp_path / ".github/workflows/release.yml"
+    document = yaml.safe_load(workflow.read_text())
+    if mutation == "new-step":
+        document["jobs"]["release-gate"]["steps"].append(
+            {"name": "Check a new release condition", "run": "echo new-check"},
+        )
+    elif mutation == "counterpart":
+        inventory = tests / "release_workflow_inventory.py"
+        inventory.write_text(inventory.read_text().replace(
+            "tests/test_release_draft_notes.py", "tests/absent-counterpart.py",
+        ))
+    else:
+        step = next(step for step in document["jobs"]["pypi-build"]["steps"]
+                    if step.get("name") == "Build wheels")
+        key, value = {"if": ("if", "false"), "shell": ("shell", "sh"),
+                      "body": ("run", "true")}[mutation]
+        step[key] = value
+    workflow.write_text(yaml.safe_dump(document))
+    report = tmp_path / "report.xml"
+    selected = [str(tests / "test_release_workflow_provenance.py") + "::test_pipeline_jobs_contract"]
+    if selection == "both":
+        selected.insert(0, str(tests / "test_release_check_counterparts.py")
+                        + "::test_release_commands_have_local_or_platform_counterparts")
+    result = subprocess.run([
+        sys.executable, "-m", "pytest", "-q", "-o", "addopts=", "--confcutdir", str(tests),
+        "--junitxml", str(report), *selected,
+    ], cwd=tmp_path, text=True, capture_output=True)
+    assert result.returncode == 1, result.stdout + result.stderr
+    failures = ET.parse(report).findall(".//failure")
+    assert len(failures) == 1, result.stdout + result.stderr
+    if mutation == "new-step":
+        assert "tests/release_workflow_inventory.py" in failures[0].text
+    else:
+        expected = {"if": "not in the allowlist", "shell": "custom shell",
+                    "body": "step text drifted", "counterpart": "lost counterpart"}
+        assert expected[mutation] in failures[0].text
+    expected_skips = 1 if mutation == "new-step" and selection == "both" else 0
+    assert len(ET.parse(report).findall(".//skipped")) == expected_skips
