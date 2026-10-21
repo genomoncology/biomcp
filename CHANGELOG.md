@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Measure outside-in Rust coverage by executable source region so unrun closures remain visible on covered lines. (2342)
+
 - Recover omitted default variant article routes through grouped queries and shared provider work, with a bounded discovery allowance and explicit remaining omissions. Preserve lexical selection and identity checks. (2337)
 
 - Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)

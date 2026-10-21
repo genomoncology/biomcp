@@ -218,7 +218,7 @@ def is_product_source(path: Path, internal: dict) -> bool:
                         for part in path.parts))
 
 
-def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dict:
+def coverage_report(root: Path, report: Path, statuses: dict, floor: float) -> dict:
     incomplete = {name: statuses.get(name, "missing") for name in ("rust", "python", "spec")
                   if statuses.get(name) != 0}
     if incomplete:
@@ -226,49 +226,65 @@ def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dic
     _, config, errors = inventory(root)
     if errors:
         raise ValueError("\n".join(errors))
+    data = json.loads(report.read_text())
+    if data.get("type") != "llvm.coverage.json.export" or not str(data.get("version", "")).startswith("3."):
+        raise ValueError("expected LLVM coverage JSON export version 3")
     product = {}
     excluded = {}
-    relative = None
-    for line in lcov.read_text().splitlines():
-        if line.startswith("SF:"):
-            path = Path(line[3:])
-            if not path.is_absolute():
-                path = root / path
-            try:
-                candidate = path.resolve().relative_to(root.resolve())
-            except ValueError:
-                relative = None
-                continue
-            if not is_product_source(candidate, config["internal"]):
-                relative = None
-                continue
-            relative = candidate.as_posix()
-            if relative not in excluded:
-                excluded[relative] = inline_tests(root, path)
-            product.setdefault(relative, {})
-        elif relative and line.startswith("DA:"):
-            number, hits, *_ = line[3:].split(",")
-            number, hits = int(number), int(hits)
-            if number not in excluded[relative]:
-                product[relative][number] = max(hits, product[relative].get(number, 0))
+    # LLVM exports function regions as [start line/column, end line/column,
+    # count, file ID, expanded file ID, kind]. File IDs are function-local.
+    # Count only code regions (kind 0), including code in expansion targets;
+    # expansion/skipped/gap records are mapping markers, not executable regions.
+    # Source spans identify regions across binaries and generic instantiations:
+    # a region is reached if any instance runs. Mangled names and file IDs
+    # cannot identify source regions across independently linked objects.
+    for export in data["data"]:
+        for function in export["functions"]:
+            filenames = function["filenames"]
+            for region in function["regions"]:
+                if len(region) != 8 or any(type(value) is not int or value < 0 for value in region):
+                    raise ValueError("invalid LLVM coverage region")
+                start_line, start_col, end_line, end_col, hits, file_id, _, kind = region
+                if kind != 0:
+                    continue
+                if file_id >= len(filenames) or not start_line or not start_col or (end_line, end_col) < (start_line, start_col):
+                    raise ValueError("invalid LLVM coverage region location")
+                path = Path(filenames[file_id])
+                if not path.is_absolute():
+                    path = root / path
+                try:
+                    candidate = path.resolve().relative_to(root.resolve())
+                except ValueError:
+                    continue
+                if not is_product_source(candidate, config["internal"]):
+                    continue
+                relative = candidate.as_posix()
+                if relative not in excluded:
+                    excluded[relative] = inline_tests(root, path)
+                if start_line in excluded[relative]:
+                    continue
+                span = (start_line, start_col, end_line, end_col)
+                regions = product.setdefault(relative, {})
+                regions[span] = max(hits, regions.get(span, 0))
     total = sum(map(len, product.values()))
     if not total:
-        raise ValueError("coverage has no instrumented product lines")
-    reached = sum(sum(value > 0 for value in lines.values()) for lines in product.values())
+        raise ValueError("coverage has no instrumented product regions")
+    reached = sum(sum(value > 0 for value in regions.values()) for regions in product.values())
     percentage = 100 * reached / total
     result = {"status": "pass" if percentage >= floor else "fail", "floor": floor,
-            "denominator": "instrumented src/**/*.rs product lines; excludes test files, inline cfg(test) items, test_support and generated code",
-            "product_lines": total, "reached_lines": reached,
+            "denominator": "unique instrumented src/**/*.rs code-region source spans across all collected binaries; excludes test files, inline cfg(test) items, test_support, generated code and compiler-omitted code",
+            "product_regions": total, "reached_regions": reached,
             "outside_in_percent": percentage,
             "unobserved_files": sorted(str(p.relative_to(root)) for p in (root / "src").rglob("*.rs")
                                        if str(p.relative_to(root)) not in product
                                        and is_product_source(p.relative_to(root), config["internal"])),
-            "unreached": {path: [number for number, hits in lines.items() if hits == 0]
-                          for path, lines in product.items() if any(h == 0 for h in lines.values())}}
+            "unreached": {path: [{"start": list(span[:2]), "end": list(span[2:])}
+                                 for span, hits in sorted(regions.items()) if hits == 0]
+                          for path, regions in product.items() if any(h == 0 for h in regions.values())}}
 
     result["excluded_test_sources"] = {path: reason for path, reason in config["internal"].items()
                                        if path.startswith("src/")}
-    result["item_accounting"] = account_items(root, config, result, lcov.parent)
+    result["item_accounting"] = account_items(root, config, result, report.parent)
     return result
 
 
@@ -288,7 +304,7 @@ def account_items(root: Path, config: dict, result: dict, evidence: Path) -> dic
                 break
         if feature is None or feature not in config.get("accounting_cases", {}):
             raise ValueError(f"missing production feature/case association: {path}")
-        observation = "unreached instrumented lines"
+        observation = "unreached instrumented regions"
         if path in result["unobserved_files"]:
             text = (root / path).read_text()
             excluded = inline_tests(root, root / path)
@@ -305,7 +321,7 @@ def account_items(root: Path, config: dict, result: dict, evidence: Path) -> dic
         accounting[path] = {"feature": feature, "case": case,
                             "case_execution": case_status(case),
                             "observation": observation,
-                            "remaining_limit": "The associated contract names the behavior; this collection does not establish that it reaches the missing lines."}
+                            "remaining_limit": "The associated contract names the behavior; this collection does not establish that it reaches the missing regions."}
     return accounting
 
 

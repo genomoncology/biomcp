@@ -52,7 +52,7 @@ def test_unclassified_tests_and_missing_selectors_fail(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("hits,exit_code", [(1, 0), (0, 1)])
-def test_only_product_lines_count_toward_the_floor(
+def test_only_product_regions_count_toward_the_floor(
     tmp_path: Path, hits: int, exit_code: int,
 ) -> None:
     root = tree(tmp_path)
@@ -69,22 +69,24 @@ def test_only_product_lines_count_toward_the_floor(
     config = json.loads(metadata.read_text())
     config["internal"]["src/consumer_only.rs"] = "Imported only by a cfg(test) module."
     metadata.write_text(json.dumps(config))
-    report = root / "outside.lcov"
-    report.write_text(
-        f"SF:{root}/src/main.rs\nDA:1,{hits}\nDA:4,1\nend_of_record\n"
-        f"SF:{root}/tests/test.rs\nDA:1,1\nend_of_record\n"
-        f"SF:{root}/src/observed_tests/mod.rs\nDA:1,1\nend_of_record\n"
-        f"SF:{root}/src/consumer_only.rs\nDA:1,1\nend_of_record\n"
-    )
+    report = root / "outside.json"
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{
+        "functions": [{"filenames": [str(root / path)], "regions": regions}
+                      for path, regions in [
+                          ("src/main.rs", [[1, 1, 1, 13, hits, 0, 0, 0], [4, 1, 4, 24, 1, 0, 0, 0]]),
+                          ("tests/test.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                          ("src/observed_tests/mod.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                          ("src/consumer_only.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                      ]]}]}))
     (root / "python.xml").write_text('<testsuites><testsuite><testcase classname="tests.test_gene" name="test_lookup" /></testsuite></testsuites>')
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
-    result = run(root, "report", "--lcov", str(report), "--statuses", str(status),
+    result = run(root, "report", "--json", str(report), "--statuses", str(status),
                  "--floor", "50")
     assert result.returncode == exit_code, result.stderr
     data = json.loads(result.stdout)
-    assert data["product_lines"] == 1
-    assert data["reached_lines"] == hits
+    assert data["product_regions"] == 1
+    assert data["reached_regions"] == hits
     assert data["outside_in_percent"] == 100 * hits
     assert not data["unobserved_files"]
     if not hits:
@@ -94,12 +96,12 @@ def test_only_product_lines_count_toward_the_floor(
 
 def test_failed_or_missing_collections_never_report_a_percentage(tmp_path: Path) -> None:
     root = tree(tmp_path)
-    report = root / "outside.lcov"
-    report.write_text(f"SF:{root}/src/main.rs\nDA:1,1\nend_of_record\n")
+    report = root / "outside.json"
+    report.write_text("{}")
     (root / "src/main.rs").write_text("fn main() {}\n")
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 1, "rust": 0}))
-    result = run(root, "report", "--lcov", str(report), "--statuses", str(status),
+    result = run(root, "report", "--json", str(report), "--statuses", str(status),
                  "--floor", "50")
     assert result.returncode != 0
     data = json.loads(result.stdout)
@@ -291,3 +293,71 @@ def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path)
     assert result.returncode != 0
     assert "unclassified test module tests/test_unclassified.py" in result.stderr
     assert not (root / "prepared").exists()
+
+
+def test_unrun_closure_on_a_covered_line_remains_unreached(tmp_path: Path) -> None:
+    root = tree(tmp_path)
+    (root / "src/main.rs").write_text(
+        'fn main() { let unused = || std::hint::black_box(42); let called = || std::hint::black_box(7); println!("{}", std::hint::black_box(&called as &dyn Fn() -> i32)()); if std::hint::black_box(false) { println!("{}", std::hint::black_box(&unused as &dyn Fn() -> i32)()); } }\n'
+    )
+    report = root / "outside.json"
+    # LLVM function regions: start/end line/column, count, file id,
+    # expansion file id, kind. Both functions occupy the same source line.
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{
+        "functions": [
+            {"filenames": [str(root / "src/main.rs")], "regions": [[1, 71, 1, 91, 1, 0, 0, 0]]},
+            {"filenames": [str(root / "src/main.rs")], "regions": [[1, 29, 1, 49, 0, 0, 0, 0]]},
+        ]}]}))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    result = run(root, "report", "--json", str(report), "--statuses", str(status), "--floor", "75")
+    assert result.returncode == 1, result.stderr
+    data = json.loads(result.stdout)
+    assert data["product_regions"] == 2
+    assert data["reached_regions"] == 1
+    assert data["outside_in_percent"] == 50
+    assert data["unreached"]["src/main.rs"] == [{"start": [1, 29], "end": [1, 49]}]
+
+
+@pytest.mark.parametrize("second_hits,percent", [(0, 0), (3, 100)])
+def test_regions_union_binaries_and_map_expansion_file_ids(
+    tmp_path: Path, second_hits: int, percent: int,
+) -> None:
+    root = tree(tmp_path)
+    source = root / "src/main.rs"
+    source.write_text("fn main() {}\n")
+    other = root / "tests/helper.rs"
+    report = root / "outside.json"
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [
+        {"functions": [{"filenames": [str(other), str(source)], "regions": [
+            [1, 1, 1, 13, 0, 1, 0, 0],
+            *[[1, 2, 1, 4, 0, 1, 0, kind] for kind in (1, 2, 3)],
+        ]}]},
+        {"functions": [{"filenames": [str(source), str(other)], "regions": [
+            [1, 1, 1, 13, second_hits, 0, 1, 0],
+            [1, 1, 1, 13, 0, 0, 1, 0],
+        ]}]},
+    ]}))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    result = run(root, "report", "--json", str(report), "--statuses", str(status), "--floor", "0")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    assert data["product_regions"] == 1
+    assert data["outside_in_percent"] == percent
+    assert bool(data["unreached"]) == (second_hits == 0)
+
+
+@pytest.mark.parametrize("report", [{}, {"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{"functions": []}]}])
+def test_empty_or_wrong_coverage_export_cannot_pass_a_zero_floor(tmp_path: Path, report: dict) -> None:
+    root = tree(tmp_path)
+    path = root / "outside.json"
+    path.write_text(json.dumps(report))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    rejected = run(root, "report", "--json", str(path), "--statuses", str(status), "--floor", "0")
+    assert rejected.returncode == 1
+    assert not rejected.stdout
+    missing = run(root, "report", "--floor", "0")
+    assert missing.returncode == 1
+    assert "report requires --json and --statuses" in missing.stderr

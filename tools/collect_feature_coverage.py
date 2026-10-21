@@ -140,10 +140,10 @@ def collect(root: Path, baseline: bool) -> int:
     if any(statuses.values()):
         (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "collections": statuses}, indent=2) + "\n")
         return 1
-    lcov = output / "outside.lcov"
-    if run("llvm-report", ["cargo", "llvm-cov", "report", "--lcov", "--output-path", str(lcov)], ordinary):
+    report = output / "outside.json"
+    if run("llvm-report", ["cargo", "llvm-cov", "report", "--json", "--output-path", str(report)], ordinary):
         return 1
-    result = coverage_report(root, lcov, statuses, 0 if baseline else floor)
+    result = coverage_report(root, report, statuses, 0 if baseline else floor)
     result["source"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     result["collection"] = {
         "cargo_features": "all-features", "rust_integration_targets": list(config["rust"]),
@@ -155,7 +155,7 @@ def collect(root: Path, baseline: bool) -> int:
         result["initial_floor_input"] = result["outside_in_percent"]
     (output / "coverage.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "unobserved_files", "collection", "item_accounting", "excluded_test_sources"}}, indent=2))
-    print(f"Unreached product lines and exact collection selection: {output / 'coverage.json'}")
+    print(f"Unreached product regions and exact collection selection: {output / 'coverage.json'}")
     return int(result["status"] != "pass")
 
 
