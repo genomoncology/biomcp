@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Accept protein frameshift spellings in variant commands and keep their supplied identity details in anchored provider queries. (2334)
+- Accept protein frameshift and versioned RefSeq duplication spellings in variant commands, preserve their complete supplied identity, and constrain genomic provider lookups to the reference build. (2334)
 
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
