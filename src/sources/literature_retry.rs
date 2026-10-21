@@ -15,6 +15,7 @@ use crate::error::{BioMcpError, SourceProvider};
 pub(crate) struct Failure {
     pub(crate) class: &'static str,
     pub(crate) retry_attempted: bool,
+    pub(crate) invocation_deadline: bool,
 }
 
 #[derive(Default)]
@@ -22,6 +23,7 @@ struct State {
     class: Option<&'static str>,
     sends: usize,
     terminal: bool,
+    invocation_deadline: bool,
 }
 #[derive(Clone, Default)]
 pub(crate) struct Observation(Arc<Mutex<State>>);
@@ -39,6 +41,7 @@ impl Observation {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.class = class;
         state.terminal = false;
+        state.invocation_deadline = false;
     }
     fn finish(&self, class: &'static str) -> Failure {
         self.set(Some(class));
@@ -70,7 +73,16 @@ impl Observation {
         state.class.map(|class| Failure {
             class,
             retry_attempted: state.sends > 1,
+            invocation_deadline: state.invocation_deadline,
         })
+    }
+    pub(super) fn deadline_timeout(&self) -> Failure {
+        self.finish("timeout");
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .invocation_deadline = true;
+        self.get().expect("deadline failure has a class")
     }
     pub(crate) fn timeout(&self) -> Failure {
         self.finish("timeout")
@@ -95,7 +107,7 @@ pub(crate) async fn within_leg<F: Future>(
         .await
 }
 
-pub(super) fn current_observation() -> Observation {
+pub(crate) fn current_observation() -> Observation {
     LEG_OBSERVATION.try_with(Clone::clone).unwrap_or_default()
 }
 
@@ -136,8 +148,8 @@ fn retry_after(response: &Response) -> Option<Duration> {
         .to_str()
         .ok()?
         .trim();
-    if let Ok(seconds) = value.parse::<u64>() {
-        return Some(Duration::from_secs(seconds));
+    if let Some(duration) = super::parse_retry_after_header(response.headers()) {
+        return Some(duration);
     }
     let date = chrono::DateTime::parse_from_rfc2822(value).ok()?;
     Some(
@@ -188,7 +200,13 @@ impl Middleware for LiteratureRetryMiddleware {
                 Err(reqwest_middleware::Error::Reqwest(error)) if error.is_timeout() => {
                     ("timeout", true, None)
                 }
-                // Shared-pool refusal and TLS/configuration failures retain their existing policies.
+                Err(error) if super::is_semantic_scholar_shared_pool_rate_limit_error(error) => {
+                    // Refuse immediately, but retain an earlier admitted retry.
+                    return Err(reqwest_middleware::Error::middleware(
+                        observation.finish("rate_limited"),
+                    ));
+                }
+                // TLS/configuration failures retain their existing policies.
                 Err(_) => {
                     observation.set(None);
                     return response;
@@ -231,6 +249,7 @@ pub(crate) fn failure(error: &BioMcpError) -> Option<Failure> {
             Some(Failure {
                 class: "rate_limited",
                 retry_attempted: false,
+                invocation_deadline: false,
             })
         }
         BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(error)) => {
@@ -257,7 +276,13 @@ impl Middleware for ObserveTransport {
                 .expect("article transport requires an invocation deadline");
             let remaining = remaining(deadline);
             if remaining.is_zero() {
-                return Err(reqwest_middleware::Error::middleware(observation.timeout()));
+                return Err(reqwest_middleware::Error::middleware(
+                    if deadline.is_exhausted() {
+                        observation.deadline_timeout()
+                    } else {
+                        observation.timeout()
+                    },
+                ));
             }
             // Recompute after pacing. Reserve time for the retry and other routes.
             let budget = remaining / 3;

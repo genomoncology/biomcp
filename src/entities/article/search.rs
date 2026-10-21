@@ -619,12 +619,19 @@ fn collect_federated_article_rows(
             // either primary died on the invocation deadline, that error
             // explains the invocation and carries the deadline translation
             // through `search_page`.
-            let primary_error = match (error, europe_error) {
-                (Some(err), _) if is_search_deadline_error(&err) => Some(err),
-                (_, Some(err)) if is_search_deadline_error(&err) => Some(err),
-                (error, _) => error,
-            }
-            .unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator));
+            let primary_error = if let Some(deadline) =
+                crate::sources::current_variant_article_deadline()
+                    .filter(|deadline| deadline.is_exhausted())
+            {
+                article_search_deadline_error(&deadline)
+            } else {
+                match (error, europe_error) {
+                    (Some(err), _) if is_search_deadline_error(&err) => Some(err),
+                    (_, Some(err)) if is_search_deadline_error(&err) => Some(err),
+                    (error, _) => error,
+                }
+                .unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator))
+            };
             Ok(FederatedArticleRows {
                 rows,
                 source_status,

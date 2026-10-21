@@ -807,7 +807,13 @@ impl VariantArticleExecutionContext {
             });
     }
 
-    pub(crate) fn record_cancelled(&self, route: &str, source: &str, started: Instant) {
+    pub(crate) fn record_cancelled(
+        &self,
+        route: &str,
+        source: &str,
+        started: Instant,
+        failure: Option<crate::sources::literature_retry::Failure>,
+    ) {
         let (status, reason_code) = if self.deadline_exhausted() {
             ("timed_out", "invocation_deadline")
         } else {
@@ -822,9 +828,9 @@ impl VariantArticleExecutionContext {
                 status: status.into(),
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages: 0,
-                reason_code: Some(reason_code),
+                reason_code: Some(failure.map_or(reason_code, |failure| failure.class)),
                 disabled_reason: None,
-                retry_attempted: false,
+                retry_attempted: failure.is_some_and(|failure| failure.retry_attempted),
             });
     }
 
@@ -5884,6 +5890,66 @@ mod tests {
         let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_DISABLE_SOURCES", "mygene-info");
         env
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn cancelled_literature_leg_retains_an_admitted_retry() {
+        let sends = Arc::new(AtomicUsize::new(0));
+        let observed = sends.clone();
+        let admitted = Arc::new(tokio::sync::Notify::new());
+        let notify = admitted.clone();
+        let (_release, hold) = crate::entities::article::test_support::held_reply_gate();
+        let mut fixture = TestHttpFixture::spawn(move |_| {
+            if observed.fetch_add(1, AtomicOrdering::SeqCst) == 0 {
+                TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                ))
+            } else {
+                notify.notify_one();
+                TestHttpReply::Hold(hold.clone())
+            }
+        })
+        .await;
+        let mut env = TestEnv::scratch_cache_only();
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(60));
+        let execution = VariantArticleExecutionContext::single_with_deadline(deadline.clone());
+        let filters = article_filters();
+        crate::sources::with_variant_article_deadline(deadline,
+            crate::sources::literature_retry::within_leg(
+                crate::test_support::hang_timeout(),
+                crate::sources::literature_retry::Observation::default(),
+                async {
+                    // Cancel the real provider leg only after transport has
+                    // admitted its second send. The source timeout owns this
+                    // same drop boundary; no clock or network reply is faked.
+                    tokio::time::timeout(crate::test_support::hang_timeout(), async { tokio::select! {
+                        biased;
+                        _ = admitted.notified() => {},
+                        result = search_europepmc_page_with_context(&filters, 1, 0, Some(&execution), "exact_name", Some("BRAF V600E")) => {
+                            panic!("held retry unexpectedly completed: {}", result.is_ok());
+                        },
+                    }}).await.expect("provider leg did not admit retry");
+                }
+            )
+        ).await;
+        assert_eq!(sends.load(AtomicOrdering::SeqCst), 2);
+        let statuses = provider_statuses_for_route("exact_name", &execution.events());
+        let status = statuses
+            .iter()
+            .find(|row| row.source == "europepmc")
+            .expect("cancelled provider status");
+        assert!(status.reason_codes.contains(&"timeout"), "{status:?}");
+        assert!(
+            status.reason_codes.contains(&"retry_attempted"),
+            "{status:?}"
+        );
+        fixture.finish().unwrap();
     }
 
     fn resolved_context() -> VariantArticleResolutionContext {

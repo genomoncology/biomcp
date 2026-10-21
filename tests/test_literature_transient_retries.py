@@ -28,6 +28,8 @@ pytestmark = [pytest.mark.needs_binary]
     for recover in (True, False)
 ] + [("pubtator", 503, False, "search"), ("semanticscholar", 503, False, "search"),
      ("semanticscholar", "shared429", False, "search"),
+     ("semanticscholar", "shared429_after_retry", False, "search"),
+     ("semanticscholar", "batch503", False, "search"),
      ("europepmc", 503, False, "variant"), ("europepmc", 400, False, "variant")])
 @pytest.mark.parametrize("cached", [False, True])
 def test_literature_search_retries_one_transient_leg(
@@ -47,7 +49,7 @@ def test_literature_search_retries_one_transient_leg(
             status = 200
             failed_path = {"europepmc": "/europe/search", "pubtator": "/pubtator/search/",
                            "semanticscholar": "/s2/graph/v1/paper/search"}[provider]
-            if path == failed_path:
+            if path == failed_path and failure != "batch503":
                 attempts.append(self.path)
                 attempt_dates.append(datetime.now(timezone.utc))
                 ordinal = len(attempts)
@@ -58,7 +60,8 @@ def test_literature_search_retries_one_transient_leg(
                     return
                 release.set()
                 if ordinal == 1 or not recover:
-                    status = 429 if str(failure).startswith("retry_after_") or failure == "shared429" else int(failure)
+                    status = (503 if ordinal == 1 else 429) if failure == "shared429_after_retry" else (
+                        429 if str(failure).startswith("retry_after_") or failure == "shared429" else int(failure))
             if path == "/europe/search":
                 body = {"hitCount": 1, "resultList": {"result": [{"id": "12345678",
                         "pmid": "12345678", "title": "Other route paper",
@@ -85,7 +88,7 @@ def test_literature_search_retries_one_transient_leg(
                     retry_date = (datetime.now(timezone.utc) + timedelta(seconds=1)).replace(microsecond=0)
                     self.send_header("Retry-After", format_datetime(retry_date, usegmt=True))
                 else:
-                    self.send_header("Retry-After", "999" if failure == "retry_after_too_long" else "0")
+                    self.send_header("Retry-After", "9" * 40 if failure == "retry_after_too_long" else "0")
             self.end_headers()
             try:
                 self.wfile.write(payload)
@@ -96,7 +99,11 @@ def test_literature_search_retries_one_transient_leg(
             self.rfile.read(int(self.headers.get("Content-Length", "0")))
             payload = json.dumps([{"paperId": "authored-paper", "externalIds": {"PubMed": "12345678"},
                                    "abstract": "Other route abstract", "citationCount": 7}]).encode()
-            self.send_response(200)
+            status = 200
+            if failure == "batch503":
+                attempts.append(self.path)
+                status = 503
+            self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
@@ -116,7 +123,7 @@ def test_literature_search_retries_one_transient_leg(
     env = isolated_command_env(tmp_path / "isolated", providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     env.pop("BIOMCP_TEST_RETRY_SLEEP_OFF", None)
-    if failure != "shared429":
+    if not str(failure).startswith("shared429"):
         env["S2_API_KEY"] = "fixture-only-key"
     if cached:
         env["BIOMCP_CACHE_MODE"] = "default"
@@ -159,9 +166,9 @@ def test_literature_search_retries_one_transient_leg(
     else:
         assert payload["complete"] is False, payload
         text = json.dumps(failed)
-        expected_class = "rate_limited" if failure == "shared429" else (
+        expected_class = "rate_limited" if str(failure).startswith("shared429") else (
             "timeout" if failure == "timeout" else (
-                "http_429" if str(failure).startswith("retry_after_") else f"http_{failure}"))
+                "http_429" if str(failure).startswith("retry_after_") else "http_503" if failure == "batch503" else f"http_{failure}"))
         if surface == "variant":
             reasons = {reason for row in failed for reason in row["reason_codes"]}
             assert expected_class in reasons, failed
@@ -169,6 +176,6 @@ def test_literature_search_retries_one_transient_leg(
         else:
             assert f"failure_class={expected_class}" in text
             assert f"retry_attempted={'false' if cannot_retry else 'true'}" in text
-        if failure == "shared429":
+        if str(failure).startswith("shared429"):
             assert "S2_API_KEY" in text
     assert not misses, misses

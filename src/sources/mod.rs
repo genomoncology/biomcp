@@ -425,9 +425,9 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
                     .await
                     .unwrap_or_else(|error| {
                         Err(match observation.as_ref() {
-                            Some(observation) => {
-                                reqwest_middleware::Error::middleware(observation.timeout())
-                            }
+                            Some(observation) => reqwest_middleware::Error::middleware(
+                                observation.deadline_timeout(),
+                            ),
                             None => reqwest_middleware::Error::middleware(error),
                         })
                     })
