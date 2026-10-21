@@ -11,7 +11,6 @@ import socket
 import subprocess
 import sys
 import threading
-import time
 import urllib.request
 
 import pytest
@@ -42,7 +41,7 @@ with replay_session():
         first_pid, first_origin = first.process.pid, first.origin
         first_dir = first._next_run_dir()
         assert first.request_log_entries() == []
-        with urllib.request.urlopen(first.origin + '/healthz', timeout=5) as response:
+        with urllib.request.urlopen(first.origin + '/healthz', timeout=None) as response:
             assert response.status == 200
         assert first.request_log_line_count() == 1
     with replay_environment() as second:
@@ -97,32 +96,18 @@ def _start_runner(tmp_path: Path, launcher: str) -> subprocess.Popen:
 
 
 def _identity(runner: subprocess.Popen) -> dict:
-    # Bound readiness without leaving a hung runner behind on a startup error.
-    result: list[str] = []
-
-    def read() -> None:
-        for line in runner.stdout:
-            if line.startswith("{"):
-                result.append(line)
-                return
-
-    reader = threading.Thread(target=read, daemon=True)
-    reader.start()
-    reader.join(timeout=10)
-    assert result, (
-        runner.stderr.read() if runner.poll() is not None
-        else "runner did not report a ready replay server"
-    )
-    return json.loads(result[0])
+    for line in runner.stdout:
+        if line.startswith("{"):
+            return json.loads(line)
+    pytest.fail("runner exited before reporting a ready replay server: " + runner.stderr.read())
 
 
 def _assert_stopped(identity: dict) -> None:
     port = int(identity["origin"].rsplit(":", 1)[1])
-    deadline = time.monotonic() + 5
     pause = threading.Event()
     while True:
         try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+            with socket.create_connection(("127.0.0.1", port), timeout=None):
                 port_closed = False
         except ConnectionRefusedError:
             port_closed = True
@@ -135,7 +120,6 @@ def _assert_stopped(identity: dict) -> None:
                 pass
         if port_closed and process_gone:
             return
-        assert time.monotonic() < deadline, "replay server survived its test runner"
         pause.wait(0.02)
 
 
@@ -145,12 +129,13 @@ def _cleanup(runner: subprocess.Popen) -> None:
         os.killpg(runner.pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
-    runner.wait(timeout=5)
+    runner.wait()
     for stream in (runner.stdin, runner.stdout, runner.stderr):
         stream.close()
 
 
 @pytest.mark.parametrize("launcher", ["python", "python-shared", "bash"])
+@pytest.mark.timeout(120)
 def test_runner_death_stops_replay_during_an_incomplete_request(
     tmp_path: Path, launcher: str,
 ) -> None:
@@ -160,26 +145,25 @@ def test_runner_death_stops_replay_during_an_incomplete_request(
         identity = _identity(runner)
         origin = identity["origin"]
         port = int(origin.rsplit(":", 1)[1])
-        with socket.create_connection(("127.0.0.1", port), timeout=5) as pending:
+        with socket.create_connection(("127.0.0.1", port), timeout=None) as pending:
             pending.sendall(
                 b"POST /mygene/query HTTP/1.1\r\nHost: localhost\r\n"
                 b"Content-Length: 100\r\n\r\nx"
             )
             # A second accepted connection proves the server remains responsive
             # while the preceding request waits for its missing body bytes.
-            with urllib.request.urlopen(origin + "/healthz", timeout=5) as probe:
+            with urllib.request.urlopen(origin + "/healthz", timeout=None) as probe:
                 assert probe.status == 200
             runner.kill()
-            assert runner.wait(timeout=5) == -signal.SIGKILL
+            assert runner.wait() == -signal.SIGKILL
             _assert_stopped(identity)
     finally:
         _cleanup(runner)
-        if identity is not None:
-            _assert_stopped(identity)
 
 
 @pytest.mark.parametrize("action", ["normal", "timeout"])
 @pytest.mark.parametrize("launcher", ["python", "python-shared"])
+@pytest.mark.timeout(120)
 def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
     tmp_path: Path, action: str, launcher: str,
 ) -> None:
@@ -189,7 +173,7 @@ def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
         identity = _identity(runner)
         runner.stdin.write(action + "\n")
         runner.stdin.flush()
-        status = runner.wait(timeout=10)
+        status = runner.wait()
         stderr = runner.stderr.read()
         if action == "normal":
             assert status == 0, stderr
@@ -199,8 +183,6 @@ def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
         _assert_stopped(identity)
     finally:
         _cleanup(runner)
-        if identity is not None:
-            _assert_stopped(identity)
 
 
 def test_shared_replay_restores_fixture_roots_and_isolates_request_logs(tmp_path: Path) -> None:

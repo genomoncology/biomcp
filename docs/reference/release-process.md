@@ -4,7 +4,9 @@ BioMCP publishes from `.github/workflows/release.yml`. A push of a stable tag ma
 
 ## Local qualification
 
-`make main-gate` runs the routine gate followed by `make repo-audit` and `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
+Each reviewed batch runs `make landing-gate` once on its final candidate through a build job. Reuse the passing gate while its inputs stay unchanged; do not run another gate after merging.
+
+`make main-gate` runs the routine gate followed by `make repo-audit`, `make full-feature-check` and the installed Linux wheel smoke. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks. Until nightly qualification is scheduled, run `make main-gate` once on the final candidate before the full nonpublishing release rehearsal. Nightly qualification will own these additional checks.
 
 `make release-gate` requires the full-feature check with `FULL_FEATURE_PROFILE=release`, including the optimized executable's PNG, SVG and terminal output checks, before release-profile specifications. Complete this qualification and the final nonpublishing release rehearsal before tagging. The rehearsal must build optimized artifacts and exercise their output checks.
 
@@ -69,6 +71,8 @@ python3 scripts/check-release-metadata.py --candidate-sha "$(git rev-parse HEAD)
 ```
 
 Use the intended stable version and tag. Run the command through the configured local build job. It runs the existing version, changelog, runbook, citation, release-note and Rust metadata checks, continues after failures, and names every failed group. It does not create a tag. Full release qualification and rehearsal remain separate steps.
+
+Run this command before pushing changes. Its repository contract tier runs `make repo-audit`, using that target's maintained whole-repository test selection.
 
 Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` checks Cargo, Python, lockfiles, `manifest.json`, both `server.json` fields, `CITATION.cff`, and the concrete Homebrew version. `scripts/check-release-versions.py` adds tag equality and stable-tag enforcement, so the release workflow refuses a tag whose own name carries `-dev` and refuses a stable tag while any committed version still does. Commit the complete version change before pushing the tag. The current release candidate is stable Cargo `0.9.4` and Python `0.9.4`. Main carries the next development version between releases, and development builds report the development version with a commit suffix. The release commit drops the development suffix and commits the released number throughout the package, registry, and citation metadata. Homebrew remains a version placeholder until the release workflow renders and publishes its formula.
 
