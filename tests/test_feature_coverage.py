@@ -21,6 +21,8 @@ def tree(tmp_path: Path) -> Path:
     (tmp_path / "tests/feature-links.json").write_text(json.dumps({
         "python": {"tests/test_gene.py": {"feature": "gene"}},
         "rust": {}, "spec": {}, "internal": {},
+        "accounting_cases": {"gene": "tests/test_gene.py::test_lookup"},
+        "source_features": {r"^src/": "gene"},
     }))
     return tmp_path
 
@@ -57,10 +59,15 @@ def test_only_product_lines_count_toward_the_floor(
     (root / "src/main.rs").write_text(
         'fn main() {}\n#[cfg(test)]\nmod tests {\n #[test] fn unit() {}\n}\n'
     )
+    for name in ("observed_tests", "unobserved_tests"):
+        directory = root / "src" / name
+        directory.mkdir()
+        (directory / "mod.rs").write_text("#[test] fn internal() {}\n")
     report = root / "outside.lcov"
     report.write_text(
         f"SF:{root}/src/main.rs\nDA:1,{hits}\nDA:4,1\nend_of_record\n"
         f"SF:{root}/tests/test.rs\nDA:1,1\nend_of_record\n"
+        f"SF:{root}/src/observed_tests/mod.rs\nDA:1,1\nend_of_record\n"
     )
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
@@ -71,6 +78,9 @@ def test_only_product_lines_count_toward_the_floor(
     assert data["product_lines"] == 1
     assert data["reached_lines"] == hits
     assert data["outside_in_percent"] == 100 * hits
+    assert not data["unobserved_files"]
+    if not hits:
+        assert data["item_accounting"]["src/main.rs"]["case"] == "tests/test_gene.py::test_lookup"
 
 
 def test_failed_or_missing_collections_never_report_a_percentage(tmp_path: Path) -> None:
@@ -148,9 +158,15 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     flag_key = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS" if encoded else "RUSTFLAGS"
     separator = "\x1f" if encoded else " "
     instrumentation = separator.join(("-C", "instrument-coverage", "--cfg=coverage"))
+    owned = output / "target"
+    owned.mkdir()
+    (owned / "stale.profraw").touch()
+    ordinary_artifact = root / "target/debug/ordinary-sentinel"
+    ordinary_artifact.parent.mkdir(parents=True)
+    ordinary_artifact.touch()
     cargo.write_text(
         '#!/bin/sh\ncase "$1 $2" in\n'
-        '"llvm-cov clean") exit 0;;\n'
+        '"llvm-cov clean") [ "$CARGO_TARGET_DIR" = "$CARGO_LLVM_COV_TARGET_DIR" ] || exit 89; rm -f "$CARGO_LLVM_COV_TARGET_DIR"/*.profraw; exit 0;;\n'
         f'"llvm-cov show-env") printf \'%s\\n\' "{flag_key}=\'{instrumentation}\'"; exit 0;;\n'
         f'build*) printf "%s\\n%s\\n" "${{{flag_key}}}" "$LLVM_PROFILE_FILE" > profile-env.txt; exit 17;;\n'
         '*) exit 90;;\nesac\n'
@@ -161,6 +177,8 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
         env=os.environ | {"PATH": str(commands) + os.pathsep + os.environ["PATH"]},
         text=True, capture_output=True,
     )
+    assert not (owned / "stale.profraw").exists()
+    assert ordinary_artifact.exists()
     assert result.returncode != 0
     assert "product-build: exit 17" in result.stdout
     data = json.loads((output / "coverage.json").read_text())
@@ -171,7 +189,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     if sys.platform == "linux":
         assert "-Cllvm-args=-runtime-counter-relocation" in flags
     assert Path(pattern).is_absolute()
-    assert pattern == str(root / "target/llvm-cov-target/outside-%c%p.profraw")
+    assert pattern == str(root / ".cache/feature-coverage/target/outside-%c%p.profraw")
     # Even errors before compilation must not leave yesterday's passing report.
     (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
     (root / "tests/test_unknown.py").write_text("def test_new(): pass\n")

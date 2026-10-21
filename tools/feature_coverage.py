@@ -159,6 +159,14 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     owners = {link["feature"] for link in links}
     errors.extend(f"unknown feature {feature}" for feature in sorted(owners - names))
     errors.extend(f"{feature} has no outside-in test" for feature in sorted(names - owners))
+    case_owners = {link["test"]: link["feature"] for link in links}
+    for feature, case in config.get("accounting_cases", {}).items():
+        if case_owners.get(case) != feature:
+            errors.append(f"accounting case {case} does not name feature {feature}")
+    for pattern, feature in config.get("source_features", {}).items():
+        re.compile(pattern)
+        if feature != "@entity" and feature not in names:
+            errors.append(f"unknown source feature {feature}")
     return links, config, errors
 
 
@@ -198,11 +206,21 @@ def inline_tests(root: Path, source: Path) -> set[int]:
     return excluded
 
 
+def is_product_source(path: Path, internal: dict) -> bool:
+    return (path.as_posix() not in internal and path.parts[0] == "src" and path.suffix == ".rs"
+            and not any(part in {"test", "tests", "test_support", "generated"}
+                        or re.search(r"(^tests?_|_tests?(?:\.rs)?$|^tests?\.rs$)", part)
+                        for part in path.parts))
+
+
 def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dict:
     incomplete = {name: statuses.get(name, "missing") for name in ("rust", "python", "spec")
                   if statuses.get(name) != 0}
     if incomplete:
         return {"status": "incomplete", "collections": incomplete}
+    _, config, errors = inventory(root)
+    if errors:
+        raise ValueError("\n".join(errors))
     product = {}
     excluded = {}
     relative = None
@@ -216,9 +234,7 @@ def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dic
             except ValueError:
                 relative = None
                 continue
-            if (candidate.parts[0] != "src" or candidate.suffix != ".rs"
-                    or any(p in {"tests", "test_support", "generated"} for p in candidate.parts)
-                    or re.search(r"(^test[s]?_|_test[s]?\.rs$|^test[s]?\.rs$)", candidate.name)):
+            if not is_product_source(candidate, config["internal"]):
                 relative = None
                 continue
             relative = candidate.as_posix()
@@ -235,13 +251,47 @@ def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dic
         raise ValueError("coverage has no instrumented product lines")
     reached = sum(sum(value > 0 for value in lines.values()) for lines in product.values())
     percentage = 100 * reached / total
-    return {"status": "pass" if percentage >= floor else "fail", "floor": floor,
+    result = {"status": "pass" if percentage >= floor else "fail", "floor": floor,
             "denominator": "instrumented src/**/*.rs product lines; excludes test files, inline cfg(test) items, test_support and generated code",
             "product_lines": total, "reached_lines": reached,
             "outside_in_percent": percentage,
             "unobserved_files": sorted(str(p.relative_to(root)) for p in (root / "src").rglob("*.rs")
                                        if str(p.relative_to(root)) not in product
-                                       and not any(part in {"tests", "test_support", "generated"} for part in p.relative_to(root).parts)
-                                       and not re.search(r"(^test[s]?_|_test[s]?\.rs$|^test[s]?\.rs$)", p.name)),
+                                       and is_product_source(p.relative_to(root), config["internal"])),
             "unreached": {path: [number for number, hits in lines.items() if hits == 0]
                           for path, lines in product.items() if any(h == 0 for h in lines.values())}}
+
+    result["excluded_test_sources"] = {path: reason for path, reason in config["internal"].items()
+                                       if path.startswith("src/")}
+    result["item_accounting"] = account_items(root, config, result)
+    return result
+
+
+def account_items(root: Path, config: dict, result: dict) -> dict:
+    """Associate missing source observations with real cases, without claiming reach."""
+    aliases = {"adverse_event": "adverse-event", "cell_line": "cell-line",
+               "pharmacodb": "cell-line", "discover": "discovery",
+               "section_outcome": "source-policy", "source_state_registry": "source-policy"}
+    accounting = {}
+    for path in sorted(set(result["unreached"]) | set(result["unobserved_files"])):
+        feature = None
+        for pattern, owner in config.get("source_features", {}).items():
+            match = re.match(pattern, path)
+            if match:
+                feature = aliases.get(match[1], match[1]) if owner == "@entity" else owner
+                break
+        if feature is None or feature not in config.get("accounting_cases", {}):
+            raise ValueError(f"missing production feature/case association: {path}")
+        observation = "unreached instrumented lines"
+        if path in result["unobserved_files"]:
+            text = (root / path).read_text()
+            excluded = inline_tests(root, root / path)
+            masked = rust_lexer(root)(text)
+            executable = any(re.search(r"\bfn\s+\w+", line) for number, line in enumerate(masked.splitlines(), 1)
+                             if number not in excluded)
+            observation = ("runtime source absent from executable mapping" if executable else
+                           "declarations/module glue absent from executable mapping")
+        accounting[path] = {"feature": feature, "case": config["accounting_cases"][feature],
+                            "observation": observation,
+                            "remaining_limit": "The associated contract names the behavior; this collection does not establish that it reaches the missing lines. Spec/opt-in cases may be outside the collected offline selection."}
+    return accounting

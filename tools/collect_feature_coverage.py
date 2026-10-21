@@ -58,6 +58,9 @@ def collect(root: Path, baseline: bool) -> int:
         raise ValueError("cannot read the configured mustmatch version")
     if run("install-mustmatch", ["uv", "tool", "install", "mustmatch==" + mustmatch[1]], tool_env):
         return 1
+    target = output / "target"
+    ordinary.update(CARGO_TARGET_DIR=str(target), CARGO_LLVM_COV_TARGET_DIR=str(target),
+                    CARGO_LLVM_COV_BUILD_DIR=str(target))
     if run("coverage-clean", ["cargo", "llvm-cov", "clean", "--workspace"]):
         return 1
     show = subprocess.check_output(["cargo", "llvm-cov", "show-env"], cwd=root, env=ordinary, text=True)
@@ -70,8 +73,6 @@ def collect(root: Path, baseline: bool) -> int:
         if key.isidentifier() and key.isupper():
             words = shlex.split(value.rstrip(";"))
             instrumented[key] = words[0] if words else ""
-    target = root / "target/llvm-cov-target"
-    instrumented["CARGO_TARGET_DIR"] = str(target)
     # MCP tests deliberately terminate servers. Continuous counters survive
     # SIGTERM instead of losing every request served before the signal.
     if sys.platform not in {"linux", "darwin"}:
@@ -138,11 +139,8 @@ def collect(root: Path, baseline: bool) -> int:
     if any(statuses.values()):
         (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "collections": statuses}, indent=2) + "\n")
         return 1
-    report_env = ordinary.copy()
-    for key in ("CARGO_TARGET_DIR", "CARGO_LLVM_COV", "CARGO_LLVM_COV_SHOW_ENV", "CARGO_LLVM_COV_TARGET_DIR"):
-        report_env.pop(key, None)
     lcov = output / "outside.lcov"
-    if run("llvm-report", ["cargo", "llvm-cov", "report", "--all-features", "--lcov", "--output-path", str(lcov)], report_env):
+    if run("llvm-report", ["cargo", "llvm-cov", "report", "--lcov", "--output-path", str(lcov)], ordinary):
         return 1
     result = coverage_report(root, lcov, statuses, 0 if baseline else floor)
     result["source"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
