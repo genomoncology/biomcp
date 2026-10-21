@@ -1,12 +1,14 @@
 # 2340 — Replace Windows cache permissions exactly
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision d48c509ac1e3043e68902b3818aecd2e7cb4e61a, accept
 
 Reviews: revision e58018b1aac348bcb3074c8017314806456f42df, accept
+
+Landed: 56aaad3
 
 ## Outcome
 
