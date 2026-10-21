@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Reviews: revision d48c509ac1e3043e68902b3818aecd2e7cb4e61a, accept
 
+Reviews: revision e58018b1aac348bcb3074c8017314806456f42df, accept
+
 ## Outcome
 
 On Windows, first-encounter repair of BioMCP's saved-tree and cache directories leaves only the current user's access, as database repair already does. The repair replaces the protected DACL exactly, so a pre-existing explicit grant to Everyone or another user does not survive. Directories pass the same protection to new children. Share one permission policy between database and directory repair.
