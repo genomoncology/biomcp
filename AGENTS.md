@@ -120,6 +120,10 @@ Run `make main-gate` once on the final candidate before the full nonpublishing r
 
 Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Follow the release process for rehearsal and tagging.
 
+## Messages
+
+The coordinator decides routine questions that an existing ruling, recipe or limit covers, and records each decision on its ticket. It asks the PM only about new, split or reordered work, a change to BioMCP's interface or output, or anything that needs Ian. Nobody sends completion reports, landing notices, status updates, thanks or acknowledgments; pm shows landings and progress.
+
 ## Source licensing
 
 State each source's terms plainly in its registry entry and on the licensing page. Label restricted terms as restricted. Users are responsible for their own licenses. BioMCP never buys a license or contacts a provider without Ian's approval.
