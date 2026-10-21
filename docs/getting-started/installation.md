@@ -3,6 +3,10 @@
 This page covers supported BioMCP installation paths and verification checks.
 
 After installation, the `biomcp` command should be available in your shell.
+The executable embeds the agent guide and worked examples. Read the guide with
+`biomcp skill`, render it with `biomcp skill render`, or install local copies
+with `biomcp skill install <dir>`. Read the documentation at
+https://biomcp.org/.
 
 ## Option 1: Installer script
 
