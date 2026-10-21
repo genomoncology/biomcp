@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 89ee5e4dfc9cf7013d84a536465e16111b4ab263, accept
+
 ## Outcome
 
 `biomcp variant articles` and the other variant commands accept protein frameshift spellings such as `FANCL p.T367fs` and their genomic duplication spellings, and anchor the variant search on them. A spelling BioMCP truly cannot parse fails as invalid_argument with the accepted forms named. A parsed variant with no matching record reports not_found, never the reverse.
