@@ -11,6 +11,14 @@ from pathlib import Path
 import pytest
 import yaml
 
+from release_workflow_inventory import (
+    EXPECTED_NEEDS, NATIVE_WINDOWS_CACHE_STEP, PINNED_STEPS,
+    assert_step_inventory as _assert_pinned_step_lists,
+    step_id as _step_id,
+    release_inventory_admission as release_inventory_admission,
+    release_inventory_state as release_inventory_state,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 RELEASE_WORKFLOW = WORKFLOWS / "release.yml"
@@ -84,49 +92,6 @@ def test_existing_tag_modes_keep_the_released_helper_command_line(
             assert result.returncode == 0, result.stderr
     assert output.read_text(encoding="utf-8") == f"source_sha={sha}\nbuild_version=0.9.2\n"
 
-EXPECTED_NEEDS = {
-    "rehearsal-docs": ["version-check", "qualification"],
-    "rehearsal-container": ["version-check", "build", "wheel-smoke"],
-    "rehearsal-payloads": ["version-check", "build", "pypi-build"],
-    "rehearsal-complete": ["qualification", "release-gate", "build", "pypi-build", "wheel-smoke", "rehearsal-docs", "rehearsal-container", "rehearsal-payloads"],
-    "version-check": [],
-    "qualification": ["version-check"],
-    "release-gate": ["version-check", "qualification"],
-    "create-draft": ["version-check", "qualification"],
-    # No archive is built before the release-gate marker set
-    # passes, so build and pypi-build wait on the marker job.
-    "build": ["version-check", "release-gate"],
-    "publish-assets": ["build", "create-draft"],
-    "pypi-build": ["version-check", "release-gate"],
-    "wheel-smoke": ["version-check", "pypi-build"],
-    "docs-publish": ["version-check", "qualification"],
-    "docs-live": ["version-check", "qualification", "docs-publish"],
-    # PyPI last (2026-09-28): every build and smoke job first.
-    "pypi-publish": ["pypi-build", "wheel-smoke", "docs-live", "build", "container-publish"],
-    # The release is public before the tap lands.
-    "homebrew-tap": [
-        "build",
-        "docs-live",
-        "wheel-smoke",
-        "container-publish",
-        "pypi-publish",
-        "publish-release",
-    ],
-    "container-publish": [
-        "build",
-        "docs-live",
-        "version-check",
-        "wheel-smoke",
-        "create-draft",
-        "publish-assets",
-    ],
-    "publish-release": [
-        "build",
-        "pypi-publish",
-        "container-publish",
-        "docs-live",
-    ],
-}
 
 
 def _job_block(workflow: str, job: str) -> str:
@@ -373,183 +338,8 @@ ALLOWED_STEP_IFS = {
     "runner.os != 'Linux'",
 }
 
-# Exit-code swallows are not banned by phrase: every step of the
-# pinned jobs below is hash-pinned, so `|| echo skip`,
-# `set +o errexit`, `trap -- 'exit 0' EXIT`, `|| exit $((0))`, or any
-# other spelling changes the step's text and fails the hash. The
-# patterns are gone on purpose — structure closed the class.
-# Hash pinning: each load-bearing step is serialized from the parsed
-# workflow (so YAML folding cannot hide a change), its `run` body is
-# normalized to trivial whitespace (per-line trailing space stripped,
-# blank runs collapsed to one blank line), and the SHA-256 of the
-# canonical JSON is recorded below. ANY edit to a pinned step — run
-# text, `if:`, `shell:`, `with:`, `continue-on-error`, `env:` — fails
-# with the step's name and the new hash; deliberate changes update
-# the hash here in the same commit.
-    # Steps of the three pipeline jobs plus version-check's gate
-    # steps, pinned 2026-09-27. Update a hash only in
-    # the same commit as the deliberate workflow edit it records.
-    # The two pypi-build build steps were re-pinned 2026-10-08
-    #both now route through tools/with-build-identity
-    # so the shipped wheels report their commit. The two wheel-smoke
-    # install/run steps were re-pinned 2026-10-10: both now compare the printed --version with the tag.
-    # The container smoke was re-pinned again 2026-10-10:
-    # the tag now rides in with -e TAG.
-NATIVE_WINDOWS_CACHE_STEP = "Check cold cache statistics in native Windows PowerShell"
-
-PINNED_STEPS: dict[tuple[str, str], str] = {
-    ("wheel-smoke", NATIVE_WINDOWS_CACHE_STEP): "799830265b580448486a7da39c8fe8414e6a9e35aae1234233f064172e012e42",
-    ("wheel-smoke", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
-    ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
-    ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
-    ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "7cf8d8f0412743a3fe26312d709d9101fe171f1ac7df797b9ef52b6abb3a7e21",
-    ("pypi-build", "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b"): "4e605dbe89d4dcacdf70d170853634c9f4c518e1a41f5d2c5e2bd27cf4c89e7c",
-    ("pypi-build", "Install pinned maturin"): "996e8a6336fff6d3d0b3a74230bb8b24021e34e7d06390412ac88bd2308173e0",
-    ("pypi-build", "Build wheels"): "cbb986dad5ba25475c9731e0d012cfff7c3cefdbb280bd480e9024e51e6c3337",
-    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "8bbf07cb07509fe7c6981b115283ac00e78ca20c5130cfec70509d8cb16d08b6",
-    ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
-    ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
-    ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
-    ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "68652b2b9183303c3c7e8a10a889029f8bed17057c66fac871ef97bb75f00bea",
-    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "ed392815d8efbff2696f38b5fea48c680b371605f9925129ffe956de5333d127",
-    ("docs-live", "Check out the gate helper"): "ff29379fee6ad185b41206f3cd927d55f6c99711dafe8c11de48998ec8e64373",
-    ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
-    ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
-    ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "20b8f03bdcde7c6e9713aa4c8aefe129de93e2dcc00e902f2b22cf8589b63a9f",
-    ("version-check", "Require the tag and committed versions to agree"): "65da2401fd66e25808ab8c3abc9758b8671fef888ffd0eb13457044764c5bf5d",
-    ("version-check", "Require the changelog to cover merged tickets"): "1f76a37b3d73ab514debb49e722c4e1be630ffec9d136fadb6c2c0ad70a1b78b",
-    # The marker-set job's run steps are pinned like the pipeline
-    # jobs' — the fetch feeds the offline compile and the make
-    # target is the marker selection itself.
-    ("release-gate", "Prepare the offline sandbox"): "965fc709b77784b3c7604ffcd85236ec692e7daae8979098703946af18ccf4a2",
-    ("release-gate", "Fetch the cargo registry for the offline marker set"): "bd8a3eea8fbfa7f0592cc9160f727c40bf2cac4f30ca475277ea9ce01a8b7403",
-    ("release-gate", "Run the release-gate marker set"): "477790ec0a17570da21b61265e5ac11c81b6b047fe889e57570aa4f334f266bb",
-}
-
-
-# The ENTIRE step list of each pinned job, in order. The hash pins
-# catch edits to a pinned step; this catches a step ADDED before or
-# between them — the BASH_ENV-writer attack, where a new first step
-# poisons the environment and every pinned step still hashes clean.
-PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
-    "pypi-build": [
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
-        "Read declared Rust toolchain",
-        "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
-        "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
-        "Install pinned maturin",
-        "Build wheels",
-        "Build wheels inside the manylinux 2_28 container",
-        "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-    ],
-    "wheel-smoke": [
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
-        "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
-        "Install the wheel into a clean venv",
-        NATIVE_WINDOWS_CACHE_STEP,
-        "Run the wheel inside the manylinux 2_28 container",
-        "Smoke the installed wheel on every shipped platform",
-    ],
-    "docs-live": [
-        "Check out the gate helper",
-        "Resolve the tag commit",
-        "Require the live documentation revision to equal or descend from the tag",
-    ],
-    "version-check": [
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "Require the tag and committed versions to agree",
-        "Require the changelog to cover merged tickets",
-    ],
-    # 2026-09-28 round three: EVERY release job is pinned, not only
-    # the four above — pypi-publish uploads to PyPI, so a new first
-    # step there (a BASH_ENV writer via $GITHUB_ENV, a swapped uv)
-    # must fail even when no hash exists to drift.
-    "pypi-publish": [
-        "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
-        "Install pinned uv",
-        "Publish to PyPI with trusted publishing (production only)",
-    ],
-    "homebrew-tap": [
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "Download checksums from the release",
-        "Update Homebrew tap (production only)",
-    ],
-    "build": [
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        # The interpreter for tools/with-build-identity,
-        # which the host build steps run under so the shipped
-        # binaries report their commit.
-        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
-        "Read declared Rust toolchain",
-        "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
-        "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
-        "Build release binary",
-        "Build and package inside the manylinux 2_28 container",
-        "Package (macOS)",
-        "Package (Windows)",
-        "Retain archive and checksum",
-    ],
-    "container-publish": [
-        "Check out the packaging ref",
-        "Resolve the image version and source revision",
-        "Stage the released Linux executables",
-        "Set up QEMU",
-        "Set up Buildx",
-        "Log in to GHCR",
-        "Build and push the versioned image",
-        "Smoke the linux/amd64 image from the registry",
-        "Smoke the linux/arm64 image from the registry",
-    ],
-    "publish-release": [
-        # The repository must be checked out before any repository
-        # script runs (2026-09-30 third go-request review).
-        "Check out the exact revision",
-        # Docker work precedes the public flip (2026-09-30 review).
-        "docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435",
-        "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567",
-        "Move latest after both platform smokes pass",
-        "Publish the GitHub release after every publisher succeeds",
-    ],
-    "create-draft": [
-        # The draft carries the tag's changelog section as its
-        # release notes.
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "Render the release notes from the changelog",
-        "Create the draft release",
-    ],
-    "release-gate": [
-        # The marker set runs before any archive is built; build and
-        # pypi-build wait on this job.
-        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        "Read declared Rust toolchain",
-        "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
-        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
-        "astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a",
-        "Prepare the offline sandbox",
-        "Fetch the cargo registry for the offline marker set",
-        "Run the release-gate marker set",
-    ],
-}
-
-
-def _step_id(step: dict) -> str:
-    return step.get("name") or step.get("uses") or "<unnamed>"
-
-
-def _assert_pinned_step_lists(parsed: dict) -> None:
-    """Each pinned job's step list matches exactly: ids, order, count."""
-    for job, expected in PINNED_JOB_STEP_LISTS.items():
-        actual = [_step_id(step) for step in _pipeline_steps(parsed, job)]
-        assert actual == expected, (
-            f"{job}: the pinned job's step list must match exactly.\n"
-            f"  expected: {expected}\n"
-            f"  actual:   {actual}\n"
-            f"A new or reordered step in a pinned job fails here even "
-            f"when every pinned step still hashes clean."
-        )
+# The shared inventory owns ordered steps, counterpart coverage and canonical
+# body pins. These semantic checks retain conditions, shells and attack controls.
 
 
 def _assert_no_bash_env(parsed: dict) -> None:
@@ -749,7 +539,7 @@ def _assert_step_hashes(parsed: dict) -> None:
             f"{job}/{needle}: step text drifted from its pinned hash.\n"
             f"  expected sha256: {expected}\n"
             f"  actual   sha256: {actual}\n"
-            f"If the edit is deliberate, update PINNED_STEPS in this file "
+            f"If the edit is deliberate, update tests/release_workflow_inventory.py "
             f"in the same commit (the workflow comment names the pins)."
         )
 

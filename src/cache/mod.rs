@@ -29,3 +29,7 @@ pub(crate) use provider_capture::{
 
 #[cfg(test)]
 pub(crate) use provider_capture::ProviderCaptureProvider;
+
+/// Pre-SQLite reusable stores can contain credential-bearing request keys.
+pub(crate) const LEGACY_STORES: &[&str] =
+    &["http", "http-cacache", "citation-evidence", "captures"];
