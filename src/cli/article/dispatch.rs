@@ -310,8 +310,11 @@ pub(in crate::cli) async fn handle_search(
         suggestions.extend(session_suggestions);
     }
 
-    let article_type_note =
-        crate::entities::article::article_type_limitation_note(filters, source_filter);
+    let article_type_note = crate::entities::article::article_search_limitation_note(
+        filters,
+        source_filter,
+        results.is_empty(),
+    );
     let warnings = article_search_warnings(filters, &results);
     let text = if json {
         article_search_json_with_detail(
@@ -628,7 +631,11 @@ pub(super) fn build_article_debug_plan(
             source_status: source_status.to_vec(),
             count: results.len(),
             total: pagination.total,
-            note: crate::entities::article::article_type_limitation_note(filters, source_filter),
+            note: crate::entities::article::article_search_limitation_note(
+                filters,
+                source_filter,
+                results.is_empty(),
+            ),
             error: None,
         }],
     })

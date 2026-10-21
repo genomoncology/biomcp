@@ -37,7 +37,7 @@ def provider():
             if self.server.redirect_to:
                 self.send_header("Location", self.server.redirect_to)
             if self.server.retry_after:
-                self.send_header("Retry-After", "30")
+                self.send_header("Retry-After", str(self.server.retry_after))
             self.end_headers()
             body = self.server.body
             self.wfile.write(
@@ -794,13 +794,19 @@ def test_keyed_s2_refuses_invalid_admission_before_requests(tmp_path, provider, 
     assert "fake-s2-marker" not in process.stdout + process.stderr
 
 
-def test_keyed_s2_stops_after_rate_limit_and_hides_echoed_fields(tmp_path, provider):
+@pytest.mark.parametrize(
+    ("status", "retry_after", "stop_reason"),
+    [(429, False, "HTTP 429"), (200, "private-header-marker", "Retry-After")],
+)
+def test_keyed_s2_stops_after_rate_limit_and_hides_echoed_fields(
+    tmp_path, provider, status, retry_after, stop_reason
+):
     server, origin = provider
     replay = s2_recordings(tmp_path, origin)
-    server.status = 429
-    server.retry_after = True
-    server.body = {"fake-s2-marker": "untrusted"}
-    process, _, summary = run_check(
+    server.status = status
+    server.retry_after = retry_after
+    server.body = {"fake-s2-marker": "private-body-marker"}
+    process, results, summary = run_check(
         tmp_path,
         replay,
         "--live",
@@ -812,7 +818,14 @@ def test_keyed_s2_stops_after_rate_limit_and_hides_echoed_fields(tmp_path, provi
     assert process.returncode == 1
     assert summary["checked"] == len(server.requests) == 1
     assert summary["blocked"] == 4
+    assert results[0]["http_status"] == status
+    assert all(row["stop_reason"] == stop_reason for row in results)
+    if status == 429:
+        assert "changed status: recorded 200; live 429" in results[0]["details"]
+    assert results[1]["details"] == [f"provider stopped after {stop_reason}"]
     assert "fake-s2-marker" not in process.stdout + process.stderr
+    assert "private-body-marker" not in process.stdout + process.stderr
+    assert "private-header-marker" not in process.stdout + process.stderr
 
 
 def test_keyed_s2_respects_source_disabling(tmp_path, provider):
@@ -852,3 +865,49 @@ def test_keyed_s2_does_not_forward_authentication_on_redirect(tmp_path, provider
     assert summary["drift"] == 5
     assert len(server.requests) == 5
     assert "fake-s2-marker" not in process.stdout + process.stderr
+
+
+@pytest.mark.parametrize(
+    ("body", "detail"),
+    [
+        (
+            {"hits": [{"name": "private-value-marker"}], "total": 1},
+            "missing field $/hits/*/symbol: expected string",
+        ),
+        (
+            {"hits": [{"name": "private-value-marker", "symbol": 42}], "total": 1},
+            "changed type $/hits/*/symbol: expected string; live number",
+        ),
+        (
+            b'{"fake-s2-marker": "private-body-marker", broken',
+            "live response has unsupported or invalid shape",
+        ),
+    ],
+)
+def test_keyed_s2_reports_recorded_field_drift_without_live_fields_or_values(
+    tmp_path, provider, body, detail
+):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    server.body = (
+        body
+        if isinstance(body, bytes)
+        else {**body, "fake-s2-marker": {"token": "private-body-marker"}}
+    )
+    process, results, summary = run_check(
+        tmp_path,
+        replay,
+        "--live",
+        "--source",
+        "semantic-scholar",
+        "--keyed-semantic-scholar",
+        env_values={"S2_API_KEY": "fake-s2-marker"},
+    )
+    assert process.returncode == 1
+    assert summary["checked"] == summary["drift"] == len(server.requests) == 5
+    assert all(row["details"] == [detail] for row in results)
+    assert all(row["http_status"] == 200 for row in results)
+    assert all(not row["added_paths"] for row in results)
+    assert not any("stop_reason" in row for row in results)
+    for marker in ("fake-s2-marker", "private-value-marker", "private-body-marker"):
+        assert marker not in process.stdout + process.stderr

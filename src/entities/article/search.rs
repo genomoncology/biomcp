@@ -129,7 +129,7 @@ where
 {
     let limit = deadline::federated_article_source_timeout();
     let observation = crate::sources::literature_retry::Observation::default();
-    match timeout(
+    let mut outcome = match timeout(
         limit,
         // Keep the backend future out of the nested task-local deadline frames.
         crate::sources::literature_retry::within_leg(limit, observation.clone(), Box::pin(future)),
@@ -195,7 +195,13 @@ where
                 },
             }
         }
+    };
+    if let FederatedSourceOutcome::Unavailable { status, .. } = &mut outcome
+        && let Some(message) = &mut status.message
+    {
+        observation.append_sent_request(message);
     }
+    outcome
 }
 
 fn variant_budget_source_name(source: ArticleSource) -> &'static str {

@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from make_fixture import make_fixture_env
+
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "tools/check-feature-coverage.py"
 
@@ -269,14 +271,13 @@ def test_release_entry_points_collect_coverage_once(tmp_path: Path, goal: str) -
     overlay.write_text("gate-preflight lint test test-long prepare-test prepare-routine-test-tmp repo-audit sync-python-dev full-feature-check spec:\n\t@:\n")
     command = ["make", "--no-print-directory", "-f", str(ROOT / "Makefile"), "-f", str(overlay)]
     result = subprocess.run([*command, goal, "TEST_LANE_WORKERS=2", "MAKE=" + " ".join(command)],
-                            cwd=tmp_path, text=True, capture_output=True)
+                            cwd=tmp_path, env=make_fixture_env(tmp_path), text=True, capture_output=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.splitlines().count("coverage:2:2") == 1
     assert result.stdout.splitlines().count("marker-check") == 1
 
 
 def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path) -> None:
-    import os
     import shutil
 
     root = tree(tmp_path)
@@ -294,9 +295,7 @@ def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path)
         "touch prepared\nexit 99\n"
     )
     uv.chmod(0o755)
-    env = {key: value for key, value in os.environ.items()
-           if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "MAKELEVEL", "MAKEFILES")}
-    env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+    env = make_fixture_env(root)
     result = subprocess.run(
         ["make", "-f", "Makefile", "-f", str(overlay), "lint"],
         cwd=root, env=env, capture_output=True, text=True,

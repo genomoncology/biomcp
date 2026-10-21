@@ -126,3 +126,61 @@ fn malformed_asset_xml_names_only_the_provider_that_failed() {
     assert!(!message.contains("NCBI EFetch"), "{message}");
     assert!(!message.contains("Figshare"), "{message}");
 }
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn empty_supplement_container_scopes_the_listing_and_names_the_article_route() {
+    let fixture = ArticleFixture::start();
+    let output = fixture
+        .biomcp_command(&["--json", "get", "article", "22663014", "assets"])
+        .output()
+        .expect("asset lookup should run");
+    assert!(!output.status.success(), "{output:?}");
+    let answer: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let message = answer["error"]["message"].as_str().unwrap();
+    assert!(
+        message.contains("Europe PMC listed no supplements (source_listed_none)"),
+        "{message}"
+    );
+    assert!(
+        message.contains("does not establish that none exist"),
+        "{message}"
+    );
+    assert!(
+        !message.contains("Europe PMC could not confirm"),
+        "{message}"
+    );
+    assert!(
+        message.contains("https://pmc.ncbi.nlm.nih.gov/articles/PMC123459/"),
+        "{message}"
+    );
+
+    let fulltext = fixture
+        .biomcp_command(&["--json", "get", "article", "22663012", "fulltext"])
+        .output()
+        .expect("fulltext lookup should run");
+    assert!(fulltext.status.success(), "{fulltext:?}");
+    let article: serde_json::Value = serde_json::from_slice(&fulltext.stdout).unwrap();
+    assert!(article["not_included"].is_null(), "{article}");
+
+    // A populated package still exposes its assets and normal data observation.
+    let populated = fixture
+        .biomcp_command(&["--json", "get", "article", "22663018", "assets"])
+        .output()
+        .expect("populated asset lookup should run");
+    assert!(populated.status.success(), "{populated:?}");
+    let manifest: serde_json::Value = serde_json::from_slice(&populated.stdout).unwrap();
+    assert!(!manifest["assets"].as_array().unwrap().is_empty());
+    assert!(
+        manifest["source_attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|attempt| {
+                attempt["provider"]["source"] == "Europe PMC"
+                    && attempt["source_document"] == "europe_pmc_zip"
+                    && attempt["outcome"] == "data"
+            }),
+        "{manifest}"
+    );
+}

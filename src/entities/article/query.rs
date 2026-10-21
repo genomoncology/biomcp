@@ -674,7 +674,17 @@ pub(super) async fn build_pubtator_query(
         ));
     }
 
-    Ok(terms.join(" "))
+    // PubTator treats adjacent terms as alternatives. Each independently
+    // supplied filter must constrain the others, and a keyword OR belongs
+    // inside its own operand rather than escaping the typed gene constraint.
+    if terms.len() > 1 {
+        for term in &mut terms {
+            if term.contains(char::is_whitespace) {
+                *term = format!("({term})");
+            }
+        }
+    }
+    Ok(terms.join(" AND "))
 }
 
 pub(super) fn build_free_text_article_query(filters: &ArticleSearchFilters) -> String {
