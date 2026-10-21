@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Recover omitted default variant article routes through grouped queries and shared provider work, with a bounded discovery allowance and explicit remaining omissions. Preserve lexical selection and identity checks. (2337)
+
 - Expand strict coding-alias discovery in default variant article searches while preserving the existing lexical queries, identity checks, and work budgets. Keep omitted aliases visible. (2327)
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 

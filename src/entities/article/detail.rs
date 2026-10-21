@@ -500,6 +500,21 @@ pub(super) async fn resolve_variant_article_from_pmid(
     }
 }
 
+pub(super) fn europepmc_hit_matches_pmid(hit: &EuropePmcResult, pmid: u64) -> bool {
+    hit.pmid.as_deref().and_then(parse_pmid) == Some(pmid) && hit.source.as_deref() == Some("MED")
+}
+
+pub(super) fn matching_europepmc_hit(
+    search: EuropePmcSearchResponse,
+    pmid: u64,
+) -> Option<EuropePmcResult> {
+    search
+        .result_list
+        .into_iter()
+        .flat_map(|list| list.result)
+        .find(|hit| europepmc_hit_matches_pmid(hit, pmid))
+}
+
 async fn variant_europepmc_hit<'a>(
     pmid: u64,
     execution: &'a super::variant_search::VariantArticleExecutionContext,
@@ -521,7 +536,7 @@ async fn variant_europepmc_hit<'a>(
         Err(error) => Err(error),
     };
     match result {
-        Ok(response) => match first_europepmc_hit(response) {
+        Ok(response) => match matching_europepmc_hit(response, pmid) {
             Some(hit) => Ok(Some((hit, unit))),
             None => {
                 unit.record("ok", 1);

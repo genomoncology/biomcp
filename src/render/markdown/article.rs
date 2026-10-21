@@ -700,6 +700,22 @@ pub(crate) fn variant_article_sources_markdown(
             .expect("source status serializes as a string");
         text.push_str(&format!("| {} | {} | {status} |\n", row.route, row.source));
     }
+    for row in source_status {
+        for (label, aliases) in [
+            ("Omitted queries", &row.omitted_aliases),
+            ("Capped query results", &row.truncated_aliases),
+        ] {
+            if !aliases.is_empty() {
+                text.push_str(&format!(
+                    "\n- {}/{}: {}. {label}: {}.\n",
+                    row.route,
+                    row.source,
+                    row.reason_codes.join(", "),
+                    markdown_cell(&aliases.join(", ")),
+                ));
+            }
+        }
+    }
     Ok(text)
 }
 
