@@ -121,6 +121,9 @@ pub struct Drug {
     pub shortage: Option<Vec<DrugShortageEntry>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approvals: Option<Vec<DrugApproval>>,
+    /// Provider records whose product identity could not be confirmed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unconfirmed_approvals: Vec<DrugApproval>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fda_orphan_designations: Option<Box<FdaOrphanDesignations>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -234,6 +237,8 @@ pub struct DrugApproval {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DrugApprovalProduct {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product_number: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub brand_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
