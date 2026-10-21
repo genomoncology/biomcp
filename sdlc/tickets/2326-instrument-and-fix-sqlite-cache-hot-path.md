@@ -10,6 +10,8 @@ Reviews: revision fca3f187c7eff128344185d05c3cac7bb49cdcda, accept
 
 Reviews: revision 3375b74440116113a525d8760e4ecb170e6fa783, accept
 
+Reviews: revision 5b88dd579dcd6525c4c88add70f3bf437939b695, accept
+
 ## Outcome
 
 Warm and day-cached answers return within 0.5 ms of 0.9.3 on the ticket 2234 rows, measured on the same Mac, while the cache keeps its integrity checks, safe use by concurrent processes, and bounded size. Measure first: add timing spans for Store::open, startup maintenance, transaction begin, the read and close, plus a busy-handler call counter, and attribute the 5.08 ms warm get variant and 1.16 ms day-cached search gwas gaps before changing behavior. Then change one step at a time, measuring after each: read in deferred transactions with blob re-validation and one retry, keep one connection per process, and skip startup maintenance when nothing is due. Keep SQLite; the performance change introduces no schema change beyond the separately required credential migration.
