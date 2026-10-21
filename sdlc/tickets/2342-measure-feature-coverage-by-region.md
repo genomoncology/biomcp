@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 90acdd6a85addf620e9a4184455d13a76a209974, accept
+
 ## Outcome
 
 tools/collect_feature_coverage.py reports unrun Rust code by source region, not by line. It reads `cargo llvm-cov report --json` and lists every region with a zero count across all test binaries. A closure or branch that shares a line with code that ran then shows up as unrun. The floor and the unreached list use regions, with the baseline reset once and recorded.
