@@ -1,0 +1,11 @@
+# Windows installed-wheel smoke repair
+
+The clean installed-wheel smoke used `env -i` and dropped `USERNAME`. The existing Windows cache permission setup needs that account name, so `cache stats --json` failed with `io` before its JSON assertions. The repair preserves the actual host identity while retaining the clean home, keyless environment and existing product assertions. It adds a native PowerShell cold-cache probe to the existing Windows wheel job; product code is unchanged.
+
+The missing-identity control failed before repair. Exact-source job `2323/j1060` passed ten focused controls with one existing skip, Ruff, Bash syntax, actionlint and ShellCheck at `7cfdfef102cfcc39ff06ab470e5c32638f8cba82`. Earlier `j1057` passed fifteen smoke controls but its overall command failed because its lint tool path was wrong; that result remains failed. The local controls do not establish native Windows success. The admission record binds the required complete rehearsal and its native Windows result.
+
+Original failed rehearsal [39541833383](https://github.com/genomoncology/biomcp/actions/runs/39541833383), its Windows job logs and exact wheel remain under `rehearsals/39541833383/` in the permanent evidence root named in [the admission record](2258-release-admission.md). Repair controls remain under `windows-wheel-smoke/2323/`.
+
+The complete Gator early signal exposed a second workflow inventory omitted from the first review. The takeback adds the native step to its ordered provenance contract and narrowly guards its condition, shell and body hash. Full routine job `2323/j1198` passed source `ed2eabfb6ab4b9d963d00b0dc37eebccd802591f`; the reviewer independently verified that result and accepted final evidence-only tip `9bd41c0746dfe99542166b7a1bca09c352a6ae9d`. The ticket Evidence and admission record retain the failed attempts and review gap.
+
+The final repair landed at `cdb9f4a1bbb37195b512c42351638a3cffe0870d` after required M5 candidate gate `2323/1792582004700-5442` passed. Complete untagged rehearsal [39593499234](https://github.com/genomoncology/biomcp/actions/runs/39593499234) then passed. Its Windows wheel job `119225648903` passed both the shared installed smoke and the native PowerShell cold-cache check; this supplies the required actual Windows proof.
