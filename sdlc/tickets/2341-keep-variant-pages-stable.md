@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 8e5fc9940f58373a0551adad05149937c876ff75, accept
+
 ## Outcome
 
 Broad variant search pages never repeat or skip a result across consecutive pages. BioMCP either pages in the same order the provider pages, or fetches enough to sort locally before applying the offset, and says which order it uses. Exact-identity search stays unchanged.
