@@ -61,6 +61,10 @@ COUNTERPARTS = {
     "wheel-smoke": {
         "Install the wheel into a clean venv":
             (PROVENANCE, "def test_pipeline_jobs_contract("),
+        # Native Windows execution belongs to the complete rehearsal; this
+        # contract checks its required command and isolated environment only.
+        "Check cold cache statistics in native Windows PowerShell":
+            ("tests/test_installed_wheel_smoke.py", "def test_main_and_release_use_the_shared_installed_wheel_smoke("),
         "Run the wheel inside the manylinux 2_28 container":
             ("scripts/check-linux-wheel.sh", "docker run"),
         "Smoke the installed wheel on every shipped platform":
