@@ -14,6 +14,8 @@ Reviews: revision f321da7, accept
 
 Reviews: revision a146294, accept
 
+Reviews: revision 2d10c0b, accept
+
 ## Outcome
 
 `sdlc/features.md` lists each feature once in caller words. Every existing outside-in test names a listed feature, including drug, managed-data, study and transport behavior; derive links from golden command metadata where it already exists. The routine gate checks these links cheaply and adds no instrumented build.
