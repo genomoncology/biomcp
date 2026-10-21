@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Changes: tests/managed_state_permissions.rs; docs/user-guide/cli-reference.md; src/sources/mod.rs (existing initialization regression); src/cache/{mod,http,manager}.rs; src/cache/sqlite.rs; src/cache/sqlite/{request_key,schema,upgrade}.rs; src/cli/cache.rs; src/cli/cache/tests.rs; tests/cache_clear.rs; tests/test_cache_credentials.py; tests/test_cache_sqlite.py; tests/feature-links.json; docs/{policies,troubleshooting}.md; docs/reference/{configuration,data-sources}.md; CHANGELOG.md.
 
+Reviews: revision 55b3377f0d1484b5dbd2693bbcd667f1b9cddaa6, reject
+
 ## Outcome
 
 No credential BioMCP sends reaches disk or logs. That covers the NCBI api_key query parameter, other key or token query parameters, and authorization or x-api-key headers.
