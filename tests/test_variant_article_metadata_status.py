@@ -25,7 +25,7 @@ FIXTURES = ROOT / "tests/fixtures/article/metadata-recovery"
 PMIDS = ["42894377", "42891779"]
 
 
-@pytest.mark.parametrize("case", ["failed", "partial", "covered", "healthy"])
+@pytest.mark.parametrize("case", ["failed", "one_missing_field", "covered", "healthy"])
 def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Path) -> None:
     missed: list[str] = []
 
@@ -48,16 +48,16 @@ def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Pat
                     return self.reply({"PubTator3": [{
                         "pmid": int(params["pmids"][0]), "passages": [],
                     }]})
-                if case == "partial":
-                    # Authored refusal control reaches partial secondary recovery.
+                if case == "one_missing_field":
+                    # Authored refusal control preserves the specific provider failure class.
                     return self.reply({"error": "Synthetic refusal"}, 422)
                 return self.bytes((FIXTURES / "pubtator-missing.body").read_bytes(), 400)
             if target.path == "/search" and params.get("query", [""])[0].startswith("EXT_ID:"):
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
-                if case != "failed" or pmid == PMIDS[1]:
+                if case in ("covered", "healthy") or pmid == PMIDS[1]:
                     return self.reply({"hitCount": 1, "resultList": {"result": [{
                         "id": pmid, "pmid": pmid, "title": "Synthetic recovered metadata",
-                        "abstractText": "" if case == "partial" and pmid == PMIDS[0] else f"Recovered abstract for {pmid}",
+                        "abstractText": f"Recovered abstract for {pmid}",
                         "citedByCount": 7,
                     }]}})
                 return self.bytes((FIXTURES / f"europepmc-exact-{pmid}.body").read_bytes())
@@ -73,7 +73,11 @@ def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Pat
         def do_POST(self) -> None:  # noqa: N802 - stdlib callback
             size = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(size))
-            self.reply([None for _ in payload["ids"]])
+            self.reply([
+                {"abstract": "Synthetic available abstract", "citationCount": 0}
+                if case == "one_missing_field" and lookup.endswith(PMIDS[0]) else None
+                for lookup in payload["ids"]
+            ])
 
         def reply(self, body: object, status: int = 200) -> None:
             self.bytes(json.dumps(body).encode(), status)
@@ -128,10 +132,12 @@ def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Pat
     rows = payload["results"]
     assert [row["pmid"] for row in rows] == PMIDS
     assert "metadata_status" not in rows[1], rows[1]
-    if case in ("failed", "partial"):
-        missing = ["abstract", "citation_count"] if case == "failed" else ["abstract"]
+    if case in ("failed", "one_missing_field"):
+        missing = ["abstract", "citation_count"] if case == "failed" else ["citation_count"]
         failure_class = "internal" if case == "failed" else "http_status"
         assert payload["complete"] is False
+        if case == "one_missing_field":
+            assert rows[0]["citation_count"] == 0
         assert rows[0].get("metadata_status") == {
             "status": "incomplete", "missing_fields": missing,
             "source": "pubtator", "failure_class": failure_class,
@@ -144,7 +150,7 @@ def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Pat
         affected = next(line for line in markdown.stdout.splitlines() if line.startswith("|PMID 42894377|"))
         covered = next(line for line in markdown.stdout.splitlines() if line.startswith("|PMID 42891779|"))
         assert "incomplete" in affected and ", ".join(missing) in affected
-        assert ("citation_count" in affected) == (case == "failed")
+        assert ("abstract" in affected) == (case == "failed")
         assert failure_class in affected and "pubtator" in affected
         assert "incomplete" not in covered and failure_class not in covered
         if case == "failed":

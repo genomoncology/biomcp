@@ -429,7 +429,7 @@ An incomplete provider route keeps available rows but sets `complete: false`,
 makes a provider request is reported as source-neutral `internal` /
 `not_attempted`, rather than attributing an outage to an uncalled provider.
 
-A visible metadata fallback failure adds `metadata_status` only to affected rows, including compact batch rows. The object has `status: "incomplete"`, `missing_fields` (`abstract`, `citation_count`, or both), `source: "pubtator"`, and the existing provider `failure_class`. The warning names the same PMID, missing fields and failure class. Fully recovered rows omit this object. Markdown shows the status beside each affected article. Page-level `complete` and `source_status` still describe the whole search.
+A visible metadata fallback failure adds `metadata_status` only to affected rows, including compact batch rows. The object has `status: "incomplete"`, `missing_fields` (`abstract`, `citation_count`, or both), `source: "pubtator"`, and the existing provider `failure_class`. The warning names the same PMID, missing fields and failure class. The status follows the existing recovery rule, which also retries zero citation counts. Covering Europe PMC records remain recovery and omit this object. Markdown shows the status beside each affected article. Page-level `complete` and `source_status` still describe the whole search.
 
 `--verify-identity` adds captured-evidence `identity` facts without filtering the
 retrieved pool. `--confirmed-only` requires it and filters before ranking and

@@ -283,13 +283,23 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
 fn article_search_row_needs_visible_article_fallback(row: &ArticleSearchResult) -> bool {
     (row.source == ArticleSource::PubMed || row.matched_sources.contains(&ArticleSource::PubMed))
         && parse_pmid(&row.pmid).is_some()
-        && (row.citation_count.is_none()
-            || matches!(row.citation_count, Some(0))
-            || row
-                .abstract_snippet
-                .as_deref()
-                .is_none_or(|snippet| snippet.trim().is_empty())
-            || row.normalized_abstract.trim().is_empty())
+        && !missing_visible_article_metadata_fields(row).is_empty()
+}
+
+fn missing_visible_article_metadata_fields(row: &ArticleSearchResult) -> Vec<&'static str> {
+    let mut fields = Vec::new();
+    if row
+        .abstract_snippet
+        .as_deref()
+        .is_none_or(|text| text.trim().is_empty())
+        || row.normalized_abstract.trim().is_empty()
+    {
+        fields.push("abstract");
+    }
+    if row.citation_count.is_none() || matches!(row.citation_count, Some(0)) {
+        fields.push("citation_count");
+    }
+    fields
 }
 
 fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, article: &Article) {
@@ -300,8 +310,8 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
 }
 
 /// Settle one visible-row fallback after the PubTator/Europe PMC resolve
-/// failed: merge Europe PMC metadata before reporting only fields that
-/// remain missing. Fully recovered rows retain the debug-only failure.
+/// failed: a covering Europe PMC record retains the debug-only failure.
+/// Only an uncovered row reports which visible fields remain missing.
 fn settle_visible_row_metadata_fallback(
     row: &mut ArticleSearchResult,
     err: &crate::error::BioMcpError,
@@ -317,22 +327,12 @@ fn settle_visible_row_metadata_fallback(
             row,
             &crate::transform::article::from_europepmc_result(hit),
         );
+        return None;
     }
     if crate::sources::disable::unavailable_disabled_reason(err).is_some() {
         return None;
     }
-    let mut missing_fields = Vec::new();
-    if row.normalized_abstract.trim().is_empty()
-        && row
-            .abstract_snippet
-            .as_deref()
-            .is_none_or(|text| text.trim().is_empty())
-    {
-        missing_fields.push("abstract");
-    }
-    if row.citation_count.is_none() {
-        missing_fields.push("citation_count");
-    }
+    let missing_fields = missing_visible_article_metadata_fields(row);
     if missing_fields.is_empty() {
         return None;
     }
