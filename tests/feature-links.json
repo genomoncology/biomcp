@@ -714,7 +714,7 @@
     "^src/entities/": "source-policy"
   },
   "source_cases": {
-    "^src/(?:cache/citation_evidence|entities/article/(?:graph/)?citation_evidence|cli/article/citation_evidence|transform/article/jats/(?:citation_evidence|refs/citation))(?:/|\\.rs$)": {
+    "^src/(?:cache/citation_evidence|sources/opencitations|entities/article/(?:graph/)?citation_evidence|cli/article/citation_evidence|transform/article/jats/(?:citation_evidence|refs/citation))(?:/|\\.rs$)": {
       "feature": "article",
       "case": "spec/entity/article.md::block-100"
     },
