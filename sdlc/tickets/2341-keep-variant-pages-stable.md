@@ -1,12 +1,14 @@
 # 2341 — Keep broad variant search pages stable
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 8e5fc9940f58373a0551adad05149937c876ff75, accept
 
 Reviews: revision 488c8169cb519b118540be582f280bb4b8522317, accept
+
+Landed: 94a02bf
 
 ## Outcome
 
