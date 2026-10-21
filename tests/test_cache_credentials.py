@@ -215,3 +215,74 @@ def test_explicit_clean_and_clear_remove_retired_stores(replay, command):
     assert result.returncode == 0, "explicit cache cleanup failed"
     assert all(not (cache / name).exists() for name in LEGACY)
     assert_no_canary(cache, result.stdout, result.stderr)
+
+
+def seed_old_database(env):
+    assert run(env, "cache", "stats").returncode == 0
+    cache = Path(env["BIOMCP_CACHE_DIR"])
+    database = cache / "biomcp.db"
+    with sqlite3.connect(database) as connection:
+        connection.execute("PRAGMA user_version=1")
+        connection.execute("INSERT INTO entries(namespace,key,base_key,metadata,body,bytes,created,last_access) "
+                           "VALUES('capture','old','old',?,X'7B7D',?,0,0)",
+                           (CANARY.encode(), len(CANARY) + 2))
+    return cache, database
+
+
+def test_upgrade_lease_contention_preserves_pending_rows_until_retry(replay):
+    env, _ = replay
+    cache, database = seed_old_database(env)
+    lease_path = cache / ".upgrade.lock"
+    lease_path.touch(mode=0o600)
+    with lease_path.open("r+b") as lease:
+        if os.name == "nt":
+            import msvcrt
+            lease.write(b"lock")
+            lease.flush()
+            lease.seek(0)
+            msvcrt.locking(lease.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        blocked = run(env, "cache", "stats")
+        assert blocked.returncode != 0, "a competing initializer must not bypass the lease"
+        with sqlite3.connect(database) as connection:
+            assert connection.execute("PRAGMA user_version").fetchone() == (1,)
+            assert connection.execute("SELECT count(*) FROM entries").fetchone() == (1,)
+    assert run(env, "cache", "stats").returncode == 0
+    assert_no_canary(cache)
+
+
+@pytest.mark.parametrize("link", ["symlink", "hardlink"])
+def test_upgrade_rejects_linked_lease_without_touching_saved_file(replay, tmp_path, link):
+    env, _ = replay
+    cache, database = seed_old_database(env)
+    saved = tmp_path / "saved-article"
+    saved.write_text("saved article")
+    lease = cache / ".upgrade.lock"
+    if link == "symlink":
+        try:
+            lease.symlink_to(saved)
+        except OSError:
+            pytest.skip("symlinks unavailable on this platform")
+    else:
+        os.link(saved, lease)
+    assert run(env, "cache", "stats").returncode != 0
+    assert saved.read_text() == "saved article"
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone() == (1,)
+    lease.unlink()
+    assert run(env, "cache", "stats").returncode == 0
+    assert_no_canary(cache)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Unix permission bits; Windows ACLs have native contracts")
+def test_upgrade_lease_is_private_before_reuse(replay):
+    env, _ = replay
+    cache, _ = seed_old_database(env)
+    lease = cache / ".upgrade.lock"
+    lease.touch(mode=0o644)
+    lease.chmod(0o644)
+    assert run(env, "cache", "stats").returncode == 0
+    assert lease.stat().st_mode & 0o777 == 0o600
+    assert_no_canary(cache)

@@ -1,4 +1,5 @@
 //! Drop old reusable bytes without decoding credential-bearing metadata.
+use std::fs::OpenOptions;
 use std::io;
 use std::path::Path;
 
@@ -15,6 +16,32 @@ pub(super) fn remove_legacy_stores(root: &Path) -> Result<()> {
 }
 
 pub(super) fn discard_credential_capable_cache(connection: &Connection, root: &Path) -> Result<()> {
+    // Keep ownership across the SQLite commits and filesystem cleanup. A
+    // SQLite transaction alone cannot span VACUUM and WAL truncation.
+    let _lease = crate::cache::open_private(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false),
+        &root.join(".upgrade.lock"),
+    )?;
+    crate::utils::fs_lock::try_lock_exclusive(&_lease)?;
+    // Store::open's initial observation may predate another initializer's
+    // completed migration. Never discard entries it subsequently published.
+    let version: i64 = connection
+        .query_row("PRAGMA user_version", [], |row| row.get(0))
+        .map_err(sqlite_error)?;
+    match version {
+        2 => return Ok(()),
+        1 => {}
+        _ => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "unsupported cache schema",
+            ));
+        }
+    }
     // DELETE alone leaves old metadata in SQLite free pages and its WAL. No
     // inspection is needed: every pre-fix reusable entry is disposable.
     connection
