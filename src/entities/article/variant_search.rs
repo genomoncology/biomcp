@@ -3254,7 +3254,7 @@ async fn federated_alias_candidates(
     (candidates, incomplete, succeeded, statuses)
 }
 
-async fn planned_provider_candidates(
+async fn planned_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
@@ -5352,15 +5352,14 @@ async fn search_variant_articles_identity(
                     context.resolution.provider_validation.status,
                     VariantProviderValidationStatus::Contradictory
                 ) {
-                    let (rows, incomplete, succeeded, route_statuses) =
-                        planned_provider_candidates(
-                            input,
-                            &context,
-                            strategy,
-                            &selected_exact_aliases,
-                            &execution,
-                        )
-                        .await;
+                    let (rows, incomplete, succeeded, route_statuses) = planned_candidates(
+                        input,
+                        &context,
+                        strategy,
+                        &selected_exact_aliases,
+                        &execution,
+                    )
+                    .await;
                     candidates.extend(rows);
                     statuses.extend(route_statuses);
                     succeeded_routes += usize::from(succeeded);
@@ -5427,7 +5426,7 @@ async fn search_variant_articles_identity(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
-            let (rows, incomplete, succeeded, route_statuses) = planned_provider_candidates(
+            let (rows, incomplete, succeeded, route_statuses) = planned_candidates(
                 input,
                 &context,
                 strategy,
@@ -7197,7 +7196,7 @@ mod tests {
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
 
         let execution = VariantArticleExecutionContext::single();
-        let (rows, incomplete, succeeded, statuses) = planned_provider_candidates(
+        let (rows, incomplete, succeeded, statuses) = planned_candidates(
             "BRAF p.V600E",
             &resolved_context(),
             VariantArticleStrategy::Union,
@@ -7258,7 +7257,7 @@ mod tests {
         context.requested.coding_change = Some("c.1799T>A".into());
         let aliases = vec!["NM_004333.6:c.1799T>A".to_string()];
         let execution = VariantArticleExecutionContext::single();
-        let (_, _, succeeded, _) = planned_provider_candidates(
+        let (_, _, succeeded, _) = planned_candidates(
             "BRAF NM_004333.6:c.1799T>A",
             &context,
             VariantArticleStrategy::Lexical,
