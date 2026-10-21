@@ -502,6 +502,17 @@ def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:
         assert gate in runs, f"{jid} must run {gate} so CI never copies the gate"
 
 
+def test_lint_enables_the_declared_linux_host_prerequisites() -> None:
+    steps = _job("lint")["steps"]
+    setup = next(step for step in steps if step.get("uses") == "./.github/actions/lane-setup")
+    assert setup["with"].get("offline") is True, (
+        "make lint checks rg and bwrap before preparation; enable their shared "
+        "package install, scoped AppArmor profile and real sandbox self-test"
+    )
+    assert setup["with"].get("nextest") is True, "preflight must work when the Rust cache misses"
+    assert steps.index(setup) < next(i for i, step in enumerate(steps) if step.get("run") == "make lint")
+
+
 def test_the_lane_setup_action_pins_match_the_workflow_environment() -> None:
     """Rust comes from its shared file; the other setup pins still agree."""
     text = ACTION.read_text(encoding="utf-8")
