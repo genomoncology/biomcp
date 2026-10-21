@@ -395,7 +395,10 @@ ALLOWED_STEP_IFS = {
     # install/run steps were re-pinned 2026-10-10: both now compare the printed --version with the tag.
     # The container smoke was re-pinned again 2026-10-10:
     # the tag now rides in with -e TAG.
+NATIVE_WINDOWS_CACHE_STEP = "Check cold cache statistics in native Windows PowerShell"
+
 PINNED_STEPS: dict[tuple[str, str], str] = {
+    ("wheel-smoke", NATIVE_WINDOWS_CACHE_STEP): "799830265b580448486a7da39c8fe8414e6a9e35aae1234233f064172e012e42",
     ("wheel-smoke", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
@@ -445,6 +448,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
         "Install the wheel into a clean venv",
+        NATIVE_WINDOWS_CACHE_STEP,
         "Run the wheel inside the manylinux 2_28 container",
         "Smoke the installed wheel on every shipped platform",
     ],
@@ -793,14 +797,22 @@ def _assert_pipeline_contract(parsed: dict) -> None:
                 assert any(allow in uses for allow in CONTINUE_ON_ERROR_ALLOW), (
                     f"{job}: continue-on-error is forbidden outside the protoc installer"
                 )
+            native_windows_cache = (
+                job == "wheel-smoke" and _step_id(step) == NATIVE_WINDOWS_CACHE_STEP
+            )
             step_if = step.get("if")
-            if step_if is not None:
+            if native_windows_cache:
+                assert step_if == "runner.os == 'Windows'", (
+                    "native cache statistics must run only on Windows"
+                )
+            elif step_if is not None:
                 assert step_if in ALLOWED_STEP_IFS, (
                     f"{job}: step if {step_if!r} is not in the allowlist"
                 )
             shell = step.get("shell")
-            assert shell in (None, "bash"), (
-                f"{job}: custom shell {shell!r} is forbidden; declare shell: bash"
+            allowed_shells = ("pwsh",) if native_windows_cache else (None, "bash")
+            assert shell in allowed_shells, (
+                f"{job}: custom shell {shell!r} is forbidden; expected {allowed_shells}"
             )
 
     # Matrix entries are pinned exactly, so a swapped runner, a new
@@ -1443,6 +1455,18 @@ PIPELINE_MUTATIONS = {
             {"env": {**parsed.get("env", {}), "ENV": "/hijack/options"}}
         ),
         "rewrites every job's",
+    ),
+    "native_windows_cache_condition_changed": (
+        _set_step_flag("wheel-smoke", NATIVE_WINDOWS_CACHE_STEP, "if", "false"),
+        "native cache statistics must run only on Windows",
+    ),
+    "native_windows_cache_shell_changed": (
+        _set_step_flag("wheel-smoke", NATIVE_WINDOWS_CACHE_STEP, "shell", "bash"),
+        "custom shell",
+    ),
+    "native_windows_cache_command_removed": (
+        _mutate_run("wheel-smoke", NATIVE_WINDOWS_CACHE_STEP, lambda run: "true"),
+        "step text drifted from its pinned hash",
     ),
     "a_new_first_step_slipped_into_pypi_publish": (
         lambda parsed: parsed["jobs"]["pypi-publish"]["steps"].insert(

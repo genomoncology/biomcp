@@ -482,6 +482,30 @@ jobs:
             echo "wheel --version must print exactly 'biomcp $expected', got: $printed" >&2; exit 1
           fi
 
+      - name: Check cold cache statistics in native Windows PowerShell
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $cli = Join-Path $env:RUNNER_TEMP 'wheel-venv/Scripts/biomcp.exe'
+          $homeRoot = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+          New-Item -ItemType Directory -Path $homeRoot | Out-Null
+          try {
+            # Keep OS identity for cache ACLs while excluding all provider keys.
+            Get-ChildItem Env: | Where-Object { $_.Name -notin @('PATH', 'SYSTEMROOT', 'WINDIR', 'USERNAME') } | ForEach-Object { Remove-Item "Env:$($_.Name)" }
+            $env:HOME = $homeRoot
+            $env:USERPROFILE = $homeRoot
+            $env:LOCALAPPDATA = Join-Path $homeRoot 'AppData/Local'
+            $env:APPDATA = Join-Path $homeRoot 'AppData/Roaming'
+            $env:BIOMCP_DISABLE_SOURCES = 'commercial-restricted,kegg,semantic-scholar'
+            $output = & $cli cache stats --json
+            if ($LASTEXITCODE -ne 0) { throw "Native cache stats failed: $output" }
+            $output | Write-Output
+            $parsed = $output | ConvertFrom-Json -ErrorAction Stop
+            if ($parsed -isnot [pscustomobject]) { throw 'Cache stats must print a JSON object' }
+          } finally {
+            Remove-Item -LiteralPath $homeRoot -Recurse -Force
+          }
+
       # Prove the glibc floor at runtime: install and run the wheel
       # inside the same manylinux_2_28 environment users on RHEL 8 or
       # Debian 10 have.
