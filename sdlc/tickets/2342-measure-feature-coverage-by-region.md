@@ -1,10 +1,12 @@
 # 2342 — Measure feature coverage by region
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 90acdd6a85addf620e9a4184455d13a76a209974, accept
+
+Landed: a815162
 
 ## Outcome
 
