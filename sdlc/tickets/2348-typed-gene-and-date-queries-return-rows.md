@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 88bcf385a17ec951ec55e7bc816b5299db2930e8, accept
+
 ## Outcome
 
 Article searches with a typed gene or date filter return the rows that the equivalent literal or long-name query finds, or explain in-band why a typed filter excluded them. Typed filters never silently return zero rows where the literal query finds matches.
