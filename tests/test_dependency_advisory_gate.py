@@ -159,3 +159,24 @@ def test_required_gate_propagates_osv_findings(tmp_path: Path, target: str) -> N
     assert result.returncode != 0, result.stdout + result.stderr
     assert "[PASS] Rust license lint" in result.stdout
     assert "[FAIL] Dependency advisory lint (OSV Cargo.lock and uv.lock)" in result.stdout
+
+
+def test_make_advisory_fixture_owns_inherited_tool_selection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    host_tools = tmp_path / "host-tools"
+    host_tools.mkdir()
+    unexpected = tmp_path / "unexpected-host-tool.log"
+    _write_executable(
+        host_tools / "cargo-deny",
+        '#!/bin/sh\nif [ "$1" = --version ]; then echo "cargo-deny 0.19.4"; exit 0; fi\n'
+        'printf "unexpected host tool\\n" > "$UNEXPECTED_HOST_TOOL_LOG"\nexit 97\n',
+    )
+    monkeypatch.setenv("BIOMCP_TOOL_DIR", str(host_tools))
+    monkeypatch.setenv("UNEXPECTED_HOST_TOOL_LOG", str(unexpected))
+    root, env, log = _advisory_fixture(tmp_path)
+    _make_fixture(root, env)
+    result = subprocess.run(["make", "lint"], cwd=root, env=os.environ | env,
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert log.read_text() == "check licenses\ncheck advisories\n"
+    assert Path(env["OSV_LOG"]).read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
+    assert not unexpected.exists(), "fixture invoked the inherited host tool"
