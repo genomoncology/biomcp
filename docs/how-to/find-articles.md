@@ -124,6 +124,13 @@ deadline is retained. Incomplete responses use an unknown total and
 `has_more: true`; a zero-row incomplete item carries `deadline_exceeded` or
 `source_unavailable`, while a healthy empty search keeps `error: null`.
 
+Default union searches group additional compatible aliases into bounded provider
+queries and reuse requested-variant and PMID metadata lookups. A grouped query
+records its aliases without claiming each one matched the paper. `source_status`
+lists omitted forms and capped groups by route and provider. Work limits and
+the invocation deadline can still leave the result incomplete. Explicit lexical
+searches keep their existing alias selection.
+
 For a bounded shortlist across several exact variants, write 1-10 structured
 objects and make one JSON request:
 
@@ -143,7 +150,8 @@ The compact ordered `items` retain resolution, route/source, pagination,
 completeness, and retraction facts without abstracts or hydrated article cards.
 Use `_meta.next_commands` for batch/detail/full-text/assets/citation follow-ups.
 The opt-in plan explains normalized aliases, providers, calls/pages, ranking,
-and the two-worker, 50-work-unit-per-item bounds.
+and the two-worker execution and separate discovery, exact lexical, and identity
+work allowances.
 At most ten provider exchanges run concurrently across those two workers.
 
 When your authority is an assembly-aware RefSeq identity, use either complete

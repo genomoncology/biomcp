@@ -294,6 +294,9 @@
         "test_ci_proves_installer_identity_before_the_version_sync_check": "Compares installer source, documentation or workflow wiring without running the public installer.",
         "test_public_installer_verifier_compares_deployed_bytes": "Compares installer source, documentation or workflow wiring without running the public installer."
       }
+    },
+    "tests/test_variant_article_recovery.py": {
+      "feature": "variant"
     }
   },
   "rust": {
