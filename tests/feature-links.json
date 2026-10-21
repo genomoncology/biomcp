@@ -137,6 +137,9 @@
         "test_diagnostic_synonym_and_literal_matching_explain_missing_resolution": "diagnostic"
       }
     },
+    "tests/test_literature_transient_retries.py": {
+      "feature": "provider-retry"
+    },
     "tests/test_mcp_2026_protocol.py": {
       "feature": "mcp-stdio"
     },

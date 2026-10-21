@@ -16,3 +16,7 @@ A literature search survives a transient Europe PMC, Semantic Scholar or PubTato
 - Item 3: Europe PMC returned HTTP 503 or timed out in four of five cases, including every dated search. Semantic Scholar and PubTator3 timed out once each. Each search came back incomplete.
 - src/sources/europepmc.rs already attaches retry source context (lines 87-173). Start by recording what it retries today and why these four cases still ended incomplete.
 - Ian asked on 2026-10-21 to clear every known issue in 0.9.4.
+
+## Changes
+
+`src/error.rs` (preserve classified provider warnings), `src/sources/mod.rs`, `src/sources/literature_retry.rs`, `src/sources/semantic_scholar.rs`, `src/entities/article/search.rs` (source-leg failure handling only), `src/entities/article/backends.rs` (partial-page and Semantic Scholar error reporting only), `src/entities/article/variant_search.rs` (error event and source-status reporting only), `tests/test_literature_transient_retries.py`, `tests/feature-links.json`, `docs/user-guide/variant.md`, `CHANGELOG.md`.

@@ -96,7 +96,9 @@ impl PartialSearchPage {
 /// The status a mid-flight truncation reports: the deadline says so by
 /// name, any other failure says what failed.
 fn truncated_source_status(source: ArticleSource, error: &BioMcpError) -> ArticleSourceStatus {
-    let message = if is_search_deadline_error(error) {
+    let message = if let Some(failure) = crate::sources::literature_retry::failure(error) {
+        format!("{} search degraded: {failure}", source.display_name())
+    } else if is_search_deadline_error(error) {
         format!(
             "{} did not answer before the article search deadline",
             source.display_name()
@@ -774,7 +776,18 @@ pub(super) async fn search_semantic_scholar_candidates(
                 crate::error::SourceProvider::SEMANTIC_SCHOLAR,
                 "article search",
             );
-            return Ok(semantic_scholar_unavailable_outcome(auth_mode));
+            let mut outcome = semantic_scholar_unavailable_outcome(auth_mode);
+            if let Some(failure) = crate::sources::literature_retry::failure(&error) {
+                let hint = if failure.class == "rate_limited" {
+                    crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX
+                } else {
+                    ""
+                };
+                outcome.status.message = Some(format!(
+                    "Semantic Scholar search unavailable: {failure} {hint}"
+                ));
+            }
+            return Ok(outcome);
         }
     };
 

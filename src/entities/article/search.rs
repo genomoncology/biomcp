@@ -127,7 +127,14 @@ async fn with_federated_source_timeout<T, F>(
 where
     F: Future<Output = Result<T, BioMcpError>>,
 {
-    match timeout(deadline::federated_article_source_timeout(), future).await {
+    let limit = deadline::federated_article_source_timeout();
+    let observation = crate::sources::literature_retry::Observation::default();
+    match timeout(
+        limit,
+        crate::sources::literature_retry::within_leg(limit, observation.clone(), future),
+    )
+    .await
+    {
         Ok(Ok(value)) => FederatedSourceOutcome::Available(value),
         Ok(Err(err)) => {
             crate::error::warn_external_failure(
@@ -140,12 +147,21 @@ where
             let message = if crate::sources::current_variant_article_deadline()
                 .is_some_and(|deadline| deadline.is_exhausted())
             {
-                format!(
+                let mut message = format!(
                     "{} did not answer before the article search deadline",
                     source.display_name()
-                )
+                );
+                if let Some(failure) = crate::sources::literature_retry::failure(&err) {
+                    message.push_str(&format!(": {failure}"));
+                }
+                message
             } else {
-                format!("{} search unavailable", source.display_name())
+                match crate::sources::literature_retry::failure(&err) {
+                    Some(failure) => {
+                        format!("{} search unavailable: {failure}", source.display_name())
+                    }
+                    None => format!("{} search unavailable", source.display_name()),
+                }
             };
             FederatedSourceOutcome::Unavailable {
                 error: Some(err),
@@ -159,7 +175,23 @@ where
             );
             FederatedSourceOutcome::Unavailable {
                 error: None,
-                status: timed_out_source_status(source),
+                status: if matches!(
+                    source,
+                    ArticleSource::EuropePmc
+                        | ArticleSource::SemanticScholar
+                        | ArticleSource::PubTator
+                ) {
+                    source_degraded_status(
+                        source,
+                        format!(
+                            "{} timed out: {}",
+                            source.display_name(),
+                            observation.timeout()
+                        ),
+                    )
+                } else {
+                    timed_out_source_status(source)
+                },
             }
         }
     }

@@ -429,6 +429,8 @@ An incomplete provider route keeps available rows but sets `complete: false`,
 makes a provider request is reported as source-neutral `internal` /
 `not_attempted`, rather than attributing an outage to an uncalled provider.
 
+Transient Europe PMC, Semantic Scholar and PubTator requests retry once within the source and command deadlines. Failed routes name the final HTTP error or timeout in `reason_codes`; `retry_attempted` means a second provider request was admitted. An unauthenticated Semantic Scholar shared-pool rate refusal keeps its fast refusal and key guidance.
+
 `--verify-identity` adds captured-evidence `identity` facts without filtering the
 retrieved pool. `--confirmed-only` requires it and filters before ranking and
 pagination. Query aliases remain retrieval provenance, never observed aliases.

@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
+
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
