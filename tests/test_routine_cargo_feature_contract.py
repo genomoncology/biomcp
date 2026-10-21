@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import os
-import signal
 import subprocess
 import sys
 import re
@@ -215,19 +214,19 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
 
 
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
-@pytest.mark.timeout(120)
-def test_make_test_prepares_once_and_waits_for_both_lanes(
+def test_make_test_prepares_once_and_runs_lanes_sequentially(
     tmp_path: Path, failed_lane: str
 ) -> None:
-    """Exercise Make's orchestration without rebuilding product artifacts."""
+    """Exercise the real Make entry point without building product artifacts."""
     worker = tmp_path / "lane.py"
     worker.write_text(
-        "import os, pathlib, sys, threading\n"
+        "import os, pathlib, sys\n"
         "root = pathlib.Path(sys.argv[1]); lane = sys.argv[2]\n"
+        "if lane == 'rust':\n"
+        "    assert not (root / 'python.started').exists(), 'Python overlapped Rust'\n"
+        "else:\n"
+        "    assert (root / 'rust.finished').exists(), 'Rust did not finish first'\n"
         "(root / (lane + '.started')).touch()\n"
-        "peer = 'python' if lane == 'rust' else 'rust'\n"
-        "while not (root / (peer + '.started')).exists():\n"
-        "    threading.Event().wait(.01)\n"
         "(root / (lane + '.finished')).touch()\n"
         "print(lane + ' output')\n"
         "raise SystemExit(7 if os.environ['FAILED_LANE'] == lane else 0)\n"
@@ -239,45 +238,42 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
         f"test-python:\n\t@{sys.executable} {worker} {tmp_path} python\n"
     )
     command = [
-        "make",
-        "--no-print-directory",
-        "-f",
-        str(REPO_ROOT / "Makefile"),
-        "-f",
-        str(overlay),
+        "make", "--no-print-directory", "-j8",
+        "-f", str(REPO_ROOT / "Makefile"), "-f", str(overlay),
     ]
-    with subprocess.Popen(
-        [
-            *command,
-            "test",
-            "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
-            "MAKE=" + " ".join(command),
-        ],
+    result = subprocess.run(
+        [*command, "test", "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
+         "MAKE=" + " ".join(command)],
         cwd=REPO_ROOT,
         env={**os.environ, "FAILED_LANE": failed_lane},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        start_new_session=True,
-    ) as process:
-        try:
-            stdout, stderr = process.communicate()
-        finally:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
-    result = subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
+        capture_output=True, text=True, timeout=15,
+    )
     assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
     assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
-    assert all(
-        (tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python")
+    assert (tmp_path / "rust.finished").exists()
+    assert (tmp_path / "python.finished").exists() == (failed_lane != "rust")
+    assert "rust output" in result.stdout
+    if failed_lane != "rust":
+        assert "python output" in result.stdout
+
+
+@pytest.mark.parametrize("workers", ["1", "2", "3"])
+def test_make_uses_one_job_worker_allowance(tmp_path: Path, workers: str) -> None:
+    overlay = tmp_path / "workers.mk"
+    overlay.write_text(
+        "workers:\n"
+        "\t@printf '%s\\n' \"$$CARGO_BUILD_JOBS\" "
+        "'$(NEXTEST_JOBS)' '$(PYTEST_WORKERS)'\n"
     )
-    assert not any(path.is_dir() for path in tmp_path.iterdir())
-    assert "=== Rust lane (exit " in result.stdout
-    assert "=== Python lane (exit " in result.stdout
-    assert "rust output" in result.stdout and "python output" in result.stdout
+    result = subprocess.run(
+        ["make", "--no-print-directory", "-s", "-f", str(REPO_ROOT / "Makefile"),
+         "-f", str(overlay), "workers", "TEST_LANE_WORKERS=" + workers],
+        cwd=REPO_ROOT,
+        env={**os.environ, "CARGO_BUILD_JOBS": "99", "NEXTEST_JOBS": "99",
+             "PYTEST_WORKERS": "99"},
+        capture_output=True, text=True, check=True,
+    )
+    assert result.stdout.splitlines() == [workers] * 3
 
 
 @pytest.mark.parametrize(

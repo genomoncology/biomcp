@@ -338,9 +338,10 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   release CLI.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
   lane against `target/debug/biomcp`, the same dev-profile binary every
-  routine gate builds once per ticket. Python contract files use four bounded
-  pytest workers with file-based distribution; `PYTEST_WORKERS=1` is the
-  diagnostic override. Routine `make spec` shares that selected binary; the CI
+  routine gate builds once per ticket. Rust finishes before Python starts.
+  `TEST_LANE_WORKERS` in the Makefile sets the shared Cargo, nextest and pytest
+  allowance for the routine booking documented in AGENTS.md. Python uses
+  file distribution; `TEST_LANE_WORKERS=1` is the diagnostic override. Routine `make spec` shares that selected binary; the CI
   `canonical-gates` job invokes those same Make targets, while the
   `full-features` job invokes the named full-feature proof.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
