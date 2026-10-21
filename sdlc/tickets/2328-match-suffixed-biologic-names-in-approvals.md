@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Reviews: revision 377b6f18fc22c2ee4a33305f7411294a533d00dd, accept
 
+Reviews: revision 978280df3348d090dd5b58805a60cce96694a3c9, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `docs/user-guide/drug.md`, `sdlc/tickets/2328-match-suffixed-biologic-names-in-approvals.md`, `src/cli/tests/next_commands_json_property/variant_drug.rs`, `src/entities/drug/approvals.rs`, `src/entities/drug/cell_lines/tests.rs`, `src/entities/drug/get.rs`, `src/entities/drug/metadata.rs`, `src/entities/drug/mod.rs`, `src/render/json.rs`, `src/render/markdown/drug/tests.rs`, `src/render/markdown/drug/tests/label_sections.rs`, `src/render/markdown/drug/tests/label_warnings.rs`, `src/render/markdown/drug_regulatory.rs`, `src/render/markdown/evidence/tests.rs`, `src/render/markdown/root_tests.rs`, `src/render/markdown/related/tests/drug_variant_article_trial.rs`, `src/render/markdown/related/tests/gene_drug.rs`, `src/render/provenance.rs`, `src/sources/mychem.rs`, `src/sources/openfda.rs`, `src/transform/drug.rs`, `tests/test_drug_regulatory_replay.py`.
