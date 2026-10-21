@@ -83,22 +83,102 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
 
 #[cfg(windows)]
 #[test]
-fn windows_cache_root_is_restricted_to_the_current_user() {
-    let parent = tempfile::tempdir().expect("temporary parent");
+fn windows_managed_directories_replace_broad_grants_and_pass_user_only_access_to_children() {
+    let parent = tempfile::tempdir().expect("temporary ACL parent");
     let root = parent.path().join("managed");
-    let status = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
-        .args(["cache", "stats"])
-        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
-        .status()
-        .expect("run cache stats");
-    assert!(status.success());
-    let acl = std::process::Command::new("icacls.exe")
-        .arg(&root)
-        .output()
-        .expect("inspect ACL");
-    assert!(acl.status.success());
-    let user = std::env::var("USERNAME").expect("current user");
-    assert!(String::from_utf8_lossy(&acl.stdout).contains(&user));
+    let sessions = root.join("sessions");
+    let nested = sessions.join("nested");
+    fs::create_dir_all(&nested).expect("saved directories");
+    fs::write(
+        sessions.join("article-search-loop-breaker.json"),
+        br#"{"version":1,"sessions":{}}"#,
+    )
+    .expect("session store");
+    let saved = nested.join("saved");
+    fs::write(&saved, b"fixture-only").expect("saved file");
+
+    // Give the parent an inheritable Authenticated Users grant, then give each
+    // managed directory an additional explicit Everyone grant. Both must go.
+    let seeded = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", r#"
+$ErrorActionPreference = 'Stop'
+$parent = $env:BIOMCP_TEST_ACL_PATH
+$acl = Get-Acl -LiteralPath $parent
+$rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+    [System.Security.Principal.SecurityIdentifier]::new('S-1-5-11'),
+    'ReadAndExecute', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+$acl.AddAccessRule($rule)
+Set-Acl -LiteralPath $parent -AclObject $acl
+foreach ($path in @((Join-Path $parent 'managed'), (Join-Path $parent 'managed/sessions'), (Join-Path $parent 'managed/sessions/nested'))) {
+    $acl = Get-Acl -LiteralPath $path
+    $acl.SetAccessRuleProtection($false, $false)
+    $acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new(
+        [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0'), 'ReadAndExecute', 'Allow'))
+    Set-Acl -LiteralPath $path -AclObject $acl
+    $rules = @((Get-Acl -LiteralPath $path).GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
+    if (-not ($rules | Where-Object { $_.IdentityReference.Value -eq 'S-1-1-0' -and -not $_.IsInherited })) { throw 'explicit Everyone precondition missing' }
+    if (-not ($rules | Where-Object { $_.IdentityReference.Value -eq 'S-1-5-11' -and $_.IsInherited })) { throw 'inherited grant precondition missing' }
+}
+"#])
+        .env(WINDOWS_ACL_PATH_ENV, parent.path())
+        .output().expect("seed ACLs");
+    assert!(
+        seeded.status.success(),
+        "{}",
+        String::from_utf8_lossy(&seeded.stderr)
+    );
+    let repaired = run_cache_database_probe(&root);
+    assert!(
+        repaired.status.success(),
+        "{}",
+        String::from_utf8_lossy(&repaired.stderr)
+    );
+    for directory in [&root, &sessions, &nested] {
+        let checked = std::process::Command::new("powershell.exe")
+            .args(["-NoProfile", "-NonInteractive", "-Command", r#"
+$ErrorActionPreference = 'Stop'
+$path = $env:BIOMCP_TEST_ACL_PATH
+$current = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+function CheckUserOnly($path, $inherited, $directory) {
+    $acl = Get-Acl -LiteralPath $path
+    if ($acl.AreAccessRulesProtected -eq $inherited) { throw 'unexpected protection' }
+    $rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
+    if ($rules.Count -ne 1) { throw "expected one rule at $path; found $($rules.Count)" }
+    $rule = $rules[0]
+    if ($rule.IdentityReference.Value -ne $current -or
+        $rule.AccessControlType -ne 'Allow' -or
+        $rule.FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]::FullControl -or
+        $rule.IsInherited -ne $inherited -or
+        $rule.PropagationFlags -ne 'None') { throw "unexpected user access at $path" }
+    $expected = if ($directory) { [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit' } else { [System.Security.AccessControl.InheritanceFlags]::None }
+    if ($rule.InheritanceFlags -ne $expected) { throw "unexpected inheritance at $path" }
+}
+CheckUserOnly $path $false $true
+$file = Join-Path $path 'new-private-file'
+[System.IO.File]::WriteAllText($file, 'fixture-only')
+CheckUserOnly $file $true $false
+$child = Join-Path $path 'new-private-directory'
+[System.IO.Directory]::CreateDirectory($child) | Out-Null
+CheckUserOnly $child $true $true
+$grandchild = Join-Path $child 'new-private-file'
+[System.IO.File]::WriteAllText($grandchild, 'fixture-only')
+CheckUserOnly $grandchild $true $false
+"#])
+            .env(WINDOWS_ACL_PATH_ENV, directory)
+            .output().expect("inspect repaired directory and child ACLs");
+        assert!(
+            checked.status.success(),
+            "{directory:?}: {}",
+            String::from_utf8_lossy(&checked.stderr)
+        );
+    }
+    let checked = inspect_windows_acl(Some(&saved));
+    assert!(
+        checked.status.success(),
+        "{}",
+        String::from_utf8_lossy(&checked.stderr)
+    );
+    assert_eq!(fs::read(saved).expect("saved content"), b"fixture-only");
 }
 
 #[cfg(windows)]

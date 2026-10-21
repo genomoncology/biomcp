@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -535,3 +536,17 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "![TP53 mutation classes as a bar chart](images/tp53-mutation-bar.svg)" in blog
     assert "![Terminal screenshot placeholder: mutation-bar-terminal.png](images/mutation-bar-terminal.png)" in blog
     assert "![Terminal screenshot placeholder: ridgeline-terminal.png](images/ridgeline-terminal.png)" in blog
+
+
+def test_published_guides_do_not_promise_unshipped_asset_directories() -> None:
+    published = [REPO_ROOT / "AGENTS.md", REPO_ROOT / "README.md"]
+    for directory in ("docs", "skills"):
+        published.extend((REPO_ROOT / directory).rglob("*.md"))
+    # Platform application-data paths such as ~/.local/share/biomcp remain valid.
+    unshipped = re.compile(r"(?<!\.local/)share/biomcp/")
+    violations = [
+        str(path.relative_to(REPO_ROOT))
+        for path in published
+        if unshipped.search(path.read_text(encoding="utf-8"))
+    ]
+    assert not violations, f"Published guides promise unshipped paths: {violations}"

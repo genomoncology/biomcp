@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
 import shutil
 import stat
@@ -313,3 +315,36 @@ def test_release_smoke_reports_mcp_error_response(tmp_path: Path, includes_sourc
     assert result.returncode != 0, result.stdout + result.stderr
     assert "MCP provider command failed" in result.stdout + result.stderr
     assert "MCP command stderr failure" in result.stdout + result.stderr
+
+
+def test_installed_command_smoke_requires_exact_structured_identity(
+    monkeypatch,
+) -> None:
+    spec = importlib.util.spec_from_file_location(
+        "release_smoke", REPO_ROOT / "release/smoke.py"
+    )
+    assert spec is not None and spec.loader is not None
+    release_smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(release_smoke)
+
+    def run(arguments, **_kwargs):
+        if arguments[-2:] == ["--json", "not-a-command"]:
+            return subprocess.CompletedProcess(arguments, 2, "{}", "")
+        if arguments[-2:] == ["--json", "version"]:
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                json.dumps(
+                    {
+                        "version": "9.9.9+gdeadbeef",
+                        "git_revision": "deadbeef",
+                        "note": "1.2.3 aaaaaaaa",
+                    }
+                ),
+                "",
+            )
+        return subprocess.CompletedProcess(arguments, 0, "{}", "")
+
+    monkeypatch.setattr(release_smoke.subprocess, "run", run)
+    with pytest.raises(release_smoke.SmokeError, match="identity"):
+        release_smoke.smoke(Path("biomcp"), "1.2.3", "aaaaaaaa")

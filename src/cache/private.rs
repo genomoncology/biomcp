@@ -180,6 +180,11 @@ fn repair_private_file(file: &File) -> io::Result<()> {
 
 #[cfg(windows)]
 fn repair_private_file(file: &File) -> io::Result<()> {
+    replace_windows_dacl(file, false)
+}
+
+#[cfg(windows)]
+fn replace_windows_dacl(file: &File, directory: bool) -> io::Result<()> {
     use std::os::windows::io::AsRawHandle;
     use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, HANDLE, LocalFree};
     use windows_sys::Win32::Security::Authorization::{
@@ -187,8 +192,9 @@ fn repair_private_file(file: &File) -> io::Result<()> {
         TRUSTEE_IS_SID, TRUSTEE_IS_USER, TRUSTEE_W,
     };
     use windows_sys::Win32::Security::{
-        ACL, DACL_SECURITY_INFORMATION, GetTokenInformation, NO_INHERITANCE,
-        PROTECTED_DACL_SECURITY_INFORMATION, TOKEN_QUERY, TOKEN_USER, TokenUser,
+        ACL, CONTAINER_INHERIT_ACE, DACL_SECURITY_INFORMATION, GetTokenInformation, NO_INHERITANCE,
+        OBJECT_INHERIT_ACE, PROTECTED_DACL_SECURITY_INFORMATION, TOKEN_QUERY, TOKEN_USER,
+        TokenUser,
     };
     use windows_sys::Win32::Storage::FileSystem::FILE_ALL_ACCESS;
     use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
@@ -244,7 +250,11 @@ fn repair_private_file(file: &File) -> io::Result<()> {
     let access = EXPLICIT_ACCESS_W {
         grfAccessPermissions: FILE_ALL_ACCESS,
         grfAccessMode: SET_ACCESS,
-        grfInheritance: NO_INHERITANCE,
+        grfInheritance: if directory {
+            CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE
+        } else {
+            NO_INHERITANCE
+        },
         Trustee: TRUSTEE_W {
             pMultipleTrustee: std::ptr::null_mut(),
             MultipleTrusteeOperation: 0,
@@ -410,61 +420,37 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
             format!("unsupported managed type: {}", path.display()),
         ));
     }
-    let user = std::env::var("USERNAME").map_err(|_| io::Error::other("no USERNAME"))?;
-    let grant = if metadata.is_dir() {
-        format!("{user}:(OI)(CI)F")
-    } else {
-        format!("{user}:F")
+    secure_windows_entry(path, metadata.is_dir())
+}
+
+#[cfg(windows)]
+fn secure_windows_entry(path: &Path, directory: bool) -> io::Result<()> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use windows_sys::Win32::Storage::FileSystem::{
+        FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_READ_ATTRIBUTES,
+        READ_CONTROL, WRITE_DAC,
     };
-    secure_with_icacls(path, &grant)
-}
 
-/// Per-process memo of paths already secured by a successful `icacls`
-/// run. The first encounter in a process still repairs a pre-existing
-/// or externally broadened entry, and steady-state writes in the same
-/// process spawn nothing. `icacls` output would otherwise corrupt the
-/// stdio MCP stream, and the reporter of GitHub #283 counted about 20
-/// spawns per call. ACLs broadened after a path's first secure in this
-/// process are re-repaired only after a restart.
-#[cfg(windows)]
-fn secure_with_icacls(path: &Path, grant: &str) -> io::Result<()> {
-    let memo_key = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    {
-        let secured = icacls_secured_paths()
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if secured.contains(&memo_key) {
-            return Ok(());
-        }
+    // Open the entry itself, including directories, and reject reparse-point
+    // replacement before applying the same current-token policy as database files.
+    let file = OpenOptions::new()
+        .read(true)
+        // Match the database handle's security-descriptor read/write rights:
+        // native DACL replacement also reads the existing descriptor.
+        .access_mode(FILE_READ_ATTRIBUTES | READ_CONTROL | WRITE_DAC)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)?;
+    let opened = file.metadata()?;
+    if is_link_or_reparse_point(&opened) || opened.is_dir() != directory {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "managed entry changed type",
+        ));
     }
-    // stdio must stay the protocol stream: the child inherits the
-    // server's handles otherwise, and icacls writes a localized line
-    // (GBK bytes on zh-CN consoles) that breaks strict clients.
-    let status = std::process::Command::new("icacls.exe")
-        .arg(path)
-        .args(["/inheritance:r", "/grant:r"])
-        .arg(grant)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()?;
-    if !status.success() {
-        return Err(io::Error::other(format!("cannot secure: {path:?}")));
+    if !directory {
+        validate_opened_file(&file, path)?;
     }
-    icacls_secured_paths()
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .insert(memo_key);
-    Ok(())
-}
-
-#[cfg(windows)]
-fn icacls_secured_paths() -> &'static std::sync::Mutex<std::collections::HashSet<std::path::PathBuf>>
-{
-    static SECURED: std::sync::OnceLock<
-        std::sync::Mutex<std::collections::HashSet<std::path::PathBuf>>,
-    > = std::sync::OnceLock::new();
-    SECURED.get_or_init(Default::default)
+    replace_windows_dacl(&file, directory)
 }
 
 fn check_variant_article_deadline() -> io::Result<()> {
@@ -687,47 +673,5 @@ mod windows_tests {
     #[test]
     fn unreadable_handle_metadata_fails_closed() {
         assert!(windows_link_count_from_handle(std::ptr::null_mut()).is_err());
-    }
-
-    #[test]
-    fn second_secure_of_the_same_path_skips_the_child_spawn() {
-        let root = tempfile::tempdir().expect("temporary root");
-        let entry = root.path().join("entry");
-        fs::create_dir(&entry).expect("entry directory");
-        let user = std::env::var("USERNAME").expect("current user");
-
-        secure_with_icacls(&entry, &format!("{user}:F")).expect("first secure");
-        let secured = icacls_secured_paths()
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let memo_key = entry.canonicalize().expect("canonical entry");
-        assert!(secured.contains(&memo_key));
-        drop(secured);
-
-        // A real icacls run with this grant fails, so success proves the
-        // memoized path never spawned the child.
-        secure_with_icacls(&entry, "definitely-not-a-user:F")
-            .expect("memoized second secure must not spawn icacls");
-    }
-
-    #[test]
-    fn first_secure_of_each_distinct_path_still_repairs() {
-        let root = tempfile::tempdir().expect("temporary root");
-        let first = root.path().join("first");
-        let second = root.path().join("second");
-        fs::create_dir(&first).expect("first directory");
-        fs::create_dir(&second).expect("second directory");
-        let user = std::env::var("USERNAME").expect("current user");
-
-        secure_with_icacls(&first, &format!("{user}:F")).expect("first path secures");
-        secure_with_icacls(&second, &format!("{user}:F")).expect("second path secures");
-
-        let secured = icacls_secured_paths()
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let first_key = first.canonicalize().expect("canonical first");
-        let second_key = second.canonicalize().expect("canonical second");
-        assert!(secured.contains(&first_key));
-        assert!(secured.contains(&second_key));
     }
 }

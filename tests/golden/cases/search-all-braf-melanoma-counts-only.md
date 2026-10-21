@@ -7,7 +7,7 @@ Rows omitted (`--counts-only`).
 
 ## Variants (42)
 Rows omitted (`--counts-only`).
-- `biomcp get variant "chr7:g.140449165A>C"`
+- `biomcp get variant "chr7:g.140476832A>G"`
 - `biomcp search variant --gene BRAF --condition melanoma --max-frequency 0.01`
 
 ## Diseases (90)

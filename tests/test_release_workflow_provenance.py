@@ -301,13 +301,11 @@ def _assert_linux_floor_contract(workflow: str) -> None:
     assert "wheel must end in $tag.whl: $wheel" in pypi
 
     # The runtime floor smoke runs a deep offline command, not only
-    # the version banner, and the JSON guard is pinned exactly so a
-    # quoting typo cannot ship.
+    # the version banner. Behavioral smoke regressions cover JSON parsing.
     assert "bash /scripts/installed-wheel-smoke.sh" in smoke
     smoke = (REPO_ROOT / "scripts/installed-wheel-smoke.sh").read_text()
     assert "cache stats --json" in smoke
-    assert 'case "$stats" in' in smoke
-    assert '"{"*) ;;' in smoke
+    assert "require_json_object cache stats --json" in smoke
 
 
 def test_release_workflow_contract() -> None:
