@@ -631,6 +631,8 @@ FAKE_TOOL_FIXTURE_MODULES = {
     "test_demo_scripts.py",
     "test_measure_mcp_tools.py",
     "test_lint.py",
+    # The feature collector control supplies temporary cargo and LLVM tools.
+    "test_feature_coverage.py",
     # The copied spec runner uses sys.executable as BIOMCP_BIN.
     "test_replay_server_lifetime.py",
 }
@@ -724,7 +726,7 @@ def test_reusable_release_qualification_does_not_require_a_live_changelog_sectio
     assert any("--revision HEAD" in step.get("run", "") for step in checks)
 
 
-@pytest.mark.skipif(shutil.which("sha256sum") is None, reason="release installer uses Linux sha256sum")
+@pytest.mark.skipif(sys.platform != "linux", reason="release installer targets Linux")
 def test_cold_nextest_setup_derives_and_verifies_shared_pins(tmp_path: Path) -> None:
     import hashlib
     import io

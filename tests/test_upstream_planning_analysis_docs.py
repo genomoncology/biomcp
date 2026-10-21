@@ -1222,10 +1222,18 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^release-gate: lint\n"
         r"\t\$\(MAKE\) test\n"
         r"\t\$\(MAKE\) test-long\n"
-        r"\t\$\(MAKE\) repo-audit\n"
-        r'\ttools/run-offline -- env BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -m release_gate -v \$\(PYTEST_XDIST_ARGS\)\n'
+        r'\t\$\(MAKE\) release-gate-markers BIOMCP_BIN="\$\(SPEC_RUN_BIN\)"\n'
         r"\t\$\(MAKE\) full-feature-check FULL_FEATURE_PROFILE=release\n"
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
+        makefile,
+        flags=re.MULTILINE,
+    )
+    assert re.search(
+        r"^release-gate-markers:\n"
+        r"\t\$\(MAKE\) repo-audit\n"
+        r"\t\$\(MAKE\) sync-python-dev\n"
+        r"\ttools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v \$\(PYTEST_XDIST_ARGS\)\n"
+        r"\t\$\(MAKE\) feature-coverage$",
         makefile,
         flags=re.MULTILINE,
     )
