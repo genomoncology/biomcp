@@ -10,6 +10,8 @@ Warm and day-cached answers return within 0.5 ms of 0.9.3 on the ticket 2234 row
 
 - Proof: paired 0.9.3-versus-candidate rows from the 2234 method on the same Mac are within 0.5 ms; a stress test with an evictor in one process and readers in another returns only correct bodies or misses; the attribution spans show where the original gap went.
 
+- Changes: `src/cache/manager.rs`, `src/cache/mod.rs`, `src/cache/sqlite.rs`, `src/cache/sqlite/maintenance.rs`, `src/cache/sqlite/pool.rs`, `src/cache/sqlite/read.rs`, `src/cache/sqlite/stress_tests.rs`, `src/cache/sqlite/tests.rs`, `src/cache/timing.rs`, `tests/test_cache_sqlite.py`, `docs/troubleshooting.md`, `CHANGELOG.md`.
+
 ## Evidence
 
 - sdlc/records/2234-candidate-measurements.md measured median paired increases of 5.078499 ms for warm get variant and 1.164458 ms for day-cached search gwas, with the cause unknown. 0.9.4 accepted them as known costs.

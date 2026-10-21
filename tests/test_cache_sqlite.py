@@ -207,6 +207,15 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
             admitted, admitted_requests,
             (provider_key(path) for path in requests[before_reuse:]),
         )
+        if os.name == "posix":
+            database = tmp_path / "cache/biomcp.db"
+            calls_before_permissions_change = len(requests)
+            database.chmod(0o644)
+            try:
+                assert mcp_gene(queries[0]) == expected
+                assert len(requests) > calls_before_permissions_change, "a retained connection must not bypass private-file checks"
+            finally:
+                database.chmod(0o600)
     finally:
         client.close()
 
@@ -257,3 +266,28 @@ def test_blob_cleanup_refuses_a_linked_directory_without_deleting_outside_files(
     assert sentinel.is_file(), (result.stdout, result.stderr)
     assert sentinel.read_bytes() == body
     assert result.returncode != 0
+
+
+def test_cached_cli_reads_while_another_process_holds_an_uncommitted_write(tmp_path, gene_provider, monkeypatch):
+    from http.server import BaseHTTPRequestHandler
+    from urllib.parse import urlsplit
+
+    requests = []
+    send_response = BaseHTTPRequestHandler.send_response
+    port = urlsplit(gene_provider).port
+
+    def observe_response(handler, *args, **kwargs):
+        if handler.server.server_port == port:
+            requests.append(handler.path)
+        return send_response(handler, *args, **kwargs)
+
+    monkeypatch.setattr(BaseHTTPRequestHandler, "send_response", observe_response)
+    env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
+    expected = invoke(env, "search", "gene", "BRAF", "--limit", "1")
+    calls = len(requests)
+    with sqlite3.connect(tmp_path / "cache/biomcp.db") as writer:
+        writer.execute("begin immediate")
+        writer.execute("delete from entries")
+        assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == expected
+        assert len(requests) == calls, "a committed cache hit must not become a provider request"
+        writer.rollback()

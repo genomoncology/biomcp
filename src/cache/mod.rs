@@ -7,6 +7,7 @@ mod limits;
 mod maintenance;
 pub(crate) mod manager;
 mod private;
+mod timing;
 mod provider_capture;
 pub(crate) mod sqlite;
 
