@@ -24,6 +24,7 @@ Depends on: 2338
 Depends on: 2339
 Depends on: 2340
 Depends on: 2341
+Depends on: 2342
 
 ## Outcome
 
@@ -58,3 +59,5 @@ Resolved tool interruption: On 2026-10-21 the live pm database reported schema 1
 - PM m3223 retains confirmed pagination correction 2341 in 0.9.4 and assigns removal of the unsupported workflow long-suite claim to 2339 as a text correction only. Legacy pm housekeeping is outside this product release and admission.
 
 - PM m3262 approves the documented hand-merge landing path for 2338–2341 because the legacy batch command classifies every script/workflow path as a gate definition. One isolated candidate carries four reviewed no-ff ticket merges; one direct make landing-gate tests its exact source; publication follows the actual pass; standard pm ticket land N --merge records each carried merge and cleanup. No tool edit, receipt copying, check exemption or gate skipping is permitted. Fresh reviewers read the changed smoke/workflow paths; final main qualification and full rehearsal remain mandatory.
+
+- PM m3274 adds 2342 to 0.9.4 before admission: feature coverage reads LLVM JSON regions rather than LCOV lines, exposes unrun closures sharing executed lines, and resets the region baseline once. This admission uses that actual region floor. Collect the baseline after the currently accepted product batch lands so the one reset covers its source; final qualification and rehearsal follow 2342.
