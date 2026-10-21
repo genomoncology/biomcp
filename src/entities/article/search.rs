@@ -131,7 +131,8 @@ where
     let observation = crate::sources::literature_retry::Observation::default();
     match timeout(
         limit,
-        crate::sources::literature_retry::within_leg(limit, observation.clone(), future),
+        // Keep the backend future out of the nested task-local deadline frames.
+        crate::sources::literature_retry::within_leg(limit, observation.clone(), Box::pin(future)),
     )
     .await
     {
