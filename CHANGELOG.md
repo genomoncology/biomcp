@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Point reversed entity search and get help requests to their exact commands while preserving registered command aliases. (2335)
+
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)

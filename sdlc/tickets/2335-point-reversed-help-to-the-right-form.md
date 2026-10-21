@@ -10,6 +10,8 @@ When a user or agent types the article-search help with its words reversed, BioM
 
 - Proof: CLI tests run each reversed help form the study recorded, and the reversed form for every other entity, and see the correct help or an error naming the exact correct command, with exit codes unchanged for real errors.
 
+- Changes: `src/cli/shared.rs`, `src/cli/shared/reversed_help.rs`, `tests/reversed_help_contract.rs`, `tests/feature-links.json`, `CHANGELOG.md`.
+
 ## Evidence
 
 - On 2026-10-21, research ran five fresh agents with BioMCP 0.9.4 (commit cdb9f4a1b) on literature searches for five hereditary cancer variants, with no answer key. Exact commands and output are in research's protected store under runs/0010/five-v1.
