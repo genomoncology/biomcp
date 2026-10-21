@@ -8,6 +8,10 @@ Milestone: 0.9.4
 
 Variant literature searches attempt the routes that alias_limit and logical_work_cap now leave unattempted, within provider rate limits and the command deadline, and merge their results. Each cap that still binds is reported with the routes it left and why. Coordinate with 2327, which recovers dropped coding spellings: one recovery mechanism serves both.
 
+Restated outcome: recover papers from compatible routes that the existing planner omits, while preserving previously selected queries, identity checks, provider pacing and truthful incomplete results.
+
+Changes: `src/entities/article/variant_search.rs`, `src/entities/article/enrichment.rs`, `tests/test_variant_article_recovery.py`, `tests/fixtures/article/recovery/authored.json`, `tests/feature-links.json`, `CHANGELOG.md`, and this ticket. Add a small shared Europe PMC query helper only if the existing endpoint requires it; update this claim before that edit.
+
 - Proof: outside-in replay tests for the study's three capped cases show the formerly unattempted routes attempted and merged, complete=true when nothing is left, and a case past the cap reporting each remaining route.
 
 ## Evidence
@@ -16,3 +20,6 @@ Variant literature searches attempt the routes that alias_limit and logical_work
 - Item 4: alias_limit and logical_work_cap left routes unattempted in three cases, and the results said so. This is the same disclosure-without-recovery gap as research's D1, which 2327 fixes for coding spellings.
 - logical_work_cap lives in src/entities/article/variant_search.rs.
 - Ian asked on 2026-10-21 to clear every known issue in 0.9.4.
+- PM decision m3100 authorizes batching and request reuse first. If their resulting work still exceeds the discovery allowance, derive one explicit named allowance from the planned provider units. Preserve the exact lexical and identity allowances, provider pacing and invocation deadline. Report remaining omissions by route and measure CHEK2 request counts and elapsed time before and after on the same machine.
+- Fresh design review accepted one stored per-invocation plan shared by execution, debug output, coverage and omissions. Retain the existing lexical list and selected discovery queries. Group only overflow PubMed/Europe PMC clauses with their gene/change pairing intact; a saturated page makes every group member incomplete. Reuse the actual requested PubTator entity calls without claiming each alias spelling was queried. Validate exact requested PMID and MED source before supplying batched Europe PMC hints; retain PubTator-first resolution and explicit missing/provider-failure outcomes. The proposed allowance of 150 was withdrawn because it lacked a derivation.
+- Accepted-2327 baseline reproduction: M5 job j2217 at d3ecf85fcea35d6a353316130bd304cdaeb1da24 ran the isolated authored four-case outside-in payload after `make prepare-test-contracts`; pytest exited 1 with four failures at the missing target-paper assertions and no fixture misses. This is not yet a reproduction on the later main composition. The commands were `biomcp --json variant articles "BRCA1 p.P1749R" --limit 50 --debug-plan`, `biomcp --json variant articles "CHEK2 p.G167R" --limit 50`, and `biomcp variant articles "ABRAXAS1 G39V" --limit 50 --json`. CHEK2 has separate under-cap and saturated reply controls. Replies are authored controls, not captured provider replies. The saturated control must remain incomplete; it cannot establish complete recovery.
