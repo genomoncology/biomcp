@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision f2f64645bac316a87c4ff77288875020611c4899, accept
+
 ## Outcome
 
 Synthetic advisory-gate tests always invoke their own fake toolchain, including when the caller inherits BIOMCP_TOOL_DIR pointing at an installed real cargo-deny. Isolate the fixture environment at its shared construction point. Preserve the production bootstrap, license and advisory policy.
