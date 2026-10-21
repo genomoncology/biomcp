@@ -797,7 +797,6 @@ fn invalid(_message: &str) -> BioMcpError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[test]
     fn receipted_pten_gene_page_is_compact_bounded_and_truthfully_paged() {
@@ -935,10 +934,6 @@ mod tests {
 
     #[tokio::test]
     async fn detail_retrieval_consumes_the_summary_selected_plan() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind ERepo fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let summary = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/clingen_erepo/apc-summary.json"
@@ -947,43 +942,30 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/clingen_erepo/apc-detail.json"
         ));
-        let server = tokio::spawn(async move {
-            let mut requests = Vec::new();
-            let guideline = include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/testdata/sources/clingen_erepo/gp1ba-guideline.html"
-            ));
-            for (body, content_type) in [
+        let guideline = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/gp1ba-guideline.html"
+        ));
+        let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let captured = requests.clone();
+        let replies = std::sync::Mutex::new(
+            [
                 (summary, "application/json"),
                 (detail, "application/json"),
                 (guideline, "text/html; charset=utf-8"),
-            ] {
-                let (mut stream, _) = listener.accept().await.expect("accept ERepo request");
-                let mut request = Vec::new();
-                loop {
-                    let mut chunk = [0_u8; 4096];
-                    let read = stream.read(&mut chunk).await.expect("read ERepo request");
-                    if read == 0 {
-                        break;
-                    }
-                    request.extend_from_slice(&chunk[..read]);
-                    if request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
-                        break;
-                    }
-                }
-                requests.push(String::from_utf8_lossy(&request).into_owned());
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    body.len(),
-                    body,
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write response");
+            ]
+            .into_iter(),
+        );
+        let mut server = crate::test_support::TestHttpServer::respond(move |request| {
+            captured.lock().expect("request lock").push(String::from_utf8_lossy(&request).into_owned());
+            let reply = replies.lock().expect("reply lock").next();
+            async move {
+                let (body, content_type) = reply.ok_or_else(|| std::io::Error::other("unexpected additional fixture request"))?;
+                Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).into_bytes())
             }
-            requests
-        });
+        })
+        .expect("start scripted HTTP fixture");
+        let base = server.base.clone();
         let client = ERepoClient::with_test_client(
             crate::sources::test_client().expect("test client"),
             base,
@@ -994,7 +976,8 @@ mod tests {
             .expect("receipt-backed detail retrieval");
         assert!(response.items[0].assertions[0].detail.is_some());
 
-        let requests = server.await.expect("ERepo fixture server");
+        server.finish().expect("scripted fixture teardown");
+        let requests = requests.lock().expect("request lock");
         assert!(requests[0].starts_with(
             "GET /evrepo/api/summary/classifications?columns=caId&values=CA015543&matchTypes=exact&pgSize=25&pg=1 "
         ));

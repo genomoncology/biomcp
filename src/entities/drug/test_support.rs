@@ -112,41 +112,36 @@ mod label_choice;
 #[cfg(test)]
 mod product_names;
 
-async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind required-label fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 32 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]);
-                let (status, body) = if request.starts_with("GET /v1/query?") {
-                    (
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#,
-                    )
-                } else if request.starts_with("GET /drug/label.json?") {
-                    ("400 Bad Request", r#"{"error":"private sentinel"}"#)
-                } else {
-                    ("404 Not Found", r#"{"error":"unplanned"}"#)
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+async fn required_label_failure_server() -> (String, crate::test_support::TestHttpServer) {
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request);
+            let (status, body) = if request.starts_with("GET /v1/query?") {
+                (
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#,
+                )
+            } else if request.starts_with("GET /drug/label.json?") {
+                ("400 Bad Request", r#"{"error":"private sentinel"}"#)
+            } else {
+                ("404 Not Found", r#"{"error":"unplanned"}"#)
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, task)
 }
 
@@ -161,76 +156,71 @@ enum ElementsFallbackAnswer {
 
 async fn label_fallback_failure_server(
     answer: ElementsFallbackAnswer,
-) -> (String, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind label fallback fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 32 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]);
-                let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
-                    (
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#.as_bytes().to_vec(),
-                    )
-                } else if request.starts_with("GET /drug/label.json?")
-                    && request.contains("spl_product_data_elements")
-                {
-                    match answer {
-                        ElementsFallbackAnswer::Error => (
-                            "500 Internal Server Error",
-                            r#"{"error":"private sentinel"}"#.as_bytes().to_vec(),
-                        ),
-                        // One byte past the 8 MiB source-body read limit.
-                        ElementsFallbackAnswer::Oversize => {
-                            ("200 OK", vec![b'x'; 8 * 1024 * 1024 + 1])
-                        }
+) -> (String, crate::test_support::TestHttpServer) {
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request);
+            let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
+                (
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#.as_bytes().to_vec(),
+                )
+            } else if request.starts_with("GET /drug/label.json?")
+                && request.contains("spl_product_data_elements")
+            {
+                match answer {
+                    ElementsFallbackAnswer::Error => (
+                        "500 Internal Server Error",
+                        r#"{"error":"private sentinel"}"#.as_bytes().to_vec(),
+                    ),
+                    // One byte past the 8 MiB source-body read limit.
+                    ElementsFallbackAnswer::Oversize => {
+                        ("200 OK", vec![b'x'; 8 * 1024 * 1024 + 1])
                     }
-                } else if request.starts_with("GET /drug/label.json?") {
-                    (
-                        "404 Not Found",
-                        r#"{"error":{"code":"NOT_FOUND"}}"#.as_bytes().to_vec(),
-                    )
-                } else {
-                    (
-                        "404 Not Found",
-                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
-                    )
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .or_else(|error| {
-                        // The oversize answer ends with the client closing the
-                        // connection once the read limit trips.
-                        if error.kind() == std::io::ErrorKind::UnexpectedEof
-                            || error.kind() == std::io::ErrorKind::BrokenPipe
-                            || error.kind() == std::io::ErrorKind::ConnectionReset
-                        {
-                            Ok(())
-                        } else {
-                            Err(error)
-                        }
-                    })
-                    .expect("write fixture response body");
-            });
+                }
+            } else if request.starts_with("GET /drug/label.json?") {
+                (
+                    "404 Not Found",
+                    r#"{"error":{"code":"NOT_FOUND"}}"#.as_bytes().to_vec(),
+                )
+            } else {
+                (
+                    "404 Not Found",
+                    r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                )
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await
+                .or_else(|error| {
+                    // The oversize answer ends with the client closing the
+                    // connection once the read limit trips.
+                    if error.kind() == std::io::ErrorKind::UnexpectedEof
+                        || error.kind() == std::io::ErrorKind::BrokenPipe
+                        || error.kind() == std::io::ErrorKind::ConnectionReset
+                    {
+                        Ok(())
+                    } else {
+                        Err(error)
+                    }
+                })
+                .expect("write fixture response body");
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, task)
 }
 
@@ -245,7 +235,7 @@ async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn label_fetch_failures_settle_as_unavailable_outcomes() {
-    let (base, server) = required_label_failure_server().await;
+    let (base, mut server) = required_label_failure_server().await;
     let (_env, _ddinter) = drug_fixture_env(&base, "required-label-ddinter-counter");
 
     // A requested label section whose fetch failed settles as
@@ -272,13 +262,13 @@ async fn label_fetch_failures_settle_as_unavailable_outcomes() {
         );
         assert!(drug.label.is_none(), "{sections:?}");
     }
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn label_fallback_fetch_error_stays_an_error() {
-    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Error).await;
+    let (base, mut server) = label_fallback_failure_server(ElementsFallbackAnswer::Error).await;
 
     // Review: the field-scoped miss must fall through to the
     // identity-field fallback, and a real fallback fetch error settles as an
@@ -297,13 +287,13 @@ async fn label_fallback_fetch_error_stays_an_error() {
         Some("OpenFDA label evidence is temporarily unavailable.")
     );
     assert!(drug.label.is_none());
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn label_elements_oversize_response_settles_as_unavailable_with_reason() {
-    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
+    let (base, mut server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
 
     // An identity-field fallback response past
     // the body read limit can never succeed, and it is a provider-side
@@ -325,7 +315,7 @@ async fn label_elements_oversize_response_settles_as_unavailable_with_reason() {
         )
     );
     assert!(drug.label.is_none());
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The withdrawn Propulsid record's product data elements, captured from
@@ -355,73 +345,67 @@ enum ElementsFallbackMatch {
 
 async fn label_elements_match_server(
     answer: ElementsFallbackMatch,
-) -> (String, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind label elements fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 32 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]);
-                let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
-                    (
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"_id":"fixture-cisapride","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"cisapride","synonyms":[],"drug_interactions":[]}}]}"#
-                            .as_bytes()
-                            .to_vec(),
-                    )
-                } else if request.starts_with("GET /drug/label.json?")
-                    && request.contains("spl_product_data_elements")
-                {
-                    match answer {
-                        ElementsFallbackMatch::Propulsid => {
-                            ("200 OK", propulsid_label_body().into_bytes())
-                        }
-                        ElementsFallbackMatch::NoMatch => (
-                            "404 Not Found",
-                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
-                                .to_vec(),
-                        ),
+) -> (String, crate::test_support::TestHttpServer) {
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request);
+            let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
+                (
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"_id":"fixture-cisapride","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"cisapride","synonyms":[],"drug_interactions":[]}}]}"#
+                        .as_bytes()
+                        .to_vec(),
+                )
+            } else if request.starts_with("GET /drug/label.json?")
+                && request.contains("spl_product_data_elements")
+            {
+                match answer {
+                    ElementsFallbackMatch::Propulsid => {
+                        ("200 OK", propulsid_label_body().into_bytes())
                     }
-                } else if request.starts_with("GET /drug/label.json?") {
-                    (
+                    ElementsFallbackMatch::NoMatch => (
                         "404 Not Found",
-                        br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#.to_vec(),
-                    )
-                } else {
-                    (
-                        "404 Not Found",
-                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
-                    )
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .expect("write fixture response body");
-            });
+                        br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                            .to_vec(),
+                    ),
+                }
+            } else if request.starts_with("GET /drug/label.json?") {
+                (
+                    "404 Not Found",
+                    br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#.to_vec(),
+                )
+            } else {
+                (
+                    "404 Not Found",
+                    r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                )
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, task)
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn label_elements_fallback_returns_the_own_record_not_an_empty() {
-    let (base, server) = label_elements_match_server(ElementsFallbackMatch::Propulsid).await;
+    let (base, mut server) = label_elements_match_server(ElementsFallbackMatch::Propulsid).await;
 
     // Second review: openFDA holds the withdrawn Propulsid
     // label, so the identity-field fallback must return it even though its
@@ -446,13 +430,13 @@ async fn label_elements_fallback_returns_the_own_record_not_an_empty() {
                 .is_some_and(|text| text.contains("cisapride")),
         "the Propulsid record's own indication text reached the card"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
-    let (base, server) = label_elements_match_server(ElementsFallbackMatch::NoMatch).await;
+    let (base, mut server) = label_elements_match_server(ElementsFallbackMatch::NoMatch).await;
 
     // When the source truly holds no record — terfenadine has no openFDA
     // SPL record at all — both lookups answer with no match, so the empty
@@ -472,7 +456,7 @@ async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
         Some("No openFDA SPL label record matched this drug.")
     );
     assert!(drug.label.is_none());
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// Percent-decode one query-parameter value, so a fixture server can route on
@@ -529,7 +513,7 @@ pub(super) async fn name_resolution_fixture_server(
     mychem: Vec<(String, String)>,
     label_searches: Vec<(String, String)>,
     ols_searches: Vec<(String, String)>,
-) -> (String, tokio::task::JoinHandle<()>) {
+) -> (String, crate::test_support::TestHttpServer) {
     name_resolution_fixture_server_with_elements(mychem, label_searches, ols_searches, Vec::new())
         .await
 }
@@ -539,97 +523,91 @@ async fn name_resolution_fixture_server_with_elements(
     label_searches: Vec<(String, String)>,
     ols_searches: Vec<(String, String)>,
     elements_searches: Vec<(String, String)>,
-) -> (String, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind name-resolution fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let mychem = mychem.clone();
-            let label_searches = label_searches.clone();
-            let ols_searches = ols_searches.clone();
-            let elements_searches = elements_searches.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 64 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]);
-                let target = request
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap_or_default()
-                    .to_string();
-                let (status, body): (&str, Vec<u8>) = if target.starts_with("/v1/query?") {
-                    let term = decoded_query_param(&target, "q").unwrap_or_default();
-                    match mychem.iter().find(|(query, _)| *query == term) {
+) -> (String, crate::test_support::TestHttpServer) {
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let mychem = mychem.clone();
+        let label_searches = label_searches.clone();
+        let ols_searches = ols_searches.clone();
+        let elements_searches = elements_searches.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request);
+            let target = request
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or_default()
+                .to_string();
+            let (status, body): (&str, Vec<u8>) = if target.starts_with("/v1/query?") {
+                let term = decoded_query_param(&target, "q").unwrap_or_default();
+                match mychem.iter().find(|(query, _)| *query == term) {
+                    Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                    None => (
+                        "404 Not Found",
+                        br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                    ),
+                }
+            } else if target.starts_with("/api/search?") {
+                let term = decoded_query_param(&target, "q").unwrap_or_default();
+                match ols_searches.iter().find(|(query, _)| *query == term) {
+                    Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                    None => (
+                        "404 Not Found",
+                        br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                    ),
+                }
+            } else if target.starts_with("/drug/label.json?") {
+                let term = decoded_query_param(&target, "search").unwrap_or_default();
+                if let Some(name) =
+                    quoted_search_field_value(&term, "spl_product_data_elements")
+                {
+                    match elements_searches.iter().find(|(query, _)| *query == name) {
                         Some((_, body)) => ("200 OK", body.clone().into_bytes()),
                         None => (
                             "404 Not Found",
-                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                .to_vec(),
                         ),
-                    }
-                } else if target.starts_with("/api/search?") {
-                    let term = decoded_query_param(&target, "q").unwrap_or_default();
-                    match ols_searches.iter().find(|(query, _)| *query == term) {
-                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
-                        None => (
-                            "404 Not Found",
-                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
-                        ),
-                    }
-                } else if target.starts_with("/drug/label.json?") {
-                    let term = decoded_query_param(&target, "search").unwrap_or_default();
-                    if let Some(name) =
-                        quoted_search_field_value(&term, "spl_product_data_elements")
-                    {
-                        match elements_searches.iter().find(|(query, _)| *query == name) {
-                            Some((_, body)) => ("200 OK", body.clone().into_bytes()),
-                            None => (
-                                "404 Not Found",
-                                br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
-                                    .to_vec(),
-                            ),
-                        }
-                    } else {
-                        let term = term
-                            .replace("openfda.generic_name:", "")
-                            .replace("openfda.brand_name:", "");
-                        match label_searches
-                            .iter()
-                            .find(|(query, _)| term.contains(query))
-                        {
-                            Some((_, body)) => ("200 OK", body.clone().into_bytes()),
-                            None => (
-                                "404 Not Found",
-                                br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
-                                    .to_vec(),
-                            ),
-                        }
                     }
                 } else {
-                    (
-                        "404 Not Found",
-                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
-                    )
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .expect("write fixture response body");
-            });
+                    let term = term
+                        .replace("openfda.generic_name:", "")
+                        .replace("openfda.brand_name:", "");
+                    match label_searches
+                        .iter()
+                        .find(|(query, _)| term.contains(query))
+                    {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                .to_vec(),
+                        ),
+                    }
+                }
+            } else {
+                (
+                    "404 Not Found",
+                    r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                )
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, task)
 }
 
@@ -643,7 +621,7 @@ async fn name_resolution_fixture_drug(base: &str, name: &str) -> super::Drug {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "terfenadine".to_string(),
             crate::transform::drug::name_resolution_tests::TERFENADINE_CAPTURE.to_string(),
@@ -679,13 +657,13 @@ async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
         Some("No openFDA SPL label record matched this drug.")
     );
     assert!(drug.label.is_none());
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_text_only_match_refuses_and_names_what_matched() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "ferric oxide".to_string(),
             crate::transform::drug::name_resolution_tests::FERRIC_OXIDE_TEXT_ONLY_CAPTURE
@@ -718,7 +696,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
         message.contains("biomcp search drug -q \"ferric oxide\""),
         "{message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// A drug name miss pays the discover resolution twice on
@@ -731,52 +709,50 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
 async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
     use std::sync::Arc;
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind refusal-count fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let requests = Arc::new(std::sync::Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock refusal-count requests")
-                    .push(request.clone());
-                let (status, body) = if request.starts_with("GET /v1/query?") {
-                    // A text-only match: no record names the query, so `get`
-                    // refuses after the openFDA identity candidate and the
-                    // discover rescue decline.
-                    (
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#,
-                    )
-                } else if request.starts_with("GET /api/search?") {
-                    // One drug concept at a contains-tier match: the rescue
-                    // declines it and the alias fallback lists it.
-                    (
-                        "200 OK",
-                        r#"{"response":{"docs":[{"iri":"http://purl.obolibrary.org/obo/DRON_0009999","ontology_prefix":"DRON","short_form":"DRON_0009999","obo_id":"DRON:0009999","label":"Fluxitol Related Molecule","description":[],"exact_synonyms":[],"type":"class"}],"numFound":1,"start":0,"maxScore":1.0}}"#,
-                    )
-                } else {
-                    ("404 Not Found", r#"{"error":{"code":"NOT_FOUND"}}"#)
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let mut task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock refusal-count requests")
+                .push(request.clone());
+            let (status, body) = if request.starts_with("GET /v1/query?") {
+                // A text-only match: no record names the query, so `get`
+                // refuses after the openFDA identity candidate and the
+                // discover rescue decline.
+                (
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#,
+                )
+            } else if request.starts_with("GET /api/search?") {
+                // One drug concept at a contains-tier match: the rescue
+                // declines it and the alias fallback lists it.
+                (
+                    "200 OK",
+                    r#"{"response":{"docs":[{"iri":"http://purl.obolibrary.org/obo/DRON_0009999","ontology_prefix":"DRON","short_form":"DRON_0009999","obo_id":"DRON:0009999","label":"Fluxitol Related Molecule","description":[],"exact_synonyms":[],"type":"class"}],"numFound":1,"start":0,"maxScore":1.0}}"#,
+                )
+            } else {
+                ("404 Not Found", r#"{"error":{"code":"NOT_FOUND"}}"#)
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     let (_env, _ddinter) = drug_fixture_env(&base, "refusal-once-ddinter");
 
     let err = crate::cli::execute(vec![
@@ -793,7 +769,7 @@ async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
         message.contains("could not map 'Fluxitol'"),
         "the alias fallback answered the refusal: {message}"
     );
-    task.abort();
+    task.finish().unwrap();
 
     let requests = requests
         .lock()
@@ -812,7 +788,7 @@ async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_brand_query_resolves_through_the_mychem_record_itself() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "TAGRISSO".to_string(),
             crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string(),
@@ -831,35 +807,22 @@ async fn a_brand_query_resolves_through_the_mychem_record_itself() {
     let drug = name_resolution_fixture_drug(&base, "TAGRISSO").await;
     assert_eq!(drug.name, "osimertinib");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// A TCP server that accepts connections and never answers: a stalled
 /// discover source. Both refusal rounds — the entity rescue inside `get`
 /// and the CLI alias fallback — must bound their discover rounds against
 /// it.
-async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind stalled OLS4 fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                // Never answers within any budget the tests allow: the
-                // connection stays open and the read parks on data that
-                // never arrives, so the stall is the fixture itself and
-                // no timer bounds it.
-                loop {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    if stream.read(&mut request).await.unwrap_or(0) == 0 {
-                        return;
-                    }
-                }
-            });
-        }
-    });
-    (base, task)
+async fn stalled_ols4_server() -> (String, crate::test_support::TestHttpServer) {
+    let server = crate::test_support::TestHttpServer::spawn(|mut stream| async move {
+        // Hold the connection without answering until the client leaves.
+        let mut request = [0; 16 * 1024];
+        while stream.read(&mut request).await? != 0 {}
+        Ok(())
+    })
+    .expect("start stalled OLS4 fixture");
+    (server.base.clone(), server)
 }
 
 /// A refusal is two rounds over one discover source — the
@@ -871,8 +834,8 @@ async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_stalled_drug_refusal_costs_one_discover_budget() {
-    let (ols_base, ols_server) = stalled_ols4_server().await;
-    let (base, server) = name_resolution_fixture_server(
+    let (ols_base, mut ols_server) = stalled_ols4_server().await;
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Fluxitol".to_string(),
             r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#
@@ -897,8 +860,8 @@ async fn a_stalled_drug_refusal_costs_one_discover_budget() {
     .expect_err("the text-only match refuses");
     let elapsed = started.elapsed();
     drop(env);
-    ols_server.abort();
-    server.abort();
+    ols_server.finish().unwrap();
+    server.finish().unwrap();
 
     assert!(
         err.to_string().contains("drug 'Fluxitol' not found"),
@@ -918,28 +881,24 @@ async fn a_stalled_drug_refusal_costs_one_discover_budget() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_slow_alias_fallback_round_gives_up_within_the_refusal_budget() {
-    let (ols_base, ols_server) = stalled_ols4_server().await;
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind mygene fixture");
-    let gene_base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let gene_server = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let _ = &request[..len];
-                let body = r#"{"total": 0, "hits": []}"#;
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let (ols_base, mut ols_server) = stalled_ols4_server().await;
+    let mut gene_server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(_request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let body = r#"{"total": 0, "hits": []}"#;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let gene_base = gene_server.base.clone();
 
     let mut env = crate::test_support::FixtureEnv::new();
     env.set("BIOMCP_MYGENE_BASE", &gene_base);
@@ -956,8 +915,8 @@ async fn a_slow_alias_fallback_round_gives_up_within_the_refusal_budget() {
     .expect_err("a gene miss refuses");
     let elapsed = started.elapsed();
     drop(env);
-    ols_server.abort();
-    gene_server.abort();
+    ols_server.finish().unwrap();
+    gene_server.finish().unwrap();
 
     assert!(err.to_string().contains("gene 'FLUX1' not found"), "{err}");
     assert!(

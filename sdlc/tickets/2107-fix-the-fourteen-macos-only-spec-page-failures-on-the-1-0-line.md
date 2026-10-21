@@ -6,7 +6,9 @@ deps: [2098]
 
 # 2107: Fix the fourteen macOS-only spec page failures on the 1.0 line
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-20, Ian paused the 1.0 line; withdrawn so pm next offers only active work. Reopen when 1.0 resumes..
 
 Milestone: 1.0
 

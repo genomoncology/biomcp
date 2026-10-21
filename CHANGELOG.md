@@ -4,6 +4,8 @@
 
 ### New features
 
+- Add the opt-in drug `approval-history` section with full provider-returned Drugs@FDA submissions, source classes, dates, and document links. Keep compact approvals and regulatory views unchanged. (2272)
+
 ### Fixes
 
 - Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
@@ -98,13 +100,25 @@
 
 ### Internal
 
+- Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
+- Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
+- Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+- Run the landing and main gates directly through repository Make targets in build jobs. (2317)
+- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
+- Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
+- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
+- Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
+
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
+
+- Keep release steps in one document and reuse qualification after records-only changes. (2312)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
-
+- Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 
+- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
@@ -127,6 +141,8 @@
 - Verify parallel article cache reuse against admitted responses and preserve failed-case cache databases. (2285)
 
 - Qualify concurrent CLI and MCP cache sharing with distinct stored requests and strict warm reuse after bounded admission. (2283)
+
+- Reject unreviewed fixed test waits and keep necessary timing controls and legacy wait risks in one explicit inventory. (2318)
 
 - Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
 - Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)

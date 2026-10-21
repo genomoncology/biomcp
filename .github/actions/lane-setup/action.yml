@@ -32,7 +32,7 @@ inputs:
     description: Install the pinned mustmatch binary.
     default: false
   lint-tools:
-    description: Install the pinned cargo-deny, ruff, shellcheck and actionlint.
+    description: Install the pinned cargo-deny, shellcheck and actionlint.
     default: false
 
 runs:
@@ -107,7 +107,7 @@ runs:
       shell: bash
       run: |
         cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
-        uv tool install "ruff==$RUFF_VERSION"
+        # make lint prepares declared Python tools in this checkout.
         tools/bootstrap-lint-tools >> "$GITHUB_PATH"
     - name: Record exact tool versions
       # Informational only: the lanes enable different tool groups, so

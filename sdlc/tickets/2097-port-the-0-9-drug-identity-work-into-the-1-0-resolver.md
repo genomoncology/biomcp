@@ -6,7 +6,9 @@ deps: [2041]
 
 # 2097: Port the 0.9 drug identity work into the 1.0 resolver
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-20, Ian paused the 1.0 line; withdrawn so pm next offers only active work. Reopen when 1.0 resumes..
 
 Milestone: 1.0
 

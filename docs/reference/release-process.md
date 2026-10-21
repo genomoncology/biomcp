@@ -2,19 +2,57 @@
 
 BioMCP publishes from `.github/workflows/release.yml`. A push of a stable tag matching `v*` starts a release. The workflow creates the GitHub release as a draft, validates and publishes the artifacts, then makes the release public last. A manual dispatch can validate an existing tag, republish its container image, or rehearse an untagged candidate without publishing.
 
+## Release sequence
+
+This document owns the release steps. A release ticket links here and records decisions, failures and the successful candidate evidence; it does not copy and tick a second checklist. Ian alone authorizes and tags a release.
+
+### Prepare the go request
+
+Each release ticket carries its changelog bullet in its own landing. Keep the New features, Fixes and Internal headings in place even when a section is empty.
+
+1. Resolve every finding for the release with its fix or an approved deferral. Keep each ticket's code review and local gate evidence. Claimed fixes need a regression that fails without the fix. A fresh project review covers the release's source and workflow changes; later records-only commits need no new review.
+2. State each new or changed source's terms in `docs/reference/sources.json` and `docs/reference/source-licensing.md`, including identifier-only sources.
+3. Commit stable versions and the versioned changelog, including fixed GitHub issues and merged tickets. Run the collected checks in [Version metadata](#version-metadata) before the metadata landing gate.
+4. Land reviewed changes through the coordinator's landing gate and check actual main. Complete the final candidate's routine, shipped-feature and required long checks in [Local qualification](#local-qualification). Retain the live replay results and name disabled providers as unverified.
+5. Compare any claimed performance measurements on one host with the same toolchain, workload and cache settings. Keep raw samples and label failed collections incomplete. Existing measurements remain evidence for their measured revision; records-only changes do not require new measurements.
+6. Clean merged ticket branches, owned worktrees, reservations and scratch builds. Leave other teams' open work alone. Confirm clean main and owned worktrees with `git status --porcelain` and owned cleanup with `pm daily`.
+7. Complete [Full untagged rehearsal](#full-untagged-rehearsal). The go request names the exact source commit to tag, the successful rehearsal URL, local qualification evidence, fixed GitHub issues and the rehearsal's publication limits. Ian's reviewer returns GO, and Ian decides whether to release.
+
+### Tag and verify
+
+Ian tags the named commit explicitly with `git tag vX.Y.Z <sha>` and pushes that tag. Never tag an advanced `HEAD` by accident. Watch the [tag-push release](#tag-push-release) through publication. If publication fails before PyPI succeeds, repair the cause and remove the failed draft and tag before starting again. After PyPI succeeds, rerun only failed jobs; PyPI refuses the same version twice.
+
+Verify the public release against its published artifacts:
+
+- Install `biomcp-cli==X.Y.Z` in a clean environment and run `biomcp --version`.
+- Check the five public archives and SHA-256 sidecars. Each binary's version names the released version and tagged commit.
+- Check the versioned container image for both supported platforms. Check `latest` only when this release qualifies for that pointer under [Container publication](#container-publication).
+- Check the published Homebrew version and checksums, install it and run `biomcp --version`.
+- Reproduce each fixed GitHub issue against the published artifact and retain the result.
+
+### Finish the release
+
+Reply to fixed issues with their verification evidence and close them. Keep one release record with the tag, commit, workflow run, workflow duration, archive download sizes, number and failure causes of full rehearsals, and published-artifact verification. Link this document rather than repeating the steps.
+
+Bump main to the next development version through a ticket, add an empty `## Unreleased` changelog section, and record any process lesson here. Handle directory submissions as [Separate manual directory actions](#separate-manual-directory-actions) describes.
+
 ## Local qualification
 
-`make main-gate` runs the routine gate followed by `make repo-audit` and `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
+Each reviewed batch runs `make landing-gate` once on its final candidate through a build job. Reuse the passing gate while its inputs stay unchanged; do not run another gate after merging.
+
+`make main-gate` runs the routine gate followed by `make repo-audit`, `make full-feature-check` and the installed Linux wheel smoke. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks. Until nightly qualification is scheduled, run `make main-gate` once on the final candidate before the full nonpublishing release rehearsal. Nightly qualification will own these additional checks.
 
 `make release-gate` requires the full-feature check with `FULL_FEATURE_PROFILE=release`, including the optimized executable's PNG, SVG and terminal output checks, before release-profile specifications. Complete this qualification and the final nonpublishing release rehearsal before tagging. The rehearsal must build optimized artifacts and exercise their output checks.
 
-Before tagging the final candidate, run `python3 tools/check-replay-live` to inventory every request in `testdata/replay`, then explicitly opt in with `python3 tools/check-replay-live --live`. This separate release check sends each eligible recorded request once, compares its status, media type and response structure, and prints one result per recording followed by total, checked, passed, ready, disabled, blocked and drift counts. Keep the output and candidate revision with the release evidence. A blocked or drifted recording fails the command and must be repaired or re-recorded before tagging. No live request runs in routine tests or without `--live`.
+Before tagging the final candidate, run `python3 tools/check-replay-live` with the authorized source-disable settings to inventory every request in `testdata/replay`. Live collection requires explicit opt-in with `python3 tools/check-replay-live --live` and the same authorized settings. This separate release check sends each eligible recorded request once, compares its status, media type and supported response structure or signature, and prints one result per recording followed by total, checked, passed, ready, disabled, blocked and drift counts. Keep the output and actual source revision with the release evidence. A blocked or drifted recording fails the command and must be repaired or re-recorded before tagging. Offline-ready entries are not live passes. No live request runs in routine tests or without `--live`.
 
 The check honors `BIOMCP_DISABLE_SOURCES`, `--disable-sources` and `BIOMCP_DISABLE_KEGG`, using the source registry's commercial groups. Disabled entries remain visible in the counts and do not certify those providers. Restricted sources require explicit access authorization through `--allow-restricted <source-id>` or must be disabled. The checker sends no API keys or authorization headers, ignores proxy environment settings, refuses credential-bearing requests and redirects, and blocks sources requiring credentials. Requests run serially at the existing most conservative unkeyed provider interval. There are no retries; a rate limit or `Retry-After` stops further requests to that provider and reports them as blocked.
 
 Structure comparison uses every JSON key path and the union of observed value types at that path. Array indices use wildcards; array length and order do not matter. The comparison ignores values, including timestamps. Removed paths and any change in an existing path's type union block the check, including changes involving null or mixed array elements. Added paths appear in `added_paths` for information and do not block. XML replies use element paths, ignoring text values, attributes, order and repeated elements. This comparison describes the observed reply; it does not validate semantic correctness or prove that every optional field will appear in each result set. Changed results can remove optional paths and need review.
 
-Only JSON and XML have generic structure coverage. Other formats remain blocked even when their status and content type match. The three current KEGG plaintext recordings have no generic structure comparison; explicit access authorization does not clear that blocker. Missing historical content types also stay blocked and cannot be inferred from filenames or payloads. The inventory currently lacks observed response metadata for 28 recordings; collect actual metadata at the final candidate before claiming coverage. POST bodies must reproduce the recorded request hash. The recorder retains safe JSON bodies and normalizes response header names for future captures.
+Only JSON and XML have generic structure coverage. Supported non-JSON/XML replies use status/type/signature checks only, preserving the Content-Type actually served. Generic octet-stream uses a bounded literal leading-byte signature. These checks do not establish document validity or completeness. XML DOCTYPE declarations are accepted without fetching external resources; entity declarations and expansion remain refused. Missing observed content types remain blocked and cannot be inferred from filenames or payloads. Recompute the inventory instead of relying on historical counts. POST bodies must reproduce the recorded request hash. The recorder retains safe JSON bodies and normalizes response header names for future captures.
+
+For 0.9.4, the PM approved reuse of unchanged prior live observations plus exact newly observed capture receipts and their command proof, without a new full live collection. The owning recorded-command coverage record retains the current inventory, each observation's actual source binding and its structural or limited scope. Restricted sources and Semantic Scholar remain disabled and unverified under the existing access rulings. The authored secondary ZIP timeout case is synthetic and stays outside the live-qualified inventory; failed capture attempts do not prove successful ZIP coverage.
 
 ## Tag-push release
 
@@ -54,7 +92,7 @@ The rehearsal runs direct qualification, the packaged-crate marker gate, all fiv
 
 Every rehearsal job has read-only or empty permissions. Publisher jobs cannot run in this mode, and no publication credential or trusted-publishing identity is granted. GitHub release creation/upload/publication, PyPI trusted upload, registry authentication/pushes, Pages deployment and live-site verification, the Homebrew push, and moving `latest` remain unexercised. A rehearsal validates their prepared payloads and build paths; actual publication still requires its own successful run.
 
-Run this complete manual rehearsal on the final candidate after every release ticket and final measurement record has landed. Record its run URL and SHA before asking Ian to tag. A later source or workflow change requires another full rehearsal of the new candidate.
+Run this complete manual rehearsal after the release source and workflow changes have landed. Record its run URL and candidate SHA before asking Ian to tag. A later source or workflow change requires another full rehearsal of the new candidate. A records-only change requires neither a fresh review nor another rehearsal. Keep the successful rehearsal bound to the source commit it qualified, and ask Ian to tag that commit explicitly even when later administrative records advance main.
 
 ## Documentation publication
 
@@ -69,6 +107,8 @@ python3 scripts/check-release-metadata.py --candidate-sha "$(git rev-parse HEAD)
 ```
 
 Use the intended stable version and tag. Run the command through the configured local build job. It runs the existing version, changelog, runbook, citation, release-note and Rust metadata checks, continues after failures, and names every failed group. It does not create a tag. Full release qualification and rehearsal remain separate steps.
+
+Run this command before pushing changes. Its repository contract tier runs `make repo-audit`, using that target's maintained whole-repository test selection.
 
 Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` checks Cargo, Python, lockfiles, `manifest.json`, both `server.json` fields, `CITATION.cff`, and the concrete Homebrew version. `scripts/check-release-versions.py` adds tag equality and stable-tag enforcement, so the release workflow refuses a tag whose own name carries `-dev` and refuses a stable tag while any committed version still does. Commit the complete version change before pushing the tag. The current release candidate is stable Cargo `0.9.4` and Python `0.9.4`. Main carries the next development version between releases, and development builds report the development version with a commit suffix. The release commit drops the development suffix and commits the released number throughout the package, registry, and citation metadata. Homebrew remains a version placeholder until the release workflow renders and publishes its formula.
 

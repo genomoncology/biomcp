@@ -447,6 +447,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
+            ("approval-history", "Drugs@FDA Approval History"),
             ("label", "FDA Label"),
             ("cell_lines", "Cell lines"),
             ("safety", "Safety"),

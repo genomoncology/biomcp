@@ -9,7 +9,7 @@ pub(super) use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovStudy
 #[allow(unused_imports)]
 pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 pub(super) use crate::test_support::FixtureEnv;
 
@@ -24,36 +24,38 @@ pub(super) fn ctgov_fixture_env(base: &str) -> FixtureEnv {
 
 pub(super) async fn ctgov_json_fixture(
     body: impl Into<String>,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let body = Arc::new(body.into());
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind synthetic CTGov fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            let body = body.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read CTGov request");
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(String::from_utf8_lossy(&request[..len]).into_owned());
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write CTGov response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        let body = body.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(String::from_utf8_lossy(&request).into_owned());
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 

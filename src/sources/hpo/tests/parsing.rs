@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 use super::super::*;
 
@@ -120,48 +120,25 @@ fn decoded_search_rows_preserve_hpo_labels_and_provider_order() {
 // timeouts before the loopback server gets another I/O turn.
 #[tokio::test]
 async fn phenotype_hpo_operation_uses_only_the_shared_four_attempts() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let base = format!("http://{}", listener.local_addr().unwrap());
     let attempts = Arc::new(AtomicUsize::new(0));
     let observed = Arc::clone(&attempts);
-    let server = tokio::spawn(async move {
-        loop {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            let observed = Arc::clone(&observed);
-            tokio::spawn(async move {
-                let mut buffer = [0_u8; 2048];
-                let mut request = Vec::new();
-                loop {
-                    request.clear();
-                    loop {
-                        let read = match stream.read(&mut buffer).await {
-                            Ok(0) | Err(_) => return,
-                            Ok(read) => read,
-                        };
-                        request.extend_from_slice(&buffer[..read]);
-                        if request.windows(4).any(|window| window == b"\r\n\r\n") {
-                            break;
-                        }
-                    }
-                    observed.fetch_add(1, Ordering::SeqCst);
-                    if stream
-                        .write_all(
-                            b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}",
-                        )
-                        .await
-                        .is_err()
-                    {
-                        return;
-                    }
-                }
-            });
+    let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let observed = observed.clone();
+        async move {
+            // Keep this connection reusable so every retry is counted as an HTTP attempt.
+            while crate::test_support::read_request(&mut stream).await?.is_some() {
+                observed.fetch_add(1, Ordering::SeqCst);
+                stream.write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}").await?;
+            }
+            Ok(())
         }
-    });
+    }).expect("start HPO retry fixture");
+    let base = server.base.clone();
     let client = HpoClient::new_for_test(base).unwrap();
     client
         .phenotype_term("HP:0001250")
         .await
         .expect_err("four retry-policy attempts must still return the provider error");
     assert_eq!(attempts.load(Ordering::SeqCst), 4);
-    server.abort();
+    server.finish().unwrap();
 }

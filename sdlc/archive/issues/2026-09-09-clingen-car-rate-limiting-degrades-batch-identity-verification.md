@@ -25,7 +25,7 @@ Options for a future ticket: apply `retry_send` to ClinGen CAR (preferred; it
 also fixes user-facing rate-limit resilience), or have the live canary merge
 readiness across a delayed second run while still asserting work-allocation
 consistency on the first full run. No design decided here. Per
-`sdlc/planning/verify-lane.md`, live failures are not gate failures; this
+`sdlc/archive/planning/verify-lane.md`, live failures are not gate failures; this
 note records the observation for triage.
 
 ## Decision (ticket 1238, 2026-09-26)
