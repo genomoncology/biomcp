@@ -10,6 +10,8 @@ Reviews: revision 910f9b9ff36a3dc85baeccea320c5616c9962265, accept
 
 Reviews: revision 474a07136c26b55ea0ec80306a593d52ceb1c0bd, accept
 
+Reviews: revision 90d38da4859ce51e7abf42289a7068bdace2956c, accept
+
 ## Outcome
 
 A literature search survives a transient Europe PMC, Semantic Scholar or PubTator3 failure where it can. After an HTTP 503, 502, 429 or timeout, BioMCP retries once with backoff, honoring Retry-After within the command's deadline. If the retry also fails, it returns every result the other routes found and names the failed route, its error class and that a retry ran. Dated, newer-paper searches get the same handling. No retry follows a 4xx other than 429, and provider pacing rules stay in force.
