@@ -126,6 +126,8 @@
 
 - Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
 
+- Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
+
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
