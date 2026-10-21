@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Reviews: revision 04b6a645b69b4f63c1ed52fa6fb7d6c496f5f1d6, accept
 
+Reviews: revision a5d4281749630ec0f6d28a45629f938adfc827c1, accept
+
 ## Outcome
 
 Variant literature searches attempt the routes that alias_limit and logical_work_cap now leave unattempted, within provider rate limits and the command deadline, and merge their results. Each cap that still binds is reported with the routes it left and why. Coordinate with 2327, which recovers dropped coding spellings: one recovery mechanism serves both.
