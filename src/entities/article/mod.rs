@@ -27,7 +27,7 @@ pub use self::graph::{authors, citations, recommendations, references};
 pub(crate) use self::identity_verification::VariantArticleVerificationOptions;
 #[allow(unused_imports)]
 pub(crate) use self::planner::{
-    ArticleSearchDebugSummary, BackendPlan, article_source_plan, article_type_limitation_note,
+    ArticleSearchDebugSummary, BackendPlan, article_search_limitation_note, article_source_plan,
     litsense2_search_enabled, plan_backends, semantic_scholar_search_enabled, summarize_debug_plan,
 };
 #[allow(unused_imports)]
