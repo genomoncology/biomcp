@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Confirm the exact BLENREP approval product from coherent source identity records, preserve product numbers and ingredients, and show unconfirmed provider records separately with full requested approval history. (2328)
+- Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
@@ -29,6 +29,8 @@
 - Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
 
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
+
+- Confirm the exact BLENREP approval product from coherent source identity records, preserve product numbers and ingredients, and show unconfirmed provider records separately with full requested approval history. (2328)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
 
