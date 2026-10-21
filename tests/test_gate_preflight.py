@@ -36,7 +36,7 @@ def test_preflight_reports_incompatible_versions_with_missing_tools(tmp_path: Pa
     shutil.copy2(ROOT / "Cargo.toml", tmp_path / "Cargo.toml")
     binaries = tmp_path / "bin"
     binaries.mkdir()
-    for name, version in (("python3", "Python 3.9.0"), ("jq", "jq-1.5")):
+    for name, version in (("python3", "Python 3.8.0"), ("jq", "jq-1.5")):
         tool = binaries / name
         tool.write_text(f"#!/bin/sh\nprintf '%s\\n' '{version}'\n")
         tool.chmod(0o755)
@@ -46,6 +46,6 @@ def test_preflight_reports_incompatible_versions_with_missing_tools(tmp_path: Pa
         capture_output=True, text=True,
     )
     assert result.returncode != 0
-    assert "python3 requires min 3.10; got 3.9.0" in result.stderr
+    assert "python3 requires min 3.9; got 3.8.0" in result.stderr
     assert "jq requires min 1.6; got 1.5" in result.stderr
     assert "missing: mustmatch" in result.stderr

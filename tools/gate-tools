@@ -56,7 +56,8 @@ require() {
 
 # The system interpreter runs outside uv. Packaged CLI requirements live in
 # pyproject.toml; the prepared development interpreter uses .python-version.
-require python3 3.10 min --version
+# Host scripts use str.removeprefix/removesuffix from Python 3.9.
+require python3 3.9 min --version
 rust_min=""
 while IFS= read -r line; do
   pattern='^rust-version = "([0-9.]+)"$'
