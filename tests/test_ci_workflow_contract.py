@@ -282,7 +282,7 @@ def test_ci_runs_only_when_dispatched_or_called_for_a_release() -> None:
     triggers = DOC.get("on", DOC.get(True))
     assert set(triggers) == {"workflow_dispatch", "workflow_call"}
     assert triggers["workflow_dispatch"]["inputs"]["windows_only"] == {
-        "description": "Run only the Windows cache concurrency and deadline checks",
+        "description": "Run only the Windows cache, permissions and deadline checks",
         "type": "boolean",
         "default": False,
     }
