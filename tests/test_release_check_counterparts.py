@@ -209,6 +209,13 @@ REUSED_WORKFLOWS = {
 }
 
 
+ACTION_COUNTERPARTS["lane-setup", "Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
+
+# Toolchain setup reads the same declaration used by local Cargo commands.
+for job in ("release-gate", "build", "pypi-build"):
+    COUNTERPARTS[job]["Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
+CI_COUNTERPARTS["windows-contracts", "Read declared Rust toolchain"] = ("tools/rust-toolchain-version", "rust-toolchain.toml")
+
 def assert_reused_steps(jobs: dict, root: Path, counterparts: dict, visited: set[str]) -> None:
     for job_name, job in jobs.items():
         assert "uses" not in job, (
