@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 7f8e8fc3bd8375b9849f297112b3cc22f5c39b83, accept
+
 ## Outcome
 
 scripts/installed-wheel-smoke.sh parses each command's complete stdout as JSON and requires an object where the release runbook promises one. Malformed output such as `{garbage`, trailing text, or an array where an object is required fails the smoke with a message naming the command.
