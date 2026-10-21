@@ -584,6 +584,7 @@
     "tests/test_release_smoke_script.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_targets.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_release_versions_check.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
+    "tests/test_release_check_counterparts.py": "Release/build tooling contract; checks workflow counterparts, nightly command sequencing and stress affinity using fake build commands, without exercising the shipped product.",
     "tests/test_release_workflow_provenance.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_replay_case_state.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
     "tests/test_replay_live_drift.py": "Tooling, source-layout, fixture or documentation contract; does not drive the shipped product.",
