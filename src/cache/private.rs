@@ -427,14 +427,17 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
 fn secure_windows_entry(path: &Path, directory: bool) -> io::Result<()> {
     use std::os::windows::fs::OpenOptionsExt;
     use windows_sys::Win32::Storage::FileSystem::{
-        FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_READ_ATTRIBUTES, WRITE_DAC,
+        FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_READ_ATTRIBUTES,
+        READ_CONTROL, WRITE_DAC,
     };
 
     // Open the entry itself, including directories, and reject reparse-point
     // replacement before applying the same current-token policy as database files.
     let file = OpenOptions::new()
         .read(true)
-        .access_mode(FILE_READ_ATTRIBUTES | WRITE_DAC)
+        // Match the database handle's security-descriptor read/write rights:
+        // native DACL replacement also reads the existing descriptor.
+        .access_mode(FILE_READ_ATTRIBUTES | READ_CONTROL | WRITE_DAC)
         .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
         .open(path)?;
     let opened = file.metadata()?;
