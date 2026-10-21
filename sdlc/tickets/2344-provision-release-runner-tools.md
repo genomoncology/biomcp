@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 The shared release-qualification setup provisions the already declared host tools before preflight runs. Linux qualification has working ripgrep and bubblewrap, including the existing kernel-isolated offline test path. Keep preflight, tool versions, advisory policy and offline failure behavior intact.
 
-- Changes: `.github/workflows/ci.yml`, `.github/actions/lane-setup/action.yml`, `tests/test_ci_workflow_contract.py`, `tests/test_offline_gate_contract.py`, `tests/test_gate_preflight.py`, `CHANGELOG.md`, `sdlc/tickets/2344-provision-release-runner-tools.md`.
+- Changes: `.github/workflows/ci.yml`, `.github/actions/lane-setup/action.yml`, `tests/test_ci_workflow_contract.py`, `tests/test_offline_gate_contract.py`, `CHANGELOG.md`, `sdlc/tickets/2344-provision-release-runner-tools.md`.
 - Proof: reproduce the setup omission against the existing declared preflight, verify the affected setup/preflight contracts through a build job, and require actual lint and offline qualification to pass in the full untagged rehearsal. Inspect all declared prerequisites together to prevent a second missing-tool cycle. No silent skips or fallback.
 
 ## Evidence
