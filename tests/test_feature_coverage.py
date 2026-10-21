@@ -264,7 +264,6 @@ def test_release_entry_points_collect_coverage_once(tmp_path: Path, goal: str) -
 
 def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path) -> None:
     import os
-    import shlex
     import shutil
 
     root = tree(tmp_path)
@@ -279,9 +278,7 @@ def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path)
     uv = tools / "uv"
     uv.write_text(
         "#!/bin/sh\n"
-        "if [ \"$1\" = sync ]; then touch prepared; exit 99; fi\n"
-        "shift 3\n"
-        f"exec {shlex.quote(sys.executable)} \"$@\"\n"
+        "touch prepared\nexit 99\n"
     )
     uv.chmod(0o755)
     env = {key: value for key, value in os.environ.items()
