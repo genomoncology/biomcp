@@ -62,7 +62,7 @@ def test_broad_variant_page_union_preserves_provider_order(
         )
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)
-        assert payload["_meta"]["pagination"]["total"] == len(hits)
+        assert payload["pagination"]["total"] == len(hits)
         return [row["id"] for row in payload["results"]]
 
     try:

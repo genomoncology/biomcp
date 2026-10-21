@@ -14,9 +14,9 @@ gene: evaluated
 
 | ID | Build | Gene | Transcript | Coding | Protein | Legacy Name | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| chr7:g.140449165A>C | GRCh37 | BRAF | NM_004333.6 | c.1914T>G | p.Asp638Glu | BRAF D638E | Pathogenic | 2 | - | 0.954 | 2.67 |
 | chr7:g.140476832A>G | GRCh37 | BRAF | NM_004333.6 | c.1574T>C | p.Leu525Pro | BRAF L525P | Pathogenic | 2 | - | 0.876 | 5.68 |
 | chr7:g.140534497T>G | GRCh37 | BRAF | NM_004333.6 | c.416A>C | p.Gln139Pro | BRAF Q139P | Uncertain significance | 1 | - | 0.286 | 5.47 |
+| chr7:g.140449165A>C | GRCh37 | BRAF | NM_004333.6 | c.1914T>G | p.Asp638Glu | BRAF D638E | Pathogenic | 2 | - | 0.954 | 2.67 |
 
 
 Use `get variant <id>` for details.
@@ -25,7 +25,7 @@ Filters: -g <gene>, --hgvsp <protein>, --significance <value>, --max-frequency <
 
 
 See also:
-  biomcp get variant "chr7:g.140449165A>C"
+  biomcp get variant "chr7:g.140476832A>G"
   biomcp get gene BRAF
   biomcp search disease --query melanoma
 
