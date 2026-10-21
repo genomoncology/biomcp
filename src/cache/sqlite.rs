@@ -8,6 +8,7 @@ mod read;
 pub(crate) use read::read_record;
 pub(crate) mod request_key;
 mod schema;
+mod upgrade;
 
 use std::fs::{self, OpenOptions};
 use std::io;
@@ -74,6 +75,7 @@ impl Store {
             validate_database_file(&path, false)?;
         }
         validate_sidecars(&root)?;
+        upgrade::remove_legacy_stores(&root)?;
         let connection = pool::open(&root, || Self::open_connection(&root))?;
         Ok(Self { connection, root })
     }
@@ -111,7 +113,7 @@ impl Store {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(sqlite_error)?;
-        if version > 1 {
+        if version > 2 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "unsupported cache schema",
@@ -133,6 +135,9 @@ impl Store {
             connection
                 .execute_batch(schema::SCHEMA)
                 .map_err(sqlite_error)?;
+        }
+        if version == 1 {
+            upgrade::discard_credential_capable_cache(&connection, root)?;
         }
         identity.validate(root, &connection)?;
         Ok((connection, identity))

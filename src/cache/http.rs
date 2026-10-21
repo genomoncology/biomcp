@@ -96,16 +96,10 @@ impl CacheManager for HttpCacheManager {
 pub(crate) fn bypass_request(request: &reqwest::Request, extensions: &http::Extensions) -> bool {
     extensions.get::<http_cache_reqwest::CacheMode>()
         == Some(&http_cache_reqwest::CacheMode::NoStore)
-        || [
-            "authorization",
-            "proxy-authorization",
-            "cookie",
-            "x-api-key",
-            "api-key",
-            "x-auth-token",
-        ]
-        .iter()
-        .any(|name| request.headers().contains_key(*name))
+        || request
+            .headers()
+            .keys()
+            .any(|name| super::sqlite::request_key::credential_header(name.as_str()))
         || (!matches!(request.method().as_str(), "GET" | "HEAD")
             && extensions.get::<http_cache_reqwest::CacheMode>()
                 != Some(&http_cache_reqwest::CacheMode::IgnoreRules))

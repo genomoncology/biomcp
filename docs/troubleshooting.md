@@ -77,7 +77,7 @@ biomcp cache clean --max-age 7d
 If targeted cleanup still does not recover the cache, use
 `biomcp cache clear --yes` to remove reusable entries from the database and ten-minute article sessions. It preserves saved provider captures, `downloads/` and explicit exports. The database remains available for subsequent requests.
 
-`cache stats` reports legacy store sizes by name. After upgrading and stopping older binaries, use `biomcp cache clean-legacy` to remove those stores explicitly. This command also preserves saved downloads and the current database.
+BioMCP removes retired reusable cache stores automatically when it opens the cache. It never imports their request indexes. The upgrade also discards older SQLite entries and large response blobs because they may retain authentication data. Saved downloads and article sessions remain. Stop older processes before upgrading so they cannot recreate retired stores. `cache clean-legacy --yes` remains available for explicit cleanup.
 
 If a cache command reports that it cannot secure managed local state, inspect
 the configured root for symlinks, hard links, unsupported file types, or an ACL

@@ -4,13 +4,18 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Changes: tests/managed_state_permissions.rs; docs/user-guide/cli-reference.md; src/sources/mod.rs (existing initialization regression); src/cache/{mod,http,manager}.rs; src/cache/sqlite.rs; src/cache/sqlite/{request_key,schema,upgrade}.rs; src/cli/cache.rs; src/cli/cache/tests.rs; tests/cache_clear.rs; tests/test_cache_credentials.py; tests/test_cache_sqlite.py; tests/feature-links.json; docs/{policies,troubleshooting}.md; docs/reference/{configuration,data-sources}.md; CHANGELOG.md.
+
+Reviews: revision 55b3377f0d1484b5dbd2693bbcd667f1b9cddaa6, reject
+
 ## Outcome
 
 No credential BioMCP sends reaches disk or logs. That covers the NCBI api_key query parameter, other key or token query parameters, and authorization or x-api-key headers.
 - The SQLite cache stores no credential in any column, including the serialized cache-policy metadata, which may carry the original request URL and headers. The blobs directory stores none either.
 - Debug output, error messages and logs show credentials redacted.
-- On first use, 0.9.4 deletes the legacy 0.9.3 stores (http, http-cacache and the other LEGACY_STORES) under the cache root. Their cacache index used full request URLs, including api_key, as keys. 0.9.4 never reads them.
-- Any credential already in a 0.9.4 database is dropped or rewritten on first use.
+- On first cache open, 0.9.4 deletes the legacy 0.9.3 stores (http, http-cacache and the other LEGACY_STORES) under the cache root. Their cacache index used full request URLs, including api_key, as keys. 0.9.4 never reads them.
+- Any credential already in a 0.9.4 database is dropped or rewritten on first cache open.
+- PM ruling m3046: preserve ordinary `--no-cache` and cache-mode-off behavior. Both `cache clean` and confirmed `cache clear` remove the legacy stores.
 
 - Proof: an outside-in test runs keyed NCBI, Semantic Scholar and header-key requests against the replay server with fake canary keys. A byte search of the whole cache root, stdout and stderr, with debug on, then finds no canary. A test seeds a legacy http-cacache store holding a canary URL and shows it gone after the first command. The sweep is idempotent and leaves the SQLite cache intact.
 

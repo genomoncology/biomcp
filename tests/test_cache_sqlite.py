@@ -57,7 +57,7 @@ def test_cached_commands_create_cache_ancestors_in_a_fresh_home(tmp_path, gene_p
         assert invoke(env, "cache", "stats")["http_entry_count"] > 0
 
 
-def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_path, gene_provider):
+def test_sqlite_retires_legacy_cache_and_preserves_saved_downloads(tmp_path, gene_provider):
     cache = tmp_path / "cache"
     for name in ("http", "captures", "citation-evidence", "downloads"):
         directory = cache / name
@@ -74,8 +74,9 @@ def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_pat
     invoke(env, "cache", "clear", "--yes")
     with sqlite3.connect(cache / "biomcp.db") as connection:
         assert connection.execute("select count(*) from entries").fetchone()[0]==0
-    for name in ("http", "captures", "citation-evidence", "downloads"):
-        assert (cache / name / "keep.txt").read_text() == "saved bytes"
+    for name in ("http", "captures", "citation-evidence"):
+        assert not (cache / name).exists()
+    assert (cache / "downloads" / "keep.txt").read_text() == "saved bytes"
 
 
 @pytest.mark.timeout(HANG_TIMEOUT)
@@ -128,7 +129,7 @@ def test_explicit_legacy_cleanup_preserves_saved_files_and_current_cache(tmp_pat
         (cache / name).mkdir()
         (cache / name / "keep.txt").write_text("saved bytes")
     stats = invoke(env, "cache", "stats")
-    assert stats["legacy_cache_bytes"]["http"] == len("saved bytes")
+    assert all(size == 0 for size in stats["legacy_cache_bytes"].values())
     invoke(env, "cache", "clean-legacy", "--yes")
     for name in ("http", "http-cacache", "captures", "citation-evidence"):
         assert not (cache / name).exists()

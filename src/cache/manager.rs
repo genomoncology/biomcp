@@ -224,9 +224,9 @@ impl CacheManager for SqliteCacheManager {
         let canonical_url = context
             .as_ref()
             .map(|context| context.canonical_url.clone());
-        let (base, key) = match context {
+        let (base, key) = match context.as_ref() {
             Some(context) => match context.variant(&vary) {
-                Some(key) => (context.base, key),
+                Some(key) => (context.base.clone(), key),
                 None => return Ok(response),
             },
             None => (key.clone(), key),
@@ -236,11 +236,22 @@ impl CacheManager for SqliteCacheManager {
         if let Some(url) = canonical_url {
             metadata_response.url = url;
         }
-        let metadata = serde_json::to_vec(&StoredResponse {
+        let mut stored = serde_json::to_value(StoredResponse {
             response: metadata_response,
             policy,
             vary,
         })?;
+        // CachePolicy retains its own request URI independently of response.url.
+        // Use the same credential-free identity in both serialized locations.
+        if let Some(context) = &context {
+            stored["policy"]["uri"] = context.canonical_url.as_str().into();
+        }
+        let metadata = serde_json::to_vec(&stored)?;
+        if context.as_ref().is_some_and(|context| {
+            context.contains_credential(&metadata) || context.contains_credential(&response.body)
+        }) {
+            return Ok(response);
+        }
         let body = response.body.clone();
         let config = self.config.clone();
         let manager = self.clone();
