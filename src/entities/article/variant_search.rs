@@ -8,6 +8,37 @@ use std::sync::{
 };
 use std::time::Instant;
 
+// Keep atomic budget updates available on the declared minimum Rust version.
+// AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
+trait AtomicBudgetUpdate {
+    fn update_budget(
+        &self,
+        set: AtomicOrdering,
+        fetch: AtomicOrdering,
+        f: impl FnMut(usize) -> Option<usize>,
+    ) -> Result<usize, usize>;
+}
+
+impl AtomicBudgetUpdate for AtomicUsize {
+    fn update_budget(
+        &self,
+        set: AtomicOrdering,
+        fetch: AtomicOrdering,
+        mut f: impl FnMut(usize) -> Option<usize>,
+    ) -> Result<usize, usize> {
+        let mut previous = self.load(fetch);
+        loop {
+            let Some(next) = f(previous) else {
+                return Err(previous);
+            };
+            match self.compare_exchange_weak(previous, next, set, fetch) {
+                Ok(value) => return Ok(value),
+                Err(value) => previous = value,
+            }
+        }
+    }
+}
+
 use crate::entities::variant::{
     CarNormalizationItem, CarNormalizationStatus, NormalizedVariantAliases,
     RequestedVariantIdentity, VariantArticleResolution, VariantArticleResolutionContext,
@@ -442,11 +473,12 @@ impl VariantArticleExecutionContext {
             .limit
             .saturating_sub(verification_consumed);
         let target = count.min(available_for_verification);
-        let _ = self.allocation.identity_verification_reserved.fetch_update(
-            AtomicOrdering::SeqCst,
-            AtomicOrdering::SeqCst,
-            |current| (current < target).then_some(target),
-        );
+        let _ = self
+            .allocation
+            .identity_verification_reserved
+            .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                (current < target).then_some(target)
+            });
     }
 
     pub(crate) fn deadline_exhausted(&self) -> bool {
@@ -606,7 +638,7 @@ impl VariantArticleExecutionContext {
             let reserve = |budget: &SharedWorkBudget| {
                 budget
                     .consumed
-                    .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                    .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                         (current < budget.limit).then(|| current + 1)
                     })
                     .is_ok()
@@ -631,7 +663,7 @@ impl VariantArticleExecutionContext {
             && self
                 .allocation
                 .identity_verification_consumed
-                .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                     (current
                         < self
                             .allocation
@@ -651,7 +683,7 @@ impl VariantArticleExecutionContext {
         let reserve = |budget: &SharedWorkBudget| {
             budget
                 .consumed
-                .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
                     ((identity_verification || current.saturating_add(reserved) < budget.limit)
                         && current < budget.limit)
                         .then(|| current + 1)

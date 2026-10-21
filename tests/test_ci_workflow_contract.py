@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -502,11 +503,13 @@ def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:
 
 
 def test_the_lane_setup_action_pins_match_the_workflow_environment() -> None:
-    """The action hardcodes the toolchain versions the workflow pins
-    in its env block (the uses-with context cannot read the calling
-    workflow's env), so the two must agree."""
+    """Rust comes from its shared file; the other setup pins still agree."""
     text = ACTION.read_text(encoding="utf-8")
-    assert f"toolchain: {DOC['env']['RUST_TOOLCHAIN']}" in text
+    declared = tomllib.loads((REPO_ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+    actual = subprocess.check_output(["bash", "tools/rust-toolchain-version"], cwd=REPO_ROOT, text=True).strip()
+    assert actual == declared
+    assert 'run: echo "version=$(tools/rust-toolchain-version)"' in text
+    assert "toolchain: ${{ steps.rust-version.outputs.version }}" in text
     assert f"python-version: {DOC['env']['PYTHON_VERSION']}" in text
     assert f"version: {DOC['env']['UV_VERSION']}" in text
     assert "@v" not in text and "@stable" not in text
@@ -635,6 +638,8 @@ FAKE_TOOL_FIXTURE_MODULES = {
     "test_lint.py",
     # The feature collector control supplies temporary cargo and LLVM tools.
     "test_feature_coverage.py",
+    # Gate preflight controls deliberately hide Cargo in a temporary PATH.
+    "test_gate_preflight.py",
     # The copied spec runner uses sys.executable as BIOMCP_BIN.
     "test_replay_server_lifetime.py",
 }
