@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 74935ef, accept
 
+Reviews: revision 64c052d, accept
+
 ## Outcome
 
 `sdlc/project/` and `sdlc/scripts/` are removed together with the contract tests that only keep them alive. This replaces 2306's plan to move those scripts out of sdlc/.
