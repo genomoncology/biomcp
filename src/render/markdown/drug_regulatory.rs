@@ -79,6 +79,48 @@ fn render_fda_orphan_block(name: &str, value: Option<&FdaOrphanDesignations>) ->
     out
 }
 
+fn render_approval_products(
+    out: &mut String,
+    products: &[crate::entities::drug::DrugApprovalProduct],
+) {
+    if !products.is_empty() {
+        out.push_str("| Product Number | Product | Active Ingredients | Dosage Form | Route | Marketing Status |\n");
+        out.push_str("|---|---|---|---|---|---|\n");
+        for product in products {
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} | {} | {} |",
+                product
+                    .product_number
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+                product
+                    .brand_name
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+                markdown_cell(&product.active_ingredients.join(", ")),
+                product
+                    .dosage_form
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+                product
+                    .route
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+                product
+                    .marketing_status
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+            );
+        }
+    }
+}
+
 pub(super) fn render_approval_history_block(drug: &Drug) -> String {
     let Some(applications) = drug.approvals.as_deref() else {
         return String::new();
@@ -91,8 +133,15 @@ pub(super) fn render_approval_history_block(drug: &Drug) -> String {
     {
         let _ = writeln!(out, "{message}\n");
     }
-    for app in applications {
+    let records = if applications.is_empty() && !drug.unconfirmed_approvals.is_empty() {
+        out.push_str("### Unconfirmed provider records\n\n");
+        drug.unconfirmed_approvals.as_slice()
+    } else {
+        applications
+    };
+    for app in records {
         let _ = writeln!(out, "### {}\n", markdown_cell(&app.application_number));
+        render_approval_products(&mut out, &app.products);
         out.push_str("| Submission Type | Number | Status | Date | Source Class | Documents |\n|---|---|---|---|---|---|\n");
         for row in &app.submissions {
             let cell = |value: Option<&str>| value.map(markdown_cell).unwrap_or_else(|| "-".into());
@@ -155,12 +204,24 @@ pub(super) fn render_us_approvals_block(heading: &str, drug: &Drug) -> String {
             .section_outcomes
             .get("approvals")
             .and_then(|outcome| outcome.message())
+            .or_else(|| {
+                drug.section_outcomes
+                    .get("approval-history")
+                    .and_then(|outcome| outcome.message())
+            })
             .unwrap_or("No approvals found in Drugs@FDA for this query.");
         let _ = writeln!(out, "{message}");
-        return out;
+        if drug.unconfirmed_approvals.is_empty() {
+            return out;
+        }
+        out.push_str("\n### Unconfirmed provider records\n\n");
     }
-
-    for app in approvals {
+    let records = if approvals.is_empty() {
+        drug.unconfirmed_approvals.as_slice()
+    } else {
+        approvals
+    };
+    for app in records {
         let _ = writeln!(out, "### {}\n", markdown_cell(&app.application_number));
         if let Some(sponsor_name) = app.sponsor_name.as_deref() {
             let _ = writeln!(out, "- Sponsor: {}", markdown_cell(sponsor_name));
@@ -183,36 +244,7 @@ pub(super) fn render_us_approvals_block(heading: &str, drug: &Drug) -> String {
                 .join(", ");
             let _ = writeln!(out, "- Generic Names: {generics}");
         }
-        if !app.products.is_empty() {
-            out.push_str("| Product | Dosage Form | Route | Marketing Status |\n");
-            out.push_str("|---|---|---|---|\n");
-            for product in &app.products {
-                let _ = writeln!(
-                    out,
-                    "| {} | {} | {} | {} |",
-                    product
-                        .brand_name
-                        .as_deref()
-                        .map(markdown_cell)
-                        .unwrap_or_else(|| "-".to_string()),
-                    product
-                        .dosage_form
-                        .as_deref()
-                        .map(markdown_cell)
-                        .unwrap_or_else(|| "-".to_string()),
-                    product
-                        .route
-                        .as_deref()
-                        .map(markdown_cell)
-                        .unwrap_or_else(|| "-".to_string()),
-                    product
-                        .marketing_status
-                        .as_deref()
-                        .map(markdown_cell)
-                        .unwrap_or_else(|| "-".to_string()),
-                );
-            }
-        }
+        render_approval_products(&mut out, &app.products);
         if !app.submissions.is_empty() {
             out.push_str("| Submission Type | Number | Status | Date |\n");
             out.push_str("|---|---|---|---|\n");

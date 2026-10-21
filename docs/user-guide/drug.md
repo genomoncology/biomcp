@@ -156,6 +156,8 @@ biomcp get drug dabrafenib approvals
 
 `approvals` remains a legacy U.S.-only section. Use `regulatory` for the region-aware regulatory view.
 
+Approval products preserve their source application and product numbers, full brand names, and active ingredient names. When a provider returns a product whose identity cannot be confirmed, JSON and MCP keep `approvals` empty and return the provider records separately in `unconfirmed_approvals`. The CLI labels these records as unconfirmed. These records do not establish an approval for the requested drug. A shared biologic name core or suffix alone never establishes product identity.
+
 PharmacoDB cell lines:
 
 ```bash
