@@ -1,43 +1,10 @@
 use super::*;
 use serde::Deserialize;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 struct CapturedRequest {
     head: String,
     body: Vec<u8>,
-}
-
-async fn read_request(stream: &mut tokio::net::TcpStream) -> CapturedRequest {
-    let mut bytes = Vec::new();
-    let (head_end, content_length) = loop {
-        let mut chunk = [0_u8; 1024];
-        let read = stream.read(&mut chunk).await.expect("read request");
-        assert!(read > 0, "request ended before its headers");
-        bytes.extend_from_slice(&chunk[..read]);
-        if let Some(head_end) = bytes.windows(4).position(|window| window == b"\r\n\r\n") {
-            let head_end = head_end + 4;
-            let head = String::from_utf8_lossy(&bytes[..head_end]);
-            let content_length = head
-                .lines()
-                .find_map(|line| {
-                    let (name, value) = line.split_once(':')?;
-                    name.eq_ignore_ascii_case("content-length")
-                        .then(|| value.trim().parse::<usize>().expect("content length"))
-                })
-                .unwrap_or(0);
-            break (head_end, content_length);
-        }
-    };
-    while bytes.len() < head_end + content_length {
-        let mut chunk = [0_u8; 1024];
-        let read = stream.read(&mut chunk).await.expect("read request body");
-        assert!(read > 0, "request ended before its declared body");
-        bytes.extend_from_slice(&chunk[..read]);
-    }
-    CapturedRequest {
-        head: String::from_utf8(bytes[..head_end].to_vec()).expect("UTF-8 request head"),
-        body: bytes[head_end..head_end + content_length].to_vec(),
-    }
 }
 
 async fn send_and_capture(
@@ -46,29 +13,43 @@ async fn send_and_capture(
     content_type: &str,
     response_body: &str,
 ) -> (CapturedRequest, reqwest::Response) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind request-plan fixture");
-    let address = listener.local_addr().expect("fixture address");
     let response = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response_body}",
         response_body.len()
     );
-    let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.expect("accept request");
-        let captured = read_request(&mut stream).await;
-        stream
-            .write_all(response.as_bytes())
-            .await
-            .expect("write response");
-        captured
-    });
+    let (captured_tx, captured_rx) = std::sync::mpsc::channel();
+    let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured_tx = captured_tx.clone();
+        let response = response.clone();
+        async move {
+            let Some(bytes) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+            let head_end = bytes
+                .windows(4)
+                .position(|window| window == b"\r\n\r\n")
+                .expect("complete request headers")
+                + 4;
+            let captured = CapturedRequest {
+                head: String::from_utf8(bytes[..head_end].to_vec()).expect("UTF-8 request head"),
+                body: bytes[head_end..].to_vec(),
+            };
+            stream.write_all(response.as_bytes()).await?;
+            captured_tx.send(captured).map_err(std::io::Error::other)?;
+            Ok(())
+        }
+    })
+    .expect("start request-plan fixture");
     let client = test_client().expect("test client");
-    let response = request_from_plan(&client, &format!("http://{address}/"), &plan)
+    let response = request_from_plan(&client, &format!("{}/", server.base), &plan)
         .send_with_source_context(SourceContext::retry(crate::error::SourceProvider::OLS4))
         .await
         .expect("send request plan");
-    (server.await.expect("fixture server"), response)
+    let captured = captured_rx
+        .recv_timeout(crate::test_support::watchdog(60))
+        .expect("fixture captures request");
+    server.finish().unwrap();
+    (captured, response)
 }
 
 #[derive(Debug, Deserialize, PartialEq)]

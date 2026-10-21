@@ -1,6 +1,6 @@
 use super::*;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 /// The disease fixture env: the one shared scratch-cache guard, so the card tests never read the machine's own cache.
 type DiseaseCardFixtureEnv = crate::test_support::FixtureEnv;
@@ -13,54 +13,52 @@ fn disease_card_fixture_response(body: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-async fn disease_card_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind disease card fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn disease_card_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let body = if request.starts_with("GET /query?") {
-                    r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
-                } else if request.starts_with("GET /disease/MONDO:0007959") {
-                    // The embedded DisGeNET block seeds the card's genes
-                    //with Open Targets unreachable these
-                    // genes must carry DisGeNET's name, not Open Targets'.
-                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
-                } else if request.contains("query.cond=Medulloblastoma") {
-                    r#"{"studies":[],"totalCount":36}"#
-                } else {
-                    r#"{"studies":[],"totalCount":0}"#
-                };
-                stream
-                    .write_all(&disease_card_fixture_response(body))
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let body = if request.starts_with("GET /query?") {
+                r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
+            } else if request.starts_with("GET /disease/MONDO:0007959") {
+                // The embedded DisGeNET block seeds the card's genes
+                //with Open Targets unreachable these
+                // genes must carry DisGeNET's name, not Open Targets'.
+                r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
+            } else if request.contains("query.cond=Medulloblastoma") {
+                r#"{"studies":[],"totalCount":36}"#
+            } else {
+                r#"{"studies":[],"totalCount":0}"#
+            };
+            stream
+                .write_all(&disease_card_fixture_response(body))
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
-    let (base, requests, server) = disease_card_fixture_server().await;
+    let (base, requests, mut server) = disease_card_fixture_server().await;
     let mut env = DiseaseCardFixtureEnv::new();
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_CTGOV_BASE", &base);
@@ -79,7 +77,7 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
     ])
     .await
     .expect("resolved disease card");
-    server.abort();
+    server.finish().unwrap();
 
     // The resolving hit's label is lowercase. These expectations require the
     // caller's differently cased term to survive the detail fetch.
@@ -101,51 +99,49 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
 /// A fixture that answers every request with a fresh-cacheable 200:
 /// one-second freshness window, so a later fetch past that window with
 /// the server gone is a stale serve.
-async fn stale_serve_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind stale-serve fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn stale_serve_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let body = if request.starts_with("GET /query?") {
-                    r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
-                } else if request.starts_with("GET /disease/MONDO:0007959") {
-                    // Same DisGeNET seed as the card fixture: the stale
-                    // card must still credit DisGeNET for its genes, so
-                    // the fixture has to seed them.
-                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
-                } else if request.contains("query.cond=Medulloblastoma") {
-                    r#"{"studies":[],"totalCount":36}"#
-                } else {
-                    r#"{"studies":[],"totalCount":0}"#
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: max-age=1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let body = if request.starts_with("GET /query?") {
+                r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
+            } else if request.starts_with("GET /disease/MONDO:0007959") {
+                // Same DisGeNET seed as the card fixture: the stale
+                // card must still credit DisGeNET for its genes, so
+                // the fixture has to seed them.
+                r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
+            } else if request.contains("query.cond=Medulloblastoma") {
+                r#"{"studies":[],"totalCount":36}"#
+            } else {
+                r#"{"studies":[],"totalCount":0}"#
+            };
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: max-age=1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -164,7 +160,7 @@ fn stale_serve_env(env: &mut DiseaseCardFixtureEnv, cache_root: &std::path::Path
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
-    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let (base, _requests, mut server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-card-cache");
     let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
@@ -183,7 +179,7 @@ async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
     );
 
     tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
-    server.abort();
+    server.finish().unwrap();
 
     let stale = crate::cli::execute(vec![
         "biomcp".to_string(),
@@ -214,7 +210,7 @@ async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
-    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let (base, _requests, mut server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-search-cache");
     let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
@@ -235,7 +231,7 @@ async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
     );
 
     tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
-    server.abort();
+    server.finish().unwrap();
 
     let stale = crate::cli::execute(vec![
         "biomcp".to_string(),
@@ -276,7 +272,7 @@ async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
     // nor the JSON _meta.notes sentence could ever appear over MCP. This
     // test drives execute_mcp (the MCP entry) against the stale fixture
     // and proves both channels.
-    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let (base, _requests, mut server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-mcp-cache");
     let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
@@ -311,7 +307,7 @@ async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
     );
 
     tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
-    server.abort();
+    server.finish().unwrap();
 
     let stale_card = crate::cli::execute_mcp(vec![
         "biomcp".to_string(),
@@ -511,66 +507,65 @@ macro_rules! recorded_mydisease {
 /// The recorded MyDisease responses for the ambiguous
 /// abbreviations. The fixture answers only the recorded queries, so the
 /// refusals cannot pass vacuously.
-async fn abbreviation_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind abbreviation fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn abbreviation_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let body = if request.contains("/query?") {
-                    // A short abbreviation grounds in any letter case
-                    //so the fixture answers `mf` and `MF`
-                    // with the same recorded reply.
-                    if request.contains("MF") || request.contains("mf") {
-                        recorded_mydisease!("query_mf.json")
-                    } else if request.contains("MM") {
-                        recorded_mydisease!("query_mm.json")
-                    } else if request.contains("MDS") {
-                        recorded_mydisease!("query_mds.json")
-                    } else if request.contains("CAD") {
-                        recorded_mydisease!("query_cad.json")
-                    } else if request.contains("CRC") {
-                        recorded_mydisease!("query_crc.json")
-                    } else if request.contains("myeloma") {
-                        recorded_mydisease!("query_myeloma.json")
-                    } else {
-                        r#"{"total":0,"hits":[]}"#
-                    }
-                } else if request.contains("/disease/MONDO:0024331") {
-                    recorded_mydisease!("get_mondo_0024331.json")
-                } else if request.contains("/disease/MONDO:0009693") {
-                    recorded_mydisease!("get_mondo_0009693.json")
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let body = if request.contains("/query?") {
+                // A short abbreviation grounds in any letter case
+                //so the fixture answers `mf` and `MF`
+                // with the same recorded reply.
+                if request.contains("MF") || request.contains("mf") {
+                    recorded_mydisease!("query_mf.json")
+                } else if request.contains("MM") {
+                    recorded_mydisease!("query_mm.json")
+                } else if request.contains("MDS") {
+                    recorded_mydisease!("query_mds.json")
+                } else if request.contains("CAD") {
+                    recorded_mydisease!("query_cad.json")
+                } else if request.contains("CRC") {
+                    recorded_mydisease!("query_crc.json")
+                } else if request.contains("myeloma") {
+                    recorded_mydisease!("query_myeloma.json")
                 } else {
                     r#"{"total":0,"hits":[]}"#
-                };
-                stream
-                    .write_all(&disease_card_fixture_response(body))
-                    .await
-                    .expect("write fixture response");
-            });
+                }
+            } else if request.contains("/disease/MONDO:0024331") {
+                recorded_mydisease!("get_mondo_0024331.json")
+            } else if request.contains("/disease/MONDO:0009693") {
+                recorded_mydisease!("get_mondo_0009693.json")
+            } else {
+                r#"{"total":0,"hits":[]}"#
+            };
+            stream
+                .write_all(&disease_card_fixture_response(body))
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
 async fn get_disease_card_or_error(query: &str) -> Result<String, String> {
-    let (base, requests, server) = abbreviation_fixture_server().await;
+    let (base, requests, mut server) = abbreviation_fixture_server().await;
     let mut env = DiseaseCardFixtureEnv::new();
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_CTGOV_BASE", &base);
@@ -587,7 +582,7 @@ async fn get_disease_card_or_error(query: &str) -> Result<String, String> {
         query.to_string(),
     ])
     .await;
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     outcome.map_err(|err| err.to_string()).map(|text| {
         text + "\n<<requests>>\n" + &requests.lock().expect("lock fixture requests").join("\n")
@@ -750,41 +745,39 @@ async fn get_disease_full_word_resolves_past_nonhuman_and_synonym_holders() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn get_disease_alias_lookup_does_not_feed_the_abbreviation_to_open_targets() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind alias fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock alias fixture requests")
-                    .push(request.clone());
-                // ZQX appears only in the initial resolution query; every
-                // later request must answer without it.
-                let body = if request.starts_with("GET /query?") && request.contains("ZQX") {
-                    r#"{"total":1,"hits":[{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}}}]}"#
-                } else if request.contains("/disease/MONDO:0900001") {
-                    // No name: the record is the abbreviation's unlabelled
-                    // single holder.
-                    r#"{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}},"disease_ontology":{}}"#
-                } else {
-                    r#"{"total":0,"hits":[]}"#
-                };
-                stream
-                    .write_all(&disease_card_fixture_response(body))
-                    .await
-                    .expect("write fixture response");
-            });
+    let mut task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock alias fixture requests")
+                .push(request.clone());
+            // ZQX appears only in the initial resolution query; every
+            // later request must answer without it.
+            let body = if request.starts_with("GET /query?") && request.contains("ZQX") {
+                r#"{"total":1,"hits":[{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}}}]}"#
+            } else if request.contains("/disease/MONDO:0900001") {
+                // No name: the record is the abbreviation's unlabelled
+                // single holder.
+                r#"{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}},"disease_ontology":{}}"#
+            } else {
+                r#"{"total":0,"hits":[]}"#
+            };
+            stream
+                .write_all(&disease_card_fixture_response(body))
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     let mut env = DiseaseCardFixtureEnv::new();
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_CTGOV_BASE", &base);
@@ -799,7 +792,7 @@ async fn get_disease_alias_lookup_does_not_feed_the_abbreviation_to_open_targets
     ])
     .await
     .expect("single-holder abbreviation resolves");
-    task.abort();
+    task.finish().unwrap();
     drop(env);
 
     assert!(card.contains("ID: MONDO:0900001"), "{card}");

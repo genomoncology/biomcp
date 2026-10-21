@@ -746,24 +746,12 @@ impl Drop for SearchEnvRestore {
 /// the oracle refuses BRUGADA deterministically offline. Returns the CLI
 /// outcome. Callers own the source_env serial-test key.
 async fn refused_zero_row_search_outcome(args: &[&str]) -> crate::cli::CommandOutcome {
-    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind myvariant fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let server = tokio::spawn(async move {
+    let mut server = crate::test_support::TestHttpServer::respond(|_| async {
         let body = r#"{"total":0,"hits":[]}"#;
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let mut request = [0_u8; 8192];
-            let _ = stream.read(&mut request).await;
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            );
-            let _ = stream.write_all(response.as_bytes()).await;
-        }
-    });
+        Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).into_bytes())
+    })
+    .expect("start myvariant fixture");
+    let base = server.base.clone();
     let cache = tempfile::Builder::new()
         .prefix("biomcp-test-variant-search-hint-")
         .tempdir()
@@ -778,7 +766,7 @@ async fn refused_zero_row_search_outcome(args: &[&str]) -> crate::cli::CommandOu
 
     let cli = Cli::try_parse_from(args).expect("parse refused search");
     let outcome = run_outcome(cli).await.expect("zero-row search outcome");
-    server.abort();
+    server.finish().unwrap();
     outcome
 }
 

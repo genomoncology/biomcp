@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import glob
 import io
 import json
@@ -72,6 +73,7 @@ CLI_SURFACE_STATIC_TEXT_GLOBS = [
     "spec/**/*.md",
 ]
 AUDIT_NAMES = [
+    "test_waits",
     "spec_lint",
     "mcp_allowlist",
     "source_registry",
@@ -604,23 +606,45 @@ def check_paused_clock_io(
                         reason = f"socket server {server[1]} remains unjoined when time pauses"
                 # Fixture wrappers own live servers even if the test itself
                 # performs no explicit read or send after pausing.
-                fixture_bindings = re.finditer(
-                    r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*(?:[\w:]+::)?"
-                    r"(?:(?:MockServer|TestHttpFixture|TestHttpServer|Server)::\w+|"
-                    r"spawn_\w*(?:fixture|server)\w*)\s*\(",
-                    before,
+                fixture_constructor = re.compile(
+                    r"(?:[\w:]+::)?(?P<kind>MockServer|TestHttpFixture|TestHttpServer|Server)::\w+\s*\(|"
+                    r"(?:[\w:]+::)?spawn_\w*(?:fixture|server)\w*\s*\("
                 )
-                for fixture in fixture_bindings:
+                fixture_bindings = []
+                for binding in re.finditer(r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*", before):
+                    start = binding.end()
+                    constructor = fixture_constructor.match(before, start)
+                    initializer_span = None
+                    if constructor is None and before[start:start + 1] == "{":
+                        initializer_span = _brace_span(before, start)
+                        if initializer_span is not None:
+                            constructor = fixture_constructor.search(
+                                before, initializer_span[0], initializer_span[1]
+                            )
+                    if constructor is not None:
+                        end = initializer_span[1] if initializer_span else constructor.end()
+                        fixture_bindings.append((binding, end, constructor["kind"], initializer_span))
+                for fixture, end, kind, initializer_span in fixture_bindings:
                     if any(span[0] <= fixture.start() < span[1] for span, _ in servers):
+                        continue
+                    if any(
+                        outer_span and outer_span[0] <= fixture.start() < outer_span[1]
+                        for outer, _, _, outer_span in fixture_bindings if outer is not fixture
+                    ):
                         continue
                     if any(
                         joined and re.search(rf"\b{fixture[1]}\b", before[span[0]:span[1]])
                         for span, joined in servers
                     ):
                         continue
-                    if not re.search(
-                        rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", before[fixture.end():]
-                    ):
+                    tail = before[end:]
+                    dropped = re.search(rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", tail)
+                    # These two owned wrappers finish synchronously. No generic
+                    # finish-method or Rust lifetime inference is claimed.
+                    finished = kind in {"TestHttpServer", "TestHttpFixture"} and re.search(
+                        rf"\b{fixture[1]}\s*\.\s*finish\s*\(\s*\)", tail
+                    )
+                    if not (dropped or finished):
                         reason = f"socket fixture {fixture[1]} remains live when time pauses"
                 # A request-read event is insufficient: direct sockets must
                 # close before pause, too. Ignore locals owned by server tasks.
@@ -652,6 +676,181 @@ def check_paused_clock_io(
         "findings": findings,
         "errors": snapshot.errors,
     }
+
+
+TEST_WAIT_EXCEPTIONS = "tools/test-wait-exceptions.json"
+
+
+def test_wait_rows(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Inventory explicit test delays, not production policy or quoted fixtures.
+
+    This is a source convention check. It does not resolve Rust macros or
+    interprocedural duration values. Scopes and call text keep each reviewed
+    exception local; moving or changing a wait requires reviewing its reason.
+    """
+    proc = subprocess.run(
+        ["git", "-C", str(root_dir), "ls-files", "--", "*.rs", "*.py"],
+        capture_output=True, text=True, check=False,
+    )
+    if proc.returncode:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    rows: list[dict[str, object]] = []
+    errors = list(snapshot.errors)
+
+    def add(path: str, scope: str, kind: str, expression: str) -> None:
+        expression = re.sub(r"\s+", " ", expression).strip()
+        occurrence = 1 + sum(
+            row["path"] == path and row["scope"] == scope
+            and row["kind"] == kind and row["expression"] == expression
+            for row in rows
+        )
+        rows.append(dict(path=path, scope=scope, kind=kind,
+                         expression=expression, occurrence=occurrence))
+
+    for relative in sorted(proc.stdout.splitlines()):
+        path = root_dir / relative
+        if not path.is_file():
+            continue
+        source = (snapshot.sources.get(relative, "") if relative.endswith(".rs")
+                  else path.read_text(encoding="utf-8"))
+        if relative.endswith(".py"):
+            if not relative.startswith("tests/"):
+                continue
+            try:
+                tree = ast.parse(source)
+            except SyntaxError as exc:
+                errors.append(f"{relative}: {exc}")
+                continue
+            sleep_names = {"sleep"} | {
+                alias.asname or alias.name
+                for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                and node.module in {"time", "asyncio"}
+                for alias in node.names if alias.name == "sleep"
+            }
+            parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+            for node in ast.walk(tree):
+                kind = None
+                waits: list[ast.expr] = []
+                if isinstance(node, ast.Call):
+                    name = (node.func.attr if isinstance(node.func, ast.Attribute)
+                            else node.func.id if isinstance(node.func, ast.Name) else "")
+                    if name in sleep_names:
+                        kind = "sleep"
+                        waits = node.args[:1] or [kw.value for kw in node.keywords]
+                    else:
+                        waits = [kw.value for kw in node.keywords if kw.arg == "timeout"]
+                        # The suite's outer pytest watchdog is not an IO readiness deadline.
+                        if ast.unparse(node.func) == "pytest.mark.timeout":
+                            continue
+                        position = {"settimeout": 0, "setdefaulttimeout": 0,
+                                    "set_timeout": 0, "join": 0, "wait": 0,
+                                    "communicate": 1, "select": 3, "poll": 0,
+                                    "wait_for": 1, "timeout": 0, "urlopen": 2,
+                                    "create_connection": 1}.get(name)
+                        if not waits and position is not None and len(node.args) > position:
+                            waits = [node.args[position]]
+                        if any(isinstance(arg, ast.Constant) and type(arg.value) in (int, float)
+                               for arg in waits):
+                            kind = "deadline"
+                elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                    left = node.left
+                    clock = (left.func.attr if isinstance(left, ast.Call) and isinstance(left.func, ast.Attribute)
+                             else left.func.id if isinstance(left, ast.Call) and isinstance(left.func, ast.Name) else "")
+                    if (clock in {"monotonic", "time", "perf_counter"}
+                        and isinstance(node.right, ast.Constant)
+                        and isinstance(node.right.value, (int, float))):
+                        kind = "deadline"
+                if kind:
+                    parent = parents.get(node)
+                    while parent and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        parent = parents.get(parent)
+                    scope = parent.name if parent else "<module>"
+                    if isinstance(node, ast.Call):
+                        expression = f"{ast.unparse(node.func)}({', '.join(ast.unparse(arg) for arg in waits)})"
+                    else:
+                        expression = ast.unparse(node)
+                    add(relative, scope, kind, expression)
+            continue
+
+        masked = snapshot.masked_sources.get(relative, "")
+        all_test = relative.startswith(("tests/", "crates/biomcp-mcp-contract-client/")) or bool(re.search(r"(?:^|/)(?:tests|test_support|[\w]+_tests)(?:/|\.rs$)", relative))
+        ranges: list[tuple[int, int]] = []
+        for annotation in re.finditer(r"#\[\s*(?:cfg\(test\)|(?:tokio::)?test(?:\([^\]]*\))?)\s*\]", masked):
+            span = _brace_span(masked, annotation.end())
+            if span:
+                ranges.append(span)
+        functions = []
+        for function in re.finditer(r"\bfn\s+(\w+)\s*(?:<[^;{}]*>)?\s*\(", masked):
+            span = _brace_span(masked, function.end())
+            if span:
+                functions.append((span, function[1]))
+        duration = r"(?:[\w:]+::)?Duration::from_(?:secs|millis|micros|nanos)(?:_f32|_f64)?\s*\(\s*[\d_]+(?:\.[\d_]+)?\s*\)"
+        pattern = re.compile(
+            r"\b(?P<sleep>sleep)\s*\(|"
+            r"\b(?P<timeout>timeout|connect_timeout|read_timeout|write_timeout|set_read_timeout|set_write_timeout)"
+            r"\s*\(\s*(?:Some\s*\(\s*)?" + duration + r"|"
+            r"\b(?P<instant>(?:[\w:]+::)?Instant::now\s*\(\s*\)\s*\+\s*" + duration + r")"
+        )
+        for match in pattern.finditer(masked):
+            if not all_test and not any(start <= match.start() < end for start, end in ranges):
+                continue
+            enclosing = [(end - start, name) for (start, end), name in functions
+                         if start <= match.start() < end]
+            scope = min(enclosing)[1] if enclosing else "<module>"
+            end = match.end()
+            if match["timeout"]:
+                # Only the delay is the selector, not the future or its body.
+                add(relative, scope, "deadline", masked[match.start():end] + ")")
+                continue
+            if not match["instant"]:
+                opening = masked.find("(", match.start())
+                depth = 1
+                end = opening + 1
+                while end < len(masked) and depth:
+                    depth += (masked[end] == "(") - (masked[end] == ")")
+                    end += 1
+            add(relative, scope, "sleep" if match["sleep"] else "deadline", masked[match.start():end])
+    return rows, errors
+
+
+def check_test_waits(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> dict[str, object]:
+    rows, errors = test_wait_rows(root_dir, snapshot)
+    inventory = root_dir / TEST_WAIT_EXCEPTIONS
+    try:
+        exceptions = json.loads(inventory.read_text(encoding="utf-8")) if inventory.exists() else []
+        if not isinstance(exceptions, list):
+            raise ValueError("expected an exception list")
+    except (OSError, ValueError) as exc:
+        return {"status": "error", "findings": [], "errors": [str(exc)]}
+    selectors = ["path", "scope", "kind", "expression", "occurrence"]
+    allowed: set[tuple[object, ...]] = set()
+    for entry in exceptions:
+        if (not isinstance(entry, dict) or set(entry) != set(selectors + ["reason"])
+            or not isinstance(entry.get("reason"), str) or not entry["reason"].strip()):
+            errors.append("each wait exception needs one exact selector and a concrete reason")
+            continue
+        if (any(not isinstance(entry[field], str) or not entry[field].strip()
+                for field in selectors[:-1])
+            or entry["kind"] not in {"sleep", "deadline"}
+            or type(entry["occurrence"]) is not int or entry["occurrence"] < 1):
+            errors.append("invalid wait exception selector")
+            continue
+        key = tuple(entry[field] for field in selectors)
+        if key in allowed:
+            errors.append(f"duplicate wait exception: {key}")
+        allowed.add(key)
+    actual = {tuple(row[field] for field in selectors) for row in rows}
+    findings = [{**row, "message": "unreviewed fixed test wait; wait for an event or explain its timing contract"}
+                for row in rows if tuple(row[field] for field in selectors) not in allowed]
+    findings.extend({"path": key[0], "scope": key[1], "message": "stale wait exception"}
+                    for key in sorted(allowed - actual))
+    return {"status": "error" if errors else "fail" if findings else "pass",
+            "waits_checked": len(rows), "findings": findings, "errors": errors}
 
 
 def check_renderer_next_command_source(root_dir: Path) -> dict[str, object]:
@@ -2589,6 +2788,7 @@ def main() -> int:
         load_rust_source_snapshot(args.root_dir)
         if {
             "dead_code_allowances",
+            "test_waits",
             "paused_clock_io",
             "source_attributed_status_typing",
             "external_error_logging",
@@ -2643,6 +2843,7 @@ def main() -> int:
         )
 
     simple_audits = {
+        "test_waits": ("quality-ratchet-test-waits.json", lambda: check_test_waits(args.root_dir, rust_snapshot)),
         "paused_clock_io": (
             "quality-ratchet-paused-clock-io.json",
             lambda: check_paused_clock_io(args.root_dir, rust_snapshot),

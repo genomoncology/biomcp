@@ -3,11 +3,9 @@ use flate2::Compression;
 use flate2::write::GzEncoder;
 use std::cell::Cell;
 use std::io::Write;
-use std::net::TcpListener;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
-use std::thread;
 use tar::{Builder, Header};
 
 fn build_targz(entries: &[(&str, &[u8])]) -> Vec<u8> {
@@ -49,44 +47,49 @@ fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     out.into_inner()
 }
 
-fn serve_body(body: Vec<u8>, chunked: bool) -> (String, thread::JoinHandle<()>) {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = listener.local_addr().unwrap();
-    let handle = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
-        let mut request = [0_u8; 1024];
-        let _ = std::io::Read::read(&mut stream, &mut request);
-        if chunked {
-            write!(stream, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n{:x}\r\n", body.len()).unwrap();
-            stream.write_all(&body).unwrap();
-            stream.write_all(b"\r\n0\r\n\r\n").unwrap();
-        } else {
-            write!(
-                stream,
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                body.len()
-            )
-            .unwrap();
-            stream.write_all(&body).unwrap();
+fn serve_body(body: Vec<u8>, chunked: bool) -> (String, crate::test_support::TestHttpServer) {
+    let mut response = if chunked {
+        format!(
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n{:x}\r\n",
+            body.len()
+        )
+        .into_bytes()
+    } else {
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        )
+        .into_bytes()
+    };
+    response.extend_from_slice(&body);
+    if chunked {
+        response.extend_from_slice(b"\r\n0\r\n\r\n");
+    }
+    let response = std::sync::Mutex::new(Some(response));
+    let server = crate::test_support::TestHttpServer::respond(move |_| {
+        let response = response.lock().expect("response lock").take();
+        async move {
+            response.ok_or_else(|| std::io::Error::other("unexpected additional archive request"))
         }
-    });
-    (format!("http://{address}/asset"), handle)
+    })
+    .expect("start update archive fixture");
+    (format!("{}/asset", server.base), server)
 }
 
 #[tokio::test]
 async fn archive_transport_accepts_exact_limit_for_declared_and_chunked_bodies() {
     for chunked in [false, true] {
-        let (url, server) = serve_body(vec![b'x'; 4096], chunked);
+        let (url, mut server) = serve_body(vec![b'x'; 4096], chunked);
         let bytes = download_asset_with_limit(&url, 4096).await.unwrap();
         assert_eq!(bytes.len(), 4096);
-        crate::test_support::bounded_join(server).unwrap();
+        server.finish().unwrap();
     }
 }
 
 #[tokio::test]
 async fn archive_transport_rejects_limit_plus_one_for_declared_and_chunked_bodies() {
     for chunked in [false, true] {
-        let (url, server) = serve_body(vec![b'x'; 4097], chunked);
+        let (url, mut server) = serve_body(vec![b'x'; 4097], chunked);
         let error = download_asset_with_limit(&url, 4096).await.unwrap_err();
         assert!(matches!(
             error,
@@ -95,7 +98,7 @@ async fn archive_transport_rejects_limit_plus_one_for_declared_and_chunked_bodie
                 ..
             } | BioMcpError::HttpMiddleware(_)
         ));
-        crate::test_support::bounded_join(server).unwrap();
+        server.finish().unwrap();
     }
 }
 
@@ -110,24 +113,24 @@ async fn archive_larger_than_shared_default_reaches_verification_and_extraction(
     let archive = build_targz(&[("release/bin/biomcp", &binary)]);
     assert!(archive.len() > crate::sources::DEFAULT_MAX_BODY_BYTES);
     for chunked in [false, true] {
-        let (url, server) = serve_body(archive.clone(), chunked);
+        let (url, mut server) = serve_body(archive.clone(), chunked);
         let downloaded = download_archive(&url).await.unwrap();
         verify_archive_against_checksum(&sha256_hex(&archive), &downloaded).unwrap();
         assert_eq!(
             extract_binary_from_targz(&downloaded, "biomcp").unwrap(),
             binary
         );
-        crate::test_support::bounded_join(server).unwrap();
+        server.finish().unwrap();
     }
 }
 
 #[tokio::test]
 async fn release_metadata_endpoint_is_injectable() {
     let body = br#"{"tag_name":"v9.9.9","assets":[]}"#.to_vec();
-    let (url, server) = serve_body(body, false);
+    let (url, mut server) = serve_body(body, false);
     let release = fetch_latest_release_from(&url).await.unwrap();
     assert_eq!(release.tag_name, "v9.9.9");
-    crate::test_support::bounded_join(server).unwrap();
+    server.finish().unwrap();
 }
 
 #[test]
