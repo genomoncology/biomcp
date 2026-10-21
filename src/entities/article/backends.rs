@@ -605,6 +605,8 @@ pub(super) async fn search_pubtator_page_with_context(
     let mut source_position = 0usize;
     let mut fetched_pages = 0usize;
     let mut degradation = None;
+    let mut year_filter: Option<Vec<String>> = None;
+    let mut date_facets_checked = offset != 0;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
         if fetched_pages > 1
@@ -612,13 +614,31 @@ pub(super) async fn search_pubtator_page_with_context(
         {
             execution.add_route_unit(route, "pubtator");
         }
+        let mut restart_with_years = None;
         let outcome = match variant_article_request(
             execution,
             route,
             "pubtator",
             &mut first_unit,
-            pubtator.search(&query, page, PUBTATOR_PAGE_SIZE, sort),
+            pubtator.search(
+                &query,
+                page,
+                PUBTATOR_PAGE_SIZE,
+                sort,
+                year_filter.as_deref(),
+            ),
             |resp| {
+                if !date_facets_checked {
+                    date_facets_checked = true;
+                    restart_with_years = resp.date_filter_years(
+                        normalized_date_from
+                            .as_deref()
+                            .and_then(normalized_bound_year),
+                        normalized_date_to
+                            .as_deref()
+                            .and_then(normalized_bound_year),
+                    );
+                }
                 if total.is_none() {
                     total = resp.count.map(|v| v as usize);
                 }
@@ -668,6 +688,22 @@ pub(super) async fn search_pubtator_page_with_context(
         let Some((offset_beyond_total, empty)) = outcome else {
             break;
         };
+        if let Some(years) = restart_with_years {
+            if years.is_empty() && out.is_empty() {
+                return Ok(PartialSearchPage::complete(SearchPage::offset(
+                    Vec::new(),
+                    Some(0),
+                )));
+            }
+            // Keep the same relevance order and exact day filtering. The native
+            // year facet removes historical pages, including for open bounds.
+            // Keep admitted first-page rows if the narrowed request later fails.
+            if !years.is_empty() && out.len() < limit {
+                year_filter = Some(years);
+                total = None;
+                continue;
+            }
+        }
         if offset_beyond_total {
             return Ok(PartialSearchPage::complete(SearchPage::offset(
                 Vec::new(),

@@ -30,16 +30,20 @@ ROWS = [
 
 
 @pytest.mark.parametrize(
-    "bounds,years,pmids",
+    "bounds,years,pmids,facet_kind",
     [
-        (["--date-from", "2026-09-01"], ["2026", "2028"], ["90004", "90005"]),
-        (["--date-to", "2025-12-31"], ["2019", "2025"], ["90001", "90002"]),
+        (["--date-from", "2026-09-01"], ["2026", "2028"], ["90004", "90005"], "complete"),
+        (["--date-to", "2025-12-31"], ["2019", "2025"], ["90001", "90002"], "complete"),
         (["--date-from", "2025-09-01", "--date-to", "2027-12-31"],
-         ["2025", "2026"], ["90002", "90003", "90004"]),
+         ["2025", "2026"], ["90002", "90003", "90004"], "complete"),
+        (["--date-from", "2030-01-01"], [], [], "complete"),
+        *[(["--date-from", "2026-09-01"], None, ["90004", "90005"], kind)
+          for kind in ("missing", "incomplete", "duplicate", "invalid", "zero", "overflow", "negative", "fraction", "unknown")],
     ],
 )
 def test_dated_gene_search_uses_complete_year_facets_without_a_clock_bound(
-    bounds: list[str], years: list[str], pmids: list[str], tmp_path: Path,
+    bounds: list[str], years: list[str] | None, pmids: list[str], facet_kind: str,
+    tmp_path: Path,
 ) -> None:
     requests: list[dict[str, list[str]]] = []
 
@@ -65,6 +69,24 @@ def test_dated_gene_search_uses_complete_year_facets_without_a_clock_bound(
                             {"name": "2028", "value": 1},
                         ]}},
                     }
+                    buckets = body["facets"]["facet_fields"]["year"]
+                    if facet_kind == "missing":
+                        body["facets"] = {}
+                    elif facet_kind == "incomplete":
+                        buckets[0]["value"] -= 1
+                    elif facet_kind == "duplicate":
+                        buckets[0]["value"] -= 1
+                        buckets.append({"name": "2019", "value": 1})
+                    elif facet_kind == "invalid":
+                        buckets[0]["name"] = "unknown"
+                    elif facet_kind in {"zero", "overflow", "negative", "fraction"}:
+                        buckets[0]["value"] = {
+                            "zero": 0, "overflow": 2**64 - 1, "negative": -1, "fraction": 1.5,
+                        }[facet_kind]
+                    elif facet_kind == "unknown":
+                        body["count"] = None
+                elif years is None:
+                    body = {"results": ROWS if params["page"] == ["2"] else [], "count": 1508}
                 else:
                     self.send_error(400, "Historical-page churn is unnecessary")
                     return
@@ -98,11 +120,19 @@ def test_dated_gene_search_uses_complete_year_facets_without_a_clock_bound(
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == 0, f"{result.stdout}{result.stderr} requests={requests}"
     response = json.loads(result.stdout)
     assert sorted(row["pmid"] for row in response["results"]) == pmids
-    assert len(requests) == 2
-    assert json.loads(requests[1]["filters"][0]) == {"year": years}
+    if years is None:
+        assert len(requests) == 3
+        assert all("filters" not in request for request in requests)
+        assert [request["page"] for request in requests] == [["1"], ["2"], ["3"]]
+    elif years:
+        assert len(requests) == 2
+        assert json.loads(requests[1]["filters"][0]) == {"year": years}
+    else:
+        assert len(requests) == 1
     assert all(request["text"] == ["@GENE_FANCL"] for request in requests)
     assert all("sort" not in request for request in requests)
-    assert all(request["page"] == ["1"] for request in requests)
+    if years is not None:
+        assert all(request["page"] == ["1"] for request in requests)

@@ -312,9 +312,13 @@ impl PubTatorClient {
         page: usize,
         size: usize,
         sort: Option<&str>,
+        years: Option<&[String]>,
     ) -> Result<PubTatorSearchResponse, BioMcpError> {
         let authenticated = self.api_key.is_some();
-        let plan = Self::search_plan(text, page, size, sort, self.api_key.as_deref())?;
+        let mut plan = Self::search_plan(text, page, size, sort, self.api_key.as_deref())?;
+        if let Some(years) = years {
+            plan = plan.query("filters", serde_json::json!({ "year": years }).to_string());
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req, authenticated).await
     }
@@ -480,6 +484,47 @@ pub struct PubTatorSearchResponse {
     pub page_size: Option<u64>,
     #[serde(default)]
     pub facets: serde_json::Value,
+}
+
+impl PubTatorSearchResponse {
+    /// Narrow only when the provider accounts for every hit in distinct years.
+    /// Missing buckets must never turn a partial histogram into an upper bound.
+    pub(crate) fn date_filter_years(
+        &self,
+        from: Option<&str>,
+        to: Option<&str>,
+    ) -> Option<Vec<String>> {
+        if from.is_none() && to.is_none() {
+            return None;
+        }
+        let buckets = self.facets.get("facet_fields")?.get("year")?.as_array()?;
+        let mut years = std::collections::BTreeSet::new();
+        let mut counted = 0u64;
+        for bucket in buckets {
+            let name = bucket.get("name")?.as_str()?;
+            let year = name.parse::<u16>().ok()?;
+            let count = bucket.get("value")?.as_u64()?;
+            if year == 0 || year > 9999 || name != format!("{year:04}") || count == 0 {
+                return None;
+            }
+            if !years.insert(name.to_string()) {
+                return None;
+            }
+            counted = counted.checked_add(count)?;
+        }
+        if counted != self.count? || counted == 0 {
+            return None;
+        }
+        let selected: Vec<_> = years
+            .iter()
+            .filter(|year| {
+                from.is_none_or(|from| year.as_str() >= from)
+                    && to.is_none_or(|to| year.as_str() <= to)
+            })
+            .cloned()
+            .collect();
+        (selected.len() < years.len()).then_some(selected)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

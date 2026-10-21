@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 The study's dated FANCL article search avoids persistent unnecessary PubTator work within the existing source guard and provider limits. Diagnose the exact single-gene request, pagination and date handling; this command has no keyword OR expression. Preserve typed identity, date meaning, source pacing and other-source results. Genuine upstream failures remain honestly source-local. Do not raise the guard or hide incomplete work.
 
-- Changes: claim the actual backend/query files after diagnosis, outside-in replay regression and `CHANGELOG.md`; coordinate with 2346's query/diagnostic owner before edits.
+- Changes: `src/sources/pubtator.rs`, `src/entities/article/backends.rs`, the narrow year-filter request projection in `src/sources/literature_retry.rs`, `tests/test_article_pubtator_dates.py`, `tests/feature-links.json` and `CHANGELOG.md`.
 - Proof: reproduce current-main command, then an outside-in recorded-provider case completes its dated gene leg without historical-page churn; a genuine timeout retains other-source results and actual attempted-request diagnostics.
 
 ## Evidence

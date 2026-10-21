@@ -58,6 +58,9 @@
     "tests/test_article_preprint_fulltext.py": {
       "feature": "article"
     },
+    "tests/test_article_pubtator_dates.py": {
+      "feature": "article"
+    },
     "tests/test_article_rsid_search.py": {
       "feature": "article"
     },
