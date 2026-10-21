@@ -174,6 +174,7 @@ def test_make_advisory_fixture_owns_inherited_tool_selection(tmp_path: Path, mon
     monkeypatch.setenv("UNEXPECTED_HOST_TOOL_LOG", str(unexpected))
     root, env, log = _advisory_fixture(tmp_path)
     _make_fixture(root, env)
+    env["BIOMCP_ADVISORY_SCOPE"] = "always"
     result = subprocess.run(["make", "lint"], cwd=root, env=os.environ | env,
                             capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
