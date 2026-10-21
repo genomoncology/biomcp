@@ -1,10 +1,12 @@
 # 2348 — Return rows for typed gene and date queries
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 88bcf385a17ec951ec55e7bc816b5299db2930e8, accept
+
+Landed: 05ac371
 
 ## Outcome
 
