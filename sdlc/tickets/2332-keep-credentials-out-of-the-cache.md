@@ -4,7 +4,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Changes: src/sources/mod.rs (existing initialization regression); src/cache/{mod,http,manager}.rs; src/cache/sqlite.rs; src/cache/sqlite/{request_key,schema,upgrade}.rs; src/cli/cache.rs; src/cli/cache/tests.rs; tests/cache_clear.rs; tests/test_cache_credentials.py; tests/test_cache_sqlite.py; tests/feature-links.json; docs/{policies,troubleshooting}.md; docs/reference/{configuration,data-sources}.md; CHANGELOG.md.
+Changes: tests/managed_state_permissions.rs; docs/user-guide/cli-reference.md; src/sources/mod.rs (existing initialization regression); src/cache/{mod,http,manager}.rs; src/cache/sqlite.rs; src/cache/sqlite/{request_key,schema,upgrade}.rs; src/cli/cache.rs; src/cli/cache/tests.rs; tests/cache_clear.rs; tests/test_cache_credentials.py; tests/test_cache_sqlite.py; tests/feature-links.json; docs/{policies,troubleshooting}.md; docs/reference/{configuration,data-sources}.md; CHANGELOG.md.
 
 ## Outcome
 
