@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 274f36b3539ec387900b994fc259010f1220bcb3, accept
+
 ## Outcome
 
 Let the existing replay live checker check exactly the five Semantic Scholar recordings using the inherited S2_API_KEY, read-only and paced at one second, under Ian's ruling relayed in PM m3019. Preserve existing source restrictions and safe logging. Confirm the current checker limitation before changing it; reuse an existing supported path if one exists.
