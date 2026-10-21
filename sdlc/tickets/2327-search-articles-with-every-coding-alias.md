@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision d632c51e46a8c8bb14eafef307f883808682ce7f, accept
+
 ## Outcome
 
 `biomcp variant articles` recovers the papers that each resolved coding spelling finds, not only discloses the spellings it left out. For ABCC8 R1437Q, the provider queries include c.4310G>A and c.4373G>A, or a follow-up query per dropped spelling merges its papers, within each provider's query length and rate limits. Disclosure stays for any spelling still left out, with its reason.
