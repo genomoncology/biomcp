@@ -79,6 +79,70 @@ fn render_fda_orphan_block(name: &str, value: Option<&FdaOrphanDesignations>) ->
     out
 }
 
+pub(super) fn render_approval_history_block(drug: &Drug) -> String {
+    let Some(applications) = drug.approvals.as_deref() else {
+        return String::new();
+    };
+    let mut out = String::from("## Drugs@FDA Approval History\n\n");
+    if let Some(message) = drug
+        .section_outcomes
+        .get("approval-history")
+        .and_then(|state| state.message())
+    {
+        let _ = writeln!(out, "{message}\n");
+    }
+    for app in applications {
+        let _ = writeln!(out, "### {}\n", markdown_cell(&app.application_number));
+        out.push_str("| Submission Type | Number | Status | Date | Source Class | Documents |\n|---|---|---|---|---|---|\n");
+        for row in &app.submissions {
+            let cell = |value: Option<&str>| value.map(markdown_cell).unwrap_or_else(|| "-".into());
+            let class = [
+                row.submission_class_code.as_deref(),
+                row.submission_class_code_description.as_deref(),
+            ]
+            .into_iter()
+            .flatten()
+            .map(markdown_cell)
+            .collect::<Vec<_>>()
+            .join(": ");
+            let documents = row
+                .application_docs
+                .iter()
+                .map(|doc| {
+                    let label = cell(doc.document_type.as_deref());
+                    let date = doc
+                        .date
+                        .as_deref()
+                        .map(|date| format!(" ({})", markdown_cell(date)))
+                        .unwrap_or_default();
+                    match doc.url.as_deref() {
+                        Some(url) if url.starts_with("https://") || url.starts_with("http://") => {
+                            format!(
+                                "[{label}](<{}>){date}",
+                                url.replace('<', "%3C").replace('>', "%3E")
+                            )
+                        }
+                        _ => format!("{label}{date}"),
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} | {} | {} |",
+                cell(row.submission_type.as_deref()),
+                cell(row.submission_number.as_deref()),
+                cell(row.status.as_deref()),
+                cell(row.status_date.as_deref()),
+                class,
+                documents
+            );
+        }
+        out.push('\n');
+    }
+    out
+}
+
 pub(super) fn render_us_approvals_block(heading: &str, drug: &Drug) -> String {
     let Some(approvals) = drug.approvals.as_deref() else {
         return String::new();
@@ -152,7 +216,7 @@ pub(super) fn render_us_approvals_block(heading: &str, drug: &Drug) -> String {
         if !app.submissions.is_empty() {
             out.push_str("| Submission Type | Number | Status | Date |\n");
             out.push_str("|---|---|---|---|\n");
-            for submission in &app.submissions {
+            for submission in app.submissions.iter().take(8) {
                 let _ = writeln!(
                     out,
                     "| {} | {} | {} | {} |",
