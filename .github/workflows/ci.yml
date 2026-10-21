@@ -131,6 +131,8 @@ jobs:
           python: true
           mustmatch: true
           lint-tools: true
+          offline: true
+          nextest: true
       - name: Canonical lint gate
         run: make lint
 
