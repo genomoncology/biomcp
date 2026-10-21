@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+Changes: `tests/release_workflow_inventory.py`, `tests/test_release_check_counterparts.py`, `tests/test_release_workflow_provenance.py`, `CHANGELOG.md`.
+
 One inventory pins the release workflow's jobs and steps. Both tests/test_release_check_counterparts.py and tests/test_release_workflow_provenance.py read it, so adding, removing or reordering a workflow step changes one place and a missed update fails in one test with a message naming that inventory. Keep every existing protection: step order, conditions, shells, body hashes and counterpart coverage.
 
 - Proof: a mutation test that adds a workflow step without updating the inventory fails once, naming the inventory; the existing mutation controls in both tests still pass; the full routine suite passes.

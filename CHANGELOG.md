@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Keep release step order, body pins and counterpart coverage in one inventory, and report a missed inventory update once. (2333)
+
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
