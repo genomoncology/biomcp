@@ -79,5 +79,6 @@ slow_test_warning_seconds = 30
 tmp_path_retention_policy = "all"
 
 [tool.biomcp.feature-coverage]
-# The valid first outside-in collection supplies floor; ordinary runs refuse until set.
+# Initial valid outside-in collection at 5188be473: 64881 / 111574 product lines.
+floor = 58.15064441536558
 llvm-cov-version = "0.9.1"

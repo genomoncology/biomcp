@@ -16,8 +16,8 @@ pytestmark = [pytest.mark.needs_binary]  # needs bubblewrap/offline toolchain; d
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MCP_SCRIPT = REPO_ROOT / "tools" / "check-mcp-allowlist.py"
 SOURCE_SCRIPT = REPO_ROOT / "tools" / "check-source-registry.py"
-WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-quality-ratchet.sh"
-RATCHET_TOOL = REPO_ROOT / "tools" / "check-quality-ratchet.py"
+WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-semantic-contracts.sh"
+RATCHET_TOOL = REPO_ROOT / "tools" / "check-semantic-contracts.py"
 
 
 def _run_python_script(
@@ -42,7 +42,7 @@ def _run_wrapper(
     wrapper_env = os.environ.copy()
     wrapper_env.update(env)
     if audits is not None:
-        wrapper_env["QUALITY_RATCHET_AUDITS"] = audits
+        wrapper_env["SEMANTIC_CONTRACTS_AUDITS"] = audits
     return subprocess.run(
         ["bash", str(WRAPPER_SCRIPT)],
         cwd=REPO_ROOT,
@@ -678,24 +678,24 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         },
         audits=None,
     )
 
     assert result.returncode == 0, result.stderr
     for name in (
-        "quality-ratchet-lint.json",
-        "quality-ratchet-mcp-allowlist.json",
-        "quality-ratchet-source-registry.json",
-        "quality-ratchet-dead-code-allowances.json",
-        "quality-ratchet-terminal-output-boundaries.json",
-        "quality-ratchet-summary.json",
+        "semantic-contracts-lint.json",
+        "semantic-contracts-mcp-allowlist.json",
+        "semantic-contracts-source-registry.json",
+        "semantic-contracts-dead-code-allowances.json",
+        "semantic-contracts-terminal-output-boundaries.json",
+        "semantic-contracts-summary.json",
     ):
         assert (output_dir / name).exists(), name
 
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["files_checked"] == 1
@@ -711,18 +711,18 @@ def test_wrapper_can_run_only_the_named_spec_lint_audit(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
-            "QUALITY_RATCHET_AUDITS": "spec_lint",
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_AUDITS": "spec_lint",
         }
     )
 
     assert result.returncode == 0, result.stderr
-    assert (output_dir / "quality-ratchet-lint.json").exists()
-    assert not (output_dir / "quality-ratchet-mcp-allowlist.json").exists()
-    assert not (output_dir / "quality-ratchet-source-registry.json").exists()
+    assert (output_dir / "semantic-contracts-lint.json").exists()
+    assert not (output_dir / "semantic-contracts-mcp-allowlist.json").exists()
+    assert not (output_dir / "semantic-contracts-source-registry.json").exists()
 
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["audits"] == ["spec_lint"]
     assert summary["lint"]["status"] == "pass"
@@ -777,7 +777,7 @@ def test_renderer_next_command_source_audit_rejects_pre_1069_pattern(
     fixture_result = _run_source_audit(fixture_root, fixture_output)
     assert fixture_result.returncode == 1, fixture_result.stderr
     payload = json.loads(
-        (fixture_output / "quality-ratchet-renderer-next-command-source.json").read_text()
+        (fixture_output / "semantic-contracts-renderer-next-command-source.json").read_text()
     )
     assert payload["status"] == "fail"
     finding = next(
@@ -902,9 +902,9 @@ def test_wrapper_is_thin_shell_around_committed_python_tool() -> None:
     assert "SHORT_LIKE_RE" not in wrapper
     assert "FENCE_RE" not in wrapper
     assert "uv run --no-project python" in wrapper
-    assert "tools/check-quality-ratchet.py" in wrapper
+    assert "tools/check-semantic-contracts.py" in wrapper
     assert "spec/**/*.md" in wrapper
-    assert "QUALITY_RATCHET_AUDITS" in wrapper
+    assert "SEMANTIC_CONTRACTS_AUDITS" in wrapper
     assert "--audit" in wrapper
     assert "tools/spec_smoke_args.py" not in wrapper
 
@@ -915,13 +915,13 @@ def test_wrapper_propagates_lint_failures(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "fail"
     assert summary["lint"]["status"] == "fail"
     findings = summary["lint"]["results"][0]["findings"]
@@ -960,13 +960,13 @@ def test_wrapper_accepts_nested_specs_with_recursive_glob(tmp_path: Path) -> Non
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(tmp_path / "spec" / "**" / "*.md"),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(tmp_path / "spec" / "**" / "*.md"),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["files_checked"] == 1
@@ -978,13 +978,13 @@ def test_wrapper_reports_error_when_no_specs_match(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(tmp_path / "spec" / "*.md"),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(tmp_path / "spec" / "*.md"),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "error"
     assert summary["lint"]["status"] == "error"
     assert "no spec files matched" in summary["lint"]["errors"][0]
@@ -998,17 +998,17 @@ def test_wrapper_propagates_mcp_failures_from_override_paths(tmp_path: Path) -> 
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
-            "QUALITY_RATCHET_CLI_FILE": str(fixture_root / "src/cli/mod.rs"),
-            "QUALITY_RATCHET_SHELL_FILE": str(fixture_root / "src/mcp/shell.rs"),
-            "QUALITY_RATCHET_CATALOG_FILE": str(fixture_root / "src/mcp/catalog.rs"),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_CLI_FILE": str(fixture_root / "src/cli/mod.rs"),
+            "SEMANTIC_CONTRACTS_SHELL_FILE": str(fixture_root / "src/mcp/shell.rs"),
+            "SEMANTIC_CONTRACTS_CATALOG_FILE": str(fixture_root / "src/mcp/catalog.rs"),
         },
         audits="mcp_allowlist",
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "fail"
     assert summary["audits"] == ["mcp_allowlist"]
     assert summary["mcp_allowlist"]["status"] == "fail"
@@ -1020,13 +1020,13 @@ def test_wrapper_reports_invalid_mustmatch_mode(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     findings = summary["lint"]["results"][0]["findings"]
     assert findings[0]["rule"] == "invalid-mustmatch-mode"
 
@@ -1037,13 +1037,13 @@ def test_wrapper_reports_invalid_shell_syntax(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     findings = summary["lint"]["results"][0]["findings"]
     assert findings[0]["rule"] == "invalid-shell-syntax"
 
@@ -1068,13 +1068,13 @@ def test_spec_lint_rejects_nested_test_gates_without_matching_prose_or_literals(
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     findings = summary["lint"]["results"][0]["findings"]
     nested = [finding for finding in findings if finding["rule"] == "nested-test-gate"]
     assert len(nested) == 1
@@ -1126,13 +1126,13 @@ def test_spec_lint_rejects_preparation_owned_cargo_commands(tmp_path: Path) -> N
 
         result = _run_wrapper(
             {
-                "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-                "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+                "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+                "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
             }
         )
 
         assert result.returncode == 1
-        summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+        summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
         findings = summary["lint"]["results"][0]["findings"]
         nested = [
             finding for finding in findings if finding["rule"] == "nested-cargo-command"
@@ -1156,13 +1156,13 @@ def test_wrapper_reports_missing_bash_mustmatch(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "fail"
     assert summary["lint"]["status"] == "fail"
     findings = summary["lint"]["results"][0]["findings"]
@@ -1192,13 +1192,13 @@ def test_wrapper_allows_h2_section_with_bash_mustmatch(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
@@ -1221,13 +1221,13 @@ def test_wrapper_allows_named_run_with_matching_expectation(tmp_path: Path) -> N
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["lint"]["finding_count"] == 0
 
 
@@ -1248,13 +1248,13 @@ def test_wrapper_rejects_named_run_without_matching_expectation(tmp_path: Path) 
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 1
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     findings = summary["lint"]["results"][0]["findings"]
     assert [finding["rule"] for finding in findings] == ["missing-bash-mustmatch"]
 
@@ -1274,13 +1274,13 @@ def test_wrapper_allows_h2_section_with_mustmatch_opt_out(tmp_path: Path) -> Non
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
@@ -1300,13 +1300,13 @@ def test_wrapper_ignores_skipped_bash_only_section(tmp_path: Path) -> None:
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
@@ -1331,13 +1331,13 @@ def test_wrapper_accepts_section_when_one_of_multiple_bash_blocks_has_mustmatch(
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
@@ -1453,13 +1453,13 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     output_dir = tmp_path / "out"
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         },
         audits="remote_resource_bounds",
     )
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["remote_resource_bounds"]["status"] == "pass"
 
 
@@ -1665,13 +1665,13 @@ def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> No
 
     result = _run_wrapper(
         {
-            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
-            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "SEMANTIC_CONTRACTS_OUTPUT_DIR": str(output_dir),
+            "SEMANTIC_CONTRACTS_SPEC_GLOB": str(spec_path),
         }
     )
 
     assert result.returncode == 0, result.stderr
-    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    summary = json.loads((output_dir / "semantic-contracts-summary.json").read_text())
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
@@ -1782,7 +1782,7 @@ def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
         "--health-file", str(fixture / "src/cli/health/catalog.rs"),
     )
     assert result.returncode == int(unsafe), result.stdout + result.stderr
-    payload = json.loads((output / "quality-ratchet-paused-clock-io.json").read_text())
+    payload = json.loads((output / "semantic-contracts-paused-clock-io.json").read_text())
     assert payload["status"] == ("fail" if unsafe else "pass")
     if unsafe:
         assert payload["findings"][0]["test"] == "socket_case"
@@ -1806,7 +1806,7 @@ def test_wait_audit_rejects_unlisted_coordination_limits(
     output = tmp_path / "audit-output"
     result = _run_source_audit(fixture, output, audit="test_waits")
     assert result.returncode == 1, result.stdout + result.stderr
-    payload = json.loads((output / "quality-ratchet-test-waits.json").read_text())
+    payload = json.loads((output / "semantic-contracts-test-waits.json").read_text())
     assert payload["status"] == "fail", payload
     assert len(payload["findings"]) == 1, payload
 
@@ -1846,10 +1846,10 @@ def test_wait_audit_rejects_a_second_copy_and_stale_exception(tmp_path: Path) ->
     test.write_text(source + "    time.sleep(0.01)\n")
     result = _run_source_audit(fixture, tmp_path / "duplicate", audit="test_waits")
     assert result.returncode == 1
-    findings = json.loads((tmp_path / "duplicate/quality-ratchet-test-waits.json").read_text())["findings"]
+    findings = json.loads((tmp_path / "duplicate/semantic-contracts-test-waits.json").read_text())["findings"]
     assert len(findings) == 1 and findings[0]["occurrence"] == 2
     test.write_text("def test_ready():\n    pass\n")
     result = _run_source_audit(fixture, tmp_path / "stale", audit="test_waits")
     assert result.returncode == 1
-    findings = json.loads((tmp_path / "stale/quality-ratchet-test-waits.json").read_text())["findings"]
+    findings = json.loads((tmp_path / "stale/semantic-contracts-test-waits.json").read_text())["findings"]
     assert findings[0]["message"] == "stale wait exception"

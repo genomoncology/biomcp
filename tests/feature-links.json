@@ -624,7 +624,10 @@
     "spec/surface/docker-image.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
     "spec/surface/homebrew.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
     "src/sources/request_plan_transport.rs": "Test-only external module imported by the cfg(test) tests module in src/sources/mod.rs via #[path = \"../request_plan_transport.rs\"].",
-    "src/entities/trial/search/eligibility/keep_paths.rs": "Test-only module declared under cfg(test) in src/entities/trial/search/eligibility.rs."
+    "src/entities/trial/search/eligibility/keep_paths.rs": "Test-only module declared under cfg(test) in src/entities/trial/search/eligibility.rs.",
+    "tests/test_advisory_bootstrap.py": "Build tooling installation contract; does not drive the shipped product.",
+    "tests/test_dependency_advisories.py": "Dependency policy scanner contract; does not drive the shipped product.",
+    "tests/test_dependency_advisory_gate.py": "Build gate selection contract; does not drive the shipped product."
   },
   "accounting_cases": {
     "gene": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol",
@@ -656,9 +659,15 @@
     "trial": "tests/test_ctgov_trial_search_detail_reuse.py::test_combined_geo_and_eligibility_filters_fetch_one_detail_projection",
     "discovery": "spec/surface/discover.md::block-1",
     "cli-controls": "tests/cli_global_modifiers.rs::genuine_json_parse_error_remains_exit_two_error",
-    "managed-data": "spec/entity/ddinter-live.md::block-1"
+    "managed-data": "spec/entity/ddinter-live.md::block-1",
+    "mcp-http": "tests/test_mcp_http_surface.py::test_http_routes_advertise_streamable_http_surface",
+    "mcp-stdio": "tests/test_mcp_stdio_guidance.py::test_pre_handshake_error_does_not_end_the_stream",
+    "mcp-catalog": "tests/test_mcp_tool_catalog.py::test_installed_binary_prints_the_complete_mcp_catalog"
   },
   "source_features": {
+    "^src/mcp/catalog\\.rs$": "mcp-catalog",
+    "^src/mcp/shell/http_server\\.rs$": "mcp-http",
+    "^src/mcp/shell/pre_session\\.rs$": "mcp-stdio",
     "^src/sources/gtr(?:/|\\.rs$)": "diagnostic",
     "^src/sources/orcid(?:/|\\.rs$)": "author",
     "^src/sources/vaers(?:/|\\.rs$)": "adverse-event",
@@ -703,5 +712,31 @@
     "^src/xml\\.rs$": "article",
     "^src/cli/": "cli-controls",
     "^src/entities/": "source-policy"
+  },
+  "source_cases": {
+    "^src/(?:cache/citation_evidence|entities/article/citation_evidence|cli/article/citation_evidence|transform/article/jats/citation_evidence)(?:/|\\.rs$)": {
+      "feature": "article",
+      "case": "spec/entity/article.md::block-100"
+    },
+    "^src/utils/fs_lock\\.rs$": {
+      "feature": "gene",
+      "case": "spec/entity/gene.md::block-10"
+    },
+    "^src/utils/date\\.rs$": {
+      "feature": "article",
+      "case": "tests/article_usage_stderr.rs::invalid_article_date_is_clean_usage_error"
+    },
+    "^src/utils/(query|serde)\\.rs$": {
+      "feature": "gene",
+      "case": "tests/golden/spec/test_spec_page_golden.py::test_get_gene_queries_mygene_once_by_symbol"
+    },
+    "^src/utils/sync\\.rs$": {
+      "feature": "cache",
+      "case": "tests/test_cache_persistent_size.py::test_concurrent_short_processes_do_not_lose_size_reservations"
+    },
+    "^src/utils/download\\.rs$": {
+      "feature": "output-safety",
+      "case": "tests/article_asset_terminal.rs::article_asset_out_preserves_its_name_and_bytes"
+    }
   }
 }

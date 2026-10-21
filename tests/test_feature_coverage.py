@@ -63,12 +63,20 @@ def test_only_product_lines_count_toward_the_floor(
         directory = root / "src" / name
         directory.mkdir()
         (directory / "mod.rs").write_text("#[test] fn internal() {}\n")
+    explicit_test = root / "src/consumer_only.rs"
+    explicit_test.write_text("fn only_a_test_helper() {}\n")
+    metadata = root / "tests/feature-links.json"
+    config = json.loads(metadata.read_text())
+    config["internal"]["src/consumer_only.rs"] = "Imported only by a cfg(test) module."
+    metadata.write_text(json.dumps(config))
     report = root / "outside.lcov"
     report.write_text(
         f"SF:{root}/src/main.rs\nDA:1,{hits}\nDA:4,1\nend_of_record\n"
         f"SF:{root}/tests/test.rs\nDA:1,1\nend_of_record\n"
         f"SF:{root}/src/observed_tests/mod.rs\nDA:1,1\nend_of_record\n"
+        f"SF:{root}/src/consumer_only.rs\nDA:1,1\nend_of_record\n"
     )
+    (root / "python.xml").write_text('<testsuites><testsuite><testcase classname="tests.test_gene" name="test_lookup" /></testsuite></testsuites>')
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
     result = run(root, "report", "--lcov", str(report), "--statuses", str(status),
@@ -81,6 +89,7 @@ def test_only_product_lines_count_toward_the_floor(
     assert not data["unobserved_files"]
     if not hits:
         assert data["item_accounting"]["src/main.rs"]["case"] == "tests/test_gene.py::test_lookup"
+        assert data["item_accounting"]["src/main.rs"]["case_execution"] == "Python suite: passed"
 
 
 def test_failed_or_missing_collections_never_report_a_percentage(tmp_path: Path) -> None:
@@ -230,3 +239,24 @@ def test_nested_rust_consumers_keep_qualified_feature_ownership(tmp_path: Path) 
     assert "missing test" not in rejected.stderr
     (root / "sdlc/features.md").write_text("- gene: Find a gene.\n- drug: Find a drug.\n")
     assert run(root, "links").returncode == 0
+
+
+@pytest.mark.parametrize("goal", ["release-gate-markers", "release-gate"])
+def test_release_entry_points_collect_coverage_once(tmp_path: Path, goal: str) -> None:
+    """Run both real recipes with only their costly external work substituted."""
+    for directory in ("tools", "scripts"):
+        (tmp_path / directory).mkdir()
+    offline = tmp_path / "tools/run-offline"
+    offline.write_text("#!/bin/sh\nprintf 'marker-check\\n'\n")
+    offline.chmod(0o755)
+    (tmp_path / "scripts/collect-feature-coverage.sh").write_text(
+        '#!/bin/sh\nprintf "coverage:%s:%s\\n" "$CARGO_BUILD_JOBS" "$NEXTEST_TEST_THREADS"\n'
+    )
+    overlay = tmp_path / "cheap.mk"
+    overlay.write_text("lint test test-long prepare-test prepare-routine-test-tmp repo-audit sync-python-dev full-feature-check spec:\n\t@:\n")
+    command = ["make", "--no-print-directory", "-f", str(ROOT / "Makefile"), "-f", str(overlay)]
+    result = subprocess.run([*command, goal, "TEST_LANE_WORKERS=2", "MAKE=" + " ".join(command)],
+                            cwd=tmp_path, text=True, capture_output=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.splitlines().count("coverage:2:2") == 1
+    assert result.stdout.splitlines().count("marker-check") == 1

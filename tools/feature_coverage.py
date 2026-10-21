@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
+import xml.etree.ElementTree as ET
 from functools import lru_cache
 import re
 from pathlib import Path
@@ -163,6 +164,10 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     for feature, case in config.get("accounting_cases", {}).items():
         if case_owners.get(case) != feature:
             errors.append(f"accounting case {case} does not name feature {feature}")
+    for pattern, declaration in config.get("source_cases", {}).items():
+        re.compile(pattern)
+        if case_owners.get(declaration["case"]) != declaration["feature"]:
+            errors.append(f"invalid component case {declaration}")
     for pattern, feature in config.get("source_features", {}).items():
         re.compile(pattern)
         if feature != "@entity" and feature not in names:
@@ -174,9 +179,9 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
 def rust_lexer(root: Path):
     # Reuse the repository's Rust lexer; comments, raw strings and nested block
     # comments cannot change the extent of a cfg(test) item.
-    tool = root / "tools/check-quality-ratchet.py"
+    tool = root / "tools/check-semantic-contracts.py"
     if not tool.is_file():
-        tool = Path(__file__).with_name("check-quality-ratchet.py")
+        tool = Path(__file__).with_name("check-semantic-contracts.py")
     spec = importlib.util.spec_from_file_location("semantic_contracts", tool)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
@@ -263,16 +268,17 @@ def coverage_report(root: Path, lcov: Path, statuses: dict, floor: float) -> dic
 
     result["excluded_test_sources"] = {path: reason for path, reason in config["internal"].items()
                                        if path.startswith("src/")}
-    result["item_accounting"] = account_items(root, config, result)
+    result["item_accounting"] = account_items(root, config, result, lcov.parent)
     return result
 
 
-def account_items(root: Path, config: dict, result: dict) -> dict:
+def account_items(root: Path, config: dict, result: dict, evidence: Path) -> dict:
     """Associate missing source observations with real cases, without claiming reach."""
     aliases = {"adverse_event": "adverse-event", "cell_line": "cell-line",
                "pharmacodb": "cell-line", "discover": "discovery",
                "section_outcome": "source-policy", "source_state_registry": "source-policy"}
     accounting = {}
+    case_status = execution_status(evidence)
     for path in sorted(set(result["unreached"]) | set(result["unobserved_files"])):
         feature = None
         for pattern, owner in config.get("source_features", {}).items():
@@ -291,7 +297,45 @@ def account_items(root: Path, config: dict, result: dict) -> dict:
                              if number not in excluded)
             observation = ("runtime source absent from executable mapping" if executable else
                            "declarations/module glue absent from executable mapping")
-        accounting[path] = {"feature": feature, "case": config["accounting_cases"][feature],
+        case = config["accounting_cases"][feature]
+        for pattern, declaration in config.get("source_cases", {}).items():
+            if re.match(pattern, path):
+                feature, case = declaration["feature"], declaration["case"]
+                break
+        accounting[path] = {"feature": feature, "case": case,
+                            "case_execution": case_status(case),
                             "observation": observation,
-                            "remaining_limit": "The associated contract names the behavior; this collection does not establish that it reaches the missing lines. Spec/opt-in cases may be outside the collected offline selection."}
+                            "remaining_limit": "The associated contract names the behavior; this collection does not establish that it reaches the missing lines."}
     return accounting
+
+
+def execution_status(evidence: Path):
+    """Read actual terminal suite evidence, without inferring execution from a link."""
+    python = {}
+    xml = evidence / "python.xml"
+    if xml.is_file():
+        for case in ET.parse(xml).iter("testcase"):
+            key = case.attrib["classname"].replace(".", "/") + ".py::" + case.attrib["name"]
+            python[key] = "skipped" if case.find("skipped") is not None else "passed"
+    rust_log = evidence / "rust.log"
+    rust = rust_log.read_text() if rust_log.is_file() else ""
+    spec_log = evidence / "spec.log"
+    spec = spec_log.read_text() if spec_log.is_file() else ""
+    selection = re.search(r"^=== spec pages: (.*?) ===$", spec, re.M)
+    selected_pages = selection[1].split() if selection else []
+
+    def status(case: str) -> str:
+        path, _, name = case.partition("::")
+        if path.endswith(".py"):
+            key = path + "::" + name
+            matches = [value for test, value in python.items()
+                       if test == key or ("[" not in key and test.startswith(key + "["))]
+            if matches:
+                return "Python suite: " + ", ".join(sorted(set(matches)))
+            return "Python suite: no execution recorded" + ("; opt-in live module excluded" if "/live/" in path else "")
+        if path.endswith(".rs"):
+            found = re.search(r"^\s*(PASS|SKIP)\s+.*?::" + re.escape(Path(path).stem) + r"\s+" + re.escape(name) + r"$", rust, re.M)
+            return "Rust suite: " + (found[1].lower() if found else "no execution recorded")
+        return ("Spec suite: selected page passed" if path in selected_pages else
+                "Spec suite: page excluded from offline selection; case unverified")
+    return status

@@ -30,7 +30,8 @@ def collect(root: Path, baseline: bool) -> int:
     statuses = {}
 
     def run(name: str, argv: list[str], env: dict | None = None) -> int:
-        print(f"{name}: {shlex.join(argv)}", flush=True)
+        print(f"{name}: {shlex.join(argv) if len(argv) < 30 else shlex.join(argv[:5]) + f' … ({len(argv)} arguments; see {name}.command.json)'}", flush=True)
+        (output / f"{name}.command.json").write_text(json.dumps(argv, indent=2) + "\n")
         with (output / f"{name}.log").open("w") as log:
             result = subprocess.run(argv, cwd=root, env=env or ordinary, stdout=log, stderr=subprocess.STDOUT)
         print(f"{name}: exit {result.returncode}; {output / (name + '.log')}", flush=True)
@@ -106,7 +107,7 @@ def collect(root: Path, baseline: bool) -> int:
     selected = sorted({link["test"].split("[")[0] for link in links if link["kind"] == "python"
                        and "/live/" not in link["test"]})
     statuses["python"] = run("python", ["tools/run-offline", "--", "uv", "run", "--no-sync", "pytest", *selected,
-                                         "-m", "not release_gate and not repo_audit and not long", "--junitxml", str(output / "python.xml")], consumers)
+                                         "-m", "not release_gate and not repo_audit and not long", "-n", "0", "--junitxml", str(output / "python.xml")], consumers)
     # The spec runner consumes these artifacts directly and cannot replace the
     # instrumented binary through a nested build. Cargo metadata is ordinary.
     cache = root / ".cache"
@@ -153,7 +154,7 @@ def collect(root: Path, baseline: bool) -> int:
         result.pop("floor")
         result["initial_floor_input"] = result["outside_in_percent"]
     (output / "coverage.json").write_text(json.dumps(result, indent=2) + "\n")
-    print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "unobserved_files", "collection"}}, indent=2))
+    print(json.dumps({k: v for k, v in result.items() if k not in {"unreached", "unobserved_files", "collection", "item_accounting", "excluded_test_sources"}}, indent=2))
     print(f"Unreached product lines and exact collection selection: {output / 'coverage.json'}")
     return int(result["status"] != "pass")
 

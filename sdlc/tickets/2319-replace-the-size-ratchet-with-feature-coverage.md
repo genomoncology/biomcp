@@ -20,7 +20,7 @@ List unreached production code. Give each item a feature test or a separate revi
 
 - Proof: Every selected outside-in test maps to a listed feature; planted unknown or missing links fail. The corrected collection passes, reports its actual source and exclusions, and establishes the floor checked by the nightly and release targets. Routine feature-link validation adds no instrumented build.
 
-- Changes: `sdlc/features.md` `tests/feature-links.json` `tests/test_feature_coverage.py` `tools/feature_coverage.py` `tools/check-feature-coverage.py` `tools/collect_feature_coverage.py` `scripts/collect-feature-coverage.sh` `pyproject.toml` `CHANGELOG.md` `crates/biomcp-mcp-contract-client/src/lib.rs` `tests/tls_ca_bundle_contract.rs`
+- Changes: `tools/test-wait-exceptions.json` `tests/test_routine_cargo_feature_contract.py` `tests/test_release_workflow_provenance.py` `.github/workflows/release.yml` `Makefile` `clippy.toml` `scripts/check-release-metadata.py` `scripts/pre-commit` `spec/surface/mcp.md` `tests/surface/test_ticket_401_surface_ratchets.py` `tests/test_cli_surface_contract_ratchet.py` `tests/test_dependency_advisory_gate.py` `tests/test_quality_ratchet_contract.py` `tests/test_section_provider_credits.py` `tests/test_upstream_planning_analysis_docs.py` `tools/check-quality-ratchet.py` `tools/check-quality-ratchet.sh` `tools/check-semantic-contracts.py` `tools/check-semantic-contracts.sh` `sdlc/features.md` `tests/feature-links.json` `tests/test_feature_coverage.py` `tools/feature_coverage.py` `tools/check-feature-coverage.py` `tools/collect_feature_coverage.py` `scripts/collect-feature-coverage.sh` `pyproject.toml` `CHANGELOG.md` `crates/biomcp-mcp-contract-client/src/lib.rs` `tests/tls_ca_bundle_contract.rs`
 
 ## Evidence
 
