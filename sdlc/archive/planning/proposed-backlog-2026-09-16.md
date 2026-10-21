@@ -16,7 +16,7 @@ that gets zero results from a criteria search has no way to know the query
 was valid but the filter was too narrow, versus the trials not existing.
 
 **Evidence.** Filed as
-`sdlc/issues/2026-09-11-search-trial-criteria-returns-zero-results.md`.
+`sdlc/archive/issues/2026-09-11-search-trial-criteria-returns-zero-results.md`.
 Reproduced during the CLI smoke test: `search trial -g BRAF` returned zero
 while the same gene via `--intervention` found trials.
 
@@ -62,7 +62,7 @@ have no local record of what was already retrieved, so they re-request the
 same edges and cannot accumulate a corpus.
 
 **Evidence.** Filed as
-`sdlc/issues/2026-08-27-a-citation-sidecar-would-make-synthesis-mechanical.md`
+`sdlc/archive/issues/2026-08-27-a-citation-sidecar-would-make-synthesis-mechanical.md`
 from an earlier research run.
 
 **Fix direction.** A local cache of citation-evidence results keyed by the

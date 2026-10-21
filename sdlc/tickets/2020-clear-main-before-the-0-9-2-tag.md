@@ -10,7 +10,7 @@ Main carries no stray files, no private names, and no spec proofs that stopped r
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, findings 5 to 9).
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, findings 5 to 9).
 
 1. `tools/zero-coupling-historical.json.probe` reached main in the 1292 landing merge `152984a12`. It was never on the ticket branch. It is an old copy of the coupling inventory, and its keys encode the forbidden coupling token. `Cargo.toml` excludes the inventory but not the probe, so `cargo package --list` ships it. The package-count failure it caused was then absorbed into `MAX_PACKAGE_FILES`. The comment in `tests/test_source_package_boundary.py:23` blames "1292's variant-input-forms fixture handler edit", which adds no file.
 2. `sdlc/pm.json` `forbiddenNames` (added in `022fe4f52`) spells out private project names in this public repository.

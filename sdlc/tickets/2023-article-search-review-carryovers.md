@@ -10,7 +10,7 @@ Article search paging, deadline errors, and the tests behind them say what is tr
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 13).
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 13).
 
 1. 1298: the Europe PMC date and citation sort branch (`src/entities/article/search.rs:904`) has no offset-plus-limit check. `search article -k melanoma --source europepmc --sort date --offset 1300 --limit 5 -j` took 19 s and returned `count 0`, `has_more: true`. The relevance path refuses above 1250.
 2. 1299: when both main sources fail, the federated path returns PubTator's error (`search.rs:535`). A fast non-retryable PubTator failure hides the deadline. Changing the fixture's 503 to 400 fails `deadline_expiry_without_rows_names_the_deadline_error`.
@@ -99,7 +99,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Branch CI green at ec27dfbcf (run on the rebased tip).
 - Yellow: lint green, spec green, test phase attempted under the
   interim deadlock rule (fourth futex hang captured; the issue
-  sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md
+  sdlc/archive/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md
   carries the forensics and the rule).
 - Code re-review (post-review delta: the rebase unions, the two
   records commits, the repin): ACCEPT 2026-10-07 at ec27dfbcf;
