@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 Synthetic advisory-gate tests always invoke their own fake toolchain, including when the caller inherits BIOMCP_TOOL_DIR pointing at an installed real cargo-deny. Isolate the fixture environment at its shared construction point. Preserve the production bootstrap, license and advisory policy.
 
-- Changes: `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `CHANGELOG.md`, `sdlc/tickets/2343-isolate-advisory-fixture-tools.md`.
+- Changes: `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `sdlc/tickets/2343-isolate-advisory-fixture-tools.md`.
 - Proof: reproduce current-main failures under an inherited real or canary tool cache, then pass the entire affected module in that same hostile environment. Assertions still prove the expected fake tool executions and advisory/license outcomes. Fresh review checks both direct subprocess paths and test isolation.
 
 ## Evidence
