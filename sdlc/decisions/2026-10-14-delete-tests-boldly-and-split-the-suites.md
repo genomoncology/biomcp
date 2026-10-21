@@ -17,7 +17,12 @@ Asked to choose between a cautious plan and a more aggressive one, he approved t
 ## What it means
 
 1. **Routine tests keep only four kinds.** Behavior tests through the real entry point, edge-case tables, contract checks on what others depend on, and regression tests that failed before their fix. Everything else goes, boldly, in small batches that each land on their own. A deleted test comes back when a real need shows up. Coverage is reported with each batch and is not a gate. Mutation testing is an optional tool for finding the next outside-in test to write, not a gate on deletion. BioMCP refuses rather than guesses, and the tests that pin those refusals and the fixed regressions are regression tests: they stay.
+
+Superseded on 2026-10-20 by the shared ruling 2026-10-17-github-actions-only-for-public-releases.md, which moves everyday checks to the build machine and keeps GitHub Actions for releases only.
+
 2. **Two suites.** Ticket-branch CI runs the routine suite only, with a target of about 10 minutes wall time. The all-features build, Windows, the stress lane and release-panic run on pushes to `main` and in the release workflow. A ticket that changes code only those jobs build runs `make full-feature-check` itself before landing. A release still needs a finished green CI run on the tagged commit, as Ian ruled on 2026-09-29.
+Rule 3 is superseded on 2026-10-20 by the same 2026-10-17 ruling and the shared developer skill: each lane runs the routine suite through pm job before review, and the batch landing gate is the final check.
+
 3. **One full check per ticket.** Once ticket-branch CI is at about 10 minutes, a developer runs only the tests for what changed, and CI is the ticket's one full gate. This overrides, for BioMCP, the shared rule to run the gates once before landing. The ticket that brings CI to about 10 minutes writes the rule into `AGENTS.md`.
 4. **Hard targets for 0.9.3**, measured against the 2069 baseline record: ticket-branch CI about 10 minutes; `make test` about 3 minutes; `make spec` about 3 minutes; every routine test a few seconds at most, enforced by the test runners once the slow tests have injected clocks. The share of test code is measured with each deletion batch, and its target is set after the first batch.
 5. **Order.** The test cleanup moves ahead of the remaining build and dependency work. The run-time speed tickets and the product fixes run in a parallel lane beside it, not behind it.

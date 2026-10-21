@@ -1169,7 +1169,7 @@ mod wire_tests {
         assert_eq!(AUTHOR_PAPERS_COMMAND_DEADLINE, Duration::from_secs(35));
     }
 
-    #[tokio::test(start_paused = true)]
+    #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn stalled_request_future_fails_at_the_absolute_deadline_without_late_output() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -1210,6 +1210,12 @@ mod wire_tests {
         );
         assert!(!message.contains("http://"), "{message}");
         stalled.abort();
+        assert!(
+            stalled
+                .await
+                .expect_err("cancel stalled fixture")
+                .is_cancelled()
+        );
     }
 }
 
