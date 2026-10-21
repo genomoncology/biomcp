@@ -100,6 +100,27 @@ fn fixture_reply(request: &str, europepmc_hold: Option<&HeldReplyGate>) -> TestH
     TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
 }
 
+// Hold an ordinary-transport leg so this scenario reaches the invocation ceiling even when literature retries settle early.
+fn invocation_expiry_reply(
+    request: &str,
+    hold: &HeldReplyGate,
+    pubmed_holds: &AtomicUsize,
+) -> TestHttpReply {
+    let target = request
+        .split_whitespace()
+        .nth(1)
+        .expect("fixture request target");
+    if target
+        .split('?')
+        .next()
+        .is_some_and(|path| path.ends_with("/esearch.fcgi"))
+    {
+        pubmed_holds.fetch_add(1, Ordering::SeqCst);
+        return TestHttpReply::Hold(Arc::clone(hold));
+    }
+    fixture_reply(request, Some(hold))
+}
+
 fn deadline_filters() -> ArticleSearchFilters {
     ArticleSearchFilters {
         keyword: Some("deadline fixture".into()),
@@ -373,11 +394,14 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
         "deadline_expiry_without_rows_names_the_deadline_error",
         120,
         async {
-            // Every source fails or is held, so nothing answers and the terminal
-            // error must name the deadline instead of a generic failure.
+            // PubMed's ordinary transport remains held until the invocation guard expires; bounded Europe PMC retries may finish earlier.
             let (_release_tx, hold) = held_reply_gate();
-            let mut fixture =
-                TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
+            let pubmed_holds = Arc::new(AtomicUsize::new(0));
+            let observed_holds = Arc::clone(&pubmed_holds);
+            let mut fixture = TestHttpFixture::spawn(move |request| {
+                invocation_expiry_reply(request, &hold, &observed_holds)
+            })
+            .await;
             let cache = TempDirGuard::new("article-search-deadline-terminal");
             let _env = deadline_env(&fixture, cache.path(), "1200");
             let mut filters = deadline_filters();
@@ -397,6 +421,10 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
                 started.elapsed() <= budget + DEADLINE_WALL_GRACE,
                 "empty expiry honors the deadline: {:?} elapsed",
                 started.elapsed()
+            );
+            assert!(
+                pubmed_holds.load(Ordering::SeqCst) > 0,
+                "the invocation guard cancelled an actual held PubMed request"
             );
             let reason = match &error {
                 BioMcpError::SourceUnavailable { reason, .. } => reason.clone(),
@@ -543,18 +571,15 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
         "fast_pubtator_failure_does_not_hide_the_deadline_error",
         120,
         async {
-            // PubTator fails fast and non-retryably (400) while Europe PMC is held
-            // past the deadline: the terminal error must still name the deadline,
-            // not the fast failure.
+            // PubTator refuses immediately; a held ordinary PubMed request forces actual invocation expiry before error selection.
             let (_release_tx, hold) = held_reply_gate();
+            let pubmed_holds = Arc::new(AtomicUsize::new(0));
+            let observed_holds = Arc::clone(&pubmed_holds);
             let mut fixture = TestHttpFixture::spawn(move |request| {
                 let target = request
                     .split_whitespace()
                     .nth(1)
                     .expect("fixture request line carries a target");
-                if target.starts_with("/search") && target.contains("query=") {
-                    return TestHttpReply::Hold(Arc::clone(&hold));
-                }
                 if target.starts_with("/search") && target.contains("text=") {
                     return TestHttpReply::Bytes(test_http_response(
                         "400 Bad Request",
@@ -562,7 +587,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
                         b"{}",
                     ));
                 }
-                fixture_reply(request, Some(&hold))
+                invocation_expiry_reply(request, &hold, &observed_holds)
             })
             .await;
             let cache = TempDirGuard::new("article-search-fast-failure-deadline");
@@ -584,6 +609,10 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
                 started.elapsed() <= budget + DEADLINE_WALL_GRACE,
                 "fast-failure expiry honors the deadline: {:?} elapsed",
                 started.elapsed()
+            );
+            assert!(
+                pubmed_holds.load(Ordering::SeqCst) > 0,
+                "the invocation guard cancelled an actual held PubMed request"
             );
             match &error {
                 BioMcpError::SourceUnavailable { reason, .. } => assert!(
