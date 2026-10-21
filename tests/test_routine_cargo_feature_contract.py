@@ -252,6 +252,7 @@ def test_make_test_prepares_once_and_runs_lanes_sequentially(
     )
     overlay = tmp_path / "lanes.mk"
     overlay.write_text(
+        'sync-python-dev:\n\t@:\n'
         f'prepare-test:\n\t@echo prepare >> "{tmp_path / "prepared"}"\n'
         f"test-rust:\n\t@{sys.executable} {worker} {tmp_path} rust\n"
         f"test-python:\n\t@{sys.executable} {worker} {tmp_path} python\n"

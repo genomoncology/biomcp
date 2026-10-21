@@ -8,7 +8,7 @@ Milestone: 0.9.4
 
 Synthetic Make tests exercise real gate ordering and failure propagation using fixture-owned commands and environment. They cannot inherit host tools or Make controls. Production preflight and its dedicated tests remain intact.
 
-- Changes: `tests/test_routine_cargo_feature_contract.py`, `tests/test_dependency_advisory_gate.py`, `tests/test_feature_coverage.py`, `tests/test_ci_workflow_contract.py`, `tests/test_lint.py`, `tests/make_fixture.py`, `CHANGELOG.md`.
+- Changes: `tests/test_routine_cargo_feature_contract.py`, `tests/test_dependency_advisory_gate.py`, `tests/test_feature_coverage.py`, `tests/test_ci_workflow_contract.py`, `tests/test_lint.py`, `tests/make_fixture.py`, `tests/test_gate_preflight.py`, `CHANGELOG.md`.
 - Proof: reproduce the six existing gate-order failures on current main with production tools unavailable and hostile inherited Make/tool settings. A shared isolated fixture must preserve exact stage order, stop at the failing stage, and never invoke hostile commands. Run affected modules through pm job. No production changes or real-tool installation to conceal fixture leakage.
 
 ## Evidence
