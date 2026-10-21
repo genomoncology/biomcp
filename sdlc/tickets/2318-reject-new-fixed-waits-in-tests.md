@@ -4,13 +4,15 @@ priority: 2
 
 # 2318 — Reject new fixed waits in tests
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Depends on: 2301, 2302, 2303
 
 Reviews: revision 5fd9b4a, accept
+
+Reviews: revision 3cd3a05, accept
 
 ## Outcome
 

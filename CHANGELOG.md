@@ -110,6 +110,7 @@
 
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+- Run the landing and main gates directly through repository Make targets in build jobs. (2317)
 - Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
 - Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
 - Run routine Rust and Python tests sequentially with a shared worker allowance for the build job booking. (2316)
@@ -118,7 +119,10 @@
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 
+- Keep release steps in one document and reuse qualification after records-only changes. (2312)
+
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
+
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
@@ -142,6 +146,7 @@
 - Verify parallel article cache reuse against admitted responses and preserve failed-case cache databases. (2285)
 
 - Qualify concurrent CLI and MCP cache sharing with distinct stored requests and strict warm reuse after bounded admission. (2283)
+
 
 - Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
 - Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)

@@ -4,7 +4,7 @@ priority: 3
 
 # 2272 — Offer full FDA approval history
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
