@@ -25,6 +25,12 @@ Sampled strengths include shared CLI/MCP execution, exact variant identity rejec
 
 The same independent lead reviewed the complete four-correction diff and callers at candidate `94a02bfa0a4f51bf84d052f483ccfcf7ce50e3b8`, tree `1549f7071d47e2e4f5f3356ecc43ad10658a8d95`, and closed all four original medium findings. Fresh per-ticket reviewers inspected the changed code, scripts and workflow selection. Their source-bound routine, hostile-output, actual installed-wheel and native Windows proof is retained in tickets 2338–2341. The unsupported workflow long-suite claim is corrected. This incremental acceptance preserves the earlier unaffected review scope; it is not final release admission. The additional region-coverage correction, actual batch gate, final qualification and complete untagged rehearsal remain required.
 
+## Correction batch landing
+
+PM m3262 approved the documented hand-merge path after the legacy batch classifier rejected script/workflow paths. The lander prepared four ticketed no-ff merges, ran one direct `make landing-gate` at exact candidate `94a02bfa0a4f51bf84d052f483ccfcf7ce50e3b8`, then published that passing source and recorded each carried merge with standard pm commands. M5 job `2338/j2877` passed exit zero. The coordinator independently verified the full candidate composition and actual terminal receipt; no source or gate change was hidden by the recovery path.
+
+The four standard record closures produced `da44ffcfecfd7d06872ddc1c83f57ea3bf55fd8f`. Carrying the new coverage ticket and dependency produced `e5c05f8b1eba906625305aa3b8b067185292e2cb`. The coordinator verified that the latter differs from the tested candidate only in six SDLC ticket files. All four ticket worktrees, branches, reservations, candidate copies and six owned machine job copies were removed. Important proof remains on Yellow under `data/biomcp/release-evidence/0.9.4/landing-2338-2339-2340-2341`; the final verified retention-manifest SHA256 is `fe395ac07d3fd7c515e93d64dc8db4147404b951d692cec9d4230d4eb51a1cc4`.
+
 ## Qualification binding
 
 The earlier release source and rehearsal remain historical evidence in [the prior admission](2258-release-admission.md). They do not qualify the expanded product source. The final direct main gate, fresh-clone offline Linux proof, authorized keyed five-record check and complete untagged rehearsal must name their actual new source. Final job receipts and publication limits will be recorded here after execution.
