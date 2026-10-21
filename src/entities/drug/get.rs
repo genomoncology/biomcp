@@ -217,7 +217,7 @@ fn apply_approvals_result(
             let outcome = if rows.is_empty() {
                 SectionOutcome::empty_with_reason(
                     "OpenFDA Drugs@FDA",
-                    "Drugs@FDA found no exact-name match. Suffixed names (e.g. belantamab mafodotin-blmf) require source-confirmed identity; FDA approvals are not ruled out.",
+                    "Drugs@FDA returned no matching approval records. FDA approvals are not ruled out.",
                 )
             } else {
                 SectionOutcome::data("OpenFDA Drugs@FDA")
@@ -238,7 +238,7 @@ fn apply_approvals_result(
 async fn add_approvals_section(
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
-    identity_brands: &[String],
+    approval_identity: &super::approvals::Identity,
     full_history: bool,
 ) {
     let key = if full_history {
@@ -257,7 +257,7 @@ async fn add_approvals_section(
     }
 
     let approvals_fut =
-        super::approvals::fetch(drug, label_response, identity_brands, full_history);
+        super::approvals::fetch(drug, label_response, approval_identity, full_history);
 
     let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
         Ok(result) => result,
@@ -267,7 +267,21 @@ async fn add_approvals_section(
             suggestion: "Retry the request.".to_string(),
         }),
     };
-    apply_approvals_result(drug, result, full_history);
+    match result {
+        Ok(lookup) => {
+            if lookup.unconfirmed.is_empty() {
+                apply_approvals_result(drug, Ok(lookup.approvals), full_history);
+            } else {
+                drug.approvals = Some(lookup.approvals);
+                drug.section_outcomes.complete(key, SectionOutcome::empty_with_reason(
+                    "OpenFDA Drugs@FDA",
+                    "Drugs@FDA product identity is unconfirmed. A source-confirmed identity is required; FDA approvals are not ruled out.",
+                ));
+            }
+            drug.unconfirmed_approvals = lookup.unconfirmed;
+        }
+        Err(error) => apply_approvals_result(drug, Err(error), full_history),
+    }
 }
 
 pub(super) struct ResolvedDrugBase {
@@ -1378,7 +1392,7 @@ async fn populate_us_regional_sections(
     drug: &mut Drug,
     selected_hits: &[MyChemHit],
     label_response: Option<&serde_json::Value>,
-    identity_brands: &[String],
+    approval_identity: &super::approvals::Identity,
     section_flags: &DrugSections,
 ) -> Result<(), BioMcpError> {
     if section_flags.include_shortage {
@@ -1389,7 +1403,7 @@ async fn populate_us_regional_sections(
 
     let compact_approvals = section_flags.include_regulatory || section_flags.include_approvals;
     if section_flags.include_approval_history {
-        add_approvals_section(drug, label_response, identity_brands, true).await;
+        add_approvals_section(drug, label_response, approval_identity, true).await;
         if compact_approvals {
             let outcome = drug
                 .section_outcomes
@@ -1399,7 +1413,7 @@ async fn populate_us_regional_sections(
             drug.section_outcomes.complete("approvals", outcome);
         }
     } else if compact_approvals {
-        add_approvals_section(drug, label_response, identity_brands, false).await;
+        add_approvals_section(drug, label_response, approval_identity, false).await;
     } else {
         drug.approvals = None;
     }
@@ -1664,7 +1678,8 @@ async fn get_with_region_owned(
     let (label_lookup, civic, target_sources, adverse_event_fetch) =
         tokio::join!(label_fut, civic_fut, targets_fut, adverse_event_fut);
 
-    let identity_brands = resolved.drug.brand_names.clone();
+    let approval_identity =
+        super::approvals::Identity::from_hits(&resolved.drug, &resolved.selected_hits);
     if let Some(label_response) = label_lookup.response.as_ref() {
         apply_openfda_metadata(&mut resolved.drug, label_response);
         resolved.drug.label_set_id = extract_label_set_id(label_response);
@@ -1696,7 +1711,7 @@ async fn get_with_region_owned(
             &mut resolved.drug,
             &resolved.selected_hits,
             label_lookup.response.as_ref(),
-            &identity_brands,
+            &approval_identity,
             &section_flags,
         )
         .await?;

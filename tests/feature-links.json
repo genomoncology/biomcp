@@ -216,6 +216,9 @@
     "tests/test_variant_article_gene_aliases.py": {
       "feature": "variant"
     },
+    "tests/test_variant_article_metadata_status.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_article_paper_anchors.py": {
       "feature": "variant"
     },

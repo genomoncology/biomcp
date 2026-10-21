@@ -737,6 +737,8 @@ pub struct DrugsFdaResult {
 #[derive(Debug, Clone, Deserialize)]
 pub struct DrugsFdaProduct {
     #[serde(default)]
+    pub product_number: Option<String>,
+    #[serde(default)]
     pub brand_name: Option<String>,
     #[serde(default)]
     pub dosage_form: Option<String>,
