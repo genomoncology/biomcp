@@ -2,7 +2,7 @@
 
 Status: OPEN.
 
-Milestone: 0.9.5
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -15,4 +15,4 @@ BioMCP's lint passes under -D warnings on current stable Rust, and every build m
 - The Gator early-signal gate j1104 for 2323 on 2026-10-21 failed lint: rustc 1.99.1 rejects four existing Atomic fetch_update uses as deprecated under -D warnings. Cargo.toml declares rust-version 1.89, and the repo has no rust-toolchain file.
 - Jarvis, 2026-10-21: Gator has 1.95.0, the M5's version, beside its default 1.99.1. Pin 1.95.0 first, then fix the deprecation and raise the pin.
 - The Gator rerun j1188 with Rust 1.95.0 passed Clippy, licenses and advisories, then failed spec lint because mustmatch was absent. Host tools failed one at a time across two runs.
-- Held out of 0.9.4 because a product source change after qualification would void the reused qualification runs.
+- Ian moved this into 0.9.4 on 2026-10-21; 0.9.4 requalifies and rehearses after it lands.
