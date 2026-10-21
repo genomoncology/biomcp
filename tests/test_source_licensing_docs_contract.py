@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 import json
 import re
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -137,23 +138,8 @@ def _inventory_item(name: str) -> dict[str, object]:
 def test_sources_inventory_is_complete_and_schema_conformant() -> None:
     source_mod = _read("src/sources/mod.rs")
     discovered_modules = re.findall(r"pub\(crate\) mod ([a-z0-9_]+);", source_mod)
-    discovered_modules = [
-        module
-        for module in discovered_modules
-        if module
-        not in {
-            "rate_limit",
-            "cbioportal_download",
-            "cbioportal_study",
-            "pmc_article",
-            "ordinary_url_policy",
-            "provider_url_policy",
-            "ca_bundle",
-            # The disabled-source registry is shared state over this
-            # inventory, not a provider client.
-            "disable",
-        }
-    ]
+    helper_modules = runpy.run_path(str(REPO_ROOT / "tools/check-source-registry.py"))["HELPER_MODULES"]
+    discovered_modules = [module for module in discovered_modules if module not in helper_modules]
     assert sorted(discovered_modules) == sorted(DIRECT_SOURCE_MODULES)
 
     inventory = _source_inventory()

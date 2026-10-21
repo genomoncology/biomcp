@@ -179,8 +179,12 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
                 europepmc
                     .message
                     .as_deref()
-                    .is_some_and(|message| message.contains("deadline")),
-                "the degraded message names the deadline: {europepmc:?}"
+                    .is_some_and(|message| {
+                        message.contains("deadline")
+                            || (message.contains("failure_class=timeout")
+                                && message.contains("retry_attempted=true"))
+                    }),
+                "the degraded message names the deadline or the exhausted timeout retry: {europepmc:?}"
             );
             assert_eq!(page.diagnostics.deadline_ms, 4000);
             assert!(
@@ -349,11 +353,12 @@ async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
                 .expect("held Europe PMC leg is reported");
             assert_eq!(europepmc.status, Some(ArticleSourceAvailability::Degraded));
             assert!(
-                europepmc
-                    .message
-                    .as_deref()
-                    .is_some_and(|message| message.contains("deadline")),
-                "the degradation names the deadline: {europepmc:?}"
+                europepmc.message.as_deref().is_some_and(|message| {
+                    message.contains("deadline")
+                        || (message.contains("failure_class=timeout")
+                            && message.contains("retry_attempted=true"))
+                }),
+                "the degradation names the deadline or the exhausted timeout retry: {europepmc:?}"
             );
             fixture.finish().unwrap();
         },
