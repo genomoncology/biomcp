@@ -165,6 +165,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         label: None,
         label_set_id: None,
         shortage: Some(Vec::new()),
+        unconfirmed_approvals: Vec::new(),
         approvals: Some(Vec::new()),
         fda_orphan_designations: None,
         us_label_effective_date: None,

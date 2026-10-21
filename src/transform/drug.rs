@@ -1240,6 +1240,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         label_set_id: None,
         shortage: None,
         approvals: None,
+        unconfirmed_approvals: Vec::new(),
         fda_orphan_designations: None,
         us_label_effective_date: None,
         us_safety_warnings: None,
