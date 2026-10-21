@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 8e3643ced0cf3b1d7902a4ce38b88b334d531d9a, accept
+
 ## Outcome
 
 Synthetic Make tests exercise real gate ordering and failure propagation using fixture-owned commands and environment. They cannot inherit host tools or Make controls. Production preflight and its dedicated tests remain intact.
