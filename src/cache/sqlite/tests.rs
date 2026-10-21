@@ -229,13 +229,40 @@ async fn http_middleware_separates_bodies_and_vary_and_preserves_original_transp
         .query_row("SELECT count(*) FROM entries", [], |r| r.get(0))
         .unwrap();
     assert_eq!(rows, 4);
-    let mut statement = store
-        .connection()
-        .prepare("SELECT metadata FROM entries")
-        .unwrap();
+    let connection = store.connection();
+    let mut statement = connection.prepare("SELECT metadata FROM entries").unwrap();
     for bytes in statement.query_map([], |r| r.get::<_, Vec<u8>>(0)).unwrap() {
         let text = String::from_utf8(bytes.unwrap()).unwrap();
         assert!(!text.contains("FAKE-CANARY"));
     }
     server.abort();
+}
+
+#[test]
+fn cached_body_remains_readable_while_another_connection_holds_the_writer_lease() {
+    let root = TempDirGuard::new("sqlite-reader-writer");
+    let mut reader = Store::open(root.path()).unwrap();
+    let body = vec![23; blobs::INLINE_LIMIT + 1];
+    reader
+        .put("http", "body", "body", b"headers", &body, None)
+        .unwrap();
+    let mut writer = crate::test_support::SignaledChild::spawn(
+        &std::env::current_exe().unwrap(),
+        &[
+            "--exact",
+            "cache::sqlite::stress_tests::writer_child_process",
+            "--ignored",
+            "--nocapture",
+        ],
+        [("BIOMCP_TEST_EVICTOR_ROOT", root.path().as_os_str())],
+        "WRITER_READY",
+    );
+    let record = reader
+        .get("http", "body")
+        .expect("a committed cache read does not acquire the writer lease")
+        .unwrap();
+    assert_eq!(record.metadata, b"headers");
+    assert_eq!(record.body, body);
+    writer.release();
+    assert!(writer.child.wait().unwrap().success());
 }

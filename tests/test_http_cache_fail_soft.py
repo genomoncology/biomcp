@@ -291,6 +291,10 @@ def test_cache_database_contention_leaves_time_for_provider(provider, command):
     seeded = run(command)
     assert seeded.returncode == 0, seeded.stderr
     with sqlite3.connect(cache / "biomcp.db") as held:
+        # A committed miss exercises provider fallback. A committed hit stays
+        # readable during a writer lease and must not require another request.
+        held.execute("delete from entries where namespace='http'")
+        held.commit()
         held.execute("begin immediate")
         before = replay.request_log_line_count()
         result = run(command)
@@ -344,7 +348,7 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
 
 
 @pytest.mark.parametrize("fault", ["integrity", "missing"])
-def test_unreadable_cached_blob_refetches_with_a_safe_warning(provider, fault):
+def test_unreadable_cached_blob_refetches_and_warns_only_on_corruption(provider, fault):
     run, cache, _, replay = provider
     first = run(GENE)
     assert first.returncode == 0, first.stderr
@@ -356,6 +360,13 @@ def test_unreadable_cached_blob_refetches_with_a_safe_warning(provider, fault):
         (cache / "blobs" / digest).write_bytes(b"corrupt cache content")
     before = replay.request_log_line_count()
     result = run(GENE)
-    assert_answer(result, "read")
+    if fault == "integrity":
+        assert_answer(result, "read")
+    else:
+        # Concurrent eviction can remove a selected blob. The bounded retry
+        # turns a repeated missing file into an ordinary miss, without alarm.
+        assert result.returncode == 0, result.stderr
+        assert json.loads(result.stdout)["results"] == json.loads(first.stdout)["results"]
+        assert "local HTTP cache" not in result.stderr, result.stderr
     assert str(cache) not in result.stderr
     assert replay.request_log_line_count() == before + 1

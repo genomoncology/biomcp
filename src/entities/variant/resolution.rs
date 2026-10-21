@@ -49,7 +49,7 @@ fn hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(&format!(
-            r"^({CHROMOSOME_PATTERN}:g\.\d+{GENOMIC_CHANGE_PATTERN})$"
+            r"^((?:{CHROMOSOME_PATTERN}|NC_\d+\.\d+):g\.\d+{GENOMIC_CHANGE_PATTERN})$"
         ))
         .expect("valid regex")
     })
@@ -59,7 +59,7 @@ fn coordinate_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(&format!(
-            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)([ACGT]>[ACGT]|del)$"
+            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)({GENOMIC_CHANGE_PATTERN})$"
         ))
         .expect("valid regex")
     })
@@ -76,7 +76,10 @@ fn vcf_coordinate_re() -> &'static Regex {
 fn refseq_coordinate_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)^(NC_\d+\.\d+):g\.(\d+)([ACGT]>[ACGT]|del)$").expect("valid regex")
+        Regex::new(&format!(
+            r"(?i)^(NC_\d+\.\d+):g\.(\d+)({GENOMIC_CHANGE_PATTERN})$"
+        ))
+        .expect("valid regex")
     })
 }
 
@@ -161,11 +164,13 @@ pub(crate) fn normalize_genomic_coordinate(
                 "genomic coordinate position must be positive".into(),
             ));
         }
-        let change = if change.eq_ignore_ascii_case("del") {
-            "del".to_string()
-        } else {
-            change.to_ascii_uppercase()
-        };
+        let change: String = change
+            .chars()
+            .map(|letter| match letter.to_ascii_uppercase() {
+                'A' | 'C' | 'G' | 'T' => letter.to_ascii_uppercase(),
+                _ => letter.to_ascii_lowercase(),
+            })
+            .collect();
         Ok(Some(NormalizedGenomicCoordinate {
             id: format!(
                 "chr{}:g.{position}{}",
@@ -509,10 +514,10 @@ Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+
 Supported formats:\n\
 - rsID: rs113488022\n\
 - ClinVar VariationID: 577152\n\
-- HGVS genomic: chr7:g.140453136A>T\n\
+- HGVS genomic: chr7:g.140453136A>T, NC_000002.12:g.58159795_58159798dup\n\
 - Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n\
 - Transcript HGVS: NM_004333.6:c.1799T>A\n\
-- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del"
+- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del, FANCL p.T367fs, FANCL p.T367Nfs*13"
     )))
 }
 
@@ -652,6 +657,7 @@ pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
 
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     normalize_protein_range_deletion(protein_alias_body(value))
+        .or_else(|| normalize_protein_frameshift(protein_alias_body(value)))
         .or_else(|| normalize_protein_substitution(value))
 }
 
@@ -683,6 +689,43 @@ pub(crate) fn normalize_protein_substitution(value: &str) -> Option<String> {
     }
 
     Some(format!("{from}{pos}{to}"))
+}
+
+fn normalize_protein_frameshift(value: &str) -> Option<String> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let caps = RE
+        .get_or_init(|| {
+            Regex::new(
+                r"^([A-Z][a-z]{0,2})([1-9]\d*)(?:([A-Z][a-z]{0,2}))?fs(?:(?:\*|Ter)([1-9]\d*|\?))?$",
+            )
+            .expect("valid regex")
+        })
+        .captures(value)?;
+    let reference = amino_acid_one_letter(&caps[1])?;
+    if reference == '*' {
+        return None;
+    }
+    let alternate = match caps.get(3) {
+        Some(residue) => {
+            let residue = amino_acid_one_letter(residue.as_str())?;
+            if residue == '*' {
+                return None;
+            }
+            residue.to_string()
+        }
+        None => String::new(),
+    };
+    // An immediate stop (fsTer1) is a nonsense change, not a frameshift.
+    if caps.get(4).is_some_and(|distance| distance.as_str() == "1") {
+        return None;
+    }
+    let termination = caps
+        .get(4)
+        .map(|distance| format!("*{}", distance.as_str()))
+        .unwrap_or_default();
+    // Retain every supplied component. A short frameshift spelling does not
+    // establish the new residue, termination distance, transcript or DNA allele.
+    Some(format!("{reference}{}{alternate}fs{termination}", &caps[2]))
 }
 
 fn protein_range_deletion_re() -> &'static Regex {
@@ -736,6 +779,7 @@ impl VariantArticleRequest {
             transcript: Self::clean(&self.transcript),
             clinvar_variation_id: None,
             genomic_accession: Self::clean(&self.accession),
+            genomic_hgvs: None,
             genome_build: Self::clean(&self.build),
             position: self.position,
             reference: Self::clean(&self.reference),
@@ -761,10 +805,21 @@ impl VariantArticleRequest {
             ));
         }
         let identity = self.requested_identity();
-        let complete_genomic = identity.genomic_accession.is_some()
-            && identity.position.is_some()
-            && identity.reference.is_some()
-            && identity.alternate.is_some();
+        if let Some(declared) = Self::clean(&self.build)
+            && identity
+                .genome_build
+                .as_deref()
+                .is_none_or(|inferred| !inferred.eq_ignore_ascii_case(&declared))
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item build conflicts with its genomic HGVS reference".into(),
+            ));
+        }
+        let complete_genomic = identity.genomic_hgvs.is_some()
+            || (identity.genomic_accession.is_some()
+                && identity.position.is_some()
+                && identity.reference.is_some()
+                && identity.alternate.is_some());
         if (structured_genomic || self.genomic.is_some()) && !complete_genomic {
             return Err(BioMcpError::InvalidArgument(
                 "genomic identity requires a complete genomic HGVS or accession, position, ref, and alt"
@@ -772,6 +827,7 @@ impl VariantArticleRequest {
             ));
         }
         if complete_genomic
+            && identity.genomic_hgvs.is_none()
             && (identity.position == Some(0)
                 || genomic_alias(&identity)
                     .as_deref()
@@ -930,6 +986,8 @@ pub(crate) struct RequestedVariantIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub genomic_accession: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub genomic_hgvs: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub genome_build: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<u64>,
@@ -1000,6 +1058,7 @@ impl RequestedVariantIdentity {
                 })
             }
             VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(_)) => {
+                let _ = normalize_genomic_coordinate(supplied)?;
                 let mut identity = Self::default();
                 identity.populate_genomic(supplied);
                 Ok(identity)
@@ -1026,17 +1085,26 @@ impl RequestedVariantIdentity {
     }
 
     pub(crate) fn populate_genomic(&mut self, value: &str) {
-        let Some(caps) = hgvs_coords_re().captures(value.trim()) else {
-            return;
-        };
-        self.populate_genomic_captures(&caps);
+        if let Some(caps) = hgvs_coords_re().captures(value.trim()) {
+            self.populate_genomic_captures(&caps);
+        } else if let Ok(Some(coordinate)) = normalize_genomic_coordinate(value) {
+            self.genomic_hgvs = Some(value.trim().to_string());
+            self.genomic_accession = coordinate
+                .id
+                .split_once(":g.")
+                .map(|(accession, _)| accession.to_string());
+            if let Some(build) = coordinate.genome_build {
+                self.genome_build = Some(super::get::genome_build_name(build).to_string());
+            }
+        }
     }
 
     fn populate_structured_genomic(&mut self, value: &str) {
-        let Some(caps) = structured_genomic_re().captures(value.trim()) else {
-            return;
-        };
-        self.populate_genomic_captures(&caps);
+        if let Some(caps) = structured_genomic_re().captures(value.trim()) {
+            self.populate_genomic_captures(&caps);
+        } else {
+            self.populate_genomic(value);
+        }
     }
 
     fn populate_genomic_captures(&mut self, caps: &regex::Captures<'_>) {
@@ -1077,6 +1145,9 @@ impl RequestedVariantIdentity {
 }
 
 fn genomic_alias(identity: &RequestedVariantIdentity) -> Option<String> {
+    if let Some(hgvs) = &identity.genomic_hgvs {
+        return Some(hgvs.clone());
+    }
     Some(format!(
         "{}:g.{}{}>{}",
         identity.genomic_accession.as_deref()?,
@@ -1206,6 +1277,17 @@ impl SourceVariantIdentity {
             coding_changes,
             rsids,
         }
+    }
+
+    pub(crate) fn from_myvariant_hit_with_build(
+        hit: &crate::sources::myvariant::MyVariantHit,
+        build: Option<super::GenomeBuild>,
+    ) -> Self {
+        let mut identity = Self::from_myvariant_hit(hit);
+        if let Some(build) = build {
+            identity.genome_build = super::get::genome_build_name(build).to_string();
+        }
+        identity
     }
 
     pub(crate) fn normalized_key(&self) -> String {
@@ -1348,7 +1430,30 @@ pub(crate) fn compare_variant_identity(
             };
         }
     }
-    let source_genomic = genomic_components(&source.genomic_id);
+    if let Some(hgvs) = requested.genomic_hgvs.as_deref() {
+        let wanted = normalize_genomic_coordinate(hgvs).ok().flatten();
+        let actual = normalize_genomic_coordinate(&source.genomic_id)
+            .ok()
+            .flatten();
+        match (wanted, actual) {
+            (Some(wanted), Some(actual)) if wanted.id == actual.id => {
+                matched_alias.get_or_insert(source.genomic_id.clone());
+            }
+            (Some(_), Some(_)) => {
+                return VariantIdentityComparison::Contradictory {
+                    field: "genomic_hgvs",
+                };
+            }
+            _ => indeterminate = Some("genomic_hgvs"),
+        }
+    }
+    let mut source_genomic = genomic_components(&source.genomic_id);
+    if requested.genomic_hgvs.is_some()
+        && source_genomic.build.is_none()
+        && !source.genome_build.is_empty()
+    {
+        source_genomic.build = Some(&source.genome_build);
+    }
     macro_rules! compare_genomic_field {
         ($requested:expr, $source:expr, $field:literal, $matches:expr) => {
             if let Some(wanted) = $requested {

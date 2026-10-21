@@ -28,6 +28,8 @@ PUBLIC_BIOMCP_SECTIONS = {
 }
 
 PRODUCTION_READ_ENV_ALLOWLIST = {
+    "BIOMCP_TEST_EVICTOR_ROOT": "cfg(test)-only cache child-process selector, not operator configuration",
+    "BIOMCP_TEST_EVICTOR_CONTROL": "cfg(test)-only cache child-process barrier, not operator configuration",
     "BIOMCP_GENCC_BASE": "fixture endpoint gated by an exact loopback test signal",
     "BIOMCP_GENCC_CHILD_CRASH_PUBLISH": "test-subprocess instruction, not operator configuration",
     "BIOMCP_GENCC_CHILD_CRASH_STATE": "test-subprocess instruction, not operator configuration",

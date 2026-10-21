@@ -210,7 +210,12 @@ fn classify_reversed_search<T: AsRef<OsStr>>(args: &[T]) -> ReversedSearch {
     }
 }
 
+mod reversed_help;
+
 pub(crate) fn reversed_search_correction<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
+    if let Some(correction) = reversed_help::correction(args) {
+        return Some(correction);
+    }
     match classify_reversed_search(args) {
         ReversedSearch::Complete(sentence) => Some(sentence),
         ReversedSearch::Suppressed { entity, reason }

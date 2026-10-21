@@ -21,9 +21,17 @@ BioMCP supports multiple input forms:
 - versioned RefSeq HGVS: `NC_000010.11:g.87925512G>A`
 - VCF-like: `chr10:87925512:G:A`
 - SPDI: `NC_000010.11:87925511:G:A`
+- versioned RefSeq duplication: `NC_000002.12:g.58159795_58159798dup`
 - versioned RefSeq deletion: `NC_000010.11:g.87925512del`
 - transcript coding HGVS: `NM_000249.4:c.678-14_678-3del` (intronic offsets resolve through ClinVar's coding aliases when normalization services refuse)
+- protein frameshift: `FANCL p.T367fs`, `FANCL p.T367Nfs*13` (the supplied residue and termination details stay distinct; a protein spelling never establishes a DNA allele)
 - gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`, `EGFR E746_A750del`
+
+Variant article JSON retains an indel's complete supplied spelling in
+`requested_variant.genomic_hgvs`. A versioned RefSeq accession supplies its
+known genome build; provider validation uses that build and the complete
+normalized genomic change. Protein frameshift queries retain omitted details
+and unknown stop distances instead of treating them as a complete DNA allele.
 
 ClinVar-style names that keep the gene in parentheses, such as
 `NM_000249.4(MLH1):c.678-14_678-3del`, are refused with the colon working form

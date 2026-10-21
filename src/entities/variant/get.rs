@@ -1132,7 +1132,7 @@ async fn normalize_transcript_hgvs_for_get(
 
 /// The public spelling of a genome build. One definition serves the
 /// not-found report and the conflicting-declaration refusal.
-fn genome_build_name(build: GenomeBuild) -> &'static str {
+pub(super) fn genome_build_name(build: GenomeBuild) -> &'static str {
     match build {
         GenomeBuild::Grch37 => "GRCh37",
         GenomeBuild::Grch38 => "GRCh38",

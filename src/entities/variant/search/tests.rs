@@ -668,7 +668,7 @@ fn scan(
     ProviderScan {
         candidates: hits
             .into_iter()
-            .map(|hit| provider_candidate(requested, hit))
+            .map(|hit| provider_candidate(requested, hit, None))
             .collect(),
         exhaustive,
         available: true,

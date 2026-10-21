@@ -541,6 +541,7 @@ fn identity_comparison_preserves_provider_alias_and_checks_every_known_field() {
         transcript: Some("NM_004333.6".into()),
         clinvar_variation_id: Some(12304),
         genomic_accession: Some("chr7".into()),
+        genomic_hgvs: None,
         genome_build: Some("GRCh38".into()),
         position: Some(140453136),
         reference: Some("A".into()),

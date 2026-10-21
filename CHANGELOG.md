@@ -10,6 +10,10 @@
 
 - Recover omitted default variant article routes through grouped queries and shared provider work, with a bounded discovery allowance and explicit remaining omissions. Preserve lexical selection and identity checks. (2337)
 
+- Keep cached responses usable during concurrent cache updates, avoid repeated database opens and skip cleanup transactions when maintenance is not due. (2326)
+
+- Accept protein frameshift and versioned RefSeq duplication spellings in variant commands, preserve their complete supplied identity, and constrain genomic provider lookups to the reference build. (2334)
+
 - Expand strict coding-alias discovery in default variant article searches while preserving the existing lexical queries, identity checks, and work budgets. Keep omitted aliases visible. (2327)
 - Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
@@ -18,6 +22,8 @@
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
 - Keep release step order, body pins and counterpart coverage in one inventory, and report a missed inventory update once. (2333)
+
+- Point reversed entity search and get help requests to their exact commands while preserving registered command aliases. (2335)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
 
