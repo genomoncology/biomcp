@@ -346,11 +346,21 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
     }
     assert_eq!(rows[0].citation_count, covered.then_some(133));
     let requests = requests.lock().unwrap().clone();
+    let expected_query = if variant {
+        "(EXT_ID:20516115) AND SRC:MED"
+    } else {
+        "EXT_ID:20516115 AND SRC:MED"
+    };
     assert!(
-        requests
-            .iter()
-            .any(|target| target.starts_with("/search?query=EXT_ID%3A20516115")),
-        "Europe PMC is consulted (the colon arrives percent-encoded): {requests:?}"
+        requests.iter().any(|target| {
+            let url = reqwest::Url::parse(&format!("http://fixture{target}"))
+                .expect("fixture request target");
+            url.path() == "/search"
+                && url
+                    .query_pairs()
+                    .any(|(key, value)| key == "query" && value == expected_query)
+        }),
+        "Europe PMC receives the exact PMID and MED query: {requests:?}"
     );
     drop(requests);
     fixture.finish().unwrap();

@@ -10,7 +10,10 @@ use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 
 use super::candidates::finalize_article_candidates;
-use super::detail::{first_europepmc_hit, parse_pmid, resolve_variant_article_from_pmid};
+use super::detail::{
+    europepmc_hit_matches_pmid, first_europepmc_hit, matching_europepmc_hit, parse_pmid,
+    resolve_variant_article_from_pmid,
+};
 use super::{
     Article, ArticleMetadataStatus, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming,
     ArticleSource, ArticleSourceAvailability, ArticleSourceStatus,
@@ -397,7 +400,7 @@ async fn variant_visible_row_europe_fallback(
     }
     let built = client.as_ref().expect("client built above");
     match built.search_by_pmid(&pmid.to_string()).await {
-        Ok(search) => match first_europepmc_hit(search) {
+        Ok(search) => match matching_europepmc_hit(search, pmid) {
             Some(hit) => {
                 unit.record("ok", 1);
                 Some(hit)
@@ -412,6 +415,78 @@ async fn variant_visible_row_europe_fallback(
             None
         }
     }
+}
+
+/// Fetch PMID metadata once per bounded group, retaining only exact MED hits.
+async fn variant_visible_europe_hints(
+    execution: &super::variant_search::VariantArticleExecutionContext,
+    positions: &[(usize, u64)],
+) -> BTreeMap<u64, crate::sources::europepmc::EuropePmcResult> {
+    let mut hits = BTreeMap::new();
+    let requested = positions
+        .iter()
+        .map(|(_, pmid)| *pmid)
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut groups: Vec<Vec<u64>> = Vec::new();
+    let query = |ids: &[u64]| {
+        format!(
+            "({}) AND SRC:MED",
+            ids.iter()
+                .map(|id| format!("EXT_ID:{id}"))
+                .collect::<Vec<_>>()
+                .join(" OR ")
+        )
+    };
+    for pmid in &requested {
+        if groups.last().is_none_or(|group| {
+            group.len() >= 100 || query(group).len() + format!(" OR EXT_ID:{pmid}").len() > 2048
+        }) {
+            groups.push(Vec::new());
+        }
+        groups.last_mut().expect("group exists").push(*pmid);
+    }
+    execution.set_route_unit_plan("enrichment", "europepmc", Some(groups.len()));
+    if groups.is_empty() {
+        return hits;
+    }
+    for group in groups {
+        let aliases = group.iter().map(u64::to_string).collect::<Vec<_>>();
+        let scoped = execution.for_aliases(&aliases);
+        let execution = &scoped;
+        let Some(unit) = execution
+            .begin_provider_unit("enrichment", "europepmc")
+            .await
+        else {
+            break;
+        };
+        execution.record_alias_query_attempt("enrichment", "europepmc");
+        let client = match EuropePmcClient::new_with_deadline(execution.deadline()).await {
+            Ok(client) => client.with_abstracts(true),
+            Err(error) => {
+                unit.record_error(&error);
+                continue;
+            }
+        };
+        match client.search_query(&query(&group), "*", group.len()).await {
+            Ok(response) => {
+                unit.record("ok", 1);
+                for hit in response
+                    .result_list
+                    .into_iter()
+                    .flat_map(|list| list.result)
+                {
+                    let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) else {
+                        continue;
+                    };
+                    if group.contains(&pmid) && europepmc_hit_matches_pmid(&hit, pmid) {
+                        hits.insert(pmid, hit);
+                    }
+                }
+            }
+            Err(error) => unit.record_error(&error),
+        }
+    }
+    hits
 }
 
 pub(super) async fn enrich_visible_article_search_rows_with_article_base(
@@ -446,20 +521,37 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return (Vec::new(), BTreeMap::new());
     }
     if let Some(execution) = execution {
+        let hints = variant_visible_europe_hints(execution, &lookup_positions).await;
         let mut metadata_status = BTreeMap::new();
         let mut europe_fallback: Option<EuropePmcClient> = None;
         for (row_idx, pmid) in lookup_positions {
+            let scoped = execution.for_alias(&pmid.to_string());
+            let execution = &scoped;
             let lookup_id = rows[row_idx].pmid.clone();
-            match resolve_variant_article_from_pmid(pmid, &lookup_id, &lookup_id, None, execution)
-                .await
+            match resolve_variant_article_from_pmid(
+                pmid,
+                &lookup_id,
+                &lookup_id,
+                hints.get(&pmid),
+                execution,
+            )
+            .await
             {
                 Ok(article) => {
                     merge_article_search_row_with_article_base(&mut rows[row_idx], &article)
                 }
                 Err(err) => {
-                    let hit =
-                        variant_visible_row_europe_fallback(execution, &mut europe_fallback, pmid)
-                            .await;
+                    let hit = match hints.get(&pmid) {
+                        Some(hit) => Some(hit.clone()),
+                        None => {
+                            variant_visible_row_europe_fallback(
+                                execution,
+                                &mut europe_fallback,
+                                pmid,
+                            )
+                            .await
+                        }
+                    };
                     if let Some(status) =
                         settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref())
                     {
