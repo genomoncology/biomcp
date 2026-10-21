@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 30bc63d, accept
+
 ## Outcome
 
 The two Rust cases that failed in fresh Linux qualification pass under the same isolated environment on current main. Each failure has a demonstrated cause and a bounded repair. Preserve the product assertions, source-access rulings and shared timing policy.
