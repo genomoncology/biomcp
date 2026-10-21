@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -135,7 +137,7 @@ def _cleanup(runner: subprocess.Popen) -> None:
 
 
 @pytest.mark.parametrize("launcher", ["python", "python-shared", "bash"])
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_runner_death_stops_replay_during_an_incomplete_request(
     tmp_path: Path, launcher: str,
 ) -> None:
@@ -163,7 +165,7 @@ def test_runner_death_stops_replay_during_an_incomplete_request(
 
 @pytest.mark.parametrize("action", ["normal", "timeout"])
 @pytest.mark.parametrize("launcher", ["python", "python-shared"])
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
     tmp_path: Path, action: str, launcher: str,
 ) -> None:
@@ -209,7 +211,7 @@ def test_shared_replay_restores_fixture_roots_and_isolates_request_logs(tmp_path
             views.append(replay)
             identities.append(replay.process.pid)
             assert replay.request_log_entries() == []
-            with urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=5) as response:
+            with urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=HANG_TIMEOUT) as response:
                 assert response.read().decode() == root.name
             assert replay.request_log_line_count() == 1
             assert replay.misses() == []
@@ -220,7 +222,7 @@ def test_shared_replay_restores_fixture_roots_and_isolates_request_logs(tmp_path
         assert replay.process.pid == identities[0]
         assert replay.request_log_entries() == []
         with pytest.raises(urllib.error.HTTPError) as error:
-            urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=5)
+            urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=HANG_TIMEOUT)
         assert error.value.code == 404
         assert len(replay.misses()) == 1
 
@@ -269,7 +271,7 @@ with replay_env.replay_session():
     for record, query in [(False, 'one'), (True, 'one'), (False, 'two')]:
         with replay_env.replay_environment(record=record) as replay:
             try:
-                response = urllib.request.urlopen(replay.origin + '/probe/value?' + query, timeout=5)
+                response = urllib.request.urlopen(replay.origin + '/probe/value?' + query, timeout=replay_env.HANG_TIMEOUT)
             except urllib.error.HTTPError as error:
                 response = error
             with response:
@@ -283,7 +285,7 @@ print(json.dumps(results))
         result = subprocess.run(
             [sys.executable, "-c", script, str(root)], cwd=ROOT,
             env=isolated_command_env(tmp_path / "command", {}, ""),
-            capture_output=True, text=True, timeout=20,
+            capture_output=True, text=True, timeout=HANG_TIMEOUT,
         )
         assert result.returncode == 0, result.stderr
         results = json.loads(result.stdout)
@@ -296,7 +298,7 @@ print(json.dumps(results))
     finally:
         upstream.shutdown()
         upstream.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
 
 def test_stored_root_object_routes_preserve_their_source_identity(tmp_path: Path) -> None:
@@ -334,7 +336,7 @@ def test_stored_root_object_routes_preserve_their_source_identity(tmp_path: Path
         for case, _, _, expected in [*cases, ("absent", "", "", 404)]:
             try:
                 response = urllib.request.urlopen(
-                    replay.origin + path + "?case=" + case, timeout=5
+                    replay.origin + path + "?case=" + case, timeout=HANG_TIMEOUT
                 )
             except urllib.error.HTTPError as error:
                 response = error

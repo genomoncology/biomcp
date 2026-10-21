@@ -5,6 +5,8 @@ Ontology paging uses recorded MyDisease replies; article rows and identity contr
 """
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -140,7 +142,7 @@ def semantic_provider(
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert not missed, missed
 
 
@@ -150,7 +152,7 @@ def search(env: dict[str, str], source: str, disease: list[str]) -> subprocess.C
         binary, "--json", "--no-cache", "search", "article", "--source", source,
         "-k", "locally advanced initial staging routine PET CT guidelines",
         "--full", "--limit", "5", "--max-per-source", "5", *disease,
-    ], env=env, capture_output=True, text=True, check=False, timeout=30)
+    ], env=env, capture_output=True, text=True, check=False, timeout=HANG_TIMEOUT)
 
 
 @pytest.mark.parametrize("source", ["semanticscholar", "litsense2"])

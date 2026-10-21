@@ -359,7 +359,7 @@ async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
             pmid: None,
             pmcid: None,
         },
-        tokio::time::Instant::now() + std::time::Duration::from_secs(5),
+        tokio::time::Instant::now() + crate::test_support::hang_timeout(),
     )
     .await
     .unwrap();
@@ -383,7 +383,7 @@ async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
             pmid: None,
             pmcid: None,
         },
-        tokio::time::Instant::now() + std::time::Duration::from_secs(5),
+        tokio::time::Instant::now() + crate::test_support::hang_timeout(),
     )
     .await
     .unwrap();

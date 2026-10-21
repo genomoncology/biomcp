@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -21,7 +23,7 @@ from replay_env import REPO_ROOT, replay_environment  # noqa: E402
 pytestmark = [pytest.mark.needs_binary]
 
 
-@pytest.mark.parametrize("surface", ["cli", pytest.param("mcp", marks=pytest.mark.timeout(120))])
+@pytest.mark.parametrize("surface", ["cli", pytest.param("mcp", marks=pytest.mark.timeout(HANG_TIMEOUT))])
 @pytest.mark.parametrize("disabled", ["all", "myvariant-info"])
 def test_variant_literature_names_configured_resolution_disable(
     surface: str, disabled: str, monkeypatch: pytest.MonkeyPatch,
@@ -39,7 +41,7 @@ def test_variant_literature_names_configured_resolution_disable(
                 "--limit", "1",
             ]
             result = subprocess.run(
-                command, env=env, capture_output=True, text=True, timeout=30,
+                command, env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT,
                 cwd=REPO_ROOT,
             )
             assert result.returncode != 0, result.stdout + result.stderr

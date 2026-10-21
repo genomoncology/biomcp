@@ -258,7 +258,7 @@ fn windows_mygene_fixture_accepts_a_valid_request_after_cold_start_delay() {
         )
         .expect("write delayed valid request");
     stream
-        .set_read_timeout(Some(Duration::from_secs(5)))
+        .set_read_timeout(Some(biomcp_mcp_contract_client::hang_timeout()))
         .expect("set delayed response timeout");
     let mut response = Vec::new();
     let mut chunk = [0_u8; 1024];

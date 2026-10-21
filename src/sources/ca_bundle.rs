@@ -425,8 +425,9 @@ mod tests {
             .with_ansi(false)
             .try_init();
         let _ = configure(reqwest::Client::builder()).expect("shared builder fallback");
-        let _ = build_client(reqwest::Client::builder().timeout(std::time::Duration::from_secs(1)))
-            .expect("health builder fallback");
+        let _ =
+            build_client(reqwest::Client::builder().timeout(crate::test_support::hang_timeout()))
+                .expect("health builder fallback");
         let _ = configure(reqwest::Client::builder().redirect(reqwest::redirect::Policy::none()))
             .expect("dedicated builder fallback");
         assert_eq!(PARSE_COUNT.load(std::sync::atomic::Ordering::SeqCst), 1);

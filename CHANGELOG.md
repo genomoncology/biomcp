@@ -100,6 +100,7 @@
 
 ### Internal
 
+- Warn about slow routine tests while reserving test timeouts for hangs and preserving product deadline contracts. (2321)
 - Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)

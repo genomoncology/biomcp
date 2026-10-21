@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import os
 from pathlib import Path
 import subprocess
@@ -18,7 +20,7 @@ def test_measure_mcp_tools_reports_failed_command_streams(tmp_path: Path) -> Non
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts/measure-mcp-tools.py")],
         env=dict(os.environ, BIOMCP_BIN=str(binary)),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode != 0
     assert "command stdout failure" in result.stdout + result.stderr

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -46,20 +48,20 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
         values = _exports(workspace / ".cache/spec-provider-contract-env")
         base = values["BIOMCP_MYCHEM_BASE"]
 
-        with urlopen(f"{base}/query?q=Keytruda", timeout=2) as response:
+        with urlopen(f"{base}/query?q=Keytruda", timeout=HANG_TIMEOUT) as response:
             body = json.load(response)
         assert body["hits"][0]["_id"] == "C3855203"
 
         mygene = values["BIOMCP_MYGENE_BASE"]
         query = urlencode({"q": 'symbol:"BRAF"'})
-        with urlopen(f"{mygene}/query?{query}", timeout=2) as response:
+        with urlopen(f"{mygene}/query?{query}", timeout=HANG_TIMEOUT) as response:
             gene = json.load(response)
         assert gene["hits"][0]["symbol"] == "BRAF"
 
         chembl = values["BIOMCP_CHEMBL_BASE"]
         with urlopen(
             f"{chembl}/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15",
-            timeout=2,
+            timeout=HANG_TIMEOUT,
         ) as response:
             mechanisms = json.load(response)
         assert mechanisms["mechanisms"][0]["target_chembl_id"] == "CHEMBL3307223"
@@ -72,12 +74,12 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
             ).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urlopen(request, timeout=2) as response:
+        with urlopen(request, timeout=HANG_TIMEOUT) as response:
             target = json.load(response)
         assert target["data"]["drug"]["id"] == "CHEMBL3137343"
 
         with pytest.raises(HTTPError) as error:
-            urlopen(f"{base}/unknown", timeout=2)
+            urlopen(f"{base}/unknown", timeout=HANG_TIMEOUT)
         assert error.value.code == 404
 
         request_log = Path(values["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"])
@@ -132,21 +134,21 @@ def test_provider_fixture_worker_namespace_scopes_the_request_log(
 
         base_url = values["BIOMCP_PROVIDER_CONTRACT_BASE"]
         worker = f"{base_url}/__biomcp_provider_worker/{private_log.name}"
-        with urlopen(f"{worker}/mychem/v1/query?q=Keytruda", timeout=2) as response:
+        with urlopen(f"{worker}/mychem/v1/query?q=Keytruda", timeout=HANG_TIMEOUT) as response:
             body = json.load(response)
         assert body["hits"][0]["_id"] == "C3855203"
 
         assert "GET /mychem/v1/query?q=Keytruda" in private_log.read_text()
         assert "Keytruda" not in shared_log.read_text()
 
-        with urlopen(f"{base_url}/mychem/v1/query?q=Keytruda", timeout=2) as response:
+        with urlopen(f"{base_url}/mychem/v1/query?q=Keytruda", timeout=HANG_TIMEOUT) as response:
             json.load(response)
         assert "GET /mychem/v1/query?q=Keytruda" in shared_log.read_text()
 
         with pytest.raises(HTTPError) as error:
             urlopen(
                 f"{base_url}/__biomcp_provider_worker/request-log.zzzzzz/mychem/v1/query?q=Keytruda",
-                timeout=2,
+                timeout=HANG_TIMEOUT,
             )
         assert error.value.code == 404
         assert "zzzzzz" not in shared_log.read_text()

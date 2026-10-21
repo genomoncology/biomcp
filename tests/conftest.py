@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from cache_fixture import set_cache_root
+from hang_guard import HANG_TIMEOUT, SLOW_WARNING_SECONDS
 
 import os
 import shutil
@@ -97,13 +98,23 @@ class SlowTestReporter:
         terminal = self.config.pluginmanager.get_plugin("terminalreporter")
         if threshold > 0 and duration > threshold and terminal is not None:
             try:
-                load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+                load = f"{os.getloadavg()[0]:.2f}"
             except (AttributeError, OSError):
                 load = "unavailable"
             terminal.write_line(
-                f"SLOW {report.nodeid} ({duration:.3f}s); load (1, 5, 15 min): {load}",
+                f"WARNING slow test {report.nodeid} ({duration:.3f}s); load (1 min): {load}",
                 yellow=True,
             )
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Catch routine hangs without putting a new limit on release/long tests."""
+    for item in items:
+        if any(item.get_closest_marker(name) for name in ("long", "release_gate", "repo_audit")):
+            continue
+        if item.get_closest_marker("timeout") is None:
+            configured = item.config.getoption("timeout")
+            item.add_marker(pytest.mark.timeout(HANG_TIMEOUT if configured is None else configured))
 
 
 @pytest.fixture(autouse=True)
@@ -123,7 +134,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini(
         "slow_test_warning_seconds",
         "Warn when a complete test exceeds this duration; never terminate it",
-        default="0",
+        default=str(SLOW_WARNING_SECONDS),
     )
     group = parser.getgroup("mcp")
     group.addoption(

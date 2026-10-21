@@ -1,6 +1,8 @@
 """Versioned transcript lookup must retain DNA identity and matched provenance."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -110,7 +112,7 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
     command = [binary, "--no-cache", "get", "variant", identifier, "clinvar"]
     try:
         result = subprocess.run([binary, "--json", *command[1:]], env=env, cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=60)
+                                capture_output=True, text=True, timeout=HANG_TIMEOUT)
         assert not misses, misses
         if case not in ("same_allele", "alias_fallback"):
             assert result.returncode != 0, result.stdout
@@ -138,7 +140,7 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
         assert any(path.startswith("/v1/variant/") and query.get("assembly") == ["hg38"]
                    for path, query in requests)
         markdown = subprocess.run(command[:-1], env=env, cwd=REPO_ROOT,
-                                  capture_output=True, text=True, timeout=60)
+                                  capture_output=True, text=True, timeout=HANG_TIMEOUT)
         assert markdown.returncode == 0, markdown.stdout + markdown.stderr
         assert f"Matched transcript: {transcript} ({coding})" in markdown.stdout
         assert "Transcript: NM_001048174.2" in markdown.stdout
@@ -146,4 +148,4 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)

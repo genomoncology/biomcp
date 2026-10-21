@@ -11,4 +11,5 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 rmcp = { version = "2.1.0", features = ["client", "transport-child-process", "transport-streamable-http-client-reqwest"] }
 serde_json = "1"
 tempfile = "3"
+toml = "0.8"
 tokio = { version = "1", features = ["process", "time"] }

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -94,11 +96,11 @@ def test_resolved_forms_omitted_by_alias_cap_are_named(surface: str, tmp_path: P
         command.append("--debug-plan")
     try:
         result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=60)
+                                capture_output=True, text=True, timeout=HANG_TIMEOUT)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
     assert not misses, misses
     if surface in ("markdown", "disabled-markdown"):

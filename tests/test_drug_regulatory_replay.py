@@ -1,6 +1,8 @@
 """Replay drug approval identity, aggregate status and label dates at the CLI."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -129,7 +131,7 @@ def replay(tmp_path: Path):
         result = subprocess.run([binary, *([] if markdown else ["--json"]), "get", "drug",
                                  "--name", state["name"], *sections,
                                  *(["--region", "us"] if len(sections) == 1 and sections[0] in {"regulatory", "safety"} else [])], env=env, text=True,
-                                capture_output=True, timeout=30, check=False)
+                                capture_output=True, timeout=HANG_TIMEOUT, check=False)
         assert result.returncode == 0, result.stdout + result.stderr
         return result if markdown else (json.loads(result.stdout), result.stderr)
 
@@ -138,7 +140,7 @@ def replay(tmp_path: Path):
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
 
 @pytest.mark.parametrize("name,brands,expected", [

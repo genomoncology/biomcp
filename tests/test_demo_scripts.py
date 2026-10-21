@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import os
 from pathlib import Path
 import subprocess
@@ -20,7 +22,7 @@ def test_demo_reports_failed_command_streams(tmp_path: Path, script: str) -> Non
     result = subprocess.run(
         ["bash", str(ROOT / "scripts" / script)],
         env=dict(os.environ, BIOMCP_BIN=str(binary)),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 7, result.stdout + result.stderr
     assert "command stdout failure" in result.stdout + result.stderr

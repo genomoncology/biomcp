@@ -1,6 +1,8 @@
 """Authored controls require paired versioned projections on one source allele."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -101,7 +103,7 @@ def test_other_transcript_acceptance_requires_versioned_same_allele_projection(
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
     try:
         result = subprocess.run([binary, "--json", "--no-cache", "get", "variant", f"{gene} {change}"],
-                                env=env, capture_output=True, text=True, timeout=30)
+                                env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT)
         message = result.stdout + result.stderr
         assert not unexpected, unexpected
         if projection in {"paired", "canonical"}:
@@ -118,4 +120,4 @@ def test_other_transcript_acceptance_requires_versioned_same_allele_projection(
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)

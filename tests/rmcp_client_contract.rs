@@ -446,7 +446,7 @@ fn request_counter_waits_for_complete_request_headers() -> anyhow::Result<()> {
         fixture.trace.lock().expect("request trace")
     );
     stream.write_all(b"Host: fixture\r\n\r\n")?;
-    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    stream.set_read_timeout(Some(biomcp_mcp_contract_client::hang_timeout()))?;
     let mut response = String::new();
     stream.read_to_string(&mut response)?;
     assert!(response.ends_with(r#"{"total":0,"data":[]}"#));
@@ -553,7 +553,7 @@ fn openfda_fixture_waits_for_complete_request_headers() -> anyhow::Result<()> {
         fixture.trace.lock().expect("OpenFDA trace")
     );
     stream.write_all(b"Host: fixture\r\n\r\n")?;
-    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    stream.set_read_timeout(Some(biomcp_mcp_contract_client::hang_timeout()))?;
     let mut response = String::new();
     stream.read_to_string(&mut response)?;
     assert!(response.ends_with(FAERS_REPORT_PAGE));

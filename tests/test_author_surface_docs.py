@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from cache_fixture import set_cache_root
 
 import json
@@ -13,7 +15,6 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from support import scaled_timeout
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -204,7 +205,7 @@ class _FixtureServer:
 
         for _ in range(20):
             try:
-                urllib.request.urlopen(f"{self.base}/health", timeout=0.5).read()
+                urllib.request.urlopen(f"{self.base}/health", timeout=HANG_TIMEOUT).read()
                 break
             except Exception:
                 import time
@@ -232,7 +233,7 @@ class _FixtureServer:
     def close(self) -> None:
         self._server.shutdown()
         self._server.server_close()
-        self._thread.join(timeout=2)
+        self._thread.join(timeout=HANG_TIMEOUT)
 
 
 @pytest.fixture
@@ -273,7 +274,7 @@ def _run_orcid_cli(
             env=_env_with_orcid(base, token, cache_dir),
             capture_output=True,
             text=True,
-            timeout=scaled_timeout(60),
+            timeout=HANG_TIMEOUT,
         )
 
 
@@ -298,7 +299,7 @@ def _run_cli(args: list[str], base: str) -> subprocess.CompletedProcess[str]:
             env=_env_with_base(base, cache_dir),
             capture_output=True,
             text=True,
-            timeout=scaled_timeout(60),
+            timeout=HANG_TIMEOUT,
         )
 
 
@@ -328,7 +329,7 @@ class _StdioMcp:
         assert self.process.stdout is not None
         self.process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self.process.stdin.flush()
-        ready, _, _ = select.select([self.process.stdout], [], [], scaled_timeout(30))
+        ready, _, _ = select.select([self.process.stdout], [], [], HANG_TIMEOUT)
         if not ready:
             if self.process.poll() is not None:
                 assert self.process.stderr is not None
@@ -360,7 +361,7 @@ class _StdioMcp:
     def close(self) -> None:
         if self.process.poll() is None:
             self.process.terminate()
-            self.process.wait(timeout=scaled_timeout(5))
+            self.process.wait(timeout=HANG_TIMEOUT)
         self._cache_dir.cleanup()
 
 

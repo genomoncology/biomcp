@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import select
@@ -21,7 +23,7 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/gene-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "absent-markdown", "batch", pytest.param("mcp", marks=pytest.mark.timeout(120)), "absent", "unavailable", "slow", "disabled", "ambiguous", "missing_entrez", "duplicate_entrez", "truncated", "cap", "grouped", "grouped-markdown", "split", "verify"])
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "absent-markdown", "batch", pytest.param("mcp", marks=pytest.mark.timeout(HANG_TIMEOUT)), "absent", "unavailable", "slow", "disabled", "ambiguous", "missing_entrez", "duplicate_entrez", "truncated", "cap", "grouped", "grouped-markdown", "split", "verify"])
 def test_source_backed_gene_alias_queries(surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     mode = surface.removesuffix("-markdown")
     control = json.loads(FIXTURE.read_text())
@@ -138,7 +140,7 @@ def test_source_backed_gene_alias_queries(surface: str, tmp_path: Path, monkeypa
                         "params": {"protocolVersion": "2025-11-25", "capabilities": {},
                                    "clientInfo": {"name": "gene-alias-contract", "version": "1"}},
                     })
-                    ready, _, _ = select.select([client.process.stdout], [], [], 60)
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
                     assert ready, "MCP initialization response did not arrive"
                     assert client.receive()["id"] == "gene-alias-init"
                     client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
@@ -149,7 +151,7 @@ def test_source_backed_gene_alias_queries(surface: str, tmp_path: Path, monkeypa
                             "strategy": "lexical", "limit": 5,
                         }},
                     })
-                    ready, _, _ = select.select([client.process.stdout], [], [], 60)
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
                     assert ready, "variant article MCP response did not arrive"
                     response = client.receive()["result"]
                 finally:
@@ -158,12 +160,12 @@ def test_source_backed_gene_alias_queries(surface: str, tmp_path: Path, monkeypa
                 payload = json.loads(response["content"][0]["text"])["items"][0]
         else:
             result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                    capture_output=True, text=True, timeout=60)
+                                    capture_output=True, text=True, timeout=HANG_TIMEOUT)
             assert result.returncode == 0, result.stdout + result.stderr
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert not misses, misses
     if surface.endswith("markdown"):
         assert "mygene-info" in result.stdout

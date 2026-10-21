@@ -1,6 +1,8 @@
 """Local cache failures preserve recorded provider answers through the CLI."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -39,7 +41,7 @@ def provider(tmp_path: Path):
                 # the same gene, while this CLI case only exercises cache behavior.
                 path = recorded_path(self.path)
                 try:
-                    reply = urlopen(replay.origin + path, timeout=10)
+                    reply = urlopen(replay.origin + path, timeout=HANG_TIMEOUT)
                 except HTTPError as error:
                     reply = error
                 with reply:
@@ -79,7 +81,7 @@ def provider(tmp_path: Path):
         def run(argv, *, log_level="warn"):
             command_env = dict(env, RUST_LOG=log_level)
             return subprocess.run([str(BINARY), "--json", *argv], cwd=REPO_ROOT, env=command_env,
-                                  capture_output=True, text=True, timeout=20)
+                                  capture_output=True, text=True, timeout=HANG_TIMEOUT)
 
         try:
             yield run, cache, before_reply, replay

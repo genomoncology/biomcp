@@ -1,5 +1,8 @@
 //! Owned loopback HTTP fixtures, independent of the caller's Tokio runtime.
 
+#[cfg(test)]
+use crate::hang_timeout;
+
 use std::future::Future;
 use std::io;
 use std::sync::{

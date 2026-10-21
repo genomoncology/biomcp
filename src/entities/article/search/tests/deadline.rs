@@ -152,7 +152,7 @@ async fn overall_deadline_returns_partial_rows_and_names_the_held_source() {
             // watchdog: the deadline must settle the search in real time; a broken
             // bound hangs here instead of returning partial rows.
             let page = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
             )
             .await
@@ -220,7 +220,7 @@ async fn failed_primaries_still_return_answered_rows() {
     let _env = deadline_env(&fixture, cache.path(), "60000");
 
     let page = tokio::time::timeout(
-        crate::test_support::watchdog(60),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
     )
     .await
@@ -268,7 +268,7 @@ async fn healthy_federated_search_keeps_output_shape_and_records_timings() {
     let _env = deadline_env(&fixture, cache.path(), "60000");
 
     let page = tokio::time::timeout(
-        crate::test_support::watchdog(60),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::All),
     )
     .await
@@ -318,7 +318,7 @@ async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
             let budget = std::time::Duration::from_millis(1500);
             let started = std::time::Instant::now();
             let page = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 10, 0, ArticleSourceFilter::EuropePmc),
             )
             .await
@@ -381,7 +381,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
             let budget = std::time::Duration::from_millis(1200);
             let started = std::time::Instant::now();
             let error = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 5, 0, ArticleSourceFilter::All),
             )
             .await
@@ -438,7 +438,7 @@ async fn construction_under_a_held_sqlite_writer_honors_the_deadline() {
     let budget = std::time::Duration::from_millis(1200);
     let started = std::time::Instant::now();
     let result = tokio::time::timeout(
-        crate::test_support::watchdog_millis(60_000),
+        crate::test_support::hang_timeout(),
         search_page(&deadline_filters(), 3, 0, ArticleSourceFilter::PubMed),
     )
     .await
@@ -568,7 +568,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
             let budget = std::time::Duration::from_millis(1200);
             let started = std::time::Instant::now();
             let error = tokio::time::timeout(
-                crate::test_support::watchdog(60),
+                crate::test_support::hang_timeout(),
                 search_page(&filters, 5, 0, ArticleSourceFilter::All),
             )
             .await

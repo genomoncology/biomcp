@@ -356,7 +356,7 @@ fn disconnected_fixture_client_does_not_panic_or_block_other_requests() {
     partial.write_all(b"GET /").unwrap();
     let mut survivor = TcpStream::connect(address).unwrap();
     survivor
-        .set_read_timeout(Some(Duration::from_secs(60)))
+        .set_read_timeout(Some(biomcp_mcp_contract_client::hang_timeout()))
         .unwrap();
     survivor
         .write_all(b"GET /survives HTTP/1.1\r\nHost: localhost\r\n\r\n")

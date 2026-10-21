@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -78,12 +80,12 @@ def test_plain_article_search_resolves_only_a_matching_rsid_entity(
         result = subprocess.run(
             [binary, "--json", "--no-cache", "search", "article", keyword,
              "--source", "pubtator", "--limit", "1"],
-            capture_output=True, text=True, check=False, timeout=30,
+            capture_output=True, text=True, check=False, timeout=HANG_TIMEOUT,
         )
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
 
     assert result.returncode == 0, result.stderr + result.stdout
     assert json.loads(result.stdout)["results"] == []

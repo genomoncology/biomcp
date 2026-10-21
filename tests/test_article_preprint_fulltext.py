@@ -1,6 +1,8 @@
 """A preprint returns JATS text or a named failure without destroying a batch."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -98,11 +100,11 @@ def test_preprint_text_and_named_failures_preserve_every_batch_item(
     command = ["batch", "article", ",".join([*PMIDS, identifier]), "--mode", "detail", "--sections", "fulltext"] if batch else ["get", "article", identifier, "fulltext"]
     try:
         result = subprocess.run([binary, "--json", "--no-cache", *command],
-                                env=env, capture_output=True, text=True, timeout=60, check=False)
+                                env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     assert not missed, missed
     payload = json.loads(result.stdout)

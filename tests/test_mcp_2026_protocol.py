@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import signal
@@ -15,7 +17,7 @@ from typing import Any
 
 import pytest
 
-pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(120)]
+pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(HANG_TIMEOUT)]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(

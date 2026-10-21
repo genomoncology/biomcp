@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 from pathlib import Path
 import json
 import os
@@ -215,7 +217,7 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
 
 
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_make_test_prepares_once_and_runs_lanes_sequentially(
     tmp_path: Path, failed_lane: str
 ) -> None:
@@ -331,7 +333,7 @@ def test_full_feature_gates_build_and_smoke_the_selected_profile(
         capture_output=True,
         text=True,
         check=False,
-        timeout=15,
+        timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     calls = [

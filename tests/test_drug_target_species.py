@@ -1,6 +1,8 @@
 """Drug targets retain source organisms and only suggest human genes."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -50,7 +52,7 @@ def test_drug_targets_label_species_and_only_suggest_human_genes(tmp_path: Path)
     def run(json_output: bool) -> str:
         result = subprocess.run(
             [binary, *(["--json"] if json_output else []), "get", "drug", "bortezomib", "targets"],
-            env=env, text=True, capture_output=True, timeout=30, check=False,
+            env=env, text=True, capture_output=True, timeout=HANG_TIMEOUT, check=False,
         )
         assert result.returncode == 0, result.stderr + result.stdout
         return result.stdout
@@ -86,4 +88,4 @@ def test_drug_targets_label_species_and_only_suggest_human_genes(tmp_path: Path)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)

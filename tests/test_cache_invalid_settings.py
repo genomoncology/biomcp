@@ -1,6 +1,8 @@
 """Bad cache input is reported before a provider request on each public surface."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 from pathlib import Path
@@ -46,7 +48,7 @@ def test_bad_cache_setting_is_invalid_input(cache_env, setting, value, json_outp
     before = replay.request_log_line_count()
     result = subprocess.run(
         [str(BINARY), *(["--json"] if json_output else []), "search", "gene", "BRAF", "--limit", "1"],
-        cwd=REPO_ROOT, env=env, capture_output=True, text=True, timeout=20,
+        cwd=REPO_ROOT, env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT,
     )
     assert result.returncode == 2, (result.returncode, result.stdout, result.stderr)
     if json_output:
@@ -60,7 +62,7 @@ def test_bad_cache_setting_is_invalid_input(cache_env, setting, value, json_outp
     assert replay.request_log_entries(since=before) == []
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(HANG_TIMEOUT)
 def test_mcp_bad_cache_setting_reports_invalid_input(cache_env, monkeypatch):
     env, replay = cache_env
     env["BIOMCP_CACHE_MAX_SIZE"] = "10GB"

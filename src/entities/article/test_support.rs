@@ -94,7 +94,7 @@ pub(super) async fn hang_guard<T>(
     seconds: u64,
     body: impl std::future::Future<Output = T>,
 ) -> T {
-    let bound = crate::test_support::watchdog(seconds);
+    let bound = crate::test_support::watchdog(seconds).max(crate::test_support::hang_timeout());
     match tokio::time::timeout(bound, body).await {
         Ok(value) => value,
         Err(_expired) => {

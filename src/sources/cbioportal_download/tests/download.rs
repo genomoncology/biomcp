@@ -3,7 +3,6 @@
 use super::super::*;
 use crate::test_support::TempDirGuard;
 use std::borrow::Cow;
-use std::time::Duration;
 
 #[test]
 fn archive_download_accounting_accepts_exact_limit_and_rejects_overflow() {
@@ -37,13 +36,13 @@ async fn archive_download_rejects_declared_oversize_before_creating_destination(
             &base,
             |builder| {
                 builder
-                    .connect_timeout(Duration::from_secs(1))
-                    .timeout(Duration::from_secs(2))
+                    .connect_timeout(crate::test_support::hang_timeout())
+                    .timeout(crate::test_support::hang_timeout())
             },
         )
         .expect("test client"),
         base: Cow::Owned(base),
-        download_idle_timeout: Duration::from_secs(1),
+        download_idle_timeout: crate::test_support::hang_timeout(),
         max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
     };
 
@@ -76,13 +75,13 @@ async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file(
             &base,
             |builder| {
                 builder
-                    .connect_timeout(Duration::from_secs(1))
-                    .timeout(Duration::from_secs(2))
+                    .connect_timeout(crate::test_support::hang_timeout())
+                    .timeout(crate::test_support::hang_timeout())
             },
         )
         .expect("test client"),
         base: Cow::Owned(base),
-        download_idle_timeout: Duration::from_secs(1),
+        download_idle_timeout: crate::test_support::hang_timeout(),
         max_archive_download_bytes: 3,
     };
 

@@ -1661,8 +1661,8 @@ pub(crate) fn scripted_client(
 #[cfg(test)]
 pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
     let base_client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(crate::test_support::hang_timeout())
+        .connect_timeout(crate::test_support::hang_timeout())
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(BioMcpError::HttpClientInit)?;
@@ -2646,7 +2646,7 @@ mod tests {
 
         for _ in 0..2 {
             let send_result = tokio::time::timeout(
-                Duration::from_secs(2),
+                crate::test_support::hang_timeout(),
                 client
                     .get(format!("http://{address}/oversized"))
                     .send_with_source_context(SourceContext::retry(

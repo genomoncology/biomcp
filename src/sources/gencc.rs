@@ -859,7 +859,7 @@ fn leaked_cancellation_temps(root: &std::path::Path) -> Vec<String> {
 
 #[cfg(test)]
 async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
-    let deadline = tokio::time::Instant::now() + crate::test_support::watchdog(60);
+    let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout();
     loop {
         let leaked = leaked_cancellation_temps(root);
         if leaked.is_empty()
@@ -914,8 +914,8 @@ async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_wo
         if streamed_body { let body = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/sources/gencc/submissions-new-odc1.csv")); let dataset = GenCcDataset::parse(body, &AtomicBool::new(false)).unwrap(); store.publish(&dataset, PublishMetadata { now: "2026-01-01T00:00:00Z", etag: "\"old\"", last_modified: "Sun, 06 Sep 2026 06:00:29 GMT", endpoint: ENDPOINT, body_sha256: &format!("{:x}", Sha256::digest(body)), row_count: dataset.row_count() }).unwrap(); }
         drop(store);
         let task = tokio::spawn(async { GenCcClient::new().unwrap().acquire(Duration::from_secs(30)).await });
-        tokio::time::timeout(Duration::from_secs(60), entered.notified()).await.expect("request barrier"); task.abort(); assert!(task.await.unwrap_err().is_cancelled()); release.notify_waiters();
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(60); // watchdog: bounded cancellation poll
+        tokio::time::timeout(crate::test_support::hang_timeout(), entered.notified()).await.expect("request barrier"); task.abort(); assert!(task.await.unwrap_err().is_cancelled()); release.notify_waiters();
+        let deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout(); // watchdog: bounded cancellation poll
         while active.load(Ordering::Acquire) != 0 {
             assert!(tokio::time::Instant::now() < deadline, "provider request survived cancellation"); // watchdog: bounded cancellation poll
             tokio::time::sleep(Duration::from_millis(5)).await;
@@ -993,7 +993,7 @@ async fn cancelled_publication_settles_and_the_previous_generation_survives() {
             .acquire(Duration::from_secs(30))
             .await
     });
-    let marker_deadline = tokio::time::Instant::now() + Duration::from_secs(60); // watchdog: bounded marker drain deadline
+    let marker_deadline = tokio::time::Instant::now() + crate::test_support::hang_timeout(); // watchdog: bounded marker drain deadline
     while !marker.exists() {
         tokio::select! {
             result = &mut task => panic!("GenCC request completed before publication barrier: {result:?}"),

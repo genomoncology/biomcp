@@ -1,6 +1,8 @@
 """Article detail prefers PubMed's text while retaining PubTator annotations."""
 from __future__ import annotations
 
+from hang_guard import HANG_TIMEOUT
+
 import json
 import os
 import subprocess
@@ -85,11 +87,11 @@ def test_article_keeps_pubmed_symbols_and_pubtator_annotations(
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     try:
         result = subprocess.run([binary, "--json", "--no-cache", "get", "article", pmid],
-                                env=env, capture_output=True, text=True, timeout=30, check=False)
+                                env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False)
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     article = json.loads(result.stdout)
     assert article["abstract_text"] == (abstract if pubmed == "available" else lossy)
