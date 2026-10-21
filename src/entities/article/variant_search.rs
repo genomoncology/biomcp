@@ -52,6 +52,7 @@ use super::{
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
 const MAX_EXACT_ALIASES: usize = 10;
+const MAX_RESOLVED_ALIASES: usize = 16;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -2094,8 +2095,13 @@ async fn expand_gene_symbol_aliases(
             ordered.push(alias.clone());
         }
     }
-    let truncated = ordered.len() > MAX_EXACT_ALIASES;
-    ordered.truncate(MAX_EXACT_ALIASES);
+    let limit = if coverage.status == "available" {
+        MAX_EXACT_ALIASES
+    } else {
+        MAX_RESOLVED_ALIASES
+    };
+    let truncated = ordered.len() > limit;
+    ordered.truncate(limit);
     *selected = ordered;
     for alias in &mut coverage.aliases {
         alias.planned = selected.contains(&alias.alias);
@@ -2304,8 +2310,8 @@ fn variant_source_gene(context: &VariantArticleResolutionContext) -> Option<&str
 
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     let mut aliases = all_exact_aliases(context);
-    let truncated = aliases.len() > MAX_EXACT_ALIASES;
-    aliases.truncate(MAX_EXACT_ALIASES);
+    let truncated = aliases.len() > MAX_RESOLVED_ALIASES;
+    aliases.truncate(MAX_RESOLVED_ALIASES);
     (aliases, truncated)
 }
 
@@ -2384,7 +2390,15 @@ fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     {
         ordered.push(primary);
     }
-    ordered.extend(aliases);
+    // Query resolved coding forms before alternate protein spellings so the
+    // invocation work budget cannot starve them behind repeated protein searches.
+    let (coding, other): (Vec<_>, Vec<_>) = aliases.into_iter().partition(|alias| {
+        alias
+            .split_once(' ')
+            .is_some_and(|(_, change)| change.starts_with("c."))
+    });
+    ordered.extend(coding);
+    ordered.extend(other);
     ordered
 }
 
@@ -2520,16 +2534,16 @@ fn alias_coverage(
                 "strategy_does_not_query_alias"
             } else if execution.deadline_exhausted() {
                 "invocation_deadline"
-            } else if execution.route_stopped("strict")
-                || execution.route_stopped("exact_lexical")
-                || execution.route_stopped("exact_name")
-            {
-                "logical_work_cap"
             } else if let Some(reason) = setup_failures
                 .get(&alias)
                 .and_then(|reasons| reasons.first())
             {
                 reason
+            } else if execution.route_stopped("strict")
+                || execution.route_stopped("exact_lexical")
+                || execution.route_stopped("exact_name")
+            {
+                "logical_work_cap"
             } else {
                 "no_provider_query_available"
             };
@@ -5144,6 +5158,9 @@ async fn search_variant_articles_identity(
         &canonical_equivalence,
         &execution,
     );
+    let aliases_omitted = alias_coverage.iter().any(|row| row.reason == "alias_limit");
+    let complete = complete && !aliases_omitted;
+    let truncated = truncated || aliases_omitted;
     let debug_plan = include_debug_plan.then(|| {
         let mut plan = build_debug_plan(
             input,
@@ -8136,8 +8153,8 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
-                "BRAF V600E",
                 "BRAF c.1799T>A",
+                "BRAF V600E",
                 "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
                 "rs113488022",
@@ -8173,8 +8190,8 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
-                "BRAF V600E",
                 "BRAF c.1799T>A",
+                "BRAF V600E",
                 "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
                 "rs113488022",

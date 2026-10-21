@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Search resolved coding aliases before alternate protein forms, recover their article matches within the existing invocation budget, and keep alias and work limits visible. (2327)
+
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
