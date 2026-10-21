@@ -56,7 +56,7 @@ def test_variant_article_rows_report_uncovered_metadata(case: str, tmp_path: Pat
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
                 if case in ("covered", "healthy") or pmid == PMIDS[1]:
                     return self.reply({"hitCount": 1, "resultList": {"result": [{
-                        "id": pmid, "pmid": pmid, "title": "Synthetic recovered metadata",
+                        "id": pmid, "pmid": pmid, "source": "MED", "title": "Synthetic recovered metadata",
                         "abstractText": f"Recovered abstract for {pmid}",
                         "citedByCount": 7,
                     }]}})

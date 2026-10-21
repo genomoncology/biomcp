@@ -595,6 +595,7 @@ pub struct EuropePmcResultList {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EuropePmcResult {
+    pub source: Option<String>,
     pub id: Option<String>,
     pub title: Option<String>,
     pub pmid: Option<String>,

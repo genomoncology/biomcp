@@ -154,7 +154,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     assert {row["alias"] for row in coverage} >= {f"ABCC8 {form}" for form in forms}
     for alias in ("ABCC8 c.4310G>A", "ABCC8 c.4373G>A"):
         row = next(row for row in coverage if row["alias"] == alias)
-        omitted = surface in ("cap", "lexical")
+        omitted = surface == "lexical"
         assert row["planned"] is not omitted, row
         assert row["attempted"] is not (omitted or disabled), row
         assert row["reason"] == ("alias_limit" if omitted else
@@ -162,13 +162,13 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         sent = any(alias.split(" ", 1)[1] in json.dumps(query)
                    for path, query in requests if path == "/search")
         assert sent is not (omitted or disabled), (alias, requests)
-    if not disabled and surface not in ("cap", "lexical"):
+    if not disabled and surface != "lexical":
         assert {row["pmid"] for row in payload["results"]} == {"99000001", "99000002"}
         assert all(row["match_reason"] == "unverified_alias_match" for row in payload["results"])
         if surface == "complete":
             assert payload["complete"] is True, json.dumps(payload["source_status"])
             assert payload["truncated"] is False, payload
-    if surface in ("cap", "lexical"):
+    if surface == "lexical":
         assert any(row["reason"] == "alias_limit" for row in coverage)
         assert payload["complete"] is False, payload
         assert payload["truncated"] is True, payload
@@ -201,6 +201,6 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
             assert any(row["route"] == "strict" and row["query_alias"] == alias
                        for row in plan["provider_queries"])
         allocation = plan["work_allocation"]
-        for work in (allocation["discovery"], allocation["exact_lexical"]["item"],
-                     allocation["identity_verification"]["item"]):
+        assert allocation["discovery"]["consumed"] <= allocation["discovery"]["limit"] == 197
+        for work in (allocation["exact_lexical"]["item"], allocation["identity_verification"]["item"]):
             assert work["consumed"] <= work["limit"] == 50

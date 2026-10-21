@@ -84,7 +84,7 @@ use super::{
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
 const MAX_EXACT_ALIASES: usize = 10;
-const MAX_RESOLVED_ALIASES: usize = 16;
+const LEGACY_DISCOVERY_ALIAS_LIMIT: usize = 16;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -136,6 +136,10 @@ pub struct VariantArticleSourceStatus {
     pub detail: Option<String>,
     pub work: VariantArticleSourceWork,
     pub reason_codes: Vec<&'static str>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub omitted_aliases: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub truncated_aliases: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -274,6 +278,12 @@ pub struct VariantArticleOutcome {
 }
 
 const ITEM_WORK_LIMIT: usize = 50;
+// Bound the reviewed recovery plan: resolution/gene/LitVar (3), PubMed
+// search/detail (34), Europe PMC (17), S2 (39), requested-entity autocomplete
+// and paging, source citations (1), and visible metadata exports plus two batches.
+// More entities and missing metadata can still exhaust this allowance.
+const DISCOVERY_WORK_LIMIT: usize =
+    3 + 34 + 17 + 39 + 1 + super::MAX_PAGE_FETCHES + 1 + ITEM_WORK_LIMIT + 2;
 const EXACT_WORK_LIMIT: usize = MAX_EXACT_ALIASES * 5;
 const ITEM_CONCURRENCY_LIMIT: usize = 2;
 const PROVIDER_CONCURRENCY_LIMIT: usize = 10;
@@ -324,7 +334,20 @@ enum RouteUnitPlan {
     Pending,
     Inapplicable,
     Applicable(usize),
+    Reused(&'static str),
 }
+
+#[derive(Debug, Clone)]
+struct VariantArticleDiscoveryPlan {
+    provider_queries: Vec<ProviderVariantQueryPlan>,
+    lexical_aliases: Vec<String>,
+    fallback_aliases: (Vec<String>, bool),
+    requested_query: String,
+    source_citation_query: String,
+}
+
+type RequestedPubTatorResult = (Vec<ArticleCandidate>, bool, bool, bool);
+type RouteAliasSets = BTreeMap<(String, String), BTreeSet<String>>;
 
 #[derive(Debug, Clone)]
 pub(crate) struct VariantArticleExecutionContext {
@@ -346,7 +369,12 @@ pub(crate) struct VariantArticleExecutionContext {
     boolean_gene_aliases: Arc<Mutex<Vec<String>>>,
     boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
     lexical_aliases: Arc<Mutex<Option<Vec<String>>>>,
+    discovery_plan: Arc<Mutex<Option<VariantArticleDiscoveryPlan>>>,
+    pubtator_discovery: Arc<Mutex<Option<RequestedPubTatorResult>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
+    route_alias_attempts: Arc<Mutex<BTreeSet<(String, String, String)>>>,
+    route_alias_omissions: Arc<Mutex<RouteAliasSets>>,
+    route_alias_truncations: Arc<Mutex<RouteAliasSets>>,
     attempted_alias_sources: Arc<Mutex<BTreeSet<(String, String)>>>,
     boolean_query_omissions: Arc<Mutex<BTreeSet<(String, String)>>>,
     gene_symbol_coverage: Arc<Mutex<VariantArticleGeneSymbolCoverage>>,
@@ -363,7 +391,7 @@ impl VariantArticleExecutionContext {
         Self {
             deadline,
             item: Arc::new(SharedWorkBudget {
-                limit: ITEM_WORK_LIMIT,
+                limit: DISCOVERY_WORK_LIMIT,
                 consumed: AtomicUsize::new(0),
             }),
             exact_item: Arc::new(SharedWorkBudget {
@@ -397,7 +425,12 @@ impl VariantArticleExecutionContext {
             boolean_gene_aliases: Arc::new(Mutex::new(Vec::new())),
             boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
             lexical_aliases: Arc::new(Mutex::new(None)),
+            discovery_plan: Arc::new(Mutex::new(None)),
+            pubtator_discovery: Arc::new(Mutex::new(None)),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
+            route_alias_attempts: Arc::new(Mutex::new(BTreeSet::new())),
+            route_alias_omissions: Arc::new(Mutex::new(BTreeMap::new())),
+            route_alias_truncations: Arc::new(Mutex::new(BTreeMap::new())),
             attempted_alias_sources: Arc::new(Mutex::new(BTreeSet::new())),
             boolean_query_omissions: Arc::new(Mutex::new(BTreeSet::new())),
             gene_symbol_coverage: Arc::new(Mutex::new(VariantArticleGeneSymbolCoverage::default())),
@@ -417,7 +450,7 @@ impl VariantArticleExecutionContext {
     pub(crate) fn single_with_deadline(deadline: crate::sources::VariantArticleDeadline) -> Self {
         Self::with_request(
             Arc::new(SharedWorkBudget {
-                limit: ITEM_WORK_LIMIT,
+                limit: DISCOVERY_WORK_LIMIT,
                 consumed: AtomicUsize::new(0),
             }),
             deadline,
@@ -437,7 +470,7 @@ impl VariantArticleExecutionContext {
         deadline: crate::sources::VariantArticleDeadline,
     ) -> Vec<Self> {
         let request = Arc::new(SharedWorkBudget {
-            limit: ITEM_WORK_LIMIT.saturating_mul(item_count),
+            limit: DISCOVERY_WORK_LIMIT.saturating_mul(item_count),
             consumed: AtomicUsize::new(0),
         });
         let contexts = (0..item_count)
@@ -544,11 +577,20 @@ impl VariantArticleExecutionContext {
             .or_insert(RouteUnitPlan::Inapplicable);
         *plan = RouteUnitPlan::Applicable(match *plan {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
-            RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
+            RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable | RouteUnitPlan::Reused(_) => 1,
         });
     }
 
     fn lexical_aliases(&self, selected: &[String]) -> Vec<String> {
+        if let Some(aliases) = self
+            .discovery_plan
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+            .map(|plan| plan.lexical_aliases.clone())
+        {
+            return aliases;
+        }
         self.lexical_aliases
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -556,13 +598,26 @@ impl VariantArticleExecutionContext {
             .unwrap_or_else(|| selected.to_vec())
     }
 
-    fn for_alias(&self, alias: &str) -> Self {
+    fn fallback_aliases(
+        &self,
+        input: &str,
+        context: &VariantArticleResolutionContext,
+    ) -> (Vec<String>, bool) {
+        self.discovery_plan
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+            .map(|plan| plan.fallback_aliases.clone())
+            .unwrap_or_else(|| fallback_aliases(input, context))
+    }
+
+    pub(super) fn for_alias(&self, alias: &str) -> Self {
         let mut scoped = self.clone();
         scoped.query_aliases = vec![alias.to_string()];
         scoped
     }
 
-    fn for_aliases(&self, aliases: &[String]) -> Self {
+    pub(super) fn for_aliases(&self, aliases: &[String]) -> Self {
         let mut scoped = self.clone();
         scoped.query_aliases = aliases.to_vec();
         scoped
@@ -578,7 +633,15 @@ impl VariantArticleExecutionContext {
             })
     }
 
-    pub(crate) fn record_alias_query_attempt(&self, source: &str) {
+    pub(crate) fn record_alias_query_attempt(&self, route: &str, source: &str) {
+        self.route_alias_attempts
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend(
+                self.query_aliases
+                    .iter()
+                    .map(|alias| (route.into(), source.into(), alias.clone())),
+            );
         self.attempted_aliases
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -846,6 +909,12 @@ impl VariantArticleExecutionContext {
     }
 
     pub(crate) fn record_not_attempted(&self, route: &str, source: &str) {
+        self.route_alias_omissions
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .entry((route.into(), source.into()))
+            .or_default()
+            .extend(self.query_aliases.iter().cloned());
         self.events
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -1081,12 +1150,12 @@ impl VariantArticleExecutionContext {
     /// ledger event with this reason code keeps the run incomplete and lets the
     /// terminal status say why instead of reporting a silently complete empty
     /// page.
-    fn record_pubtator_variant_no_entity(&self) {
+    fn record_pubtator_variant_no_entity(&self, route: &str) {
         self.events
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .push(VariantArticleCallEvent {
-                route: "pubtator_variant".into(),
+                route: route.into(),
                 source: "pubtator".into(),
                 status: "degraded".into(),
                 latency_ms: 0,
@@ -1447,6 +1516,8 @@ fn status_with_detail(
         detail,
         work,
         reason_codes,
+        omitted_aliases: Vec::new(),
+        truncated_aliases: Vec::new(),
     }
 }
 
@@ -1548,6 +1619,8 @@ fn aggregate_source_status(
         detail,
         work,
         reason_codes,
+        omitted_aliases: Vec::new(),
+        truncated_aliases: Vec::new(),
     }
 }
 
@@ -1632,8 +1705,16 @@ fn terminal_reconciled_statuses(
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
     let deadline_exhausted = execution.deadline.is_exhausted();
-    plans
+    let reused = plans
+        .iter()
+        .filter_map(|((route, source), plan)| match plan {
+            RouteUnitPlan::Reused(from) => Some((route.clone(), source.clone(), *from)),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut statuses = plans
         .into_iter()
+        .filter(|(_, plan)| !matches!(plan, RouteUnitPlan::Reused(_)))
         .filter(|((route, source), plan)| {
             *plan != RouteUnitPlan::Pending
                 || deadline_exhausted
@@ -1660,6 +1741,7 @@ fn terminal_reconciled_statuses(
                 RouteUnitPlan::Pending => matching.len().saturating_add(1),
                 RouteUnitPlan::Inapplicable => matching.len(),
                 RouteUnitPlan::Applicable(units) => units.max(matching.len()),
+                RouteUnitPlan::Reused(_) => 0,
             };
             let started = matching
                 .iter()
@@ -1711,9 +1793,99 @@ fn terminal_reconciled_statuses(
                 status.detail = None;
                 status.reason_codes.clear();
             }
+            let key = (route.clone(), source.clone());
+            let mut omitted = execution
+                .route_alias_omissions
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .get(&key)
+                .cloned()
+                .unwrap_or_default();
+            if status.work.not_attempted > 0 && route == "strict" {
+                let attempted = execution
+                    .route_alias_attempts
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(plans) = execution
+                    .discovery_plan
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .as_ref()
+                {
+                    omitted.extend(
+                        plans
+                            .provider_queries
+                            .iter()
+                            .filter(|plan| plan.route == route && plan.provider == source)
+                            .flat_map(|plan| plan.coverage_aliases.iter())
+                            .filter(|alias| {
+                                !attempted.contains(&(
+                                    route.clone(),
+                                    source.clone(),
+                                    (*alias).clone(),
+                                ))
+                            })
+                            .cloned(),
+                    );
+                }
+            }
+            if status.work.not_attempted > 0
+                && omitted.is_empty()
+                && let Some(plan) = execution
+                    .discovery_plan
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .as_ref()
+            {
+                match route.as_str() {
+                    "source_citation" => {
+                        omitted.insert(plan.source_citation_query.clone());
+                    }
+                    "pubtator_variant" | "litvar_variant" => {
+                        omitted.insert(plan.requested_query.clone());
+                    }
+                    _ => {}
+                }
+            }
+            status.omitted_aliases = omitted.into_iter().collect();
+            status.truncated_aliases = execution
+                .route_alias_truncations
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .get(&key)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .collect();
+            if !status.truncated_aliases.is_empty() {
+                status.reason_codes.push("query_result_cap");
+                if status.status == VariantArticleSourceStatusKind::Ok {
+                    status.status = VariantArticleSourceStatusKind::Degraded;
+                }
+            }
             status
         })
-        .collect()
+        .collect::<Vec<_>>();
+    for (route, source, from) in reused {
+        if let Some(original) = statuses
+            .iter()
+            .find(|status| status.route == from && status.source == source)
+        {
+            let mut status = original.clone();
+            status.route = route;
+            status.work = VariantArticleSourceWork::default();
+            status.detail = Some(format!(
+                "reused requested-entity provider work from {from}{}",
+                original
+                    .detail
+                    .as_ref()
+                    .map(|detail| format!(": {detail}"))
+                    .unwrap_or_default()
+            ));
+            statuses.push(status);
+        }
+    }
+    statuses
 }
 
 /// The entity-id route names a no-entity miss in plain words; the ledger
@@ -2059,9 +2231,9 @@ async fn resolve_search_context(
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone();
         if boolean_variants.is_empty() {
-            (aliases, truncated) = coding_discovery_aliases(&context, &aliases);
+            (aliases, truncated) = legacy_discovery_aliases(&context, &aliases);
         } else {
-            let (expanded, cut) = coding_discovery_aliases(&context, &boolean_variants);
+            let (expanded, cut) = legacy_discovery_aliases(&context, &boolean_variants);
             *execution
                 .boolean_variant_aliases
                 .lock()
@@ -2069,6 +2241,28 @@ async fn resolve_search_context(
             truncated |= cut;
         }
     }
+    let plans = compile_recovery_plan(
+        input,
+        &context,
+        strategy,
+        &aliases,
+        &canonical_equivalence,
+        execution,
+    );
+    let discovery = VariantArticleDiscoveryPlan {
+        provider_queries: plans,
+        lexical_aliases: execution.lexical_aliases(&aliases),
+        fallback_aliases: fallback_aliases(input, &context),
+        requested_query: input.trim().to_string(),
+        source_citation_query: context
+            .source_id
+            .clone()
+            .unwrap_or_else(|| input.trim().to_string()),
+    };
+    *execution
+        .discovery_plan
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(discovery);
     Ok((context, canonical_equivalence, aliases, truncated))
 }
 
@@ -2411,8 +2605,8 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     (aliases, truncated)
 }
 
-/// Add bounded coding discovery without evicting the lexical route's old queries.
-fn coding_discovery_aliases(
+/// Retain the selected discovery prefix while the stored plan recovers overflow.
+fn legacy_discovery_aliases(
     context: &VariantArticleResolutionContext,
     legacy: &[String],
 ) -> (Vec<String>, bool) {
@@ -2436,8 +2630,8 @@ fn coding_discovery_aliases(
             ordered.push(alias.clone());
         }
     }
-    let truncated = ordered.len() > MAX_RESOLVED_ALIASES;
-    ordered.truncate(MAX_RESOLVED_ALIASES);
+    let truncated = ordered.len() > LEGACY_DISCOVERY_ALIAS_LIMIT;
+    ordered.truncate(LEGACY_DISCOVERY_ALIAS_LIMIT);
     (ordered, truncated)
 }
 
@@ -2615,7 +2809,7 @@ fn alias_coverage(
         if resolved {
             planned.extend(execution.lexical_aliases(selected));
         } else {
-            planned.extend(fallback_aliases(input, context).0);
+            planned.extend(execution.fallback_aliases(input, context).0);
         }
     }
     let setup_failures = execution
@@ -2789,15 +2983,58 @@ fn article_alias_matches(
         .collect()
 }
 
+/// One requested-entity retrieval supplies strict and annotation provenance.
+async fn shared_pubtator_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+    route: &str,
+) -> Result<RequestedPubTatorResult, BioMcpError> {
+    if let Some(mut cached) = execution
+        .pubtator_discovery
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+    {
+        for candidate in &mut cached.0 {
+            for fact in &mut candidate.variant_provenance {
+                fact.route = route.into();
+            }
+            for trace in &mut candidate.candidate_trace {
+                trace.route = route.into();
+            }
+        }
+        return Ok(cached);
+    }
+    let result = requested_pubtator_candidates(input, context, execution, route).await;
+    // The originating provider events retain typed failures. Reuse their
+    // terminal outcome without constructing a replacement error or retrying.
+    let cached = result
+        .as_ref()
+        .cloned()
+        .unwrap_or_else(|_| (Vec::new(), true, false, false));
+    *execution
+        .pubtator_discovery
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(cached);
+    result
+}
+
 async fn annotation_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
-) -> Result<(Vec<ArticleCandidate>, bool, bool, bool), BioMcpError> {
-    let Some(unit) = execution
-        .begin_provider_unit("pubtator_variant", "pubtator")
-        .await
-    else {
+) -> Result<RequestedPubTatorResult, BioMcpError> {
+    shared_pubtator_candidates(input, context, execution, "pubtator_variant").await
+}
+
+async fn requested_pubtator_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+    route: &str,
+) -> Result<RequestedPubTatorResult, BioMcpError> {
+    let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
         return Ok((Vec::new(), true, false, true));
     };
     let pubtator =
@@ -2817,6 +3054,17 @@ async fn annotation_candidates(
             return Err(error);
         }
     };
+    let resolved = context.resolution.status == VariantResolutionStatus::Resolved;
+    let tokens = if route == "strict" && !resolved {
+        tokens.into_iter().take(1).collect::<Vec<_>>()
+    } else {
+        tokens
+    };
+    let fetch_limit = if route == "strict" && !resolved {
+        LEXICAL_ALIAS_FETCH_LIMIT
+    } else {
+        MAX_FEDERATED_FETCH_RESULTS
+    };
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;
@@ -2825,14 +3073,17 @@ async fn annotation_candidates(
         // matching variant entity, so this route has no entity id to search
         // by. Report the miss instead of a silently complete empty search;
         // bare text queries stay out of this route.
-        execution.record_pubtator_variant_no_entity();
+        execution.record_pubtator_variant_no_entity(route);
         return Ok((Vec::new(), true, false, false));
     }
     for _ in &tokens {
-        execution.add_route_unit("pubtator_variant", "pubtator");
+        execution.add_route_unit(route, "pubtator");
     }
     for token in tokens {
         execution.record_pubtator_variant_query(&token.entity_id);
+        if route == "strict" {
+            execution.record_strict_pubtator_query(input.trim(), &token.entity_id);
+        }
         let mut filters = article_filters();
         filters.variant = Some(ArticleVariantIntent {
             original: input.to_string(),
@@ -2842,10 +3093,10 @@ async fn annotation_candidates(
         });
         let page_result = search_pubtator_page_with_context(
             &filters,
-            MAX_FEDERATED_FETCH_RESULTS,
+            fetch_limit,
             0,
             Some(execution),
-            "pubtator_variant",
+            route,
             None,
         )
         .await;
@@ -2863,12 +3114,12 @@ async fn annotation_candidates(
         };
         succeeded = true;
         for row in page.results {
-            if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
+            if candidates.len() >= fetch_limit {
                 return Ok((candidates, true, succeeded, false));
             }
             candidates.push(candidate_with_provenance(
                 row,
-                "pubtator_variant",
+                route,
                 "pubtator",
                 vec![if context.requested.is_authoritative_refseq() {
                     input.trim().to_string()
@@ -3096,6 +3347,25 @@ async fn strict_provider_candidates(
                     Ok((outcome.rows, false, None))
                 }
             }),
+            "pubtator" if strategy == VariantArticleStrategy::Union => {
+                shared_pubtator_candidates(input, context, execution, "strict")
+                    .await
+                    .map(|(candidates, incomplete, _, _)| {
+                        if let Some(query) = execution.pubtator_variant_queries().first() {
+                            execution.record_strict_pubtator_query(&plan.query_alias, query);
+                        }
+                        let total = candidates.len();
+                        (
+                            candidates
+                                .into_iter()
+                                .take(LEXICAL_ALIAS_FETCH_LIMIT)
+                                .map(|candidate| candidate.row)
+                                .collect(),
+                            incomplete,
+                            Some(total),
+                        )
+                    })
+            }
             "pubtator" => {
                 let Some(unit) = execution.begin_provider_unit("strict", "pubtator").await else {
                     incomplete = true;
@@ -3163,6 +3433,18 @@ async fn strict_provider_candidates(
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
                     || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
+                if !plan.query_aliases.is_empty()
+                    && (cut || rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT)
+                {
+                    incomplete = true;
+                    execution
+                        .route_alias_truncations
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .entry(("strict".into(), plan.provider.clone()))
+                        .or_default()
+                        .extend(plan.coverage_aliases.iter().cloned());
+                }
                 execution.record_alias_yield(
                     "strict",
                     &plan.query_alias,
@@ -3681,7 +3963,7 @@ async fn fallback_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let (aliases, alias_budget_stopped) = fallback_aliases(input, context);
+    let (aliases, alias_budget_stopped) = execution.fallback_aliases(input, context);
     federated_alias_candidates(
         aliases,
         alias_budget_stopped,
@@ -3796,7 +4078,7 @@ fn plan_queries(
             aliases
         }
         "exact_lexical" => execution.lexical_aliases(exact_aliases),
-        "best_effort_free_text" => fallback_aliases(input, context).0,
+        "best_effort_free_text" => execution.fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
             .clone()
@@ -3974,7 +4256,160 @@ fn boolean_gene_query_plans(
     plans
 }
 
+/// Every consumer reads the plan compiled once after resolution.
 fn provider_variant_query_plan_with_gene_aliases(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
+) -> Vec<ProviderVariantQueryPlan> {
+    execution
+        .discovery_plan
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .as_ref()
+        .map(|plan| plan.provider_queries.clone())
+        .unwrap_or_else(|| {
+            build_provider_variant_query_plan_with_gene_aliases(
+                input,
+                context,
+                strategy,
+                exact_aliases,
+                execution,
+            )
+        })
+}
+
+/// Keep selected queries intact, then recover forms left outside their coverage.
+fn compile_recovery_plan(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    selected: &[String],
+    equivalence: &CanonicalEquivalence,
+    execution: &VariantArticleExecutionContext,
+) -> Vec<ProviderVariantQueryPlan> {
+    let mut plans = build_provider_variant_query_plan_with_gene_aliases(
+        input, context, strategy, selected, execution,
+    );
+    if strategy != VariantArticleStrategy::Union || context.requested.is_authoritative_refseq() {
+        return plans;
+    }
+    let mut aliases = all_exact_aliases(context);
+    aliases.extend(
+        execution
+            .gene_symbol_coverage
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .aliases
+            .iter()
+            .map(|row| row.alias.clone()),
+    );
+    if equivalence.status == "confirmed" {
+        aliases.extend(equivalence.aliases.iter().map(|alias| {
+            match variant_source_gene(context).filter(|_| alias.contains(":g.")) {
+                Some(gene) => format!("{gene} {alias}"),
+                None => alias.clone(),
+            }
+        }));
+    }
+    aliases.sort();
+    aliases.dedup();
+    let extras = provider_variant_query_plan_with_aliases(input, context, strategy, &aliases);
+    for provider in ["pubmed", "europepmc", "semanticscholar"] {
+        let covered = plans
+            .iter()
+            .filter(|plan| plan.route == "strict" && plan.provider == provider)
+            .flat_map(|plan| plan.coverage_aliases.iter().cloned())
+            .collect::<BTreeSet<_>>();
+        let overflow = extras
+            .iter()
+            .filter(|plan| {
+                plan.route == "strict"
+                    && plan.provider == provider
+                    && plan
+                        .coverage_aliases
+                        .iter()
+                        .all(|alias| !covered.contains(alias))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if provider == "semanticscholar" {
+            plans.extend(overflow);
+        } else {
+            plans.extend(group_overflow_queries(provider, overflow, execution));
+        }
+    }
+    // These plans all resolve the same requested entity, regardless of their
+    // display alias. Its lookup/search is one provider unit, not one per spelling.
+    let mut pubtator_seen = false;
+    plans.retain(|plan| {
+        if plan.provider != "pubtator" || plan.route != "strict" {
+            return true;
+        }
+        let keep = !pubtator_seen;
+        pubtator_seen = true;
+        keep
+    });
+    plans
+}
+
+fn group_overflow_queries(
+    provider: &str,
+    queries: Vec<ProviderVariantQueryPlan>,
+    execution: &VariantArticleExecutionContext,
+) -> Vec<ProviderVariantQueryPlan> {
+    let mut groups = Vec::new();
+    let mut group: Vec<ProviderVariantQueryPlan> = Vec::new();
+    let combine = |group: &[ProviderVariantQueryPlan]| ProviderVariantQueryPlan {
+        provider: provider.into(),
+        route: "strict".into(),
+        query_alias: group[0].query_alias.clone(),
+        query_aliases: group
+            .iter()
+            .flat_map(|plan| plan.coverage_aliases.clone())
+            .collect(),
+        coverage_aliases: group
+            .iter()
+            .flat_map(|plan| plan.coverage_aliases.clone())
+            .collect(),
+        query: group
+            .iter()
+            .map(|plan| format!("({})", plan.query))
+            .collect::<Vec<_>>()
+            .join(" OR "),
+        query_template_version: format!("{provider}-paired-overflow-v1"),
+    };
+    for plan in queries {
+        group.push(plan);
+        if boolean_query_fits(provider, &combine(&group).query) {
+            continue;
+        }
+        let last = group.pop().expect("just added query");
+        if !group.is_empty() {
+            groups.push(combine(&group));
+            group.clear();
+        }
+        group.push(last);
+        if !boolean_query_fits(provider, &combine(&group).query) {
+            for alias in &group[0].coverage_aliases {
+                execution
+                    .boolean_query_omissions
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .insert((provider.into(), alias.clone()));
+            }
+            group.clear();
+        }
+    }
+    if !group.is_empty() {
+        groups.push(combine(&group));
+    }
+    groups
+}
+
+fn build_provider_variant_query_plan_with_gene_aliases(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
@@ -4174,7 +4609,7 @@ fn materialize_discovery_route_plans(
     }
 
     let fallback_applicable = strategy == VariantArticleStrategy::Union && !resolved;
-    let fallback_units = fallback_aliases(input, context).0.len();
+    let fallback_units = execution.fallback_aliases(input, context).0.len();
     for source in federated {
         execution.set_route_unit_plan(
             "best_effort_free_text",
@@ -4194,6 +4629,21 @@ fn materialize_discovery_route_plans(
         "pubtator",
         annotation_applicable.then_some(1),
     );
+    if annotation_applicable
+        && strategy == VariantArticleStrategy::Union
+        && strict
+            .iter()
+            .any(|plan| plan.route == "strict" && plan.provider == "pubtator")
+    {
+        execution
+            .route_unit_plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(
+                ("pubtator_variant".into(), "pubtator".into()),
+                RouteUnitPlan::Reused("strict"),
+            );
+    }
 
     // LitVar2 resolves the variant through its own autocomplete, so the
     // route stays applicable without a resolved identity; a contradicted
@@ -5596,7 +6046,7 @@ fn empty_debug_plan(
     offset: usize,
 ) -> VariantArticleDebugPlan {
     let item_work =
-        VariantArticleWork::new(ITEM_WORK_LIMIT + EXACT_WORK_LIMIT + ITEM_WORK_LIMIT, 0);
+        VariantArticleWork::new(DISCOVERY_WORK_LIMIT + EXACT_WORK_LIMIT + ITEM_WORK_LIMIT, 0);
     VariantArticleDebugPlan {
         gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
         alias_coverage: Vec::new(),
@@ -5614,10 +6064,10 @@ fn empty_debug_plan(
         },
         budgets: VariantArticleBudgetsPlan {
             item: item_work,
-            request: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
+            request: VariantArticleWork::new(DISCOVERY_WORK_LIMIT, 0),
         },
         work_allocation: VariantArticleWorkAllocationPlan {
-            discovery: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
+            discovery: VariantArticleWork::new(DISCOVERY_WORK_LIMIT, 0),
             exact_lexical: VariantArticleWorkAllocationScope {
                 item: VariantArticleWork::new(EXACT_WORK_LIMIT, 0),
                 request: VariantArticleWork::new(EXACT_WORK_LIMIT, 0),
@@ -6466,7 +6916,22 @@ mod tests {
                     visible[0].row.normalized_abstract.clear();
                     enrich_candidates(&mut visible, &execution).await;
                     let statuses = terminal_reconciled_statuses(&execution, &execution.events());
-                    for status in statuses {
+                    for status in &statuses {
+                        if strategy == VariantArticleStrategy::Union
+                            && expected_strict_units > 0
+                            && status.route == "pubtator_variant"
+                        {
+                            let original = statuses
+                                .iter()
+                                .find(|row| row.route == "strict" && row.source == "pubtator")
+                                .expect("strict entity retrieval is planned");
+                            assert_eq!(original.work.planned, expected_strict_units);
+                            assert_eq!(status.work.planned, 0);
+                            assert_eq!(status.work.not_attempted, 0);
+                            assert_eq!(status.status, original.status);
+                            assert_eq!(status.reason_codes, original.reason_codes);
+                            continue;
+                        }
                         let (planned, skipped, healthy_zero) = match status.route.as_str() {
                             "resolution" => (1, false, false),
                             "canonical_equivalence" => (car_units, car_units == 0, false),
@@ -6510,7 +6975,7 @@ mod tests {
                             "source_citation" => (0, true, false),
                             "enrichment" => match status.source.as_str() {
                                 "semanticscholar" | "pubtator" => (1, false, false),
-                                "europepmc" => (0, false, true),
+                                "europepmc" => (1, false, false),
                                 _ => unreachable!("fixed enrichment source"),
                             },
                             "identity_verification" => {
@@ -9000,18 +9465,24 @@ mod tests {
     }
 
     #[test]
-    fn item_and_request_work_budgets_stop_at_fifty_and_five_hundred() {
+    fn item_and_request_discovery_work_stops_at_the_named_allowance() {
         let reserved = VariantArticleExecutionContext::single();
         reserved.reserve_identity_verification(3);
-        for _ in 0..ITEM_WORK_LIMIT - 3 {
+        for _ in 0..DISCOVERY_WORK_LIMIT - 3 {
             assert!(reserved.reserve("strict").is_some());
         }
         assert!(reserved.reserve("strict").is_none());
         for _ in 0..3 {
             assert!(reserved.reserve("identity_verification").is_some());
         }
-        assert_eq!(reserved.work_allocation().discovery.limit, ITEM_WORK_LIMIT);
-        assert_eq!(reserved.work_allocation().discovery.consumed, 47);
+        assert_eq!(
+            reserved.work_allocation().discovery.limit,
+            DISCOVERY_WORK_LIMIT
+        );
+        assert_eq!(
+            reserved.work_allocation().discovery.consumed,
+            DISCOVERY_WORK_LIMIT - 3
+        );
         assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
         assert_eq!(
             reserved
@@ -9024,14 +9495,17 @@ mod tests {
 
         let contexts = VariantArticleExecutionContext::batch(10);
         for context in &contexts {
-            for _ in 0..ITEM_WORK_LIMIT {
+            for _ in 0..DISCOVERY_WORK_LIMIT {
                 assert!(context.reserve("strict").is_some());
             }
             assert!(context.reserve("strict").is_none());
-            assert_eq!(context.item_work().consumed, ITEM_WORK_LIMIT);
+            assert_eq!(context.item_work().consumed, DISCOVERY_WORK_LIMIT);
             assert_eq!(context.stopped_routes(), vec!["strict"]);
         }
-        assert_eq!(contexts[0].request_work().consumed, 500);
+        assert_eq!(
+            contexts[0].request_work().consumed,
+            DISCOVERY_WORK_LIMIT * 10
+        );
         assert!(contexts[0].request_work().exhausted);
     }
 
@@ -9229,7 +9703,7 @@ mod tests {
     #[tokio::test]
     async fn annotation_pre_call_stop_is_attributed_to_pubtator() {
         let execution = VariantArticleExecutionContext::single();
-        for _ in 0..ITEM_WORK_LIMIT {
+        for _ in 0..DISCOVERY_WORK_LIMIT {
             assert!(execution.reserve("pubtator_variant").is_some());
         }
 
@@ -9249,7 +9723,7 @@ mod tests {
     #[tokio::test]
     async fn citation_pre_call_stop_is_attributed_to_myvariant() {
         let execution = VariantArticleExecutionContext::single();
-        for _ in 0..ITEM_WORK_LIMIT {
+        for _ in 0..DISCOVERY_WORK_LIMIT {
             assert!(execution.reserve("source_citation").is_some());
         }
         let mut context = resolved_context();
@@ -9268,7 +9742,7 @@ mod tests {
     #[test]
     fn exact_lexical_allowance_survives_strict_budget_exhaustion() {
         let execution = VariantArticleExecutionContext::single();
-        for _ in 0..ITEM_WORK_LIMIT {
+        for _ in 0..DISCOVERY_WORK_LIMIT {
             assert!(execution.reserve("strict").is_some());
         }
 
@@ -9281,7 +9755,7 @@ mod tests {
     #[test]
     fn identity_verification_allowance_survives_strict_budget_exhaustion() {
         let execution = VariantArticleExecutionContext::single();
-        for _ in 0..ITEM_WORK_LIMIT {
+        for _ in 0..DISCOVERY_WORK_LIMIT {
             assert!(execution.reserve("strict").is_some());
         }
         execution.reserve_identity_verification(1);
@@ -9308,7 +9782,7 @@ mod tests {
     #[test]
     fn ldh_medium_lookup_is_one_per_item_and_survives_an_exhausted_item_budget() {
         let execution = VariantArticleExecutionContext::single();
-        for _ in 0..ITEM_WORK_LIMIT {
+        for _ in 0..DISCOVERY_WORK_LIMIT {
             assert!(execution.reserve("strict").is_some());
         }
         assert!(execution.reserve("strict").is_none());
