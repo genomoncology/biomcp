@@ -16,6 +16,7 @@ struct ArticleSearchRenderRow {
     why: String,
     citation_count: Option<u64>,
     is_retracted: Option<bool>,
+    metadata_status: Option<String>,
 }
 
 pub struct ArticleSearchRenderContext<'a> {
@@ -666,8 +667,19 @@ pub(crate) fn variant_article_search_markdown(
     filters: &ArticleSearchFilters,
     context: ArticleSearchRenderContext<'_>,
     source_status: &[crate::entities::article::variant_search::VariantArticleSourceStatus],
+    metadata_status: &std::collections::BTreeMap<
+        String,
+        crate::entities::article::ArticleMetadataStatus,
+    >,
 ) -> Result<String, BioMcpError> {
-    article_search_markdown(query, results, "", filters, context, Some(source_status))
+    article_search_markdown(
+        query,
+        results,
+        "",
+        filters,
+        context,
+        Some((source_status, metadata_status)),
+    )
 }
 
 pub(crate) fn variant_article_sources_markdown(
@@ -697,9 +709,10 @@ fn article_search_markdown(
     pagination_footer: &str,
     filters: &ArticleSearchFilters,
     context: ArticleSearchRenderContext<'_>,
-    variant_source_status: Option<
+    variant_source_status: Option<(
         &[crate::entities::article::variant_search::VariantArticleSourceStatus],
-    >,
+        &std::collections::BTreeMap<String, crate::entities::article::ArticleMetadataStatus>,
+    )>,
 ) -> Result<String, BioMcpError> {
     let rows = results
         .iter()
@@ -719,6 +732,17 @@ fn article_search_markdown(
             why: article_ranking_why(row, filters),
             citation_count: row.citation_count,
             is_retracted: row.is_retracted,
+            metadata_status: variant_source_status
+                .and_then(|(_, statuses)| statuses.get(&row.pmid))
+                .map(|status| {
+                    format!(
+                        "{}: missing {} ({}; {})",
+                        status.status,
+                        status.missing_fields.join(", "),
+                        status.source,
+                        status.failure_class
+                    )
+                }),
         })
         .collect::<Vec<_>>();
     let related_block = format_related_block(
@@ -734,7 +758,7 @@ fn article_search_markdown(
     let source_status_rows =
         article_source_status_rows(context.source_status, filters, retry_limit, retry_offset);
     let variant_source_metadata = variant_source_status
-        .map(variant_article_sources_markdown)
+        .map(|(statuses, _)| variant_article_sources_markdown(statuses))
         .transpose()?;
     let source_plan = if variant_source_status.is_none() {
         Some(crate::entities::article::article_source_plan(
@@ -764,6 +788,7 @@ fn article_search_markdown(
         variant_source_metadata => variant_source_metadata,
         count => results.len(),
         rows => rows,
+        has_metadata_status => rows.iter().any(|row| row.metadata_status.is_some()),
         semantic_scholar_enabled => context.semantic_scholar_enabled,
         source_status_rows => source_status_rows,
         warning => context.warning,

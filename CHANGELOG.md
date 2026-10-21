@@ -43,6 +43,8 @@
 
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
 
+- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
+
 - Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
 
 - Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
