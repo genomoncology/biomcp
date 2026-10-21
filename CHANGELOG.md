@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Preserve provider order in broad variant search pages so consecutive offsets do not repeat or skip results. (2341)
+
 - Retry transient article-source failures once within the search deadline and preserve other routes with explicit failure and retry details. (2336)
 
 - Keep cached responses usable during concurrent cache updates, avoid repeated database opens and skip cleanup transactions when maintenance is not due. (2326)
