@@ -334,6 +334,17 @@ def test_initialized_mcp_refuses_rows_from_a_replaced_cache_path(tmp_path, gene_
             for path in cache.glob("biomcp.db*"):
                 path.rename(displaced / path.name)
         assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == expected
+        # A replacement may itself need the credential purge. The retained
+        # handle must reject it without publishing or marking migration done.
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            connection.execute("pragma user_version=1")
         assert search("after") == expected, "a retained connection must never serve the displaced database"
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            assert connection.execute("pragma user_version").fetchone()[0] == 1
+            assert connection.execute("select count(*) from entries").fetchone()[0] > 0
+        invoke(env, "cache", "stats")
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            assert connection.execute("pragma user_version").fetchone()[0] == 2
+            assert connection.execute("select count(*) from entries").fetchone()[0] == 0
     finally:
         client.close()
