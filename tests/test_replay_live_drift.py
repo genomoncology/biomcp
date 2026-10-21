@@ -149,7 +149,10 @@ def test_live_check_ignores_values_and_order_reports_added_paths_and_paces_calls
         "timestamp": "changed",
     }
     process, results, summary = run_check(
-        tmp_path, replay, "--live", env_values={"NCBI_API_KEY": "private-marker"}
+        tmp_path,
+        replay,
+        "--live",
+        env_values={"NCBI_API_KEY": "private-marker", "S2_API_KEY": "private-marker"},
     )
     assert process.returncode == 0
     assert summary["total"] == summary["checked"] == summary["passed"] == 2
@@ -635,3 +638,127 @@ def test_policy_identity_follows_runtime_declaration_and_refuses_ambiguity(tmp_p
         ValueError, match="unknown or ambiguous provider policy identity"
     ):
         resolve("future", derive(tmp_path, overrides, set()))
+
+
+def s2_recordings(tmp_path, origin, count=5):
+    replay, routes = recording(tmp_path, origin, count=count, provider="s2")
+    routes = {
+        key.replace("/s2/query", "/s2/graph/v1/paper/search"): value
+        for key, value in routes.items()
+    }
+    for entry in routes.values():
+        entry["upstream"] = entry["upstream"].replace(
+            "/query", "/graph/v1/paper/search"
+        )
+    if count == 5:
+        key, entry = routes.pop(next(iter(routes)))
+        body = '{"ids":["PMID:123"]}'
+        digest = hashlib.sha256(body.encode()).hexdigest()[:16]
+        entry["upstream"] = origin + "/graph/v1/paper/batch"
+        entry["request_body"] = body
+        routes[f"POST /s2/graph/v1/paper/batch#{digest}"] = entry
+    routes["GET /kegg/query"] = next(iter(routes.values())).copy()
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    return replay
+
+
+def test_explicit_keyed_s2_checks_only_five_recordings_and_paces(tmp_path, provider):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    before = {p: p.read_bytes() for p in replay.rglob("*") if p.is_file()}
+    process, results, summary = run_check(
+        tmp_path,
+        replay,
+        "--live",
+        "--source",
+        "semantic-scholar",
+        "--keyed-semantic-scholar",
+        env_values={"S2_API_KEY": "fake-s2-marker"},
+    )
+    assert process.returncode == 0, process.stderr + process.stdout
+    assert summary["total"] == summary["checked"] == summary["passed"] == 5
+    assert len(results) == len(server.requests) == 5
+    assert all(
+        headers.get("X-Api-Key") == "fake-s2-marker" for _, headers in server.requests
+    )
+    assert all(b[0] - a[0] >= 0.9 for a, b in zip(server.requests, server.requests[1:]))
+    assert "fake-s2-marker" not in process.stdout + process.stderr
+    assert before == {p: p.read_bytes() for p in replay.rglob("*") if p.is_file()}
+
+
+@pytest.mark.parametrize(
+    "fault", ["missing-key", "count", "scope", "unsafe-key", "endpoint", "body"]
+)
+def test_keyed_s2_refuses_invalid_admission_before_requests(tmp_path, provider, fault):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin, count=4 if fault == "count" else 5)
+    if fault in {"endpoint", "body"}:
+        manifest_path = replay / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        for key, entry in manifest["routes"].items():
+            if key.startswith("POST"):
+                if fault == "endpoint":
+                    entry["upstream"] = origin + "/graph/v1/paper/write"
+                else:
+                    entry["request_body"] = '{"token":"fake-s2-marker"}'
+        manifest_path.write_text(json.dumps(manifest))
+    env = {"S2_API_KEY": "fake-s2-marker"}
+    if fault == "missing-key":
+        env = {}
+    if fault == "unsafe-key":
+        env["S2_API_KEY"] += "\ninvalid"
+    args = ["--live", "--keyed-semantic-scholar"]
+    if fault != "scope":
+        args += ["--source", "semantic-scholar"]
+    process = subprocess.run(
+        [sys.executable, str(CHECKER), "--replay-dir", str(replay), *args],
+        env={**isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"), **env},
+        text=True,
+        capture_output=True,
+        timeout=HANG_TIMEOUT,
+    )
+    assert process.returncode != 0
+    assert not server.requests
+    assert "fake-s2-marker" not in process.stdout + process.stderr
+
+
+def test_keyed_s2_stops_after_rate_limit_and_hides_echoed_fields(tmp_path, provider):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    server.status = 429
+    server.retry_after = True
+    server.body = {"fake-s2-marker": "untrusted"}
+    process, _, summary = run_check(
+        tmp_path,
+        replay,
+        "--live",
+        "--source",
+        "semantic-scholar",
+        "--keyed-semantic-scholar",
+        env_values={"S2_API_KEY": "fake-s2-marker"},
+    )
+    assert process.returncode == 1
+    assert summary["checked"] == len(server.requests) == 1
+    assert summary["blocked"] == 4
+    assert "fake-s2-marker" not in process.stdout + process.stderr
+
+
+def test_keyed_s2_respects_source_disabling(tmp_path, provider):
+    server, origin = provider
+    replay = s2_recordings(tmp_path, origin)
+    process, _, summary = run_check(
+        tmp_path,
+        replay,
+        "--live",
+        "--source",
+        "semantic-scholar",
+        "--keyed-semantic-scholar",
+        "--disable-sources",
+        "semantic-scholar",
+        env_values={"S2_API_KEY": "fake-s2-marker"},
+    )
+    assert process.returncode == 0
+    assert summary["disabled"] == 5
+    assert not server.requests

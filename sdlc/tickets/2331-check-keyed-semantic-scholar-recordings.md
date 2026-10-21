@@ -14,7 +14,7 @@ Let the existing replay live checker check exactly the five Semantic Scholar rec
 
 - Proof: outside-in controls show explicit source selection, inherited authentication, pacing and failure handling without printing or persisting credentials or authorization headers. Run the full routine on the coherent branch composed with current main before fresh review. The actual five-recording check belongs to release admission 2330.
 
-Changes: `tools/check-replay-live`, its implementation and focused contract tests, related source-policy documentation and `CHANGELOG.md`; correct the claim after reproduction.
+Changes: `tools/check-replay-live`, `tests/test_replay_live_drift.py`, `docs/reference/release-process.md` and `CHANGELOG.md`.
 
 ## Evidence
 
