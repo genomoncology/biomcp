@@ -44,3 +44,4 @@ Pending the remaining accepted source landings and assessment work. The final jo
 
 - 2026-10-20 landed 368a8ac8f5074d9f78bae5ee5a9b0ff232313572; next: Land remaining accepted release work, complete final qualification and rehearse without publication
 - 2026-10-20 next: Qualify frozen main b91c4d46bb33741e76065dbe81e3b406d0e1596c with the final main gate and fresh Linux offline run, then complete one full untagged rehearsal and send the PM go request; no tag or publication
+- 2026-10-20 next: Resolve2322 after failed fresh Linux j402 on b91c4d46b, then qualify the repaired final source and complete the full untagged rehearsal; no tag or publication
