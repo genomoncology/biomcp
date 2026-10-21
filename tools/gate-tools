@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Host prerequisites. Installer-owned pins are read from their declarations.
+# Portable utilities use POSIX.1-2008 and BSD command interfaces.
+set -u
+root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
+export PATH="${BIOMCP_TOOL_DIR:-$root/.cache/tools/bin}:$PATH"
+errors=()
+
+pin() {
+  local line pattern="^[[:space:]]*$1: ([0-9.]+)$"
+  while IFS= read -r line; do
+    if [[ "$line" =~ $pattern ]]; then printf '%s' "${BASH_REMATCH[1]}"; return; fi
+  done < "$root/.github/workflows/ci.yml"
+  return 1
+}
+
+lint_pin() {
+  local line pattern="install_archive_binary $1 ([0-9.]+)"
+  while IFS= read -r line; do
+    if [[ "$line" =~ $pattern ]]; then printf '%s' "${BASH_REMATCH[1]}"; return; fi
+  done < "$root/tools/bootstrap-lint-tools"
+  return 1
+}
+
+version_ok() {
+  local actual="$1" expected="$2" mode="$3" i left right
+  local actual_parts expected_parts
+  IFS=. read -r -a actual_parts <<< "$actual"
+  IFS=. read -r -a expected_parts <<< "$expected"
+  for i in 0 1 2; do
+    left="${actual_parts[$i]:-0}"; right="${expected_parts[$i]:-0}"
+    if ((left < right)); then return 1; fi
+    if ((left > right)); then [ "$mode" = min ]; return; fi
+  done
+}
+
+require() {
+  local command="$1" version="$2" mode="$3" output actual
+  shift 3
+  if ! command -v "$command" >/dev/null 2>&1; then
+    errors+=("missing: $command${1:+ $1}")
+    return
+  fi
+  [ "$mode" != portable ] || return 0
+  if ! output="$("$command" "$@" 2>&1)"; then
+    errors+=("missing: $command${1:+ $1}")
+  elif [[ "$output" =~ ([0-9]+\.[0-9]+(\.[0-9]+)?) ]]; then
+    actual="${BASH_REMATCH[1]}"
+    if ! version_ok "$actual" "$version" "$mode"; then
+      errors+=("version: $command requires $mode $version; got $actual")
+    fi
+  else
+    errors+=("version: $command did not report a version")
+  fi
+}
+
+# The system interpreter runs outside uv. Packaged CLI requirements live in
+# pyproject.toml; the prepared development interpreter uses .python-version.
+# Host scripts use str.removeprefix/removesuffix from Python 3.9.
+require python3 3.9 min --version
+rust_min=""
+while IFS= read -r line; do
+  pattern='^rust-version = "([0-9.]+)"$'
+  if [[ "$line" =~ $pattern ]]; then rust_min="${BASH_REMATCH[1]}"; break; fi
+done < "$root/Cargo.toml"
+require cargo "$rust_min" min --version
+require rustc "$rust_min" min --version
+require rustup 1.27 min --version
+require cargo 1.0 min fmt --version
+require cargo 0.1 min clippy --version
+require cargo "$(pin CARGO_NEXTEST_VERSION)" min nextest --version
+require cargo "$(pin CARGO_DENY_VERSION)" min deny --version
+require mustmatch "$(pin MUSTMATCH_VERSION)" exact --version
+require uv "$(pin UV_VERSION)" min --version
+require git 2.25 min --version
+require make 3.81 min --version
+require bash 3.2 min --version
+require jq 1.6 min --version
+require curl 7.68 min --version
+require rg 13.0 min --version
+require docker 20.10 min --version
+if [[ "$OSTYPE" == darwin* ]]; then require lsof 4.9 min -v; fi
+if [[ "$OSTYPE" == linux* ]]; then require bwrap 0.4 min --version; fi
+require shellcheck "$(lint_pin shellcheck)" exact --version
+require actionlint "$(lint_pin actionlint)" exact --version
+require xz 5.2 min --version
+require sha256sum GNU-compatible portable
+for utility in awk sed grep find sort head tail wc tr cut dirname basename cat cp mv rm mkdir chmod mktemp uname id stat env tee touch tar install cc ar gzip cmp seq sleep ps; do
+  require "$utility" POSIX.1-2008/BSD portable
+done
+if ((${#errors[@]})); then
+  printf '%s\n' "${errors[@]}" >&2
+  printf 'Install the declared prerequisites in tools/gate-tools before running the gate.\n' >&2
+  exit 1
+fi

@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Allow explicitly authorized, paced Semantic Scholar recording checks with inherited authentication and safe diagnostics. (2331)
+- Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
@@ -22,6 +22,8 @@
 - Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
 
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
+
+- Allow explicitly authorized, paced Semantic Scholar recording checks with inherited authentication and safe diagnostics. (2331)
 
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
