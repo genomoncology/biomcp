@@ -48,7 +48,7 @@ EXTERNAL_GIT_COMMAND = re.compile(
     r"(?i)\bgit(?:\s+-[^\s]+)*\s+"
     r"(?:clone|submodule\s+add|worktree\s+add)\b"
 )
-SEGMENTED_RECORD = "sdlc/records/1183-remove-" + "bio" + "data-from-biomcp-0-9.md"
+SEGMENTED_RECORD = "sdlc/archive/records/1183-remove-" + "bio" + "data-from-biomcp-0-9.md"
 SEGMENT_BEGIN = b"<!-- biomcp-1183-hosted-evidence-begin -->"
 SEGMENT_END = b"<!-- biomcp-1183-hosted-evidence-end -->"
 PENDING_EVIDENCE = b"\nstatus: pending\n"
