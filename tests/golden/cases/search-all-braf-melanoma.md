@@ -11,11 +11,11 @@
 ## Variants (42)
 |ID|Gene|Protein|Significance|
 |---|---|---|---|
-|chr7:g.140449165A>C|BRAF|p.Asp638Glu|Pathogenic|
 |chr7:g.140476832A>G|BRAF|p.Leu525Pro|Pathogenic|
+|chr7:g.140449165A>C|BRAF|p.Asp638Glu|Pathogenic|
 |chr7:g.140534497T>G|BRAF|p.Gln139Pro|Uncertain significance|
 
-- `biomcp get variant "chr7:g.140449165A>C"`
+- `biomcp get variant "chr7:g.140476832A>G"`
 - `biomcp search variant --gene BRAF --condition melanoma --max-frequency 0.01`
 
 ## Diseases (90)

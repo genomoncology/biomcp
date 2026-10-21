@@ -1,4 +1,4 @@
-//! Variant search against MyVariant.info with quality scoring and result shaping.
+//! Variant search against MyVariant.info with stable provider pages and exact identity ranking.
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
@@ -699,83 +699,6 @@ async fn search_page_with_execution(
         )));
     }
 
-    let has_precision_filter = filters
-        .hgvsp
-        .as_deref()
-        .map(str::trim)
-        .is_some_and(|v| !v.is_empty())
-        || filters
-            .hgvsc
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .rsid
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters.protein_alias.is_some()
-        || filters
-            .significance
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters.max_frequency.is_some()
-        || filters.min_cadd.is_some()
-        || filters
-            .review_status
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .population
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters.revel_min.is_some()
-        || filters.gerp_min.is_some()
-        || filters
-            .tumor_site
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .condition
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .impact
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters.lof
-        || filters
-            .has
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .missing
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .therapy
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty())
-        || filters
-            .consequence
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|v| !v.is_empty());
-    let fetch_limit = if has_precision_filter {
-        limit
-    } else {
-        (limit.saturating_mul(40)).clamp(limit, 200)
-    };
-
     let params_at = |page_limit, page_offset| {
         search_params(filters, filters.gene.clone(), page_limit, page_offset)
     };
@@ -785,9 +708,11 @@ async fn search_page_with_execution(
         None => MyVariantClient::new()?,
     };
     let Some(requested) = filters.requested_identity.as_ref() else {
-        let initial = client.search(&params_at(fetch_limit, offset)).await?;
+        // Preserve the provider order: sorting overlapping windows locally repeats
+        // or skips hits when the caller advances the provider offset.
+        let initial = client.search(&params_at(limit, offset)).await?;
         let (resp, diagnostics) = if initial.total == Some(0) {
-            classify_provider_zero(&client, filters, initial, fetch_limit, offset).await?
+            classify_provider_zero(&client, filters, initial, limit, offset).await?
         } else {
             (initial, Vec::new())
         };
@@ -796,7 +721,6 @@ async fn search_page_with_execution(
             .iter()
             .map(transform::variant::from_myvariant_search_hit)
             .collect::<Vec<_>>();
-        sort_results(&mut out);
         out.truncate(limit);
         let page = SearchPage::offset(out, resp.total);
         return Ok(VariantSearchPage {
@@ -1105,10 +1029,6 @@ fn resolution_status(
     } else {
         VariantResolutionStatus::Unresolved
     }
-}
-
-fn sort_results(out: &mut [VariantSearchResult]) {
-    out.sort_by(compare_search_results);
 }
 
 fn compare_search_results(a: &VariantSearchResult, b: &VariantSearchResult) -> std::cmp::Ordering {

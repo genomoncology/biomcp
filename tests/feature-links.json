@@ -237,6 +237,9 @@
     "tests/test_variant_normalize_json_contract.py": {
       "feature": "variant"
     },
+    "tests/test_variant_search_pagination.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_transcript_allele_guard.py": {
       "feature": "variant"
     },

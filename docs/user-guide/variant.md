@@ -114,6 +114,12 @@ and names any oversized preview fields it omitted.
 
 ## Search variants
 
+Broad searches preserve MyVariant provider order. `--offset` and `--limit`
+select that provider window without local reranking, so consecutive pages
+cover the same ordered results as one larger page while the provider results
+remain stable. Provider totals and filters retain their source meaning.
+Exact-identity searches retain their separate compatibility checks and ranking.
+
 By gene and protein change:
 
 ```bash
