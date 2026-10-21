@@ -10,6 +10,12 @@ Milestone: 0.9.4
 
 Depends on: 2316, 2319
 
+Changes: `Makefile`, `scripts/run-nightly-checks.sh`, `tests/test_release_check_counterparts.py`, `tests/test_ci_workflow_contract.py`, `tests/test_stress_lane_contract.py`, `CHANGELOG.md`.
+
+Reviews: revision 4e49bcc, accept
+
+Reviews: revision a55c944, accept
+
 ## Outcome
 
 `make nightly-checks` composes the existing stress, optimized panic-recovery, protobuf generation and long-suite checks, the repository audit, full-feature/rendered-output checks and installed-wheel smoke, followed by the feature-coverage target from 2319. One counterpart guard detects a release check without its actual local/nightly counterpart; native-platform and publication-only boundaries remain explicit.

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY: build test lint check-semantic-contracts full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: landing-gate main-gate repo-audit installed-wheel-smoke
-.PHONY: feature-coverage output-footprint
+.PHONY: feature-coverage output-footprint nightly-checks
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= dev
@@ -112,6 +112,9 @@ main-gate:
 
 installed-wheel-smoke: sync-python-dev
 	bash scripts/check-linux-wheel.sh
+
+nightly-checks:
+	bash scripts/run-nightly-checks.sh
 
 repo-audit: sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "repo_audit and not release_gate"
@@ -227,9 +230,10 @@ stress: prepare-routine-test-tmp
 	@set -euo pipefail; \
 	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \
+	cpu="$$(python3 -c 'import os; print(min(os.sched_getaffinity(0)))')"; \
 	for round in $$(seq 1 "$$repeat"); do \
-	  echo "=== stress round $$round/$$repeat (one CPU, 4 workers, timeout scale $$scale) ==="; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
+	  echo "=== stress round $$round/$$repeat (CPU $$cpu, 4 workers, timeout scale $$scale) ==="; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c "$$cpu" tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
 	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelled_publication_settles_and_the_previous_generation_survives)'; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c "$$cpu" tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
 	done
