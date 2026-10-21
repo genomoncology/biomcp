@@ -1109,24 +1109,20 @@ mod tests {
 
     #[tokio::test]
     async fn redirect_target_is_revalidated_before_target_contact() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
         let target = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let target_url = format!("http://{}/stolen", target.local_addr().unwrap());
-        let redirect = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let redirect_url =
-            Url::parse(&format!("http://{}/start", redirect.local_addr().unwrap())).unwrap();
-        let server = tokio::spawn(async move {
-            for _ in ProviderUrlConsumer::ALL {
-                let (mut stream, _) = redirect.accept().await.unwrap();
-                let mut request = [0_u8; 1024];
-                let _ = stream.read(&mut request).await.unwrap();
-                let response = format!(
-                    "HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                );
-                stream.write_all(response.as_bytes()).await.unwrap();
-            }
-        });
+
+        let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = received.clone();
+        let mut server = crate::test_support::TestHttpServer::respond(move |_| {
+    observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let response = format!("HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    async move {
+        Ok(response.into_bytes())
+    }
+})
+.expect("start redirect fixture");
+        let redirect_url = Url::parse(&format!("{}/start", server.base)).unwrap();
         for consumer in ProviderUrlConsumer::ALL.iter().copied() {
             let policy = ProviderUrlPolicy::test_fixture(consumer, &redirect_url).unwrap();
             let client = reqwest::Client::builder()
@@ -1142,7 +1138,11 @@ mod tests {
                 .expect_err("off-origin redirect must fail");
             assert!(error.is_redirect());
         }
-        server.await.unwrap();
+        server.finish().unwrap();
+        assert_eq!(
+            received.load(std::sync::atomic::Ordering::SeqCst),
+            ProviderUrlConsumer::ALL.len()
+        );
         assert!(
             tokio::time::timeout(std::time::Duration::from_millis(100), target.accept())
                 .await

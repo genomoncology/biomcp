@@ -253,7 +253,7 @@ impl FixtureEnv {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn repeat_call_serves_the_stored_edge_without_graph_or_fulltext_requests() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-repeat",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -283,12 +283,13 @@ async fn repeat_call_serves_the_stored_edge_without_graph_or_fulltext_requests()
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(!logged.contains("s2:graph"), "{logged}");
     assert!(!logged.contains("fulltext"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn cross_spelling_call_is_served_for_the_same_resolved_pair() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-spelling",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -312,6 +313,7 @@ async fn cross_spelling_call_is_served_for_the_same_resolved_pair() {
     let logged = fx.logged();
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(!logged.contains("s2:graph"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -344,12 +346,13 @@ async fn an_expired_entry_refetches() {
     .expect("second call");
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_bypassed_cache_reads_and_writes_nothing() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-bypass",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -385,6 +388,7 @@ async fn a_bypassed_cache_reads_and_writes_nothing() {
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
     assert!(citation_records(fx.cache.path()).is_empty());
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -423,12 +427,13 @@ async fn infinite_mode_serves_an_expired_entry() {
     let logged = fx.logged();
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(!logged.contains("s2:graph"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn an_off_mode_guard_does_not_latch_the_bypass_for_later_reads() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-off-guard",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -483,12 +488,13 @@ async fn an_off_mode_guard_does_not_latch_the_bypass_for_later_reads() {
     let logged = fx.logged();
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(!logged.contains("s2:graph"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_corrupt_record_is_a_miss_and_is_replaced() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-corrupt",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -520,12 +526,13 @@ async fn a_corrupt_record_is_a_miss_and_is_replaced() {
     assert!(logged.contains("s2:graph"), "{logged}");
     let replaced = String::from_utf8(read_citation_record(fx.cache.path(), &records[0])).unwrap();
     assert!(replaced.contains("\"schema_version\":1"), "{replaced}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_future_schema_version_is_a_miss() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-schema",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -562,12 +569,13 @@ async fn a_future_schema_version_is_a_miss() {
     .expect("second call");
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_non_evidence_status_is_never_cached() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-unavailable",
         vec![page(0, None, edge(vec![]))],
         None,
@@ -588,12 +596,13 @@ async fn a_non_evidence_status_is_never_cached() {
     );
     let logged = fx.logged();
     assert!(logged.contains("fulltext:xml"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_forced_call_ignores_a_stored_provider_context_entry() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-forced-miss",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -621,12 +630,13 @@ async fn a_forced_call_ignores_a_stored_provider_context_entry() {
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
     assert!(logged.contains("fulltext:xml"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_forced_call_serves_a_stored_fulltext_entry() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-forced-hit",
         vec![page(0, None, edge(vec![]))],
         Some(JATS_LINKED),
@@ -655,12 +665,13 @@ async fn a_forced_call_serves_a_stored_fulltext_entry() {
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(!logged.contains("s2:graph"), "{logged}");
     assert!(!logged.contains("fulltext"), "{logged}");
+    fx.fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_write_failure_leaves_the_outcome_unchanged() {
-    let fx = FixtureEnv::new(
+    let mut fx = FixtureEnv::new(
         "citation-sidecar-write-failure",
         vec![page(0, None, edge(vec!["Provider context"]))],
         Some(JATS_LINKED),
@@ -677,4 +688,5 @@ async fn a_write_failure_leaves_the_outcome_unchanged() {
     .expect("outcome survives the write failure");
     assert_eq!(result.status, CitationEvidenceStatus::ContextFromProvider);
     assert!(citation_records(fx.cache.path()).is_empty());
+    fx.fixture.finish().unwrap();
 }

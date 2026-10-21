@@ -133,6 +133,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           offline: true
+          nextest: true
 
       # The marker set compiles the packaged crate offline; the
       # registry has to be fetched first, the same fetch the CI

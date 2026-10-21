@@ -1,9 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
+.PHONY: build test lint check-semantic-contracts full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: landing-gate main-gate repo-audit installed-wheel-smoke
-.PHONY: output-footprint
-.PHONY: nightly-checks
+.PHONY: feature-coverage output-footprint nightly-checks
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= dev
@@ -11,6 +10,7 @@ FULL_FEATURE_PROFILE ?= dev
 FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FULL_FEATURE_PROFILE))/biomcp
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
+export UV_PROJECT_ENVIRONMENT := $(CURDIR)/.venv
 PYTEST_WORKERS = $(TEST_LANE_WORKERS)
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 # Cargo maps the dev profile to target/debug; every other profile name is
@@ -89,10 +89,11 @@ test-long: prepare-test
 	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml" --profile long --no-tests=pass
 	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
-lint:
+lint: sync-python-dev
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" BIOMCP_ADVISORY_SCOPE="$(BIOMCP_ADVISORY_SCOPE)" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
-	tools/check-quality-ratchet.sh
+	tools/check-semantic-contracts.sh
+	uv run --no-project python tools/check-feature-coverage.py links
 
 # Keep commands in recipes so even make -j preserves the landing order.
 # The existing landing gate runs on the merge candidate; main adds the
@@ -127,30 +128,29 @@ full-feature-check:
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
 
-# The marker set alone (ticket 2125): the packaged-crate cold
-# compile behind -m release_gate and any later check that joins it.
-# The release workflow's release-gate job runs this target before it
-# builds any archive; `make release-gate` still runs the same
-# selection after the full suite with the dev build's binary on
-# BIOMCP_BIN.
+# Nightly and both release entry points share the outside-in floor check.
+# Routine lint only validates links and never builds with instrumentation.
+feature-coverage:
+	NEXTEST_TEST_THREADS="$(TEST_LANE_WORKERS)" bash scripts/collect-feature-coverage.sh
+
 release-gate-markers:
 	$(MAKE) repo-audit
 	$(MAKE) sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
+	$(MAKE) feature-coverage
 
 release-gate: lint
 	$(MAKE) test
 	$(MAKE) test-long
-	$(MAKE) repo-audit
-	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
+	$(MAKE) release-gate-markers BIOMCP_BIN="$(SPEC_RUN_BIN)"
 	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 # Release lint remains unconditional even when a caller carries landing scope.
 release-gate: override BIOMCP_ADVISORY_SCOPE = always
 
-check-quality-ratchet:
-	@bash tools/check-quality-ratchet.sh
+check-semantic-contracts:
+	@bash tools/check-semantic-contracts.sh
 
 output-footprint:
 	$(SPEC_BUILD)

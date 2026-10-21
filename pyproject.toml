@@ -26,6 +26,7 @@ Documentation = "https://biomcp.org"
 
 [project.optional-dependencies]
 dev = [
+  "ruff==0.13.2",
   "jsonschema>=4.26",
   "pytest>=8.0",
   "pytest-asyncio>=0.24",
@@ -76,3 +77,8 @@ asyncio_mode = "auto"
 slow_test_warning_seconds = 30
 # Retain through every failure phase; conftest removes passing replay directories.
 tmp_path_retention_policy = "all"
+
+[tool.biomcp.feature-coverage]
+# Initial valid outside-in collection at 5188be473: 64881 / 111574 product lines.
+floor = 58.15064441536558
+llvm-cov-version = "0.9.1"

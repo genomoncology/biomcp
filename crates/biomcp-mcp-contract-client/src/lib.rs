@@ -1,13 +1,11 @@
 use std::collections::BTreeMap;
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
 };
-use std::thread;
 use std::time::Duration;
 
 use base64::Engine;
@@ -19,6 +17,8 @@ use rmcp::service::ServiceError;
 use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
 use serde_json::json;
 use tokio::process::{Child, Command};
+
+pub mod test_http;
 
 pub type EnvVar = (&'static str, String);
 pub type RunningClient<T> = rmcp::service::RunningService<rmcp::RoleClient, T>;
@@ -1028,37 +1028,28 @@ pub fn study_dir_from_fixture(root: &std::path::Path) -> anyhow::Result<String> 
     Ok(study_dir)
 }
 
-pub fn start_ols4_stub() -> anyhow::Result<(thread::JoinHandle<()>, String)> {
-    let listener = TcpListener::bind(("127.0.0.1", 0))?;
-    listener.set_nonblocking(false)?;
-    let url = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
-    let handle = thread::spawn(move || {
-        for stream in listener.incoming().flatten() {
-            handle_ols4_connection(stream);
-        }
-    });
-    Ok((handle, url))
+pub fn start_ols4_stub() -> anyhow::Result<(test_http::TestHttpServer, String)> {
+    let (server, url, _) = start_counting_ols4_stub()?;
+    Ok((server, url))
 }
 
 pub fn start_counting_ols4_stub()
--> anyhow::Result<(thread::JoinHandle<()>, String, Arc<AtomicUsize>)> {
-    let listener = TcpListener::bind(("127.0.0.1", 0))?;
-    listener.set_nonblocking(false)?;
-    let url = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
+-> anyhow::Result<(test_http::TestHttpServer, String, Arc<AtomicUsize>)> {
     let requests = Arc::new(AtomicUsize::new(0));
     let observed = Arc::clone(&requests);
-    let handle = thread::spawn(move || {
-        for stream in listener.incoming().flatten() {
-            observed.fetch_add(1, Ordering::SeqCst);
-            handle_ols4_connection(stream);
-        }
-    });
-    Ok((handle, url, requests))
+    let server = test_http::TestHttpServer::spawn(move |stream| {
+        observed.fetch_add(1, Ordering::SeqCst);
+        handle_ols4_connection(stream)
+    })?;
+    let url = server.base.clone();
+    Ok((server, url, requests))
 }
 
-fn handle_ols4_connection(mut stream: TcpStream) {
-    let mut buffer = [0_u8; 2048];
-    let _ = stream.read(&mut buffer);
+async fn handle_ols4_connection(mut stream: tokio::net::TcpStream) -> std::io::Result<()> {
+    use tokio::io::AsyncWriteExt;
+    if test_http::read_request(&mut stream).await?.is_none() {
+        return Ok(());
+    }
     let body = json!({
         "response": {
             "numFound": 1,
@@ -1082,7 +1073,7 @@ fn handle_ols4_connection(mut stream: TcpStream) {
         body.len(),
         body
     );
-    let _ = stream.write_all(response.as_bytes());
+    stream.write_all(response.as_bytes()).await
 }
 
 impl ContractHarness {
@@ -1111,6 +1102,7 @@ impl ContractHarness {
             "LD_PRELOAD",
             "DYLD_LIBRARY_PATH",
             "DYLD_INSERT_LIBRARIES",
+            "LLVM_PROFILE_FILE",
         ] {
             if let Some(value) = std::env::var_os(key) {
                 command.env(key, value);
@@ -1292,4 +1284,35 @@ pub fn child_cache_env(
         ("BIOMCP_CACHE_DIR", root.as_ref().to_owned()),
         ("BIOMCP_CACHE_MIN_DISK_FREE", "1B".into()),
     ]
+}
+
+#[cfg(all(test, unix))]
+mod environment_contract {
+    use super::ContractHarness;
+
+    #[test]
+    fn child_preserves_optional_coverage_and_clears_unrelated_environment() {
+        let harness = ContractHarness::new("/usr/bin/env", ".");
+        let output = harness
+            .server_command_with(&[])
+            .as_std_mut()
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap();
+        let variables = text
+            .lines()
+            .filter_map(|line| line.split_once('='))
+            .collect::<std::collections::HashMap<_, _>>();
+        let expected = std::env::var("LLVM_PROFILE_FILE").ok();
+        assert_eq!(
+            variables.get("LLVM_PROFILE_FILE").copied(),
+            expected.as_deref()
+        );
+        assert!(!variables.contains_key("BIOMCP_REVIEW_UNRELATED"));
+        assert_eq!(
+            variables.get("HOME").copied(),
+            harness.environment.path().to_str()
+        );
+    }
 }

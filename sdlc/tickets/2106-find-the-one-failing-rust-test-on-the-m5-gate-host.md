@@ -6,18 +6,22 @@ deps: [2098]
 
 # 2106: Find the one failing Rust test on the macOS build host
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-20, Ian paused the 1.0 line; withdrawn so pm next offers only active work. Reopen when 1.0 resumes..
 
 Milestone: 1.0
 
-## Evidence
-
-- 2098's acceptance run on the macOS build host (line base 72c81e535 + gate-host branch at 7bad55dfb): `make test` fails exactly one Rust test. Unknown whether macOS-specific or a tip breakage; 2098 has no Rust changes, so the failure predates or is independent of its portability layer. Fail-fast stopped the run before the pytest contracts.
-
-## Work
+## Outcome
 
 - Reproduce on the macOS build host, name the test, and decide: macOS-specific (fix or refuse on macOS with a recorded reason) or a real breakage (fix on the line).
 
-## Acceptance
+## Evidence
+
+- Proof: the existing acceptance cases and their stated gate checks below.
+
+- 2098's acceptance run on the macOS build host (line base 72c81e535 + gate-host branch at 7bad55dfb): `make test` fails exactly one Rust test. Unknown whether macOS-specific or a tip breakage; 2098 has no Rust changes, so the failure predates or is independent of its portability layer. Fail-fast stopped the run before the pytest contracts.
+
+### Acceptance
 
 1. `make test` on the macOS build host reaches the pytest contracts with zero Rust failures, or each macOS-specific refusal is recorded with its reason.

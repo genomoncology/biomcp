@@ -10,7 +10,7 @@ Milestone: 0.9.2
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 4).
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 4).
 
 - The gate counts a ticket only from a `Merge ... tickets/NNNN-` subject (`scripts/check-changelog-coverage.py:12`) or a new ticket-numbered `sdlc/records/` file (`:17`). Tickets now land as `Land NNNN: ...` and record their build in the ticket file.
 - On main at `37631c357` the gate sees 11 tickets. It cannot see 1293, 1299, 1302, 1303, 1304 or 1306.

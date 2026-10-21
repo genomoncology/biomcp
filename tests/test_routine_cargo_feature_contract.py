@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import os
+import signal
 import subprocess
 import sys
 import re
@@ -214,6 +215,7 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
 
 
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
+@pytest.mark.timeout(120)
 def test_make_test_prepares_once_and_runs_lanes_sequentially(
     tmp_path: Path, failed_lane: str
 ) -> None:
@@ -241,13 +243,25 @@ def test_make_test_prepares_once_and_runs_lanes_sequentially(
         "make", "--no-print-directory", "-j8",
         "-f", str(REPO_ROOT / "Makefile"), "-f", str(overlay),
     ]
-    result = subprocess.run(
+    with subprocess.Popen(
         [*command, "test", "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
          "MAKE=" + " ".join(command)],
         cwd=REPO_ROOT,
         env={**os.environ, "FAILED_LANE": failed_lane},
-        capture_output=True, text=True, timeout=15,
-    )
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    ) as process:
+        try:
+            stdout, stderr = process.communicate()
+        finally:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+    result = subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
     assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
     assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
     assert (tmp_path / "rust.finished").exists()
@@ -304,7 +318,7 @@ def test_full_feature_gates_build_and_smoke_the_selected_profile(
     wrapper = tmp_path / "gate.mk"
     wrapper.write_text(
         f"include {REPO_ROOT / 'Makefile'}\n"
-        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev installed-wheel-smoke:\n\t@:\n",
+        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev installed-wheel-smoke feature-coverage:\n\t@:\n",
         encoding="utf-8",
     )
     result = subprocess.run(

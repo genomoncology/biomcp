@@ -4,7 +4,7 @@ Written 2026-09-03 by the BioMCP lead, after retiring ticket 1118 and supersedin
 
 ## The rule
 
-A ticket whose work will never be done goes to `sdlc/tickets/drafts/` with a `hold:` line saying why, and a banner at the top of the body saying the same thing in prose.
+A ticket whose work will never be done goes to `sdlc/archive/tickets/drafts/` with a `hold:` line saying why, and a banner at the top of the body saying the same thing in prose.
 
 It does **not** go to `sdlc/tickets/archive/`.
 

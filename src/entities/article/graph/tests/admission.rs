@@ -76,7 +76,7 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
 </element-citation></ref></ref-list></back></article>";
     let requests = std::sync::Arc::new(Mutex::new(Vec::<String>::new()));
     let logged = requests.clone();
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         let target = request
             .split_whitespace()
             .nth(1)
@@ -211,6 +211,7 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
         1,
         "the late worker never re-ran"
     );
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -234,7 +235,7 @@ async fn citation_evidence_bounds_a_panicking_jats_worker_and_releases_the_permi
 <back><ref-list><ref id=\"bib7\"><element-citation>\
 <pub-id pub-id-type=\"doi\">10.1/target</pub-id>\
 </element-citation></ref></ref-list></back></article>";
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         let target = request
             .split_whitespace()
             .nth(1)
@@ -304,4 +305,5 @@ async fn citation_evidence_bounds_a_panicking_jats_worker_and_releases_the_permi
         super::super::citation_evidence::CitationEvidenceStatus::ContextFromFulltext
     );
     assert_eq!(settled.passages.len(), 1);
+    fixture.finish().unwrap();
 }

@@ -18,7 +18,7 @@ A malformed MCP tool call, such as `gene_cspec` without `gene`, returns an `isEr
 
 ## Evidence
 
-Residuals of 1251 in `sdlc/issues/2026-09-24-mcp-schema-follow-ups-after-1240.md`: parse failures inside rmcp's `Parameters` stay protocol errors (-32602) that the model never sees; and the `variant_erepo` flat root restates its property list by hand.
+Residuals of 1251 in `sdlc/archive/issues/2026-09-24-mcp-schema-follow-ups-after-1240.md`: parse failures inside rmcp's `Parameters` stay protocol errors (-32602) that the model never sees; and the `variant_erepo` flat root restates its property list by hand.
 
 ## Keeps
 

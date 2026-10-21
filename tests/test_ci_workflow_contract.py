@@ -633,6 +633,8 @@ FAKE_TOOL_FIXTURE_MODULES = {
     "test_demo_scripts.py",
     "test_measure_mcp_tools.py",
     "test_lint.py",
+    # The feature collector control supplies temporary cargo and LLVM tools.
+    "test_feature_coverage.py",
     # The copied spec runner uses sys.executable as BIOMCP_BIN.
     "test_replay_server_lifetime.py",
 }
@@ -724,3 +726,49 @@ def test_reusable_release_qualification_does_not_require_a_live_changelog_sectio
     assert release["jobs"]["qualification"]["needs"] == ["version-check"]
     checks = release["jobs"]["version-check"]["steps"]
     assert any("--revision HEAD" in step.get("run", "") for step in checks)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="release installer targets Linux")
+def test_cold_nextest_setup_derives_and_verifies_shared_pins(tmp_path: Path) -> None:
+    import hashlib
+    import io
+    import tarfile
+
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / "scripts/install-nextest.sh", root / "scripts/install-nextest.sh")
+    workflow = root / ".github/workflows/ci.yml"
+    workflow.parent.mkdir(parents=True)
+    archive = tmp_path / "nextest.tgz"
+    payload = b"#!/bin/sh\necho fixture-nextest\n"
+    with tarfile.open(archive, "w:gz") as package:
+        entry = tarfile.TarInfo("cargo-nextest")
+        entry.mode = 0o755
+        entry.size = len(payload)
+        package.addfile(entry, io.BytesIO(payload))
+    checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
+    workflow.write_text(f"env:\n  CARGO_NEXTEST_VERSION: 9.8.7\n  CARGO_NEXTEST_SHA256: {checksum}\n")
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    curl = commands / "curl"
+    curl.write_text(f"#!{sys.executable}\nimport os,pathlib,shutil,sys\n"
+                    "pathlib.Path(os.environ['URL_LOG']).write_text(sys.argv[-1])\n"
+                    "shutil.copyfile(os.environ['FIXTURE_ARCHIVE'], sys.argv[sys.argv.index('-o') + 1])\n")
+    curl.chmod(0o755)
+    destination = tmp_path / "home/.cargo/bin"
+    destination.mkdir(parents=True)
+    env = {key: value for key, value in os.environ.items()
+           if key not in {"CARGO_NEXTEST_VERSION", "CARGO_NEXTEST_SHA256"}}
+    env |= {"HOME": str(tmp_path / "home"), "PATH": str(commands) + os.pathsep + env["PATH"],
+            "FIXTURE_ARCHIVE": str(archive), "URL_LOG": str(tmp_path / "url")}
+    result = subprocess.run(["bash", "scripts/install-nextest.sh"], cwd=root, env=env,
+                            text=True, capture_output=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (destination / "cargo-nextest").read_bytes() == payload
+    assert "cargo-nextest-9.8.7-x86_64-unknown-linux-musl.tar.gz" in (tmp_path / "url").read_text()
+    (destination / "cargo-nextest").unlink()
+    workflow.write_text(workflow.read_text().replace(checksum, "0" * 64))
+    rejected = subprocess.run(["bash", "scripts/install-nextest.sh"], cwd=root, env=env,
+                              text=True, capture_output=True)
+    assert rejected.returncode != 0
+    assert not (destination / "cargo-nextest").exists()

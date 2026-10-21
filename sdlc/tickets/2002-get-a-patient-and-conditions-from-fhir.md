@@ -39,7 +39,7 @@ biomcp get patient <id> conditions
 - `get patient <id>` reads `Patient/{id}`, shows id, gender, and birth date, and lists `conditions` as a section. A redirect of `Patient/{id}` to another host fails with an error that names no URL.
 - Until ticket 2003 lands, `search patient` on the CLI and the typed `search` tool fails with a message that search is not yet available. On `serve-http`, the transport refusal checks the entity first, before any search runs.
 - The `conditions` section reads `Condition?patient={id}&_count=100` and follows next links up to 20 pages. A repeated link or the page cap stops the walk and marks the section `degraded`. A condition without `clinicalStatus` marks it `degraded`. No matches is `empty`. A transport or status failure is `unavailable`.
-- One transport check refuses patient calls on `serve-http`. It covers the shell tool, typed `search` and `get`, and `batch`. The message cites `sdlc/issues/2026-09-11-health-record-entity-needs-authenticated-http-transport.md`.
+- One transport check refuses patient calls on `serve-http`. It covers the shell tool, typed `search` and `get`, and `batch`. The message cites `sdlc/archive/issues/2026-09-11-health-record-entity-needs-authenticated-http-transport.md`.
 - `patient` becomes a valid entity for the existing typed `search` and `get` tools on stdio. No new MCP tool is added.
 - Help, `biomcp list`, the MCP catalog text, `docs/user-guide/patient.md`, and `CHANGELOG.md` show `get patient`.
 

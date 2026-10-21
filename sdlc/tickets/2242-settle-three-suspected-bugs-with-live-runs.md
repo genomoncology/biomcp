@@ -22,13 +22,13 @@ Reviews: revision fe4781d, accept
 
 Each of three suspected user-facing bugs is either shown fixed on current main or fixed in this ticket.
 
-- Changes: `src/entities/drug/get.rs`, `src/entities/drug/test_support/brand_resolution.rs`, `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `spec/entity/diagnostic.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `spec/fixtures/setup-provider-contract-spec-fixture.sh` `spec/surface/mcp.md` `src/cli/diagnostic/dispatch.rs` `src/entities/diagnostic/search.rs` `src/entities/discover.rs` `src/transform/drug.rs` `tests/fixtures/live-suspects/aspirin-authored.json` `tests/fixtures/live-suspects/ddinter-authored.csv` `tests/fixtures/live-suspects/discover-authored.json` `tests/fixtures/live-suspects/discovery-controls-authored.json` `tests/fixtures/live-suspects/disease-detail-authored.json` `tests/fixtures/live-suspects/disease-empty-authored.json` `tests/fixtures/live-suspects/disease-query-authored.json` `tests/fixtures/live-suspects/provenance.json` `tests/test_live_suspect_regressions.py`.
+- Changes: `src/entities/drug/get.rs`, `src/entities/drug/test_support/brand_resolution.rs`, `CHANGELOG.md` `sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/archive/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/archive/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `spec/entity/diagnostic.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `spec/fixtures/setup-provider-contract-spec-fixture.sh` `spec/surface/mcp.md` `src/cli/diagnostic/dispatch.rs` `src/entities/diagnostic/search.rs` `src/entities/discover.rs` `src/transform/drug.rs` `tests/fixtures/live-suspects/aspirin-authored.json` `tests/fixtures/live-suspects/ddinter-authored.csv` `tests/fixtures/live-suspects/discover-authored.json` `tests/fixtures/live-suspects/discovery-controls-authored.json` `tests/fixtures/live-suspects/disease-detail-authored.json` `tests/fixtures/live-suspects/disease-empty-authored.json` `tests/fixtures/live-suspects/disease-query-authored.json` `tests/fixtures/live-suspects/provenance.json` `tests/test_live_suspect_regressions.py`.
 
 ## Evidence
 
-1. `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md`: `biomcp drug interactions aspirin` may resolve plain aspirin to a five-ingredient combination product and report "not covered".
-2. Finding 4 of `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`: `biomcp discover "H3K27M"` suggested `get drug "h3k27me3"`, a histone mark offered as a drug, and suggestions favor the first synonym over the term typed.
-3. `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`: a GTR read returned zero rows under its fixture and the spec block was deleted with no replacement.
+1. `sdlc/archive/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md`: `biomcp drug interactions aspirin` may resolve plain aspirin to a five-ingredient combination product and report "not covered".
+2. Finding 4 of `sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`: `biomcp discover "H3K27M"` suggested `get drug "h3k27me3"`, a histone mark offered as a drug, and suggestions favor the first synonym over the term typed.
+3. `sdlc/archive/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`: a GTR read returned zero rows under its fixture and the spec block was deleted with no replacement.
 
 ## Keeps
 
@@ -42,7 +42,7 @@ One live opt-in run per item on current main with synced bundles, recorded. For 
 
 
 
-Issue closure claim: `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`.
+Issue closure claim: `sdlc/archive/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/archive/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`.
 
 Restated outcome: preserve the selected aspirin source identity alias; recommend discovery commands only with affirmative entity evidence and preserve the exact entered H3K27M identity; restore deterministic diagnostic synonym coverage and name unavailable resolution in an empty response.
 

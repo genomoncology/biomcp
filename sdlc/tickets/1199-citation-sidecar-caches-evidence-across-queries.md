@@ -23,7 +23,7 @@ but the assembled outcome (including the parse work) is recomputed, the
 effective freshness is limited by each HTTP entry's own policy, and HTTP
 entries are subject to size-LRU eviction and `biomcp cache clean` without any
 durable record of which edges were already recovered. The original observation
-is `sdlc/issues/2026-08-27-a-citation-sidecar-would-make-synthesis-mechanical.md`
+is `sdlc/archive/issues/2026-08-27-a-citation-sidecar-would-make-synthesis-mechanical.md`
 (that issue's `--cite` rendering idea is a different feature and is not this
 ticket).
 

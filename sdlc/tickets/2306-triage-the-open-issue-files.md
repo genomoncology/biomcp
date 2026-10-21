@@ -8,9 +8,13 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a31447f, accept
+
+Reviews: revision 5841134, accept
+
 ## Outcome
 
-Every file in `sdlc/issues/` is either closed into `sdlc/issues/closed/` with a one-line disposition citing the landing that fixed it, or turned into an open ticket, or closed as moot with its reason. `pm lint` reports no findings for BioMCP's `sdlc/`. No product code changes.
+Every file in `sdlc/issues/` is either closed into `sdlc/archive/issues/` with a one-line disposition citing the landing that fixed it, or turned into an open ticket, or closed as moot with its reason. `pm lint` reports no findings for BioMCP's `sdlc/`. No product code changes.
 
 - Proof: `ls sdlc/issues/*.md` lists only issues with an open ticket cited in them, and `pm lint` on main reports zero BioMCP findings.
 
@@ -19,3 +23,9 @@ Every file in `sdlc/issues/` is either closed into `sdlc/issues/closed/` with a 
 On 2026-10-20 `sdlc/issues/` held 79 files: 69 from September and 4 from August. At least six say resolved or closed but were never moved, and 72 carry no status line. `pm lint` reported 383 findings: 285 layout-record (records named for ticket numbers no ticket file carries, such as 1180 to 1185), 55 layout-ticket-section, 18 ticket-evidence, 9 layout-script, 9 layout-issues, 5 layout-entry and 2 layout-status. Stale issue files hide which findings are still live, and lint noise hides real lint findings.
 
 Mechanical moves and renames suit a cheap delegated job; a developer verifies each disposition against main before closing. Real still-open findings become tickets in the current milestone. Lands as records only.
+
+The PM approved the canonical archive/issues destination. Preserve the zero-lint outcome. The PM requires this layout work in 0.9.4. The obsolete pipeline scripts have their own deletion ticket. Remove the obsolete checklist after active consumers point to the canonical release process. Product behavior remains unchanged. Current admission records stay protected until their active work closes.
+
+For this implementation, historical completed-build records with no ticket may move unchanged into sdlc/archive/records with Markdown links and active references corrected; they must not be relabeled as design studies. Preserve original evidence and quoted command results. Existing deferred ideas, recurrence-only watches and future preconditions can close as active defects with their original ruling and reason preserved in archive/issues; this does not complete a future task or revoke a recurrence watch. Unresolved real findings still require an open ticket.
+
+- Changes: `tools/zero-coupling-historical.json`, `tools/check-zero-coupling.py`, `sdlc/archive/**`, `sdlc/records/**`, `sdlc/issues/**`, `sdlc/tickets/**`, `sdlc/planning/onboarding.md`, `sdlc/planning/notes/retiring-a-ticket.md`, `sdlc/planning/proposed-backlog-2026-09-16.md`, `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, `sdlc/planning/notes/2026-09-09-biomcp-interface-and-agent-behavior-study.md`, `sdlc/pm.json`, `sdlc/release-checklist.md`.
