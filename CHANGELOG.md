@@ -101,6 +101,7 @@
 - Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+- Run the landing and main gates directly through repository Make targets in build jobs. (2317)
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
 - Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)

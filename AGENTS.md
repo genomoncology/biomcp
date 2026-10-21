@@ -110,6 +110,8 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 Land accepted tickets in batches through one lander, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse that passing gate while its inputs stay unchanged. Do not repeat the gate after merging.
 
+Invoke each gate directly as the build job command: `pm job run NNNN SHA -- make landing-gate` for the landing candidate and `pm job run NNNN SHA -- make main-gate` for the final candidate. The normal candidate preparation may construct the merge before it invokes the declared `make landing-gate`. Keep every required check in the repository Make targets. Do not run a gate through a private script in an experiment folder or add private checks around it. Retain the build job log as evidence; run any separate inspection or resource sampling outside the gate command.
+
 A failed batch gate holds that landing. A reviewed repair or backout must pass the candidate gate before publication. On resume, inspect the candidate's exact-revision gate evidence before landing it.
 
 Run `make main-gate` once on the final candidate before the full nonpublishing release rehearsal until nightly qualification is scheduled. Nightly qualification will own the additional repository audit, all-feature checks, rendered output checks and installed Linux wheel smoke.
