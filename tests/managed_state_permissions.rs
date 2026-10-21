@@ -18,7 +18,8 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
     let file = root.join("local-metadata");
     fs::write(&file, b"fixture-only").expect("managed file");
     fs::set_permissions(&root, fs::Permissions::from_mode(0o777)).expect("broad root");
-    fs::set_permissions(&downloads, fs::Permissions::from_mode(0o777)).expect("broad saved directory");
+    fs::set_permissions(&downloads, fs::Permissions::from_mode(0o777))
+        .expect("broad saved directory");
     fs::set_permissions(&file, fs::Permissions::from_mode(0o666)).expect("broad file");
     let expected_parent_mode = 0o755;
     fs::set_permissions(
@@ -45,7 +46,10 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
         0o700
     );
     assert_eq!(
-        fs::metadata(&downloads).expect("saved directory mode").mode() & 0o777,
+        fs::metadata(&downloads)
+            .expect("saved directory mode")
+            .mode()
+            & 0o777,
         0o777
     );
     assert_eq!(
