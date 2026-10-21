@@ -137,7 +137,8 @@ config below.
 
 ### Install skills
 
-Install guided investigation workflows into your agent directory:
+The executable embeds the guide and worked examples. Read the complete guide
+with `biomcp skill render`, or install copies into your agent directory:
 
 ```bash
 biomcp skill install ~/.claude --force

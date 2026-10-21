@@ -11,20 +11,16 @@ contracts exercise the shipped CLI/MCP surface.
 BioMCP is a biomedical CLI and MCP server. For example, search from the CLI
 with `biomcp search articles --gene BRAF`.
 
-Installed packages place agent skills in `share/biomcp/skills/`. Packaged
-Markdown documentation is available locally and on the canonical site at
-https://biomcp.org/:
+The executable embeds the agent guide and worked examples. Read the guide with
+`biomcp skill`, render the complete guide with `biomcp skill render`, or install
+local copies into your agent directory with `biomcp skill install <dir>`.
+Use `biomcp skill list` to choose a worked example.
 
-| Topic           | Packaged documentation               | Website                             |
-| --------------- | ------------------------------------ | ----------------------------------- |
-| Blog            | `share/biomcp/docs/blog/`            | https://biomcp.org/blog/            |
-| Charts          | `share/biomcp/docs/charts/`          | https://biomcp.org/charts/          |
-| Concepts        | `share/biomcp/docs/concepts/`        | https://biomcp.org/concepts/        |
-| Getting started | `share/biomcp/docs/getting-started/` | https://biomcp.org/getting-started/ |
-| How-to          | `share/biomcp/docs/how-to/`          | https://biomcp.org/how-to/          |
-| Reference       | `share/biomcp/docs/reference/`       | https://biomcp.org/reference/       |
-| Sources         | `share/biomcp/docs/sources/`         | https://biomcp.org/sources/         |
-| User guide      | `share/biomcp/docs/user-guide/`      | https://biomcp.org/user-guide/      |
+Read the documentation at https://biomcp.org/, including
+[getting started](https://biomcp.org/getting-started/),
+[how-to guides](https://biomcp.org/how-to/),
+[the user guide](https://biomcp.org/user-guide/) and
+[the reference](https://biomcp.org/reference/).
 
 ## Repository contract shape
 

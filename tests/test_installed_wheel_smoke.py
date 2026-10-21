@@ -16,10 +16,14 @@ ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "scripts/installed-wheel-smoke.sh"
 
 
-def fake_cli(tmp_path: Path, fault: str) -> Path:
+def fake_cli(
+    tmp_path: Path, fault: str, *, json_command: list[str] | None = None,
+    json_output: str | None = None,
+) -> Path:
     executable = tmp_path / "biomcp"
     executable.write_text(
         f"#!{sys.executable}\nFAULT = {fault!r}\n"
+        f"JSON_COMMAND = {json_command!r}\nJSON_OUTPUT = {json_output!r}\n"
         '''import json, os, pathlib, sys
 args = sys.argv[1:]
 home = pathlib.Path(os.environ['HOME'])
@@ -27,6 +31,9 @@ assert os.environ['BIOMCP_DISABLE_SOURCES'] == 'commercial-restricted,kegg,seman
 assert not any(key in os.environ for key in ('NCBI_API_KEY', 'S2_API_KEY', 'BIOMCP_CACHE_DIR', 'XDG_CACHE_HOME'))
 with pathlib.Path(__file__).with_suffix('.calls').open('a') as log:
     log.write(json.dumps(args) + '\\n')
+if args == JSON_COMMAND:
+    print(JSON_OUTPUT)
+    sys.exit(0)
 if args == ['--version']:
     print('biomcp 0.9.4')
 elif args == ['cache', 'stats', '--json']:
@@ -56,6 +63,13 @@ elif args == ['skill', 'list']:
     print('article-follow-up')
 elif args == ['skill', 'article-follow-up']:
     print('Article follow-up via citations and recommendations')
+elif args == ['skill', 'render']:
+    print('wrong skill' if FAULT == 'skill-render' else '# BioMCP CLI')
+elif args[:2] == ['skill', 'install']:
+    target = pathlib.Path(args[2]) / 'skills' / 'biomcp'
+    target.mkdir(parents=True)
+    (target / 'SKILL.md').write_text('wrong skill' if FAULT == 'skill-install' else '# BioMCP CLI\\n')
+    print('Installed BioMCP skills')
 elif args == ['chart', 'bar']:
     print('Bar Chart')
 elif FAULT == 'panic':
@@ -73,7 +87,9 @@ else:
 @pytest.mark.parametrize("fault,details", [
     ("cold-root", ("missing cache ancestor", "cache stderr detail")),
     ("json", ("json stdout detail", "json stderr detail")),
-    ("json-shape", ("json shape stdout detail", "json mode must print an object")),
+    ("json-shape", ("json shape stdout detail", "JSON object required")),
+    ("skill-render", ("skill render must show the BioMCP CLI guidance",)),
+    ("skill-install", ("skill install must write the rendered BioMCP CLI guidance",)),
     ("panic", ("panic stdout detail", "panic stderr detail")),
     ("faers", ("unexpected FAERS response", "expected a successful FAERS not-found response")),
     ("", ()),
@@ -98,6 +114,26 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
     if fault == "cold-root":
         # A broken cache directory must stop before any live source command.
         assert len(executable.with_suffix('.calls').read_text().splitlines()) == 2
+
+
+@pytest.mark.parametrize("command", [
+    ["cache", "stats", "--json"],
+    ["get", "drug", "--region", "us", "aspirin", "regulatory", "-j"],
+    ["search", "trial", "--condition", "diabetes", "--limit", "1", "-j"],
+    ["--json", "get", "article", "32794606"],
+])
+@pytest.mark.parametrize("output", ["{garbage", '{} trailing text', "[]", "{}\0"])
+def test_installed_smoke_rejects_invalid_json_objects(
+    tmp_path: Path, command: list[str], output: str,
+) -> None:
+    executable = fake_cli(tmp_path, "", json_command=command, json_output=output)
+    result = subprocess.run(
+        ["bash", str(HELPER), str(executable), "0.9.4"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "biomcp " + " ".join(command) in result.stderr
+    assert "JSON object" in result.stderr
 
 
 @pytest.mark.parametrize("username", ["wheel-smoke-user", None])

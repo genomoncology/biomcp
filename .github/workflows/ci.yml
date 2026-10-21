@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       windows_only:
-        description: Run only the Windows cache concurrency and deadline checks
+        description: Run only the Windows cache, permissions and deadline checks
         type: boolean
         default: false
   workflow_call:
@@ -407,13 +407,13 @@ jobs:
         run: |
           cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture
           cargo test --locked --no-default-features --test windows_lock_contract
+          cargo test --locked --no-default-features --test managed_state_permissions
           cargo test --locked --no-default-features --lib sqlite_busy_deadline_finishes_without_late_publication
           cargo test --locked --no-default-features --lib construction_under_a_held_sqlite_writer_honors_the_deadline
       - name: Compile Windows CSpec and managed-state boundaries
         if: ${{ !inputs.windows_only }}
         run: |
           cargo check --locked
-          cargo test --locked --test managed_state_permissions
           cargo test --locked --lib cache::private
       # Ticket 2024 reopening: tools/with-build-identity handed off
       # with os.execvpe, which on Windows exits 0 at once while the
