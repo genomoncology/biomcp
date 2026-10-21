@@ -382,6 +382,30 @@ const CLINGEN_LOOKUP_BODY: &str = r#"[{"label":"BRAF","hgnc":"HGNC:1097","curate
 const CLINGEN_VALIDITY_BODY: &str = "GENE SYMBOL,GENE ID (HGNC),DISEASE LABEL,CLASSIFICATION,CLASSIFICATION DATE,MOI\nBRAF,HGNC:1097,Noonan syndrome,Definitive,2024-01-01,AD\n";
 const CLINGEN_DOSAGE_BODY: &str = "GENE SYMBOL,HGNC ID,HAPLOINSUFFICIENCY,TRIPLOSENSITIVITY,DATE\nBRAF,HGNC:1097,3,3,2024-01-01\n";
 
+/// Establish the cache precondition independently of optional CLI enrichment.
+/// The real source plans and HTTP cache store the same fixture replies the
+/// prefetch reads, without relying on concurrent best-effort publications.
+async fn seed_clingen_cache(base: &str) {
+    use crate::sources::clingen::ClinGenClient;
+
+    let client = crate::sources::shared_client("clingen").expect("fixture cache client");
+    for plan in [
+        ClinGenClient::gene_lookup_plan("BRAF").expect("fixture gene plan"),
+        ClinGenClient::validity_download_plan(),
+        ClinGenClient::dosage_download_plan(),
+    ] {
+        crate::sources::request_from_plan(&client, base, &plan)
+            .send()
+            .await
+            .expect("seed ClinGen fixture response")
+            .error_for_status()
+            .expect("successful ClinGen fixture response")
+            .bytes()
+            .await
+            .expect("read ClinGen fixture response");
+    }
+}
+
 /// The ClinGen prefetch runs on a bare `tokio::spawn`, which drops
 /// the command's task-locals; the note scope travels by handle
 /// and the no-cache flag with it. A
@@ -419,6 +443,7 @@ async fn a_stale_clingen_prefetch_note_reaches_the_gene_card() {
         "the clingen section rendered: {fresh}"
     );
 
+    seed_clingen_cache(&base).await;
     age_cached_provider_responses();
     server.abort();
 
