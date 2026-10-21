@@ -2,7 +2,7 @@
 
 Follow the [release process](../../docs/reference/release-process.md). This record binds the expanded candidate's review and qualification to actual source revisions. It grants no release authorization. Ian alone tags and publishes.
 
-The corrected full rehearsal targets published source `b49a5096fa2a9d2d77517e65ab26b62fc74ee97a`, tree `cfc2eeae35b222993f1c1dc4390863f8acbd8ddc`. The earlier source identities below remain the actual identities of their reused evidence. Later record and operational diagnostic-tool commits must not replace this source implicitly.
+The failed second full rehearsal executed published source `b49a5096fa2a9d2d77517e65ab26b62fc74ee97a`, tree `cfc2eeae35b222993f1c1dc4390863f8acbd8ddc`. That source and the earlier source identities below remain the actual identities of historical evidence. The new product corrections require an explicitly named new source and fresh qualification; later record or diagnostic-tool commits never rebind an earlier result implicitly.
 
 ## Independent project review
 
