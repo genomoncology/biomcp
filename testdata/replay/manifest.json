@@ -1803,6 +1803,24 @@
       },
       "status": 200,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
+    },
+    "GET /pubtator/search/?page=1&size=25&text=%40GENE_BRAF+AND+%40DISEASE_Melanoma": {
+      "file": "responses/pubtator/pubtator-search-9c3c37a1b63e.json",
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+AND+%40DISEASE_Melanoma&page=1&size=25",
+      "response_metadata_observation": {
+        "bytes": 34720,
+        "content_type": "application/json",
+        "observed_at": "2026-10-21T23:36:54.605839+00:00",
+        "completed_at": "2026-10-21T23:36:56.303586+00:00",
+        "sha256": "9a18291bcb35e9f44d8788605fc0e30d1885e37fc29e9a5a60361791327c6467",
+        "source_revision": "6c0f4173829f26bf1e0b47546af90ea6cd9a673a",
+        "status": 200,
+        "note": "New explicit-conjunction query captured directly; original adjacent-term recording remains unchanged."
+      }
     }
   },
   "schema_version": 1
