@@ -30,18 +30,22 @@ async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Re
         .call_tool(CallToolRequestParams::new("__biomcp_test_panic"))
         .await?;
     assert_eq!(panic_result.is_error, Some(true));
-    assert!(panic_result.content.iter().any(|content| content
-        .as_text()
-        .is_some_and(|text| text.text.contains("injected MCP tool panic"))));
+    assert!(panic_result.content.iter().any(|content| {
+        content
+            .as_text()
+            .is_some_and(|text| text.text.contains("injected MCP tool panic"))
+    }));
 
     let success = client
         .peer()
-        .call_tool(CallToolRequestParams::new("biomcp").with_arguments(
-            serde_json::json!({"command": "biomcp version"})
-                .as_object()
-                .unwrap()
-                .clone(),
-        ))
+        .call_tool(
+            CallToolRequestParams::new("biomcp").with_arguments(
+                serde_json::json!({"command": "biomcp version"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
         .await?;
     assert_eq!(success.is_error, Some(false));
     client.cancel().await?;
