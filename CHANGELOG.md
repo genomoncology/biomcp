@@ -4,6 +4,8 @@
 
 ### New features
 
+- Add the opt-in drug `approval-history` section with full provider-returned Drugs@FDA submissions, source classes, dates, and document links. Keep compact approvals and regulatory views unchanged. (2272)
+
 ### Fixes
 
 - Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)

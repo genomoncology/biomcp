@@ -256,6 +256,12 @@ pub struct DrugApprovalSubmission {
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub submission_class_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub submission_class_code_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub application_docs: Vec<crate::sources::openfda::DrugsFdaDocument>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -649,6 +655,7 @@ const DRUG_SECTION_TARGETS: &str = "targets";
 const DRUG_SECTION_INDICATIONS: &str = "indications";
 const DRUG_SECTION_INTERACTIONS: &str = "interactions";
 const DRUG_SECTION_CIVIC: &str = "civic";
+const DRUG_SECTION_APPROVAL_HISTORY: &str = "approval-history";
 const DRUG_SECTION_APPROVALS: &str = "approvals";
 pub(crate) const DRUG_SECTION_CELL_LINES: &str = "cell_lines";
 const DRUG_SECTION_ALL: &str = "all";
@@ -663,6 +670,7 @@ pub const DRUG_SECTION_NAMES: &[&str] = &[
     DRUG_SECTION_INTERACTIONS,
     DRUG_SECTION_CIVIC,
     DRUG_SECTION_APPROVALS,
+    DRUG_SECTION_APPROVAL_HISTORY,
     DRUG_SECTION_CELL_LINES,
     DRUG_SECTION_ALL,
 ];
@@ -707,6 +715,7 @@ mod outcome_tests {
         assert_eq!(
             keys,
             vec![
+                "approval-history",
                 "approvals",
                 "cell_lines",
                 "civic",

@@ -698,7 +698,7 @@ fn drugsfda_failure_state_matrix() {
         let mut drug = test_approval_drug();
         let error = injected_approval_failure(failure);
         let private_detail = error.to_string();
-        apply_approvals_result(&mut drug, Err::<Vec<DrugApproval>, _>(error));
+        apply_approvals_result(&mut drug, Err::<Vec<DrugApproval>, _>(error), false);
         assert!(
             drug.approvals
                 .as_ref()
@@ -714,7 +714,7 @@ fn drugsfda_failure_state_matrix() {
     }
 
     let mut empty = test_approval_drug();
-    apply_approvals_result(&mut empty, Ok(Vec::new()));
+    apply_approvals_result(&mut empty, Ok(Vec::new()), false);
     assert!(
         empty
             .approvals
@@ -735,6 +735,7 @@ fn drugsfda_failure_state_matrix() {
             products: Vec::new(),
             submissions: Vec::new(),
         }]),
+        false,
     );
     assert_eq!(
         data.approvals.as_ref().expect("approval payload")[0].application_number,
