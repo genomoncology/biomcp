@@ -367,7 +367,7 @@ pub(crate) fn execute_managed_clear(
     })
 }
 
-const LEGACY_STORES: &[&str] = &["http", "http-cacache", "citation-evidence", "captures"];
+use crate::cache::LEGACY_STORES;
 
 fn legacy_sizes(
     root: &std::path::Path,

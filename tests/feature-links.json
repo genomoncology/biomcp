@@ -80,6 +80,9 @@
         "test_author_surface_docs_describe_the_shipped_provider_exact_slice": "Source/documentation or harness contract, not an outside product invocation."
       }
     },
+    "tests/test_cache_credentials.py": {
+      "feature": "cache"
+    },
     "tests/test_cache_invalid_settings.py": {
       "feature": "cache"
     },

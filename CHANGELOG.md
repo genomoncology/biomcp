@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Keep authentication values out of reusable cache entries and discard credential-capable legacy stores and older database entries during upgrade. (2332)
+
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
 - Establish cached ClinGen fixture replies before stale-note checks and isolate bridge deadline checks from unrelated cache setup. (2322)
