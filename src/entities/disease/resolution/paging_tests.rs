@@ -111,10 +111,10 @@ async fn exact_resolution_deadline_cancels_a_provider_that_never_responds() {
     let client =
         MyDiseaseClient::new_for_test(format!("http://{}", listener.local_addr().unwrap()))
             .unwrap();
+    let started = tokio::time::Instant::now();
     let mut task =
         tokio::spawn(async move { resolve_exact_disease_terms(&client, "melanoma").await });
-    // Paused time can expire the request before the OS reports socket readiness,
-    // leaving a bare accept waiting forever. Synchronize on a real request first.
+    // Keep real time throughout the stalled request and cancellation.
     let (mut stream, _) = tokio::select! {
         result = &mut task => panic!("resolution ended before provider connection: {result:?}"),
         accepted = listener.accept() => accepted.unwrap(),
@@ -127,11 +127,8 @@ async fn exact_resolution_deadline_cancels_a_provider_that_never_responds() {
     };
     assert!(
         received > 0,
-        "provider must receive the request before time advances"
+        "provider must receive the request before cancellation"
     );
-    tokio::time::pause();
-    let advanced_from = tokio::time::Instant::now();
-    tokio::time::advance(std::time::Duration::from_secs(16)).await;
     let error = task
         .await
         .unwrap()
@@ -139,7 +136,7 @@ async fn exact_resolution_deadline_cancels_a_provider_that_never_responds() {
     assert!(
         matches!(error, BioMcpError::SourceUnavailable { source_name, .. } if source_name == "MyDisease.info")
     );
-    assert_eq!(advanced_from.elapsed(), std::time::Duration::from_secs(16));
+    assert!(started.elapsed() >= std::time::Duration::from_secs(15));
     // Dropping the timed-out request must also close the provider connection.
     let mut remaining = Vec::new();
     stream.read_to_end(&mut remaining).await.unwrap();

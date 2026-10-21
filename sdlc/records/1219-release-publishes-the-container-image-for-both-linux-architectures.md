@@ -22,7 +22,7 @@ binary glibc floor is explicit.
 `tests/test_release_workflow_provenance.py` pins the dispatch gate, the
 packaging ref, the tag revision, both platforms, and the latest guard.
 `docs/reference/release-process.md` describes the single workflow and the
-container paths, `sdlc/planning/release-0.9-runbook.md` is marked historical,
+container paths, `sdlc/archive/planning/release-0.9-runbook.md` is marked historical,
 `AGENTS.md` carries a `## Releases` section, and
 `architecture/technical/overview.md` states v0.9.0 and the container job.
 

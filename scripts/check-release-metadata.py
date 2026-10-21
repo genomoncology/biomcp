@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the existing release metadata checks before a candidate enters a gate."""
+"""Run the existing release metadata checks and whole-repository contracts."""
 
 from __future__ import annotations
 
@@ -72,6 +72,7 @@ def main() -> int:
             "--no-default-features", "--lib", "--test", "package_build_identity",
             "--test", "cli_global_modifiers", "-E", RUST_TESTS,
         ]),
+        ("Repository contracts", ["make", "repo-audit"]),
     )
     failures = []
     for name, command in commands:

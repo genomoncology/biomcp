@@ -1130,13 +1130,14 @@ def test_manual_qualification_remains_separate_from_protected_release() -> None:
         "1.93.1",
         "3.12.3",
         "0.8.0",
-        "0.13.2",
         "0.9.146",
         "0.19.4",
         "0.1.0",
         "28.3",
     ):
         assert version in ci
+    assert "RUFF_VERSION" not in ci
+    assert 'uv tool install "ruff' not in lane_setup
     # The rust cache is pinned by its v2 commit (2026-09-29
     # review), so every action in the files carries a commit pin.
     assert "@v" not in ci and "@stable" not in ci
