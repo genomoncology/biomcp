@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from make_fixture import make_fixture_env
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LINT_SCRIPT = REPO_ROOT / "bin" / "lint"
 TEXT_LINT_SCRIPT = REPO_ROOT / "tools" / "check-tracked-text"
@@ -378,14 +380,12 @@ def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
         'printf \'%s\\n\' "$*" >> "$CARGO_DENY_LOG"\n',
     )
 
-    env = {
+    env = make_fixture_env(repo_root, {
         "CARGO_DENY_LOG": str(log_file),
-        "BIOMCP_TOOL_DIR": str(repo_root / "tools"),
         "BIOMCP_ADVISORY_SCOPE": "landing",
         "OSV_LOG": str(tmp_path / "osv.log"),
         "UV_LOG": str(tmp_path / "uv.log"),
-        "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
-    }
+    }, commands=(tool_dir,))
     return repo_root, env, log_file
 
 

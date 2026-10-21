@@ -99,7 +99,6 @@ def test_gate_entry_points_preserve_advisory_policy_and_failures(
         with (tmp_path / "tools/cargo-deny").open("a") as output:
             output.write('if [ "$*" = "check advisories" ]; then exit 1; fi\n')
     env["BIOMCP_ADVISORY_SCOPE"] = scope
-    env = {key: value for key, value in os.environ.items() if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "MAKELEVEL", "MAKEFILES")} | env
     result = subprocess.run(
         ["make", target, f"BIOMCP_ADVISORY_SCOPE={scope}"], cwd=root,
         env=env, text=True, capture_output=True, check=False,
@@ -154,7 +153,7 @@ def test_required_gate_propagates_osv_findings(tmp_path: Path, target: str) -> N
     if target == "landing-gate":
         with (root / "uv.lock").open("a") as output:
             output.write("# changed\n")
-    result = subprocess.run(["make", target], cwd=root, env=os.environ | env,
+    result = subprocess.run(["make", target], cwd=root, env=env,
                             capture_output=True, text=True, check=False)
     assert result.returncode != 0, result.stdout + result.stderr
     assert "[PASS] Rust license lint" in result.stdout
@@ -170,12 +169,18 @@ def test_make_advisory_fixture_owns_inherited_tool_selection(tmp_path: Path, mon
         '#!/bin/sh\nif [ "$1" = --version ]; then echo "cargo-deny 0.19.4"; exit 0; fi\n'
         'printf "unexpected host tool\\n" > "$UNEXPECTED_HOST_TOOL_LOG"\nexit 97\n',
     )
+    inherited = tmp_path / "inherited.mk"
+    inherited.write_text("$(error inherited Make configuration executed)\n")
+    monkeypatch.setenv("MAKEFILES", str(inherited))
+    monkeypatch.setenv("MAKEFLAGS", "--question")
+    monkeypatch.setenv("MAKEOVERRIDES", "BIOMCP_TOOL_DIR=" + str(host_tools))
+    monkeypatch.setenv("MAKELEVEL", "9")
     monkeypatch.setenv("BIOMCP_TOOL_DIR", str(host_tools))
     monkeypatch.setenv("UNEXPECTED_HOST_TOOL_LOG", str(unexpected))
     root, env, log = _advisory_fixture(tmp_path)
     _make_fixture(root, env)
     env["BIOMCP_ADVISORY_SCOPE"] = "always"
-    result = subprocess.run(["make", "lint"], cwd=root, env=os.environ | env,
+    result = subprocess.run(["make", "lint"], cwd=root, env=env,
                             capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
     assert log.read_text() == "check licenses\ncheck advisories\n"
