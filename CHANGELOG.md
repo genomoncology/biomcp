@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Measure outside-in Rust coverage by executable source region so unrun closures remain visible on covered lines, and bootstrap the pinned license checker from verified release archives. (2342)
+
 - Point agent guidance to the embedded skill commands and documentation site, and remove the unused guide-copy packaging path. (2338)
 - Reject malformed or non-object JSON in installed-wheel checks and verify rendered and installed agent guidance. (2339)
 - Replace Windows managed-directory permissions with exact current-user access and pass private permissions to new children. (2340)

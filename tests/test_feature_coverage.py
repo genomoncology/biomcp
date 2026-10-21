@@ -32,6 +32,18 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
                           capture_output=True, text=True)
 
 
+
+def collector_command(tools: Path, platform: str, *args: str) -> list[str]:
+    # Vary only the collector's platform dependency. Changing sys.platform
+    # globally also changes lazy stdlib imports into unsupported host modules.
+    program = ("import runpy,sys,types; sys.path.insert(0," + repr(str(tools)) + "); "
+               "module=runpy.run_path(" + repr(str(tools / "collect_feature_coverage.py")) + "); "
+               "module['collect'].__globals__['sys']=types.SimpleNamespace(platform=" + repr(platform) + "); "
+               "sys.argv=" + repr(["collect_feature_coverage.py", *args]) + "; "
+               "raise SystemExit(module['main']())")
+    return [sys.executable, "-c", program]
+
+
 def test_every_outside_case_names_a_known_feature(tmp_path: Path) -> None:
     root = tree(tmp_path)
     assert run(root, "links").returncode == 0
@@ -52,7 +64,7 @@ def test_unclassified_tests_and_missing_selectors_fail(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("hits,exit_code", [(1, 0), (0, 1)])
-def test_only_product_lines_count_toward_the_floor(
+def test_only_product_regions_count_toward_the_floor(
     tmp_path: Path, hits: int, exit_code: int,
 ) -> None:
     root = tree(tmp_path)
@@ -69,22 +81,24 @@ def test_only_product_lines_count_toward_the_floor(
     config = json.loads(metadata.read_text())
     config["internal"]["src/consumer_only.rs"] = "Imported only by a cfg(test) module."
     metadata.write_text(json.dumps(config))
-    report = root / "outside.lcov"
-    report.write_text(
-        f"SF:{root}/src/main.rs\nDA:1,{hits}\nDA:4,1\nend_of_record\n"
-        f"SF:{root}/tests/test.rs\nDA:1,1\nend_of_record\n"
-        f"SF:{root}/src/observed_tests/mod.rs\nDA:1,1\nend_of_record\n"
-        f"SF:{root}/src/consumer_only.rs\nDA:1,1\nend_of_record\n"
-    )
+    report = root / "outside.json"
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{
+        "functions": [{"filenames": [str(root / path)], "regions": regions}
+                      for path, regions in [
+                          ("src/main.rs", [[1, 1, 1, 13, hits, 0, 0, 0], [4, 1, 4, 24, 1, 0, 0, 0]]),
+                          ("tests/test.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                          ("src/observed_tests/mod.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                          ("src/consumer_only.rs", [[1, 1, 1, 13, 1, 0, 0, 0]]),
+                      ]]}]}))
     (root / "python.xml").write_text('<testsuites><testsuite><testcase classname="tests.test_gene" name="test_lookup" /></testsuite></testsuites>')
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
-    result = run(root, "report", "--lcov", str(report), "--statuses", str(status),
+    result = run(root, "report", "--json", str(report), "--statuses", str(status),
                  "--floor", "50")
     assert result.returncode == exit_code, result.stderr
     data = json.loads(result.stdout)
-    assert data["product_lines"] == 1
-    assert data["reached_lines"] == hits
+    assert data["product_regions"] == 1
+    assert data["reached_regions"] == hits
     assert data["outside_in_percent"] == 100 * hits
     assert not data["unobserved_files"]
     if not hits:
@@ -94,12 +108,12 @@ def test_only_product_lines_count_toward_the_floor(
 
 def test_failed_or_missing_collections_never_report_a_percentage(tmp_path: Path) -> None:
     root = tree(tmp_path)
-    report = root / "outside.lcov"
-    report.write_text(f"SF:{root}/src/main.rs\nDA:1,1\nend_of_record\n")
+    report = root / "outside.json"
+    report.write_text("{}")
     (root / "src/main.rs").write_text("fn main() {}\n")
     status = root / "suites.json"
     status.write_text(json.dumps({"python": 1, "rust": 0}))
-    result = run(root, "report", "--lcov", str(report), "--statuses", str(status),
+    result = run(root, "report", "--json", str(report), "--statuses", str(status),
                  "--floor", "50")
     assert result.returncode != 0
     data = json.loads(result.stdout)
@@ -182,7 +196,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     )
     cargo.chmod(0o755)
     result = subprocess.run(
-        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        collector_command(tools, "linux", "--baseline"),
         env=os.environ | {"PATH": str(commands) + os.pathsep + os.environ["PATH"]},
         text=True, capture_output=True,
     )
@@ -195,15 +209,14 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(
     assert "outside_in_percent" not in data
     flags, pattern = (root / "profile-env.txt").read_text().splitlines()
     assert instrumentation in flags
-    if sys.platform == "linux":
-        assert "-Cllvm-args=-runtime-counter-relocation" in flags
+    assert "-Cllvm-args=-runtime-counter-relocation" in flags
     assert Path(pattern).is_absolute()
     assert pattern == str(root / ".cache/feature-coverage/target/outside-%c%p.profraw")
     # Even errors before compilation must not leave yesterday's passing report.
     (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
     (root / "tests/test_unknown.py").write_text("def test_new(): pass\n")
     rejected = subprocess.run(
-        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        collector_command(tools, "linux", "--baseline"),
         text=True, capture_output=True,
     )
     assert rejected.returncode != 0
@@ -291,3 +304,95 @@ def test_lint_rejects_unclassified_tests_before_preparing_python(tmp_path: Path)
     assert result.returncode != 0
     assert "unclassified test module tests/test_unclassified.py" in result.stderr
     assert not (root / "prepared").exists()
+
+
+def test_unrun_closure_on_a_covered_line_remains_unreached(tmp_path: Path) -> None:
+    root = tree(tmp_path)
+    (root / "src/main.rs").write_text(
+        'fn main() { let unused = || std::hint::black_box(42); let called = || std::hint::black_box(7); println!("{}", std::hint::black_box(&called as &dyn Fn() -> i32)()); if std::hint::black_box(false) { println!("{}", std::hint::black_box(&unused as &dyn Fn() -> i32)()); } }\n'
+    )
+    report = root / "outside.json"
+    # LLVM function regions: start/end line/column, count, file id,
+    # expansion file id, kind. Both functions occupy the same source line.
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{
+        "functions": [
+            {"filenames": [str(root / "src/main.rs")], "regions": [[1, 71, 1, 91, 1, 0, 0, 0]]},
+            {"filenames": [str(root / "src/main.rs")], "regions": [[1, 29, 1, 49, 0, 0, 0, 0]]},
+        ]}]}))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    result = run(root, "report", "--json", str(report), "--statuses", str(status), "--floor", "75")
+    assert result.returncode == 1, result.stderr
+    data = json.loads(result.stdout)
+    assert data["product_regions"] == 2
+    assert data["reached_regions"] == 1
+    assert data["outside_in_percent"] == 50
+    assert data["unreached"]["src/main.rs"] == [{"start": [1, 29], "end": [1, 49]}]
+
+
+@pytest.mark.parametrize("second_hits,percent", [(0, 0), (3, 100)])
+def test_regions_union_binaries_and_map_expansion_file_ids(
+    tmp_path: Path, second_hits: int, percent: int,
+) -> None:
+    root = tree(tmp_path)
+    source = root / "src/main.rs"
+    source.write_text("fn main() {}\n")
+    other = root / "tests/helper.rs"
+    report = root / "outside.json"
+    report.write_text(json.dumps({"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [
+        {"functions": [{"filenames": [str(other), str(source)], "regions": [
+            [1, 1, 1, 13, 0, 1, 0, 0],
+            *[[1, 2, 1, 4, 0, 1, 0, kind] for kind in (1, 2, 3)],
+        ]}]},
+        {"functions": [{"filenames": [str(source), str(other)], "regions": [
+            [1, 1, 1, 13, second_hits, 0, 1, 0],
+            [1, 1, 1, 13, 0, 0, 1, 0],
+        ]}]},
+    ]}))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    result = run(root, "report", "--json", str(report), "--statuses", str(status), "--floor", "0")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    assert data["product_regions"] == 1
+    assert data["outside_in_percent"] == percent
+    assert bool(data["unreached"]) == (second_hits == 0)
+
+
+@pytest.mark.parametrize("report", [{}, {"type": "llvm.coverage.json.export", "version": "3.1.0", "data": [{"functions": []}]}])
+def test_empty_or_wrong_coverage_export_cannot_pass_a_zero_floor(tmp_path: Path, report: dict) -> None:
+    root = tree(tmp_path)
+    path = root / "outside.json"
+    path.write_text(json.dumps(report))
+    status = root / "suites.json"
+    status.write_text(json.dumps({"python": 0, "rust": 0, "spec": 0}))
+    rejected = run(root, "report", "--json", str(path), "--statuses", str(status), "--floor", "0")
+    assert rejected.returncode == 1
+    assert not rejected.stdout
+    missing = run(root, "report", "--floor", "0")
+    assert missing.returncode == 1
+    assert "report requires --json and --statuses" in missing.stderr
+
+
+@pytest.mark.parametrize("platform", ["darwin", "win32"])
+def test_collection_requires_linux_before_preparing_or_building(tmp_path: Path, platform: str) -> None:
+    import shutil
+
+    root = tree(tmp_path)
+    tools = root / "tools"
+    tools.mkdir()
+    for name in ("collect_feature_coverage.py", "feature_coverage.py"):
+        shutil.copyfile(ROOT / "tools" / name, tools / name)
+    output = root / ".cache/feature-coverage"
+    output.mkdir(parents=True)
+    (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
+    # No pyproject or installed tools: reject the platform before reading
+    # collection settings, preparing dependencies or compiling anything.
+    result = subprocess.run(collector_command(tools, platform), text=True, capture_output=True)
+    assert result.returncode == 1
+    assert "outside-in feature coverage requires a Linux host" in result.stdout
+    assert not result.stderr
+    data = json.loads((output / "coverage.json").read_text())
+    assert data["status"] == "incomplete"
+    assert "outside_in_percent" not in data
+    assert not list(output.glob("*.command.json"))

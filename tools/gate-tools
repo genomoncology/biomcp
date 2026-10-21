@@ -3,7 +3,12 @@
 # Portable utilities use POSIX.1-2008 and BSD command interfaces.
 set -u
 root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
+# Listing Cargo's home bin on PATH makes Cargo honor PATH order for external
+# subcommands, so the checkout's pinned tools precede global installations.
 export PATH="${BIOMCP_TOOL_DIR:-$root/.cache/tools/bin}:$PATH"
+if [ -n "${CARGO_HOME:-${HOME:-}}" ]; then
+  export PATH="$PATH:${CARGO_HOME:-$HOME/.cargo}/bin"
+fi
 errors=()
 
 pin() {

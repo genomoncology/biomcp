@@ -6,9 +6,14 @@ tool_dir="${BIOMCP_TOOL_DIR:-$repo_root/.cache/tools/bin}"
 mkdir -p "$tool_dir"
 
 install_archive_binary() {
-  local name="$1" version="$2" url="$3" expected="$4" member="$5"
-  if [ -x "$tool_dir/$name" ] && "$tool_dir/$name" --version 2>&1 | grep -Fq "$version"; then
-    return
+  local name="$1" version="$2" url="$3" expected="$4" member="$5" current
+  if [ -x "$tool_dir/$name" ]; then
+    current="$("$tool_dir/$name" --version 2>&1)" || current=""
+    if [ "$name" = cargo-deny ]; then
+      [ "$current" != "cargo-deny $version" ] || return 0
+    elif printf '%s\n' "$current" | grep -Fq "$version"; then
+      return
+    fi
   fi
   local temp_dir archive actual
   temp_dir="$(mktemp -d)"
@@ -31,6 +36,7 @@ install_archive_binary() {
   esac
   install -m 0755 "$temp_dir/$member" "$tool_dir/$name"
 }
+
 
 # Official release assets and SHA-256 values:
 # https://github.com/google/osv-scanner/releases/tag/v2.7.0
@@ -77,5 +83,27 @@ case "$(uname -s)-$(uname -m)" in
     exit 1
     ;;
 esac
+
+# CI owns the policy version. Checksums bind its reviewed release assets.
+cargo_deny_version="$(sed -n 's/^  CARGO_DENY_VERSION: \([0-9.]*\)$/\1/p' "$repo_root/.github/workflows/ci.yml")"
+case "$cargo_deny_version-$(uname -s)-$(uname -m)" in
+  0.19.4-Linux-x86_64)
+    cargo_deny_target=x86_64-unknown-linux-musl
+    cargo_deny_digest=3bd58b784e83715b86ddbc9deac591890372ec77fda5741bb0826970b958506f
+    ;;
+  0.19.4-Darwin-arm64)
+    cargo_deny_target=aarch64-apple-darwin
+    cargo_deny_digest=2437a51d904b29abe2d3aa9ea87e353c86cff108d519ba1e5fb495bb28e7fbaf
+    ;;
+  *) printf 'No pinned cargo-deny archive for policy %s on %s\n' "$cargo_deny_version" "$(uname -s)-$(uname -m)" >&2; exit 1 ;;
+esac
+# https://github.com/EmbarkStudios/cargo-deny/releases/tag/0.19.4
+install_archive_binary cargo-deny "$cargo_deny_version" \
+  "https://github.com/EmbarkStudios/cargo-deny/releases/download/$cargo_deny_version/cargo-deny-$cargo_deny_version-$cargo_deny_target.tar.gz" \
+  "$cargo_deny_digest" "cargo-deny-$cargo_deny_version-$cargo_deny_target/cargo-deny"
+[ "$("$tool_dir/cargo-deny" --version)" = "cargo-deny $cargo_deny_version" ] || {
+  printf 'Installed cargo-deny does not match policy %s\n' "$cargo_deny_version" >&2
+  exit 1
+}
 
 printf '%s\n' "$tool_dir"

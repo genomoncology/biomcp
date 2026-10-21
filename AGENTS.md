@@ -58,7 +58,7 @@ For focused Python checks in a build job, run `make sync-python-dev` in that job
 
 `rust-toolchain.toml` selects the build compiler for Cargo, build jobs and release workflows. `Cargo.toml` retains the supported minimum for consumers. An explicit `RUSTUP_TOOLCHAIN=stable make lint` checks compatibility with the newest stable compiler.
 
-`make lint` prepares this environment before running Python lint. Direct `bin/lint` requires the prepared local environment and checks the declared Ruff version. `tools/bootstrap-lint-tools` supplies ShellCheck and actionlint.
+`make lint` prepares this environment before running Python lint. Direct `bin/lint` requires the prepared local environment and checks the declared Ruff version. `tools/bootstrap-lint-tools` supplies the pinned cargo-deny, ShellCheck and actionlint binaries in the checkout cache.
 
 tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 
