@@ -402,11 +402,11 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
-    ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "e5cf6427d1b42e2b776f2589adc36320874f109751f02494b68ee9068c79b0d5",
+    ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "7cf8d8f0412743a3fe26312d709d9101fe171f1ac7df797b9ef52b6abb3a7e21",
     ("pypi-build", "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b"): "4e605dbe89d4dcacdf70d170853634c9f4c518e1a41f5d2c5e2bd27cf4c89e7c",
     ("pypi-build", "Install pinned maturin"): "996e8a6336fff6d3d0b3a74230bb8b24021e34e7d06390412ac88bd2308173e0",
     ("pypi-build", "Build wheels"): "cbb986dad5ba25475c9731e0d012cfff7c3cefdbb280bd480e9024e51e6c3337",
-    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "d04d98be4ff1c1caee89a3337461678427197f11d91b9a36c4b8006413578b9b",
+    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "8bbf07cb07509fe7c6981b115283ac00e78ca20c5130cfec70509d8cb16d08b6",
     ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
@@ -436,6 +436,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
     "pypi-build": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+        "Read declared Rust toolchain",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
         "Install pinned maturin",
@@ -482,6 +483,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         # which the host build steps run under so the shipped
         # binaries report their commit.
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+        "Read declared Rust toolchain",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
         "Build release binary",
@@ -522,6 +524,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         # The marker set runs before any archive is built; build and
         # pypi-build wait on this job.
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        "Read declared Rust toolchain",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a",
@@ -1634,7 +1637,7 @@ def test_restoring_the_unpinned_rustup_pipe_breaks_the_contract(tmp_path: Path) 
         "https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init.sha256\n"
         "            sha256sum -c rustup-init.sha256\n"
         "            chmod +x rustup-init\n"
-        "            ./rustup-init -y --default-toolchain 1.93.1 --profile minimal"
+        "            ./rustup-init -y --default-toolchain \"$(tools/rust-toolchain-version)\" --profile minimal"
     )
     assert pinned in workflow
     scratch = tmp_path / "release.yml"

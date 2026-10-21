@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
+- Pin the build toolchain, report every missing gate prerequisite before preparation, and preserve atomic budget updates across supported Rust versions. (2324)
 
 - Preserve the Windows account identity when checking an installed wheel in a clean environment so cache permissions can be secured. (2323)
 
@@ -40,6 +40,8 @@
 - Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
 
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Mark variant article rows with missing metadata and its fallback failure cause in JSON and Markdown, and identify the same fields and article in warnings. (2329)
 
 - Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
 

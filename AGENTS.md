@@ -58,6 +58,10 @@ Run affected tests during development. Run one Rust build at a time within a lan
 
 For focused Python checks in a build job, run `make sync-python-dev` in that job's checkout. This target runs `uv sync --extra dev --no-install-project` in the checkout's own `.venv` and supplies pytest and the Ruff pin declared in the development dependencies. Run affected checks with `.venv/bin/python -m pytest tests/<affected-test>.py` and `.venv/bin/python -m ruff check <changed-python-files>`. Supply the prepared `BIOMCP_BIN` when checks need the CLI. These commands use the same job environment without syncing or triggering an editable Rust package build. Never borrow another checkout's environment. Existing Makefile Python commands use `uv run --no-sync` with that same local environment.
 
+`tools/gate-tools` declares gate host prerequisites and their supported versions. Run `make gate-preflight` to list every missing or incompatible host tool before preparation. Install the lint archives with `tools/bootstrap-lint-tools`; the preflight also searches their checkout-local cache. Python dependencies and the advisory scanner are prepared by their existing installers after the host preflight. The system Python floor is separate from the packaged CLI Python floor.
+
+`rust-toolchain.toml` selects the build compiler for Cargo, build jobs and release workflows. `Cargo.toml` retains the supported minimum for consumers. An explicit `RUSTUP_TOOLCHAIN=stable make lint` checks compatibility with the newest stable compiler.
+
 `make lint` prepares this environment before running Python lint. Direct `bin/lint` requires the prepared local environment and checks the declared Ruff version. `tools/bootstrap-lint-tools` supplies ShellCheck and actionlint.
 
 tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
@@ -123,3 +127,7 @@ Everyday builds and tests use build jobs. GitHub Actions run for releases after 
 ## Source licensing
 
 State each source's terms plainly in its registry entry and on the licensing page. Label restricted terms as restricted. Users are responsible for their own licenses. BioMCP never buys a license or contacts a provider without Ian's approval.
+
+## Source keys
+
+The source keys live in `~/.zshenv.local` on each build machine: `ALPHAGENOME_API_KEY`, `S2_API_KEY`, `DISGENET_API_KEY`, `UMLS_API_KEY`, `NCI_API_KEY` and `NCBI_API_KEY`. They carry no financial risk and only raise bandwidth and rate limits. Use them for all BioMCP testing. Name a key; never write its value in the repo, a log or a fixture. Replace a key only when its provider rejects it.
