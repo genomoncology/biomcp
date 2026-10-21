@@ -12,6 +12,10 @@ Depends on: 2301
 
 Reviews: revision 6e8f2de, accept
 
+Reviews: revision b15c389, accept
+
+Reviews: revision 5ce46a6, accept
+
 ## Outcome
 
 Rust tests that need a local HTTP server use one shared test server that handles WouldBlock and connection resets, shuts down without panicking in Drop, and reports its own failures as test errors. Hand-written per-test socket servers move to it.
