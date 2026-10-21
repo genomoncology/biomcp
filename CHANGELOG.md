@@ -102,6 +102,8 @@
 
 ### Internal
 
+- Archive resolved issue and ticket records, preserve active release instructions, and repair historical audit paths. (2306)
+
 - Warn about slow routine tests while reserving test timeouts for hangs and preserving product deadline contracts. (2321)
 - Run the maintained repository contract tier with the collected local release metadata checks before pushing changes. (2304)
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
