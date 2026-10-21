@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 46f3b44, accept
 
+Reviews: revision 5a8cfda, accept
+
 ## Outcome
 
 Every landing gate and full check runs the repo's own make targets. No gate runs a private script from an experiment folder.
