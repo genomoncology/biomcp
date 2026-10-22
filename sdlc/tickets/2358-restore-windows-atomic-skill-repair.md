@@ -24,6 +24,10 @@ The bounded review recommends an explicit near-term Windows forced-repair limita
 
 Platform sources: [MoveFileExW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw), [FILE_RENAME_INFORMATION](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information), [ReplaceFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-replacefilew), [Microsoft's Transactional NTFS recommendation](https://learn.microsoft.com/en-us/windows/win32/fileio/deprecation-of-txf), [transaction restrictions](https://learn.microsoft.com/en-us/windows/win32/fileio/programming-considerations-for-transacted-fileio-), and [MoveFileTransactedW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefiletransactedw).
 
+## PM ruling
+
+PM ruling 2026-10-22: take the explicit Windows forced-repair limitation for 0.9.4. Released 0.9.3 already refuses forced repair on Windows (the platform guard dates from 2026-07-21), so this documents existing behavior and is no regression. Keep the fail-closed refusal. Make the refusal message tell the user how to repair on Windows: remove the managed skill folder, then run a fresh install. State the limitation in docs/getting-started/skills.md and the skill install help. Prove at the native Windows executable that forced repair refuses, leaves the existing bundle and unrelated files untouched, and that the stated manual repair succeeds. A versioned layout that would allow atomic Windows repair is a later design, outside 0.9.4. Transactional NTFS and rename-aside stay excluded.
+
 ## Proof
 
 - Reproduce forced repair with the actual native Windows executable or record exactly why its existing unconditional platform guard already establishes the failure, without relabeling fresh-install evidence as force execution.
