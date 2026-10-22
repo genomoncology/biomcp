@@ -1,6 +1,6 @@
 # 2357 — Restore fresh Windows skill installation
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -11,6 +11,8 @@ Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/assets.rs, src/cli/skill/in
 Reviews: revision 8ced436b6ff0a6ee3a0d5a0e7e18553509e3f5b1, accept
 
 Reviews: revision edd92bd02c804241778dbc5f598d6375d68ed0eb, accept
+
+Landed: 7a7fbeb
 
 ## Outcome
 
