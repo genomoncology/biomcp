@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 import pytest
 import yaml
 
+from make_fixture import make_fixture_env
 from release_workflow_inventory import (
     COUNTERPARTS, LOCAL_COMMANDS, assert_step_inventory,
     release_inventory_admission as release_inventory_admission,
@@ -237,10 +238,9 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
         path.write_text('#!/bin/sh\n' + body + '\n')
         path.chmod(0o755)
     calls = tmp_path / "calls"
-    result = subprocess.run(["bash", str(runner)], env={
-        **os.environ, "PATH": str(commands) + os.pathsep + os.environ["PATH"],
-        "CALLS": str(calls), "FAILURE": failure,
-    }, capture_output=True, text=True)
+    result = subprocess.run(["bash", str(runner)], env=make_fixture_env(
+        tmp_path, {"CALLS": str(calls), "FAILURE": failure}, commands=(commands,),
+    ), capture_output=True, text=True)
     expected = [
         "make prepare-test", "make lint BIOMCP_ADVISORY_SCOPE=always",
         "make stress", "make test-long",
@@ -257,7 +257,9 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
 
 
 @pytest.mark.skipif(not hasattr(os, "sched_getaffinity"), reason="Linux stress affinity")
-def test_stress_uses_one_cpu_available_to_the_job(tmp_path: Path) -> None:
+def test_stress_uses_one_cpu_available_to_the_job(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Restrict the recipe to one allowed CPU, normally outside CPU zero.
     selected = max(os.sched_getaffinity(0))
     (tmp_path / ".cache").mkdir()
@@ -273,15 +275,26 @@ def test_stress_uses_one_cpu_available_to_the_job(tmp_path: Path) -> None:
         path = commands / name
         path.write_text("#!/bin/sh\n" + body + "\n")
         path.chmod(0o755)
+    # GNU Make propagates a caller's command-line PATH through MAKEFLAGS.
+    # It must not outrank the fixture's fake taskset in the child Make process.
+    host_commands = tmp_path / "host-commands"
+    host_commands.mkdir()
+    host_taskset = host_commands / "taskset"
+    host_taskset.write_text('#!/bin/sh\necho inherited-taskset >> "$CALLS"\nexit 97\n')
+    host_taskset.chmod(0o755)
+    inherited_path = str(host_commands) + os.pathsep + os.environ["PATH"]
+    assignment = "PATH=" + inherited_path.replace(" ", "\\ ")
+    monkeypatch.setenv("MAKEFLAGS", " -- " + assignment)
+    monkeypatch.setenv("MAKEOVERRIDES", assignment)
+    monkeypatch.setenv("MAKELEVEL", "7")
     calls = tmp_path / "calls"
     result = subprocess.run([
         shutil.which("taskset"), "-c", str(selected),
         shutil.which("make"), "-f", str(ROOT / "Makefile"), "stress", "MAKE=" + str(commands / "make"),
         "SPEC_BIN=" + str(binary), "BIOMCP_STRESS_REPEAT=1",
-    ], cwd=tmp_path, env={
-        **os.environ, "PATH": str(commands) + os.pathsep + os.environ["PATH"],
-        "CALLS": str(calls),
-    }, capture_output=True, text=True)
+    ], cwd=tmp_path, env=make_fixture_env(
+        tmp_path, {"CALLS": str(calls)}, commands=(commands,),
+    ), capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     expected = "-c " + str(selected)
     assert calls.read_text().splitlines() == [expected, expected]
