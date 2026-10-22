@@ -191,21 +191,36 @@ fn install_result_reports_installed_unchanged_and_repaired_truthfully() -> Resul
     Ok(())
 }
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 #[test]
 fn fresh_atomic_rename_refuses_a_racing_target() -> Result<(), BioMcpError> {
     let paths = TestPaths::new("fresh-race");
-    let source = paths.cwd.join("candidate");
-    let target = paths.cwd.join("target");
-    fs::create_dir(&source)?;
-    fs::write(source.join("SKILL.md"), "candidate")?;
-    fs::create_dir(&target)?;
-    fs::write(target.join("racing-file"), "preserve")?;
-
-    super::super::atomic_swap::rename_absent(&source, &target)
-        .expect_err("a racing target must not be replaced");
-    assert_eq!(fs::read_to_string(source.join("SKILL.md"))?, "candidate");
-    assert_eq!(fs::read_to_string(target.join("racing-file"))?, "preserve");
+    // Exercise the commit boundary after staging without timing a race or
+    // adding a production injection hook.
+    for kind in ["empty-directory", "populated-directory", "file"] {
+        let source = paths.cwd.join(format!(".biomcp-install-{kind}"));
+        let target = paths.cwd.join(kind);
+        install_to_dir(&source, false)?;
+        if kind == "file" {
+            fs::write(&target, "preserve")?;
+        } else {
+            fs::create_dir(&target)?;
+            if kind == "populated-directory" {
+                fs::write(target.join("racing-file"), "preserve")?;
+            }
+        }
+        super::super::install::publish_fresh_candidate(&source, &target)
+            .expect_err("a racing target must not be replaced");
+        assert!(!source.exists(), "failed staging must be removed");
+        if kind == "file" {
+            assert_eq!(fs::read_to_string(&target)?, "preserve");
+        } else if kind == "populated-directory" {
+            assert_eq!(fs::read_to_string(target.join("racing-file"))?, "preserve");
+            assert_eq!(fs::read_dir(&target)?.count(), 1);
+        } else {
+            assert_eq!(fs::read_dir(&target)?.count(), 0);
+        }
+    }
     Ok(())
 }
 

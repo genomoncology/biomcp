@@ -17,7 +17,8 @@ pub(super) fn embedded_text(path: &str) -> Result<String, BioMcpError> {
 }
 
 pub(super) fn canonical_prompt_body() -> Result<String, BioMcpError> {
-    let mut body = embedded_text("SKILL.md")?;
+    // Checkouts may use CRLF; rendering and installed files share LF bytes.
+    let mut body = embedded_text("SKILL.md")?.replace("\r\n", "\n");
     while body.ends_with('\n') {
         body.pop();
     }

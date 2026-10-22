@@ -409,6 +409,8 @@ jobs:
         run: |
           cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture
           cargo test --locked --no-default-features --test windows_lock_contract
+          cargo test --locked --no-default-features --test skill_install_contract
+          cargo test --locked --no-default-features --lib fresh_atomic_rename_refuses_a_racing_target
           cargo test --locked --no-default-features --test managed_state_permissions
           cargo test --locked --no-default-features --lib sqlite_busy_deadline_finishes_without_late_publication
           cargo test --locked --no-default-features --lib construction_under_a_held_sqlite_writer_honors_the_deadline

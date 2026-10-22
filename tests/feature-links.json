@@ -375,6 +375,9 @@
     },
     "tests/reversed_help_contract.rs": {
       "feature": "cli-controls"
+    },
+    "tests/skill_install_contract.rs": {
+      "feature": "skills"
     }
   },
   "spec": {

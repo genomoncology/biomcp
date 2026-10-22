@@ -533,6 +533,14 @@ fn target_exists(path: &Path) -> Result<bool, BioMcpError> {
     }
 }
 
+pub(super) fn publish_fresh_candidate(candidate: &Path, target: &Path) -> Result<(), BioMcpError> {
+    if let Err(error) = super::atomic_swap::rename_absent(candidate, target) {
+        let _ = fs::remove_dir_all(candidate);
+        return Err(error);
+    }
+    Ok(())
+}
+
 fn install_to_dir_with_display(
     target: &Path,
     safe_dir: &str,
@@ -552,10 +560,7 @@ fn install_to_dir_with_display(
 
     let candidate = prepare_candidate(target, exists, &payload)?;
     if !exists {
-        if let Err(error) = super::atomic_swap::rename_absent(&candidate, target) {
-            let _ = fs::remove_dir_all(&candidate);
-            return Err(error);
-        }
+        publish_fresh_candidate(&candidate, target)?;
     } else if let Err(error) = super::atomic_swap::exchange_directories(&candidate, target) {
         let _ = fs::remove_dir_all(&candidate);
         return Err(error);
