@@ -10,6 +10,8 @@ Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/assets.rs, src/cli/skill/in
 
 Reviews: revision 8ced436b6ff0a6ee3a0d5a0e7e18553509e3f5b1, accept
 
+Reviews: revision edd92bd02c804241778dbc5f598d6375d68ed0eb, accept
+
 ## Outcome
 
 Restore the published fresh skill-install contract on Windows without overwriting an existing destination. Keep complete sibling staging, same-filesystem publication, failure cleanup and preservation of unrelated user files. Preserve the installed-wheel smoke assertion. Do not introduce copy/delete fallback, weaken atomic publication, change the public layout or claim forced repair works; forced repair is separately tracked in 2358.
