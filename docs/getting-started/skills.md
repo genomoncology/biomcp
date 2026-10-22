@@ -67,15 +67,37 @@ A fresh managed install reports `current`. Missing or invalid management metadat
 reports `unmanaged`; changed managed files report `locally_modified`; and an
 intact older payload reports `stale`. Only `current` omits the recovery command.
 
-Plain install never overwrites an existing skill. Repair an installation
-explicitly:
+Plain install never overwrites an existing skill. On Linux and macOS, repair an
+installation explicitly:
 
 ```bash
 biomcp skill install ~/.claude --force
 ```
 
-Force replacement updates only BioMCP-managed files and preserves unrelated
-files. The `dir` argument can point at an agent root such as `~/.claude`, an
+Force replacement on Linux and macOS updates only BioMCP-managed files and
+preserves unrelated files.
+
+### Repair on Windows
+
+Windows does not support forced repair. `--force` refuses to replace an existing
+skill and leaves its managed files and unrelated files unchanged.
+
+To repair an installation on Windows, back up unrelated files to a location
+outside the managed `<agent>/skills/biomcp/` folder. Remove only that managed
+folder, then run a fresh install without `--force`. For example, after saving
+your unrelated files outside the folder, run these commands in PowerShell:
+
+```powershell
+Remove-Item -LiteralPath "$HOME/.claude/skills/biomcp" -Recurse
+biomcp skill install "$HOME/.claude"
+```
+
+Restore the saved unrelated files into the new `skills/biomcp/` folder afterward.
+The fresh installation supplies the current managed guide and reference files.
+
+### Install targets
+
+The `dir` argument can point at an agent root such as `~/.claude`, an
 existing `skills/` directory, or a `skills/biomcp/` directory. When you omit `dir`,
 BioMCP attempts supported agent-directory detection in your home directory and
 the current working tree, then prompts before installing when stdin is a TTY.

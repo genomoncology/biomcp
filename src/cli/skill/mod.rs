@@ -49,7 +49,11 @@ pub enum SkillCommand {
     Install {
         /// Agent root or skills directory (e.g. ~/.claude, ~/.claude/skills, ~/.claude/skills/biomcp)
         dir: Option<String>,
-        /// Replace existing installation
+        /// Replace existing installation (not supported on Windows)
+        ///
+        /// Back up unrelated files outside the managed skills/biomcp folder,
+        /// remove that folder, then run a fresh install without --force.
+        /// Restore the saved unrelated files afterward.
         #[arg(long)]
         force: bool,
     },
