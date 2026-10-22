@@ -1,12 +1,14 @@
 # 2355 — Recover all-indexed-field variant paper candidates
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 91184cbfd0f29585ebf26689ac18ae9c4c3dbe8c, accept
 
 Reviews: revision e202246e1fd82c109eef793901d98fd3ab638fc5, accept
+
+Landed: 84ef9b4
 
 ## Outcome
 
