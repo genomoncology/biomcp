@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a7f05235d379720964d68c0fff495d036a7a7940, accept
+
 ## Outcome
 
 The study's dated FANCL article search avoids persistent unnecessary PubTator work within the existing source guard and provider limits. Diagnose the exact single-gene request, pagination and date handling; this command has no keyword OR expression. Preserve typed identity, date meaning, source pacing and other-source results. Genuine upstream failures remain honestly source-local. Do not raise the guard or hide incomplete work.
