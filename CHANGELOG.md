@@ -13,6 +13,8 @@
 - Report empty Europe PMC supplement containers as a source-specific empty listing and point to the article for further checks. (2349)
 - Isolate synthetic Make gate fixtures from inherited tools and Make controls while retaining stage ordering and failure checks. (2351)
 - Report safe HTTP status and failure categories in recording diagnostics while withholding response values and credentials. (2330)
+- Remove the internal panic injection tool from shipped MCP servers and retain panic recovery checks in test-only builds. (2352)
+
 - Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)

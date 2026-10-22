@@ -21,8 +21,6 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
-const TEST_PANIC_TOOL: &str = "__biomcp_test_panic";
-
 mod arguments;
 use self::arguments::Parameters;
 
@@ -535,16 +533,7 @@ const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin a
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
-        let panic_route = tool_router
-            .map
-            .remove(TEST_PANIC_TOOL)
-            .expect("test panic route should be generated");
         super::catalog::apply(&mut tool_router);
-        // Internal panic-recovery test hook. Only the exact value enables this
-        // route, and the contract harness clears inherited values from children.
-        if std::env::var("BIOMCP_TEST_PANIC_TOOL").as_deref() == Ok("1") {
-            tool_router.add_route(panic_route);
-        }
         Self { tool_router }
     }
 
@@ -1334,14 +1323,6 @@ fn append_default_mcp_footer(text: String, json_text: &str) -> String {
 
 #[tool_router]
 impl BioMcpServer {
-    #[tool(
-        name = "__biomcp_test_panic",
-        description = "Internal panic recovery test hook"
-    )]
-    async fn test_panic(&self) -> Result<CallToolResult, McpError> {
-        panic!("injected MCP tool panic")
-    }
-
     #[tool(input_schema = schema_for_type::<ShellCommand>())]
     async fn biomcp(
         &self,
@@ -1823,6 +1804,10 @@ pub async fn run_stdio() -> anyhow::Result<()> {
     let _reason = running.waiting().await?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "shell/panic_tests.rs"]
+mod panic_tests;
 
 #[cfg(test)]
 #[path = "shell/typed_get_tests.rs"]

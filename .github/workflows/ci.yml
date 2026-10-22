@@ -303,7 +303,7 @@ jobs:
       - name: Release-mode panic recovery contract
         run: |
           cargo build --release --locked
-          cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic
+          cargo nextest run --release --lib rmcp_stdio_recovers_from_tool_panic
 
   full-features:
     needs: changes

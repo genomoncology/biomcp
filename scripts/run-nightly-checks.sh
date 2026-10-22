@@ -11,7 +11,7 @@ make lint BIOMCP_ADVISORY_SCOPE=always
 make stress
 make test-long
 tools/with-build-identity cargo build --release --locked
-tools/with-build-identity cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic
+tools/with-build-identity cargo nextest run --release --lib rmcp_stdio_recovers_from_tool_panic
 scripts/regenerate-alphagenome-proto --check
 make repo-audit
 make full-feature-check

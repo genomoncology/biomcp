@@ -1781,22 +1781,22 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Result<()> {
+async fn rmcp_stdio_never_exposes_test_panic_tool() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness
         .spawn_stdio_client(&[("BIOMCP_TEST_PANIC_TOOL", "1".to_string())])
         .await?;
-
-    let panic_result = client
+    let tools = client.peer().list_all_tools().await?;
+    assert!(
+        tools.iter().all(|tool| tool.name != "__biomcp_test_panic"),
+        "the shipped server exposed a test-only panic tool"
+    );
+    let error = client
         .peer()
         .call_tool(CallToolRequestParams::new("__biomcp_test_panic"))
-        .await?;
-    assert_eq!(panic_result.is_error, Some(true));
-    assert!(
-        biomcp_mcp_contract_client::first_text(&panic_result.content)
-            .contains("injected MCP tool panic")
-    );
-
+        .await
+        .expect_err("the test panic tool must be unknown in shipped builds");
+    assert!(error.to_string().contains("not found"), "{error}");
     let success = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
     assert_eq!(success.is_error, Some(false));
     client.cancel().await?;
