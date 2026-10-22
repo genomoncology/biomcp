@@ -1,6 +1,7 @@
 # 2358 — Document Windows manual skill repair
 
-Status: OPEN.
+Status: COMPLETE.
+Landed: 3a72c13f53cf25b0978a68fe03681dcfd89366b0
 
 Milestone: 0.9.4
 
