@@ -197,9 +197,21 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
             assert any(query.get("query", [""])[0].startswith("ABCC8 R1458Q AND NOT")
                        for path, query in requests if path == "/search"), requests
         for alias in ("ABCC8 c.4310G>A", "ABCC8 c.4373G>A"):
-            assert alias not in lexical_queries
+            assert alias in lexical_queries
             assert any(row["route"] == "strict" and row["query_alias"] == alias
                        for row in plan["provider_queries"])
+            # Restricted strict work cannot stand in for all indexed fields.
+            all_field_plans = [row for row in plan["provider_queries"]
+                               if row["route"] == "exact_lexical"
+                               and row["provider"] == "europepmc"
+                               and alias in row.get("query_aliases", [row["query_alias"]])]
+            assert all_field_plans, (alias, plan["provider_queries"])
+            for all_field in all_field_plans:
+                query = all_field["query"]
+                assert "TITLE_ABS:" not in query
+                assert "ABCC8" in query and alias.split(" ", 1)[1] in query
+                assert any(path == "/search" and params.get("query") == [query]
+                           for path, params in requests), query
         allocation = plan["work_allocation"]
         assert allocation["discovery"]["consumed"] <= allocation["discovery"]["limit"] == 197
         for work in (allocation["exact_lexical"]["item"], allocation["identity_verification"]["item"]):

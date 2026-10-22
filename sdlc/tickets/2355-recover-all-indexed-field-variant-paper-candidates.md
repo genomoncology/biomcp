@@ -10,7 +10,7 @@ Reviews: revision 91184cbfd0f29585ebf26689ac18ae9c4c3dbe8c, accept
 
 Variant article discovery retains a bounded Europe PMC all-indexed-field gene plus compatible supplied-allele alias route when title/abstract-only strict work has run. Coverage of restricted fields cannot suppress a non-equivalent all-field route. Recover both clinically confirmed BRCA1 P1749R expert papers while preserving supplied identity, typed annotations, provenance, existing budgets and deadlines. Candidate discovery does not claim verified allele relevance for every lexical hit. No gene-token fallback, schema expansion or guard increase.
 
-- Changes: `src/entities/article/variant_search.rs` compiled all-field plans, route execution and work accounting; `tests/test_variant_article_field_scope.py`, recovery controls and recorded-row fixtures; affected transcript replay controls; `tests/feature-links.json`; `CHANGELOG.md`.
+- Changes: `src/entities/article/variant_search.rs` compiled all-field plans, route execution and work accounting; `tests/test_variant_article_field_scope.py`, `tests/test_variant_article_alias_coverage.py`, recovery controls and recorded-row fixtures; affected transcript replay controls; `tests/feature-links.json`; `CHANGELOG.md`.
 - Proof: a recorded-provider outside-in default variant-articles run recovers PMID10486320 and31788995, which are absent before the fix; show exact all-field versus restricted query coverage, negative identity controls and bounded-work behavior. Inventory all existing replay consumers affected by new requests before review.
 
 ## Evidence
