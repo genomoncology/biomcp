@@ -15,3 +15,11 @@ Clinical review confirms with high confidence that GRCh37 `NC_000009.11:g.219746
 Sources retrieved 2026-10-21: [ClinVar VCV000187713.16](https://www.ncbi.nlm.nih.gov/clinvar/variation/187713/), [ClinGen CA198385](https://reg.genome.network/allele/CA198385), [HGVS general recommendations 21.1.5](https://hgvs-nomenclature.org/stable/recommendations/general/), [HGVS numbering](https://hgvs-nomenclature.org/stable/background/numbering/), and [NCBI SPDI convention](https://ncbiinsights.ncbi.nlm.nih.gov/2017/02/09/new-web-services-for-comparing-and-grouping-sequence-variants/).
 
 Disposition: j4144 returns the correct GRCh37 position from an identity that retains GRCh37 internally. Withdraw 2345 with its actual command/output evidence. Missing serialized assembly/transcript context does not justify a speculative coordinate shift or authorize an interface expansion.
+
+## BRCA1 direct-only expert papers, 2026-10-21
+
+Clinical review confirms with high confidence that PMID10486320 and PMID31788995 directly report the supplied BRCA1 Pro1749Arg allele. Gayther et al.1999 (DOI10.1086/302583), Table1 and Results, pairs codon1749/Pro1749Arg with historical5365C>G. Lai et al.2020 (DOI10.3802/jgo.2020.31.e5), Table3, pairs c.5246C>G/p.Pro1749Arg in a sequenced study specimen. These are study results, not gene co-occurrence or reference-only mentions.
+
+Same-allele evidence: ClinVar VCV000055479.6 pairs U14680.1:n.5365C>G, NM_007294.4:c.5246C>G and NP_009225.1:p.Pro1749Arg. ClinGen CA003387, MANE1.3 Select, pairs this allele with GRCh38 NC_000017.11:g.43057083G>C and GRCh37 NC_000017.10:g.41209100G>C. The paper main texts do not supply versioned transcript/assembly metadata; current registry mappings are not attributed to the papers. Preserve the standing same-allele proof rule and no gene-token fallback.
+
+Sources: [Gayther full text](https://pmc.ncbi.nlm.nih.gov/articles/PMC1288234/), [Lai fulltext XML](https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6918895/fullTextXML), [ClinVar55479](https://www.ncbi.nlm.nih.gov/clinvar/variation/55479/), [ClinGenCA003387](https://reg.genome.network/allele/CA003387). Retrieved2026-10-21. Corrections to the paper tables or registry bridge would change the ruling.
