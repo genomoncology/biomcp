@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 1
 
-Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/mod.rs, docs/getting-started/skills.md, tests/skill_install_contract.rs, tests/test_public_skill_docs_contract.py, CHANGELOG.md
+Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/mod.rs, docs/getting-started/skills.md, tests/skill_install_contract.rs, tests/test_public_skill_docs_contract.py, CHANGELOG.md, sdlc/records/2358-windows-manual-skill-repair.md
 
 Reviews: revision e6abc1752e3889279d7e8c70b590b035beb2a08c, accept
 
