@@ -8,6 +8,8 @@ Priority: 1
 
 Changes: tests/test_release_check_counterparts.py, CHANGELOG.md
 
+Reviews: revision 4148919eb9d5c5e4776bef85d96e7f89b5b0df50, accept
+
 ## Outcome
 
 Use the existing shared Make-fixture environment for the overlooked synthetic release-counterpart cases. A caller's Make command-line PATH and inherited Make controls must not override a fixture's fake commands. Preserve the real outer CPU-affinity check, both exact affinity assertions and all production gate checks. This is test isolation only; do not change production Make behavior or add a second isolation helper.
