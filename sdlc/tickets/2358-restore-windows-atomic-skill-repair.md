@@ -8,6 +8,8 @@ Priority: 1
 
 Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/mod.rs, docs/getting-started/skills.md, tests/skill_install_contract.rs, tests/test_public_skill_docs_contract.py, CHANGELOG.md
 
+Reviews: revision e6abc1752e3889279d7e8c70b590b035beb2a08c, accept
+
 ## Outcome
 
 Document the existing Windows forced-repair limitation for 0.9.4 and preserve its refusal without changing the existing managed bundle or unrelated files. Tell users in the refusal message, skill install help and skills page to back up unrelated files outside the managed skill folder, remove that folder, run a fresh install and restore the saved unrelated files. Prove refusal preservation and successful manual repair through the native Windows executable. Keep the current layout and fresh-install publication guarantees. Transactional NTFS, rename-aside and a versioned layout remain outside this change.
