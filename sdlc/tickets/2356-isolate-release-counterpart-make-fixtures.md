@@ -24,6 +24,8 @@ Use the existing shared Make-fixture environment for the overlooked synthetic re
 
 - Focused proof archive: Yellow `ticket-evidence/2356/biomcp-2356-proof.tar.gz`, 3975 bytes, SHA256 `8a55777d7c8c8f4cce76742c85adb49c2018b04f7680b7463b3354a5c283ff08`. Both transfer endpoints and all five inner files were verified.
 
+- Direct M5 landing gate j4423 passed on candidate `b4256332d707955230091f8cb2824e8c0b4f6211`, tree `beb87cd4e38c7b79d7b12a5c075a5dd26b52dbdc`, exit zero in 916599ms. It passed 4298 Rust cases, 2012 Python cases with 19 expected skips, strict documentation and 73 specification cases, 11 golden cases and 7 static cases. Darwin provides no kernel network isolation. Yellow `release-evidence/0.9.4/landing-2356` retains the exact command, source tree, source diff, scheduler receipt and raw log; verified manifest SHA256 `c8b80502fb7d0eeaeff1fc19b50606a1166a12c287cc7862573df85200cdff3d`. The gate was not repeated after publication.
+
 ## Proof
 
 - Restate the outcome, reproduce the inherited command-line PATH failure against current main and name the exact files and failing outside-in test before editing code.
