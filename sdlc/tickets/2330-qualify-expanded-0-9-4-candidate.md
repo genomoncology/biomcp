@@ -5,6 +5,7 @@ priority: 1
 # 2330 — Qualify the expanded 0.9.4 candidate
 
 Status: OPEN.
+Landed: 871136be46202cb9c64d189edaea165b351f40e7
 
 Milestone: 0.9.4
 
