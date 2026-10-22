@@ -1,6 +1,6 @@
 # 2356 — Isolate release-counterpart Make fixtures
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -9,6 +9,8 @@ Priority: 1
 Changes: tests/test_release_check_counterparts.py, CHANGELOG.md
 
 Reviews: revision 4148919eb9d5c5e4776bef85d96e7f89b5b0df50, accept
+
+Landed: ea11734
 
 ## Outcome
 
