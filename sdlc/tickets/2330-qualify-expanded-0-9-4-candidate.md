@@ -32,6 +32,16 @@ Depends on: 2348
 Depends on: 2349
 Depends on: 2351
 
+Depends on: 2350
+
+Depends on: 2352
+
+Depends on: 2353
+
+Depends on: 2354
+
+Depends on: 2355
+
 ## Outcome
 
 After the required fixes land and pass review, qualify the explicit 0.9.4 source with the full local main gate, fresh-checkout Linux offline proof, the authorized Semantic Scholar check under its recorded PM disposition and a complete untagged release rehearsal. Retain each executed source and any expressly approved unchanged-input reuse chain. Hand the explicit qualified and rehearsed commit and truthful release limits to the PM for Ian. Ian alone publishes.
@@ -85,3 +95,5 @@ Resolved tool interruption: On 2026-10-21 the live pm database reported schema 1
 - Carry the previously reviewed diagnostic checker correction and its tests as a partial source slice before final qualification, with one descriptive 2330 changelog bullet. This remains diagnostic-only; the consumed live retry and its failure limitation do not change. Admission stays open until all source-bound checks and full rehearsal pass. The next accepted product batch may include this already-reviewed slice in its single gate, preserving partial progress rather than completing this ticket.
 
 - Completed non-reproduction dispositions remove dependency edges to withdrawn 2345 and 2347; their archived evidence and clinical ruling remain required historical inputs, not open build dependencies. Final Linux isolation uses a recreated detached scheduler worktree with no ignored build/runtime output, lane-owned runtime/tool caches and explicitly shared Git metadata, rather than claiming an independent Git clone. Current declared make release-gate replaces the obsolete custom recipe and owns audit, source-region floor and optimized checks.
+
+- PM m3492 expands the admitted release to all known bugs, including2350 exhaustive research disposition and2352 removal of shipped panic injection. Current research adds confirmed2353 dated-gene pagination,2354 readable-conversion continuation,2355 compatible all-field discovery. Final local/Linux/rehearsal proof waits for them. Latest user instruction requires final status here without coordination notifications; any required outside input waits until tomorrow.
