@@ -27,16 +27,24 @@ Depends on: 2341
 Depends on: 2342
 Depends on: 2343
 Depends on: 2344
-Depends on: 2345
 Depends on: 2346
-Depends on: 2347
 Depends on: 2348
 Depends on: 2349
 Depends on: 2351
 
+Depends on: 2350
+
+Depends on: 2352
+
+Depends on: 2353
+
+Depends on: 2354
+
+Depends on: 2355
+
 ## Outcome
 
-After the required fixes land and pass review, qualify the explicit 0.9.4 source with the full local main gate, fresh-clone Linux offline proof, the authorized Semantic Scholar check under its recorded PM disposition and a complete untagged release rehearsal. Retain each executed source and any expressly approved unchanged-input reuse chain. Hand the explicit qualified and rehearsed commit and truthful release limits to the PM for Ian. Ian alone publishes.
+After the required fixes land and pass review, qualify the explicit 0.9.4 source with the full local main gate, fresh-checkout Linux offline proof, the authorized Semantic Scholar check under its recorded PM disposition and a complete untagged release rehearsal. Retain each executed source and any expressly approved unchanged-input reuse chain. Hand the explicit qualified and rehearsed commit and truthful release limits to the PM for Ian. Ian alone publishes.
 
 - Proof: the new source passes the required final local main and fresh Linux checks and every required job in one complete untagged rehearsal, including native installed-wheel checks, both containers and rehearsal-complete. Retained raw evidence and the fresh completion review name the actual revisions and limits. Earlier passes carry forward only through the recorded PM-approved source/input equivalence; failed runs remain failed. The PM-approved live-proof waiver retains the exact stated limitation and is not a successful provider verification.
 
@@ -85,3 +93,7 @@ Resolved tool interruption: On 2026-10-21 the live pm database reported schema 1
 - PM m3479 requires current-main disposition of 2345–2349 before rehearsal. Actual jobs j4144 and j4148 did not reproduce the reported coordinate/read failures; both tickets are withdrawn with archived proof. Jobs j4159, j4152 and j4166 confirm query grouping, missing typed-index explanation and empty-container classification respectively. PM reply m3485 approves 2351 in 0.9.4, incorporating 2343 isolation into one shared synthetic-Make helper. Product changes require a fresh final source qualification and complete rehearsal.
 
 - Carry the previously reviewed diagnostic checker correction and its tests as a partial source slice before final qualification, with one descriptive 2330 changelog bullet. This remains diagnostic-only; the consumed live retry and its failure limitation do not change. Admission stays open until all source-bound checks and full rehearsal pass. The next accepted product batch may include this already-reviewed slice in its single gate, preserving partial progress rather than completing this ticket.
+
+- Completed non-reproduction dispositions remove dependency edges to withdrawn 2345 and 2347; their archived evidence and clinical ruling remain required historical inputs, not open build dependencies. Final Linux isolation uses a recreated detached scheduler worktree with no ignored build/runtime output, lane-owned runtime/tool caches and explicitly shared Git metadata, rather than claiming an independent Git clone. Current declared make release-gate replaces the obsolete custom recipe and owns audit, source-region floor and optimized checks.
+
+- PM m3492 expands the admitted release to all known bugs, including2350 exhaustive research disposition and2352 removal of shipped panic injection. Current research adds confirmed2353 dated-gene pagination,2354 readable-conversion continuation,2355 compatible all-field discovery. Final local/Linux/rehearsal proof waits for them. Latest user instruction requires final status here without coordination notifications; any required outside input waits until tomorrow.
