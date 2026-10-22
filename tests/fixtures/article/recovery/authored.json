@@ -343,7 +343,7 @@
       "reply": "europepmc"
     },
     {
-      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=%28%22BRCA1%22+AND+%22Phe1761I%22%29",
+      "request": "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=%28%22BRCA1%22+AND+%22Phe1761Ile%22%29",
       "status": 200,
       "reply": "europepmc"
     }
