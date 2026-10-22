@@ -143,7 +143,14 @@ pub(super) fn exchange_directories(left: &Path, right: &Path) -> Result<(), BioM
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(windows)]
+pub(super) fn exchange_directories(_left: &Path, _right: &Path) -> Result<(), BioMcpError> {
+    Err(BioMcpError::InvalidArgument(
+        "Atomic skill repair is unsupported on Windows. Back up unrelated files outside the managed skills/biomcp folder, remove that folder, then run biomcp skill install <dir> without --force. Restore the saved unrelated files afterward.".into(),
+    ))
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 pub(super) fn exchange_directories(_left: &Path, _right: &Path) -> Result<(), BioMcpError> {
     Err(BioMcpError::InvalidArgument(
         "Atomic skill repair is unsupported on this platform".into(),

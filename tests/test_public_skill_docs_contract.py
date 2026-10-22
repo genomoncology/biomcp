@@ -220,6 +220,11 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp skill variant-pathogenicity" in skills
     assert "biomcp skill exact-variant-literature" in skills
     assert "biomcp --json skill status ~/.claude" in skills
+    assert "Windows does not support forced repair" in skills
+    assert "back up unrelated files" in skills
+    assert 'Remove-Item -LiteralPath "$HOME/.claude/skills/biomcp" -Recurse' in skills
+    assert 'biomcp skill install "$HOME/.claude"' in skills
+    assert "Restore the saved unrelated files" in skills
     assert "SKILL.md" in skills
     assert "use-cases/" in skills
     assert "jq-examples.md" in skills
