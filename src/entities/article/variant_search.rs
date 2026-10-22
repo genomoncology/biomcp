@@ -4380,7 +4380,7 @@ fn compile_recovery_plan(
             VariantProviderValidationStatus::Contradictory
         )
     {
-        add_europepmc_all_field_plans(&mut plans, execution);
+        add_europepmc_all_field_plans(&mut plans, context, execution);
     }
     plans
 }
@@ -4389,10 +4389,11 @@ fn compile_recovery_plan(
 /// Keep the first precision query ahead of a bounded compatible-allele union.
 fn add_europepmc_all_field_plans(
     plans: &mut Vec<ProviderVariantQueryPlan>,
+    context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
 ) {
     let mut seen = BTreeSet::new();
-    let lexical = plans
+    let lexical: Vec<ProviderVariantQueryPlan> = plans
         .iter()
         .filter(|plan| plan.route == "strict" && plan.provider == "europepmc")
         .flat_map(|plan| plan.coverage_aliases.iter())
@@ -4415,10 +4416,39 @@ fn add_europepmc_all_field_plans(
             })
         })
         .collect();
+    // A wide union can fill its first page before a supplied-allele paper.
+    // Preserve a narrow, existing long protein spelling as priority work.
+    let priority = lexical
+        .iter()
+        .find(|plan| {
+            let Some((gene, change)) = plan.query_alias.split_once(' ') else {
+                return false;
+            };
+            let change = change.strip_prefix("p.").unwrap_or(change);
+            context
+                .requested
+                .gene
+                .as_deref()
+                .is_some_and(|requested| gene.eq_ignore_ascii_case(requested))
+                && context
+                    .requested
+                    .protein_change
+                    .as_deref()
+                    .is_some_and(|requested| {
+                        crate::entities::variant::protein_changes_equivalent(change, requested)
+                            && crate::entities::variant::normalize_protein_change(change)
+                                .is_some_and(|normalized| normalized != change)
+                    })
+        })
+        .cloned();
     let mut grouped = group_overflow_queries("europepmc", lexical, execution);
     for plan in &mut grouped {
         plan.route = "exact_lexical".into();
         plan.query_template_version = "europepmc-all-indexed-fields-v1".into();
+    }
+    if let Some(mut priority) = priority {
+        priority.query_template_version = "europepmc-supplied-protein-all-indexed-fields-v1".into();
+        grouped.insert(0, priority);
     }
     if let Some(index) = plans
         .iter()

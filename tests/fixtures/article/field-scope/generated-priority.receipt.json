@@ -1,0 +1,17 @@
+{
+  "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=%28%22BRCA1%22+AND+%22Pro1749Arg%22%29&format=json&cursorMark=%2A&pageSize=25",
+  "query": "(\"BRCA1\" AND \"Pro1749Arg\")",
+  "started_utc": "2026-10-22T00:03:58.709498+00:00",
+  "finished_utc": "2026-10-22T00:03:59.185727+00:00",
+  "status": 200,
+  "content_type": "application/json;charset=UTF-8",
+  "provider_date": "Thu, 22 Oct 2026 00:03:59 GMT",
+  "sha256": "3918ee573cec04816d8d7a456d1c92882b81961485c2f0ec215dfdcd70428a56",
+  "hit_count": 1,
+  "identifiers": [
+    "10486320"
+  ],
+  "experts_recovered": [
+    "10486320"
+  ]
+}
