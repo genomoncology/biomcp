@@ -1,0 +1,3 @@
+The all-fields and title-abstract comparison bodies were observed in job j4346 on 2026-10-21. Their request.queryString preserves the actual query. HTTP status was 200; response media headers and individual response timestamps were not retained.
+
+The generated-union and generated-priority bodies and receipts retain the exact requests used by the regression. The union first page contains 25 of 31 rows and excludes PMID10486320. The separate supplied-protein priority response contains PMID10486320. Nonmatching queries use explicitly authored controls. Metadata controls select captured row data without claiming a captured metadata response. Resolver and other provider replies use the authored recovery controls.

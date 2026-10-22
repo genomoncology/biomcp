@@ -9,6 +9,7 @@
 ### Fixes
 
 - Narrow dated PubTator searches with complete provider year facets while preserving future dates, typed identities and relevance order. (2353)
+- Search all Europe PMC indexed fields for compatible variant aliases while retaining precise searches and existing work limits. (2355)
 
 - Constrain typed article filters with explicit PubTator conjunctions and grouped keywords, avoid broad historical scans in dated searches, and report the credential-free request on PubTator timeouts. (2346)
 - Explain Europe PMC typed gene annotation filtering in article search output and retain the literal query alternative and date window. (2348)

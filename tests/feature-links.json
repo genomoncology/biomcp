@@ -309,6 +309,9 @@
     },
     "tests/test_article_typed_gene.py": {
       "feature": "article"
+    },
+    "tests/test_variant_article_field_scope.py": {
+      "feature": "variant"
     }
   },
   "rust": {

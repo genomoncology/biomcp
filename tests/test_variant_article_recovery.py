@@ -193,6 +193,20 @@ def execute_case(case, tmp_path, *, markdown=False):
                             "title": "Authored grouped control",
                         }
                     ]
+                if mode == "field-scope":
+                    captured = [json.loads((REPO_ROOT / "tests/fixtures/article/field-scope" / name).read_text())
+                                for name in ("generated-priority.json", "generated-union.json")]
+                    recorded = next((reply for reply in captured
+                                     if reply["request"]["queryString"] == term), None)
+                    if recorded is not None:
+                        assert q["pageSize"] == [str(recorded["request"]["pageSize"])]
+                        assert q["cursorMark"] == [recorded["request"]["cursorMark"]]
+                        self.reply(recorded)
+                        return
+                    # Other queries are authored empty controls. Metadata uses
+                    # selected captured rows, not a claimed metadata capture.
+                    rows = [row for reply in captured for row in reply["resultList"]["result"]
+                            if metadata and row.get("pmid", "unrecorded-id") in term]
                 if metadata and mode in (
                     "unrelated-metadata",
                     "wrong-metadata-fallback",
