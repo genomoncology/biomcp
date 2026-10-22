@@ -1,6 +1,6 @@
 # 2350 — Trace papers direct provider queries find
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -9,6 +9,8 @@ Depends on: 2354
 Depends on: 2355
 
 Reviews: revision d13912251a9a5631f2e58bad269e2ff10895c6fb, accept
+
+Landed: cef3826
 
 ## Outcome
 
