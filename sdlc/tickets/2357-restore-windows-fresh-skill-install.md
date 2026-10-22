@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 1
 
-Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/install.rs, src/cli/skill/tests/install.rs, tests/skill_install_contract.rs, tests/feature-links.json, .github/workflows/ci.yml, tests/test_ci_workflow_contract.py, CHANGELOG.md
+Changes: src/cli/skill/atomic_swap.rs, src/cli/skill/assets.rs, src/cli/skill/install.rs, src/cli/skill/tests/install.rs, tests/skill_install_contract.rs, tests/feature-links.json, .github/workflows/ci.yml, tests/test_ci_workflow_contract.py, CHANGELOG.md
 
 Reviews: revision 8ced436b6ff0a6ee3a0d5a0e7e18553509e3f5b1, accept
 

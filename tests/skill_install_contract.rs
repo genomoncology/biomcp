@@ -45,7 +45,17 @@ fn fresh_skill_install_matches_render_and_repeat_preserves_user_files() {
     assert_eq!(installed["status"], "installed");
     assert_eq!(installed["skill_status"]["state"], "current");
     let target = root.join("skills/biomcp");
-    assert_eq!(fs::read(target.join("SKILL.md")).unwrap(), rendered.stdout);
+    let installed_guide = fs::read(target.join("SKILL.md")).unwrap();
+    assert!(
+        installed_guide == rendered.stdout,
+        "guide bytes differ: installed length {}, rendered length {}, first mismatch {:?}",
+        installed_guide.len(),
+        rendered.stdout.len(),
+        installed_guide
+            .iter()
+            .zip(&rendered.stdout)
+            .position(|(left, right)| left != right)
+    );
     let status = run(root, &["skill", "status", ".", "--json"]);
     let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
     assert_eq!(status["state"], "current");

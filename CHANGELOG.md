@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Restore fresh Windows skill installation with a same-volume directory rename that refuses an existing destination and preserves staged-install cleanup. (2357)
+- Restore fresh Windows skill installation with a same-volume directory rename that refuses an existing destination and preserves staged-install cleanup. Normalize embedded guide line endings so rendered and installed guidance contain identical bytes. (2357)
 
 - Isolate release counterpart fixtures from inherited Make command-line tool paths while preserving stress CPU-affinity checks. (2356)
 
