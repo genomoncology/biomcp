@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 91184cbfd0f29585ebf26689ac18ae9c4c3dbe8c, accept
+
 ## Outcome
 
 Variant article discovery retains a bounded Europe PMC all-indexed-field gene plus compatible supplied-allele alias route when title/abstract-only strict work has run. Coverage of restricted fields cannot suppress a non-equivalent all-field route. Recover both clinically confirmed BRCA1 P1749R expert papers while preserving supplied identity, typed annotations, provenance, existing budgets and deadlines. Candidate discovery does not claim verified allele relevance for every lexical hit. No gene-token fallback, schema expansion or guard increase.
