@@ -1,10 +1,12 @@
 # 2353 — Finish dated gene PubTator searches
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision a7f05235d379720964d68c0fff495d036a7a7940, accept
+
+Landed: 4b22f7b
 
 ## Outcome
 
