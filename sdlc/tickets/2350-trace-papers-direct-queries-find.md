@@ -14,7 +14,7 @@ Reviews: revision d13912251a9a5631f2e58bad269e2ff10895c6fb, accept
 
 For each of research's 42 direct-only candidates, starting with BRCA1 PMIDs 10486320 and 31788995, record whether an equivalent BioMCP query should find it, and why BioMCP missed it: fields, aliases, dates, page size or ranking. File one fix ticket per cause that applies to more than one paper. Fix every cause that applies to more than one paper in 0.9.4; Ian moved this in on 2026-10-21.
 
-- Changes: `sdlc/records/2350-direct-only-paper-causes.md`.
+- Changes: `sdlc/records/2350-direct-only-paper-causes.md`, `CHANGELOG.md`.
 
 - Proof: a record lists each candidate with its cause class, and an outside-in test per fixed cause recovers its papers.
 
@@ -27,3 +27,5 @@ For each of research's 42 direct-only candidates, starting with BRCA1 PMIDs 1048
 - Coordinator restatement: account for each stable paper and each research observation, distinguish equivalent query failures from source/harness limitations, and assign confirmed multi-paper causes to bounded fixes without asserting every lexical candidate is the supplied allele.
 - Fresh independent reviewer accepts investigation record d13912251a9a5631f2e58bad269e2ff10895c6fb: all56traces,42globalpapers,43case/papercontexts and27observationIDs verified against research561cb47. Actual archived j4307/j4335/j4346 support field comparisons and failures; invalidlimit/embedded-provider-DSL attempts remain excluded. Clinical statements match the cited specialist ruling. No additional provider request or product change in this record review.
 - Child2353 owns persistent dated FANCL work,2354 owns exact10811118 managed conversion reads,2355 owns missing all-field compatible-alias discovery. Parent remains OPEN until each child's actual outside-in proof and disposition are recorded; this record acceptance does not claim those fixes landed or that final release qualification passed.
+
+- Child proof now includes2353 native dated filtering: finalj4398 and independentj4401 pass17 cases, with exact study command j4379 completing without degradation; accepted sourcea7f05235d379720964d68c0fff495d036a7a7940. Child2354 saved-conversion views: j4388 passes corrected storage/alias/view controls; accepted sourceb1f22f6fef106e77b7df8ead8d6292a1f5f1c1dd. Each remains subject to the combined landing gate. A descriptive internal2350 changelog bullet accompanies the new record to satisfy release coverage. The2355 exact generated union proof exposed its real25-row boundary; no false recovery claim is made while its bounded priority-query repair is under final checks.

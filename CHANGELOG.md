@@ -136,6 +136,8 @@
 
 ### Internal
 
+- Record literature-search field coverage, verified failures and source limitations. (2350)
+
 - Archive resolved issue and ticket records, preserve active release instructions, and repair historical audit paths. (2306)
 
 - Warn about slow routine tests while reserving test timeouts for hangs and preserving product deadline contracts. (2321)
