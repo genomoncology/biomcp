@@ -739,7 +739,8 @@ pub(super) async fn search_pubtator_page_with_context(
     if year_filter.is_some() {
         // The provider counts whole years; only an exhausted successful stream
         // gives the total after exact day filtering.
-        total = (source_exhausted && degradation.is_none() && out.len() < limit).then_some(out.len());
+        total =
+            (source_exhausted && degradation.is_none() && out.len() < limit).then_some(out.len());
     }
     Ok(PartialSearchPage {
         page: SearchPage::offset(out, total),
