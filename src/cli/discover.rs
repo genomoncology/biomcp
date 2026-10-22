@@ -112,7 +112,11 @@ pub(crate) async fn run_inline_article_search(
     let warning = super::article::article_search_warnings(&filters, &page.results)
         .first()
         .map(|warning| warning.message.to_string());
-    let note = crate::entities::article::article_type_limitation_note(&filters, source_filter);
+    let note = crate::entities::article::article_search_limitation_note(
+        &filters,
+        source_filter,
+        page.results.is_empty(),
+    );
     Ok(DiscoverArticleSearch {
         command: crate::entities::discover::review_article_fallback_command(query),
         returned: page.results.len(),

@@ -58,6 +58,9 @@
     "tests/test_article_preprint_fulltext.py": {
       "feature": "article"
     },
+    "tests/test_article_pubtator_deadline.py": {
+      "feature": "article"
+    },
     "tests/test_article_rsid_search.py": {
       "feature": "article"
     },
@@ -300,6 +303,9 @@
     },
     "tests/test_variant_article_recovery.py": {
       "feature": "variant"
+    },
+    "tests/test_article_typed_gene.py": {
+      "feature": "article"
     },
     "tests/test_variant_article_field_scope.py": {
       "feature": "variant"

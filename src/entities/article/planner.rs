@@ -210,6 +210,27 @@ pub(crate) fn litsense2_search_enabled(
     source == ArticleSourceFilter::LitSense2
 }
 
+pub(crate) fn article_search_limitation_note(
+    filters: &ArticleSearchFilters,
+    source: ArticleSourceFilter,
+    no_results: bool,
+) -> Option<String> {
+    let mut notes = article_type_limitation_note(filters, source)
+        .into_iter()
+        .collect::<Vec<_>>();
+    if no_results
+        && filters.gene_anchored
+        && article_source_plan(filters, source)
+            .is_ok_and(|plan| plan.candidate_sources.contains(&ArticleSource::EuropePmc))
+    {
+        notes.push(
+            "Note: Europe PMC applies its GENE_PROTEIN annotation index to this typed gene filter. Literal gene mentions can be excluded when they lack that annotation. Use --keyword instead of --gene for a literal text search; retain --date-from/--date-to to keep the date window."
+                .into(),
+        );
+    }
+    (!notes.is_empty()).then(|| notes.join(" "))
+}
+
 pub(crate) fn article_type_limitation_note(
     filters: &ArticleSearchFilters,
     source: ArticleSourceFilter,

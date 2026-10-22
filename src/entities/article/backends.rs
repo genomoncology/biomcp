@@ -96,7 +96,7 @@ impl PartialSearchPage {
 /// The status a mid-flight truncation reports: the deadline says so by
 /// name, any other failure says what failed.
 fn truncated_source_status(source: ArticleSource, error: &BioMcpError) -> ArticleSourceStatus {
-    let message = if is_search_deadline_error(error) {
+    let mut message = if is_search_deadline_error(error) {
         let mut message = format!(
             "{} did not answer before the article search deadline",
             source.display_name()
@@ -110,6 +110,9 @@ fn truncated_source_status(source: ArticleSource, error: &BioMcpError) -> Articl
     } else {
         format!("{} search degraded: {error}", source.display_name())
     };
+    if source == ArticleSource::PubTator {
+        crate::sources::literature_retry::current_observation().append_sent_request(&mut message);
+    }
     ArticleSourceStatus {
         source,
         enabled: true,

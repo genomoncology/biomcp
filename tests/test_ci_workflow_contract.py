@@ -21,6 +21,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from make_fixture import make_fixture_env
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
@@ -93,12 +95,7 @@ def test_python_gate_prepares_a_clean_environment_before_offline_execution(
     )
     for executable in (uv, offline):
         executable.chmod(0o755)
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "BIOMCP_OFFLINE_NETWORK")
-    }
-    env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+    env = make_fixture_env(tmp_path)
     result = subprocess.run(
         ["make", "test-python"],
         cwd=tmp_path,

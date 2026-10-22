@@ -438,9 +438,21 @@ fn parse_supplementary_response(
     if let Ok(text) = std::str::from_utf8(bytes)
         && let Ok(document) =
             crate::xml::parse_external_xml(text, crate::xml::ARTICLE_XML_NODE_LIMIT)
-        && document.root_element().has_tag_name("errorBean")
     {
         let root = document.root_element();
+        if root.has_tag_name(("http://webservice.cdb.ebi.ac.uk/", "fullTextXMLBean"))
+            && !root.children().any(|node| {
+                node.is_element()
+                    || (node.is_text() && node.text().is_some_and(|text| !text.trim().is_empty()))
+            })
+        {
+            return Ok(Some(EuropePmcSupplementaryPackage {
+                entries: Vec::new(),
+            }));
+        }
+        if !root.has_tag_name("errorBean") {
+            return parse_supplementary_zip(bytes).map(Some);
+        }
         let field = |name| {
             root.children()
                 .find(|node| node.is_element() && node.has_tag_name(name))
