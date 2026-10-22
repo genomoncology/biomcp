@@ -329,6 +329,8 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
     for test in (
         "windows_stdio_contract",
         "windows_lock_contract",
+        "skill_install_contract",
+        "fresh_atomic_rename_refuses_a_racing_target",
         "sqlite_busy_deadline_finishes_without_late_publication",
         "construction_under_a_held_sqlite_writer_honors_the_deadline",
     ):
@@ -356,7 +358,7 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         )
 
 
-@pytest.mark.parametrize("failed_command", range(5))
+@pytest.mark.parametrize("failed_command", range(7))
 def test_windows_lock_proof_propagates_each_cargo_failure(
     tmp_path: Path, failed_command: int
 ) -> None:
