@@ -40,25 +40,23 @@ def test_live_verify_lane_is_not_network_isolated() -> None:
     assert "tools/run-offline" not in verify
 
 
-def test_lane_setup_installs_unpinned_gate_tools() -> None:
-    # The shared setup installs the apt packages the
-    # offline lanes need, unpinned from the distribution like the
-    # 2026-09-29 review ruled, and each lane runs its gate through
-    # the Makefile target, never a copied command list.
-    for text in (WORKFLOW, ACTION):
-        assert "BUBBLEWRAP_VERSION" not in text
-        assert "APPARMOR_VERSION" not in text
-        assert "RIPGREP_VERSION" not in text
+def test_lane_setup_installs_pinned_commands_and_distribution_security_profiles() -> None:
     sandbox = _action_step("Install the offline sandbox")
     assert "sudo apt-get install -y --no-install-recommends" in sandbox
-    install = sandbox.split("sudo apt-get install", 1)[1]
-    install = install.split("sudo install", 1)[0]
-    assert "=" not in install
-    packages = (
-        set(install.replace("\\", " ").split())
-        - {"--no-install-recommends", "-y"}
-    )
-    assert packages == {"bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"}
+    install = sandbox.split("sudo apt-get install", 1)[1].split("sudo install", 1)[0]
+    packages = set(install.replace("\\", " ").split()) - {"--no-install-recommends", "-y"}
+    pinned = dict(package.split("=", 1) for package in packages if "=" in package)
+    assert set(pinned) == {"bubblewrap", "ripgrep"}
+    assert all(version and "*" not in version for version in pinned.values())
+    assert packages - {f"{name}={version}" for name, version in pinned.items()} == {
+        "apparmor", "apparmor-profiles",
+    }
+    # Host minimums remain compatibility floors, not installer pins.
+    preflight = (ROOT / "tools/gate-tools").read_text(encoding="utf-8")
+    for command, package in (("bwrap", "bubblewrap"), ("rg", "ripgrep")):
+        minimum = preflight.split(f"require {command} ", 1)[1].split()[0]
+        actual = tuple(int(part) for part in pinned[package].split("-", 1)[0].split("."))
+        assert actual >= tuple(int(part) for part in minimum.split("."))
     for gate in ("make lint", "make test-rust", "make test-python", "make spec"):
         assert f"run: {gate}" in WORKFLOW
 

@@ -21,6 +21,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from make_fixture import make_fixture_env
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
@@ -93,12 +95,7 @@ def test_python_gate_prepares_a_clean_environment_before_offline_execution(
     )
     for executable in (uv, offline):
         executable.chmod(0o755)
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "BIOMCP_OFFLINE_NETWORK")
-    }
-    env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+    env = make_fixture_env(tmp_path)
     result = subprocess.run(
         ["make", "test-python"],
         cwd=tmp_path,
@@ -500,6 +497,17 @@ def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:
     for jid, gate in gates.items():
         runs = [s.get("run") for s in _job(jid)["steps"]]
         assert gate in runs, f"{jid} must run {gate} so CI never copies the gate"
+
+
+def test_lint_enables_the_declared_linux_host_prerequisites() -> None:
+    steps = _job("lint")["steps"]
+    setup = next(step for step in steps if step.get("uses") == "./.github/actions/lane-setup")
+    assert setup["with"].get("offline") is True, (
+        "make lint checks rg and bwrap before preparation; enable their shared "
+        "package install, scoped AppArmor profile and real sandbox self-test"
+    )
+    assert setup["with"].get("nextest") is True, "preflight must work when the Rust cache misses"
+    assert steps.index(setup) < next(i for i, step in enumerate(steps) if step.get("run") == "make lint")
 
 
 def test_the_lane_setup_action_pins_match_the_workflow_environment() -> None:

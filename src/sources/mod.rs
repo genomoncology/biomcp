@@ -411,6 +411,7 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
             Some(observation) => {
                 observation.start();
                 self.with_extension(observation.clone())
+                    .with_extension(context)
             }
             None => self,
         };

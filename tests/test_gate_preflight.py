@@ -1,13 +1,19 @@
 """Gate callers see every absent prerequisite before preparation starts."""
 from pathlib import Path
-import os
 import shutil
 import subprocess
+
+from make_fixture import make_fixture_env
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_gate_lists_all_missing_tools_before_python_sync(tmp_path: Path) -> None:
+def test_gate_lists_all_missing_tools_before_python_sync(tmp_path: Path, monkeypatch) -> None:
+    inherited = tmp_path / "inherited.mk"
+    inherited.write_text("$(error inherited Make configuration executed)\n")
+    monkeypatch.setenv("MAKEFILES", str(inherited))
+    monkeypatch.setenv("MAKEFLAGS", "--question")
+    monkeypatch.setenv("BIOMCP_TOOL_DIR", str(tmp_path / "host-tools"))
     shutil.copy2(ROOT / "Makefile", tmp_path / "Makefile")
     shutil.copytree(ROOT / "tools", tmp_path / "tools")
     shutil.copytree(ROOT / ".github", tmp_path / ".github")
@@ -20,7 +26,7 @@ def test_gate_lists_all_missing_tools_before_python_sync(tmp_path: Path) -> None
         (binaries / name).symlink_to(shutil.which(name))
     result = subprocess.run(
         [shutil.which("make"), "landing-gate"], cwd=tmp_path,
-        env=os.environ | {"PATH": str(binaries), "HOME": str(tmp_path)},
+        env=make_fixture_env(tmp_path, {"PATH": str(binaries)}),
         capture_output=True, text=True,
     )
     output = result.stdout + result.stderr
@@ -42,7 +48,7 @@ def test_preflight_reports_incompatible_versions_with_missing_tools(tmp_path: Pa
         tool.chmod(0o755)
     result = subprocess.run(
         [shutil.which("bash"), str(tmp_path / "tools/gate-tools")],
-        env=os.environ | {"PATH": str(binaries), "HOME": str(tmp_path)},
+        env=make_fixture_env(tmp_path, {"PATH": str(binaries)}),
         capture_output=True, text=True,
     )
     assert result.returncode != 0

@@ -356,6 +356,13 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
         SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package }) => {
             build_assets_manifest(requested_id, article, &pmcid, package)
         }
+        // An empty source container cannot establish how many supplements
+        // the article has. Leave the optional fulltext count summary unknown.
+        SourceAttempt::Success(ArchivePackage::EuropePmc { ref package, .. })
+            if package.entries.is_empty() =>
+        {
+            return;
+        }
         SourceAttempt::Success(ArchivePackage::EuropePmc {
             pmcid,
             package,
@@ -663,7 +670,7 @@ async fn resolve_article_assets_for(
             let europe =
                 bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_package(pmcid))
                     .await;
-            source_attempts.push(source_attempt_record(
+            let mut attempt = source_attempt_record(
                 ArticleFulltextProvider {
                     label: EUROPE_PMC_PROVIDER_LABEL.into(),
                     source: EUROPE_PMC_PROVIDER_SOURCE.into(),
@@ -671,7 +678,12 @@ async fn resolve_article_assets_for(
                 ArticleAssetSourceDocument::EuropePmcZip,
                 &europe,
                 false,
-            ));
+            );
+            if matches!(&europe, SourceAttempt::Success(observation) if observation.package.entries.is_empty())
+            {
+                attempt.outcome = ArticleAssetSourceOutcome::SourceListedNone;
+            }
+            source_attempts.push(attempt);
             match europe {
                 SourceAttempt::Success(observation) => {
                     let provider = ArticleFulltextProvider {
@@ -1489,6 +1501,7 @@ fn finish_resolution(
     if assets.is_empty() && pending.is_empty() {
         return Err(final_asset_source_error(
             requested_id,
+            pmcid,
             any_failed,
             &source_attempts,
         ));
@@ -2047,14 +2060,38 @@ fn no_supported_asset_source(requested_id: &str) -> BioMcpError {
 
 fn final_asset_source_error(
     requested_id: &str,
+    pmcid: Option<&str>,
     failed: bool,
     attempts: &[ArticleAssetSourceAttempt],
 ) -> BioMcpError {
-    if failed {
+    let mut error = if failed {
         asset_sources_unavailable(attempts, None)
     } else {
         no_supported_asset_source(requested_id)
+    };
+    if attempts
+        .iter()
+        .any(|attempt| attempt.outcome == ArticleAssetSourceOutcome::SourceListedNone)
+    {
+        let mut note = "Europe PMC listed no supplements (source_listed_none). This does not establish that none exist.".to_string();
+        if let Some(pmcid) = pmcid {
+            note.push_str(&format!(
+                " Open the article in a browser to check its supplement links: https://pmc.ncbi.nlm.nih.gov/articles/{pmcid}/"
+            ));
+        }
+        match &mut error {
+            BioMcpError::NotFound { suggestion, .. } => {
+                suggestion.push(' ');
+                suggestion.push_str(&note);
+            }
+            BioMcpError::SourceUnavailable { reason, .. } => {
+                reason.push(' ');
+                reason.push_str(&note);
+            }
+            _ => {}
+        }
     }
+    error
 }
 
 fn asset_sources_unavailable(
@@ -3105,11 +3142,11 @@ mod tests {
     #[test]
     fn final_source_classification_distinguishes_absence_from_failure() {
         assert!(matches!(
-            final_asset_source_error("22663011", false, &[]),
+            final_asset_source_error("22663011", None, false, &[]),
             BioMcpError::NotFound { .. }
         ));
         assert!(matches!(
-            final_asset_source_error("22663011", true, &[]),
+            final_asset_source_error("22663011", None, true, &[]),
             BioMcpError::SourceUnavailable { .. }
         ));
     }

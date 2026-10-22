@@ -8,7 +8,12 @@
 
 ### Fixes
 
+- Constrain typed article filters with explicit PubTator conjunctions and grouped keywords, avoid broad historical scans in dated searches, and report the credential-free request on PubTator timeouts. (2346)
+- Explain Europe PMC typed gene annotation filtering in article search output and retain the literal query alternative and date window. (2348)
+- Report empty Europe PMC supplement containers as a source-specific empty listing and point to the article for further checks. (2349)
+- Isolate synthetic Make gate fixtures from inherited tools and Make controls while retaining stage ordering and failure checks. (2351)
 - Report safe HTTP status and failure categories in recording diagnostics while withholding response values and credentials. (2330)
+- Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
 - Isolate advisory test fixtures from inherited host scanner installations. (2343)
 - Measure outside-in Rust coverage by executable source region so unrun closures remain visible on covered lines, and bootstrap the pinned license checker from verified release archives. (2342)
