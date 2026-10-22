@@ -1,10 +1,12 @@
 # 2352 — Remove the MCP test panic tool from the shipped binary
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 4b1055bfc9b79b24ab1ad79e1292f820c9df22db, accept
+
+Landed: 22d76d4
 
 ## Outcome
 
