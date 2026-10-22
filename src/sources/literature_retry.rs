@@ -72,7 +72,7 @@ impl Observation {
     // Only the admitted PubTator request is exposed. Never retain its origin,
     // authorization headers, api_key, or arbitrary provider query parameters.
     fn record_pubtator_request(&self, request: &Request) {
-        let fields: std::collections::BTreeMap<_, _> = request
+        let mut fields: std::collections::BTreeMap<_, _> = request
             .url()
             .query_pairs()
             .filter(|(key, _)| {
@@ -82,6 +82,28 @@ impl Observation {
                 )
             })
             .collect();
+        // Project only our native year filter, never arbitrary JSON query data.
+        let years = request
+            .url()
+            .query_pairs()
+            .find(|(key, _)| key == "filters")
+            .and_then(|(_, value)| {
+                serde_json::from_str::<std::collections::BTreeMap<String, Vec<String>>>(&value).ok()
+            })
+            .filter(|filters| filters.len() == 1)
+            .and_then(|mut filters| filters.remove("year"))
+            .filter(|years| {
+                !years.is_empty()
+                    && years
+                        .iter()
+                        .all(|year| super::pubtator::is_publication_year(year))
+            });
+        if let Some(years) = years {
+            fields.insert(
+                "filters".into(),
+                serde_json::json!({ "year": years }).to_string().into(),
+            );
+        }
         let description = format!(
             "request={} {} {}",
             request.method(),

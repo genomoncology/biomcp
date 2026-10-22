@@ -328,6 +328,10 @@ fn clean_api_key(api_key: Option<&str>) -> Option<&str> {
     api_key.map(str::trim).filter(|key| !key.is_empty())
 }
 
+pub(crate) fn is_publication_year(value: &str) -> bool {
+    value.len() == 4 && value.bytes().all(|byte| byte.is_ascii_digit()) && value != "0000"
+}
+
 // dead-code reason: pubtator::pubtator_query_key preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn pubtator_query_key(key: &str) -> &'static str {
@@ -502,9 +506,8 @@ impl PubTatorSearchResponse {
         let mut counted = 0u64;
         for bucket in buckets {
             let name = bucket.get("name")?.as_str()?;
-            let year = name.parse::<u16>().ok()?;
             let count = bucket.get("value")?.as_u64()?;
-            if year == 0 || year > 9999 || name != format!("{year:04}") || count == 0 {
+            if !is_publication_year(name) || count == 0 {
                 return None;
             }
             if !years.insert(name.to_string()) {

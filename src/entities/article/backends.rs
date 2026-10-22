@@ -610,6 +610,8 @@ pub(super) async fn search_pubtator_page_with_context(
     let mut degradation = None;
     let mut year_filter: Option<Vec<String>> = None;
     let mut date_facets_checked = offset != 0;
+    let mut probe_rows = Vec::new();
+    let mut source_exhausted = false;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
         if fetched_pages > 1
@@ -631,6 +633,9 @@ pub(super) async fn search_pubtator_page_with_context(
                 year_filter.as_deref(),
             ),
             |resp| {
+                if year_filter.is_some() {
+                    probe_rows.clear();
+                }
                 if !date_facets_checked {
                     date_facets_checked = true;
                     restart_with_years = resp.date_filter_years(
@@ -682,7 +687,10 @@ pub(super) async fn search_pubtator_page_with_context(
             Ok(outcome) => outcome,
             // Fetched rows survive a mid-flight page failure; the held
             // source is named degraded.
-            Err(error) if !out.is_empty() => {
+            Err(error) if !out.is_empty() || !probe_rows.is_empty() => {
+                if out.is_empty() {
+                    out = std::mem::take(&mut probe_rows);
+                }
                 degradation = Some(truncated_source_status(ArticleSource::PubTator, &error));
                 break;
             }
@@ -700,8 +708,12 @@ pub(super) async fn search_pubtator_page_with_context(
             }
             // Keep the same relevance order and exact day filtering. The native
             // year facet removes historical pages, including for open bounds.
-            // Keep admitted first-page rows if the narrowed request later fails.
+            // Keep first-page rows only as a failure backup. A successful native
+            // query owns its own order, scores and duplicate selection.
             if !years.is_empty() && out.len() < limit {
+                probe_rows = std::mem::take(&mut out);
+                seen_pmids.clear();
+                source_position = 0;
                 year_filter = Some(years);
                 total = None;
                 continue;
@@ -714,14 +726,21 @@ pub(super) async fn search_pubtator_page_with_context(
             )));
         }
         if empty {
+            source_exhausted = true;
             break;
         }
         if total.is_some_and(|value| page.saturating_mul(PUBTATOR_PAGE_SIZE) >= value) {
+            source_exhausted = true;
             break;
         }
         page += 1;
     }
 
+    if year_filter.is_some() {
+        // The provider counts whole years; only an exhausted successful stream
+        // gives the total after exact day filtering.
+        total = (source_exhausted && degradation.is_none() && out.len() < limit).then_some(out.len());
+    }
     Ok(PartialSearchPage {
         page: SearchPage::offset(out, total),
         degradation,
