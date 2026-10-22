@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Isolate release counterpart fixtures from inherited Make command-line tool paths while preserving stress CPU-affinity checks. (2356)
+
 - Narrow dated PubTator searches with complete provider year facets while preserving future dates, typed identities and relevance order. (2353)
 - Search all Europe PMC indexed fields for compatible variant aliases while retaining precise searches and existing work limits. (2355)
 
