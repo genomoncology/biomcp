@@ -1,10 +1,12 @@
 # 2354 — Read the returned fulltext conversion
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision b1f22f6fef106e77b7df8ead8d6292a1f5f1c1dd, accept
+
+Landed: 4a93161
 
 ## Outcome
 
