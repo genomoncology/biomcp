@@ -1,5 +1,6 @@
-//! Platform-specific atomic directory exchange used by forced skill repair.
+//! Platform-specific directory publication and exchange for skill installation.
 
+#[cfg(unix)]
 use std::ffi::CString;
 use std::path::Path;
 
@@ -61,7 +62,35 @@ pub(super) fn rename_absent(source: &Path, destination: &Path) -> Result<(), Bio
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(windows)]
+pub(super) fn rename_absent(source: &Path, destination: &Path) -> Result<(), BioMcpError> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Storage::FileSystem::MoveFileW;
+
+    let wide_path = |path: &Path| -> Result<Vec<u16>, BioMcpError> {
+        let mut path: Vec<u16> = path.as_os_str().encode_wide().collect();
+        if path.contains(&0) {
+            return Err(BioMcpError::InvalidArgument(
+                "Skill install path contains a NUL byte".into(),
+            ));
+        }
+        path.push(0);
+        Ok(path)
+    };
+    let source = wide_path(source)?;
+    let destination = wide_path(destination)?;
+    // MoveFileW renames the complete directory on the same volume and refuses
+    // an existing destination. The caller stages in the destination's parent.
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefilew
+    // SAFETY: both UTF-16 paths are NUL-terminated and live through the call.
+    if unsafe { MoveFileW(source.as_ptr(), destination.as_ptr()) } != 0 {
+        Ok(())
+    } else {
+        Err(BioMcpError::Io(std::io::Error::last_os_error()))
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 pub(super) fn rename_absent(_source: &Path, _destination: &Path) -> Result<(), BioMcpError> {
     Err(BioMcpError::InvalidArgument(
         "Atomic skill installation is unsupported on this platform".into(),
