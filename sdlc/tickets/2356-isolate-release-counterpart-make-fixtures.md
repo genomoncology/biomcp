@@ -22,6 +22,8 @@ Use the existing shared Make-fixture environment for the overlooked synthetic re
 - Unchanged-source Gator j4421 ran exactly two invocations: an outer Make command-line PATH reproduced the same missing fixture runner failure; environmental PATH with inherited Make controls removed passed the unchanged case. Its raw manifest is 02021e63ac2f0063b893168c9254df4d672f2941d66a41f1bbe8f33cd7ddf2b2 under Yellow qualification-2330/j4421. This confirms the trigger, not a production Make defect.
 - Gator j4422 passed all 16 cases in the complete affected module and Ruff, exit zero. Actual executed source was published main 9f6f165d455cf6c313dd4bb0108f0b937c7d1a7b plus repair patch SHA256 b76c87a758c54d77966767d0c92f1596d78b718fb8d19322167638534be3f6cb. The regression supplies hostile parent Make PATH and controls, while preserving real outer CPU affinity and both exact expected child-affinity lines. This is focused proof, not the pending landing gate.
 
+- Focused proof archive: Yellow `ticket-evidence/2356/biomcp-2356-proof.tar.gz`, 3975 bytes, SHA256 `8a55777d7c8c8f4cce76742c85adb49c2018b04f7680b7463b3354a5c283ff08`. Both transfer endpoints and all five inner files were verified.
+
 ## Proof
 
 - Restate the outcome, reproduce the inherited command-line PATH failure against current main and name the exact files and failing outside-in test before editing code.
