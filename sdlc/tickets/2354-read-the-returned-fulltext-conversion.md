@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision b1f22f6fef106e77b7df8ead8d6292a1f5f1c1dd, accept
+
 ## Outcome
 
 After BioMCP returns an existing managed fulltext conversion for an article, the documented immediate line-read commands can read that same conversion when a later provider attempt is unavailable. Check the actual file and persisted identity before repairing resolution. Preserve explicit cache controls and honest absence when no usable conversion exists.
