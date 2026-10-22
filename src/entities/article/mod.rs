@@ -8,6 +8,8 @@ mod detail;
 mod enrichment;
 pub(crate) mod filters;
 mod fulltext;
+mod fulltext_saved;
+pub(crate) use fulltext_saved::saved_fulltext_path;
 pub(crate) mod graph;
 mod identity_verification;
 mod planner;

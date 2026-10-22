@@ -54,7 +54,10 @@ fn collect_fingerprint_entries(root: &Path, entries: &mut Vec<(PathBuf, u64, u12
     }
 }
 
-fn download_path_for_config(id: &str, config: &crate::cache::ResolvedCacheConfig) -> PathBuf {
+pub(crate) fn download_path_for_config(
+    id: &str,
+    config: &crate::cache::ResolvedCacheConfig,
+) -> PathBuf {
     config
         .cache_root
         .join("downloads")

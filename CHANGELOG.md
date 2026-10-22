@@ -16,6 +16,7 @@
 - Isolate synthetic Make gate fixtures from inherited tools and Make controls while retaining stage ordering and failure checks. (2351)
 - Report safe HTTP status and failure categories in recording diagnostics while withholding response values and credentials. (2330)
 - Remove the internal panic injection tool from shipped MCP servers and retain panic recovery checks in test-only builds. (2352)
+- Read the saved article full-text conversion for immediate line and outline views when a later provider response has no full text, while honoring explicit cache bypasses. (2354)
 
 - Prepare the declared Linux lint tools and verify the offline sandbox before release qualification. (2344)
 
