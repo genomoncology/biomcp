@@ -172,3 +172,233 @@ impl From<StoredObservation> for super::super::identity_verification::VariantArt
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct StoredPool {
+    context: StoredContext,
+    ordered: Vec<StoredRow>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct StoredContext {
+    gene_symbol_coverage: super::VariantArticleGeneSymbolCoverage,
+    alias_coverage: Vec<super::VariantArticleAliasCoverage>,
+    requested_variant: RequestedVariantIdentity,
+    resolution: crate::entities::variant::VariantArticleResolution,
+    canonical_equivalence: Option<super::CanonicalEquivalence>,
+    strategy: VariantArticleStrategy,
+    complete: bool,
+    truncated: bool,
+    source_status: Vec<super::VariantArticleSourceStatus>,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    retrieval_path: &'static str,
+    error: Option<super::VariantArticleItemError>,
+    debug_plan: Option<super::VariantArticleDebugPlan>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct StoredRow {
+    candidate: StoredCandidate,
+    matched_aliases: Vec<String>,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    match_reason: &'static str,
+    alias_matches: Vec<super::VariantArticleAliasMatch>,
+    retrieval_routes: Vec<String>,
+    sources: Vec<String>,
+    rank: usize,
+    metadata_status: Option<crate::entities::article::ArticleMetadataStatus>,
+}
+
+impl StoredPool {
+    pub(super) fn capture(response: super::VariantArticleResponse, candidates: Vec<ArticleCandidate>) -> Self {
+        let context = StoredContext {
+            gene_symbol_coverage: response.gene_symbol_coverage,
+            alias_coverage: response.alias_coverage,
+            requested_variant: response.requested_variant,
+            resolution: response.resolution,
+            canonical_equivalence: response.canonical_equivalence,
+            strategy: response.strategy,
+            complete: response.complete,
+            truncated: response.truncated,
+            source_status: response.source_status,
+            retrieval_path: response.retrieval_path,
+            error: response.error,
+            debug_plan: response.debug_plan,
+        };
+        let ordered = candidates.into_iter().zip(response.results).map(|(mut candidate, row)| {
+            // Visible enrichment may have filled display metadata after ranking.
+            candidate.row = row.article;
+            candidate.identity = row.identity;
+            StoredRow {
+                candidate: candidate.into(), matched_aliases: row.matched_aliases,
+                match_reason: row.match_reason, alias_matches: row.alias_matches,
+                retrieval_routes: row.retrieval_routes, sources: row.sources,
+                rank: row.rank, metadata_status: row.metadata_status,
+            }
+        }).collect();
+        Self { context, ordered }
+    }
+
+    pub(super) fn complete(&self) -> bool { self.context.complete }
+
+    pub(super) fn into_response(self, offset: usize, limit: usize, token: Option<String>, debug: bool) -> Result<super::VariantArticleOutcome, crate::error::BioMcpError> {
+        let mut identifiers = std::collections::BTreeSet::new();
+        for (index, stored) in self.ordered.iter().enumerate() {
+            let id = super::super::candidates::stable_article_identifier(&stored.candidate.row);
+            if stored.rank != index + 1 || id.is_empty() || !identifiers.insert(id) {
+                return Err(crate::error::BioMcpError::InvalidArgument("Invalid stored article pool; restart at offset 0 without a token".into()));
+            }
+        }
+        let total = self.ordered.len();
+        let mut context = self.context;
+        let results = self.ordered.into_iter().skip(offset).take(limit).map(|stored| {
+            let candidate: ArticleCandidate = stored.candidate.into();
+            super::VariantArticleRow {
+                article: candidate.row, requested_variant: context.requested_variant.clone(),
+                matched_aliases: stored.matched_aliases, match_reason: stored.match_reason,
+                alias_matches: stored.alias_matches, retrieval_routes: stored.retrieval_routes,
+                sources: stored.sources, rank: stored.rank, provenance: candidate.variant_provenance,
+                identity: candidate.identity, metadata_status: stored.metadata_status,
+            }
+        }).collect::<Vec<_>>();
+        if let Some(plan) = context.debug_plan.as_mut() {
+            plan.counts.returned = results.len();
+            plan.next.offset = offset.saturating_add(results.len());
+            plan.next.cursor.clone_from(&token);
+            for trace in &mut plan.candidate_trace.candidates {
+                trace.pagination_disposition = if trace.rank_position.is_some_and(|rank| rank > offset && rank <= offset.saturating_add(limit)) { "visible" } else { "not_visible" }.into();
+            }
+        }
+        let hard_error = results.is_empty() && context.error.is_some();
+        Ok(super::VariantArticleOutcome {
+            response: super::VariantArticleResponse {
+                gene_symbol_coverage: context.gene_symbol_coverage, alias_coverage: context.alias_coverage,
+                requested_variant: context.requested_variant, resolution: context.resolution,
+                canonical_equivalence: context.canonical_equivalence, strategy: context.strategy,
+                complete: context.complete, truncated: context.truncated,
+                pagination: super::VariantArticlePagination {
+                    offset, limit, returned: results.len(), total: Some(total),
+                    has_more: offset.saturating_add(results.len()) < total, next_page_token: token,
+                },
+                source_status: context.source_status, retrieval_path: context.retrieval_path,
+                results, error: context.error, debug_plan: if debug { context.debug_plan } else { None },
+            }, hard_error,
+        })
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) async fn execute(
+    input: &str,
+    requested: RequestedVariantIdentity,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug: bool,
+    verification: VariantArticleVerificationOptions,
+    execution: super::VariantArticleExecutionContext,
+    page_token: Option<&str>,
+) -> Result<super::VariantArticleOutcome, crate::error::BioMcpError> {
+    use crate::cache::variant_article_pool::PoolStore;
+    use crate::error::BioMcpError;
+    let key = query_key(input, &requested, strategy, verification);
+    let persistent = key.is_some() && !crate::sources::cache_is_bypassed();
+    if !persistent && (offset != 0 || page_token.is_some()) {
+        return Err(super::page::unavailable());
+    }
+    let key = key.unwrap_or_default();
+    let store = PoolStore::new(crate::cache::resolve_cache_config()?);
+    let continuation = page_token.map(|token| super::page::Continuation::decode(token, &key, offset)).transpose()?;
+    let page_offset = continuation.as_ref().map_or(offset, |token| token.offset);
+    let existing = if !persistent {
+        None
+    } else {
+        let read = if let Some(token) = &continuation {
+            store.read(&key, &token.snapshot)
+        } else {
+            store.selected(&key, offset != 0)
+        };
+        match read {
+            Ok(value) => value,
+            Err(error) if offset == 0 && continuation.is_none() => {
+                crate::cache::warn_local_http_cache("article-pool-read", &error);
+                None
+            }
+            Err(_) => return Err(super::page::unavailable()),
+        }
+    };
+    if existing.is_none() && (offset != 0 || continuation.is_some()) {
+        return Err(super::page::unavailable());
+    }
+    let decoded = existing.as_ref().map(|snapshot| serde_json::from_value::<StoredPool>(snapshot.payload.clone())).transpose();
+    let mut loaded = match decoded {
+        Ok(value) => value,
+        Err(_) if continuation.is_some() || offset != 0 => return Err(super::page::unavailable()),
+        Err(_) => None,
+    };
+    if loaded.as_ref().is_some_and(StoredPool::complete) {
+        let snapshot = existing.as_ref().expect("decoded stored pool");
+        if offset == 0 && continuation.is_none() {
+            if let Err(error) = store.activate(snapshot) {
+                crate::cache::warn_local_http_cache("article-pool-activate", &error);
+            }
+        }
+        let pool = loaded.take().expect("complete stored pool");
+        let next = page_offset.saturating_add(limit.min(pool.ordered.len().saturating_sub(page_offset)));
+        let token = Some(super::page::Continuation::encode(&snapshot.id, &key, next));
+        return pool.into_response(page_offset, limit, token, debug);
+    }
+    let retained = loaded.as_ref().map(|pool| pool.ordered.iter().map(|row| {
+        // The stored DTO is typed and validated before any confirmation is reused.
+        serde_json::from_value::<StoredCandidate>(serde_json::to_value(&row.candidate).expect("stored candidate serializes"))
+            .map(Into::into)
+    }).collect::<Result<Vec<ArticleCandidate>, _>>()).transpose().map_err(|_| super::page::unavailable())?.unwrap_or_default();
+    if persistent {
+        if let Ok(Some(value)) = store.progress(&key, "literal_pubmed") {
+            if let Ok(progress) = serde_json::from_value(value) {
+                execution.set_literal_pubmed_progress(Some(progress));
+            }
+        }
+    }
+    let mut acquisition_execution = execution.clone();
+    if existing.is_some() {
+        acquisition_execution.deadline = execution.deadline.capped(std::time::Duration::from_secs(2));
+    }
+    let (acquired, candidates) = super::acquire_variant_article_pool(
+        input, requested, strategy, limit, page_offset, true, verification,
+        acquisition_execution, retained,
+    ).await?;
+    if persistent {
+        if let Some(progress) = execution.literal_pubmed_progress() {
+            if let Ok(value) = serde_json::to_value(progress) {
+                if let Err(error) = store.save_progress(&key, "literal_pubmed", value) {
+                    crate::cache::warn_local_http_cache("article-progress-write", &error);
+                }
+            }
+        }
+    }
+    let pool = StoredPool::capture(acquired.response, candidates);
+    let payload = serde_json::to_value(&pool).map_err(BioMcpError::Json)?;
+    let snapshot = store.snapshot(&key, payload);
+    let published = persistent && match store.publish(&snapshot) {
+        Ok(()) => true,
+        Err(error) => {
+            crate::cache::warn_local_http_cache("article-pool-write", &error);
+            false
+        }
+    };
+    // A bound or legacy continuation keeps its old membership while a retry
+    // publishes a successor. Only a new offset-zero session activates it.
+    let (selected_pool, selected_id) = if let (Some(old), Some(old_pool)) = (existing.as_ref(), loaded) {
+        if continuation.is_some() || offset != 0 { (old_pool, Some(old.id.clone())) }
+        else { (pool, published.then(|| snapshot.id.clone())) }
+    } else { (pool, published.then(|| snapshot.id.clone())) };
+    if offset == 0 && continuation.is_none() && published {
+        if let Err(error) = store.activate(&snapshot) {
+            crate::cache::warn_local_http_cache("article-pool-activate", &error);
+        }
+    }
+    let next = page_offset.saturating_add(limit.min(selected_pool.ordered.len().saturating_sub(page_offset)));
+    let token = selected_id.map(|id| super::page::Continuation::encode(&id, &key, next));
+    selected_pool.into_response(page_offset, limit, token, debug)
+}
