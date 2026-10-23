@@ -10,6 +10,8 @@ Priority: 0
 
 The first page of `variant articles` leads with papers about the variant: the variant in the title or abstract, and the landmark discovery and clinical papers, ahead of papers that only mention the gene.
 
+- Changes: `src/entities/article/variant_search/rank.rs`, `src/entities/article/ranking.rs`, `tests/test_variant_article_evidence_ranking.py`, `tests/variant_article_evidence_replay.py`, `tests/fixtures/article/evidence-ranking/akt1-e17k.json`, `tests/fixtures/article/evidence-ranking/README.md`. The pool owner integrates the stage calls in its shared orchestration file.
+
 ## Evidence
 
 - Research test of the 0.9.4 practice artifact (run 39857815354, SHA-256 6dbc3a83...4739) on Blue, 2026-10-23, relayed by Jarvis in m4147. Plain PubMed ESearch for 'AKT1 E17K' (relevance sort) returns 192 PMIDs. `biomcp --json variant articles 'AKT1 E17K'` (union, --limit 50, 35 pages) returns about 1,386 PMIDs, yet 20 of PubMed's 192 never appear. Ian's ruling: the worst case is variant articles failing to return what a plain PubMed search finds.
