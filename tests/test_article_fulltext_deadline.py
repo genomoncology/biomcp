@@ -36,7 +36,7 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
                         and not (held == "assets" and path.endswith("fullTextXML"))
                         and "biocjson" not in path and "/graph/" not in path
                         and not ("efetch" in path and "db=pubmed" in self.path))):
-                release.wait(HANG_TIMEOUT)
+                release.wait()
                 return
             code, content_type = 200, "application/json"
             if path == "/search":
