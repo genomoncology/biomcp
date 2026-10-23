@@ -4146,6 +4146,25 @@ async fn fallback_candidates(
 }
 
 
+async fn enrich_candidates(
+    candidates: &mut [ArticleCandidate],
+    execution: &VariantArticleExecutionContext,
+) -> BTreeMap<String, ArticleMetadataStatus> {
+    let mut rows = candidates
+        .iter()
+        .map(|candidate| candidate.row.clone())
+        .collect::<Vec<_>>();
+    let _ =
+        enrich_article_search_rows_with_semantic_scholar_context(&mut rows, Some(execution)).await;
+    let (_, metadata_status) =
+        enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution))
+            .await;
+    for (candidate, row) in candidates.iter_mut().zip(rows) {
+        candidate.row = row;
+    }
+    metadata_status
+}
+
 fn plan_queries(
     input: &str,
     context: &VariantArticleResolutionContext,
@@ -5177,6 +5196,7 @@ pub(crate) async fn search_variant_articles_with_page_token(
     .await
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_with_deadline(
     input: &str,
@@ -5417,6 +5437,7 @@ fn variant_article_retrieval_path(
     }
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
@@ -5470,43 +5491,32 @@ async fn acquire_variant_article_pool(
     resolution_execution.deadline = execution
         .deadline
         .capped(VARIANT_ARTICLE_DEADLINE_LIMIT / 2);
-    // Poll literal enumeration and resolution together. Membership discovery
-    // has its own reservation and cannot wait for an identity provider.
+    let dependent = async {
+        let (context, canonical, aliases, aliases_truncated) =
+            resolve_search_context(input, requested, strategy, &resolution_execution).await?;
+        if context.available {
+            materialize_discovery_route_plans(input, &context, strategy, &aliases, &execution);
+        }
+        let components = sources::acquire_components(
+            input, &context, strategy, &aliases, aliases_truncated, &execution,
+        ).await;
+        Ok::<_, BioMcpError>((context, canonical, aliases, aliases_truncated, components))
+    };
     let (resolution, literal) = tokio::join!(
-        resolve_search_context(input, requested, strategy, &resolution_execution),
-        sources::acquire_literal_pubmed(
-            literal_query.as_deref(),
-            execution.literal_pubmed_progress(),
-            &execution
-        ),
+        dependent,
+        sources::acquire_literal_pubmed(literal_query.as_deref(), execution.literal_pubmed_progress(), &execution),
     );
-    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) =
-        match resolution {
-            Ok(resolution) => resolution,
-            Err(_) if !literal.candidates.is_empty() => {
-                let mut context = unresolved_exact_context(requested_backup);
-                context.available = false;
-                context.resolution.provider_validation.status =
-                    VariantProviderValidationStatus::Unavailable;
-                (
-                    context,
-                    unattempted_canonical_equivalence(),
-                    Vec::new(),
-                    false,
-                )
-            }
-            Err(error) => return Err(error),
-        };
+    let (context, canonical_equivalence, selected_exact_aliases, _selected_exact_aliases_truncated, components) = match resolution {
+        Ok(resolution) => resolution,
+        Err(_) if !literal.candidates.is_empty() => {
+            let mut context = unresolved_exact_context(requested_backup);
+            context.available = false;
+            context.resolution.provider_validation.status = VariantProviderValidationStatus::Unavailable;
+            (context, unattempted_canonical_equivalence(), Vec::new(), false, (Vec::new(), false, false, Vec::new()))
+        }
+        Err(error) => return Err(error),
+    };
     execution.set_literal_pubmed_progress(literal.progress.clone());
-    if context.available {
-        materialize_discovery_route_plans(
-            input,
-            &context,
-            strategy,
-            &selected_exact_aliases,
-            &execution,
-        );
-    }
     if !context.available && literal.candidates.is_empty() {
         return Ok((resolution_unavailable_outcome(
             context,
@@ -5532,15 +5542,7 @@ async fn acquire_variant_article_pool(
     let mut failed_routes =
         usize::from(literal.progress.is_some_and(|progress| !progress.complete));
 
-    let (rows, incomplete, succeeded, route_statuses) = sources::acquire_components(
-        input,
-        &context,
-        strategy,
-        &selected_exact_aliases,
-        selected_exact_aliases_truncated,
-        &execution,
-    )
-    .await;
+    let (rows, incomplete, succeeded, route_statuses) = components;
     candidates.extend(rows);
     statuses.extend(route_statuses);
     succeeded_routes += usize::from(succeeded);
@@ -5556,8 +5558,8 @@ async fn acquire_variant_article_pool(
     let mut verification_response_subsets = Vec::new();
     let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
+    rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
     if verification.verify_identity {
-        rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
         let (verification_start, verification_count) = materialize_identity_verification_plan(
             &candidates,
             &context.requested,
@@ -9457,7 +9459,8 @@ mod tests {
             lexical_candidate("1", &[1]),
         ];
 
-        rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
+        let requested = RequestedVariantIdentity::from_variant_input("BRAF V600E").expect("identity");
+        rank::rank_candidates(&mut candidates, &requested, &requested.normalized_aliases());
 
         assert_eq!(
             candidates
