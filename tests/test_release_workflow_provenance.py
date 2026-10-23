@@ -1558,6 +1558,41 @@ def test_the_latest_step_fails_when_gh_fails() -> None:
     )
 
 
+def test_release_publication_excludes_other_versions_until_the_draft_is_public() -> None:
+    """The runner must exclude other publishers across the entire decision.
+
+    Per-tag workflow concurrency lets an older draft read public releases,
+    then replace latest after a newer draft publishes. GitHub's job queue
+    supplies exclusion; the version comparison handles either queue order.
+    """
+    parsed = _load_release_pipeline()
+    jobs = parsed["jobs"]
+    publisher = jobs["publish-release"]
+    assert publisher.get("concurrency") == {
+        "group": "release-publication", "queue": "max", "cancel-in-progress": False,
+    }, "publication needs shared exclusion across versions without replacing pending jobs"
+    assert parsed["concurrency"]["group"] == (
+        "release-${{ inputs.candidate_sha || inputs.tag || github.ref_name }}"
+    )
+    assert publisher["if"] == "github.event_name == 'push'"
+    for name, job in jobs.items():
+        if name != "publish-release":
+            assert "concurrency" not in job, f"{name}: keep builds outside publication exclusion"
+        for step in job.get("steps", []):
+            body = str(step.get("run", ""))
+            tags = str(step.get("with", {}).get("tags", ""))
+            if "imagetools create" in body or ":latest" in tags:
+                assert name == "publish-release", f"{name}: latest writer escapes exclusion"
+    body = "\n".join(step.get("run", "") for step in publisher["steps"])
+    stages = (
+        "gh release list", 'scripts/should-move-latest.sh "$TAG"',
+        'docker buildx imagetools create --tag "${IMAGE}:latest"',
+        'gh release edit "$TAG" --draft=false',
+    )
+    positions = [body.index(stage) for stage in stages]
+    assert positions == sorted(positions), "query, decision, latest move and publication must stay protected in order"
+
+
 def test_jobs_downloading_the_draft_release_can_write_contents() -> None:
     """2026-10-01 fifth go-request review: container-publish ran
     `gh release download` on the still-draft release with
