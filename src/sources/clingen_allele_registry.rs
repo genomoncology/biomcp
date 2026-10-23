@@ -22,6 +22,7 @@ type ProjectedAliases = (
     Vec<String>,
     Vec<String>,
     CarAliasCollection,
+    Vec<crate::entities::GenomicCoordinate>,
 );
 
 pub(crate) struct ClinGenAlleleRegistryClient {
@@ -331,6 +332,7 @@ fn empty(
         caid: None,
         canonical_title: None,
         genomic_aliases: CarAliasCollection::default(),
+        genomic_coordinates: Vec::new(),
         transcript_aliases: CarAliasCollection::default(),
         protein_aliases: CarAliasCollection::default(),
         external_ids: CarAliasCollection::default(),
@@ -392,7 +394,8 @@ pub(crate) fn decode_normalize_response(
             version,
         );
     };
-    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
+    let Ok((canonical_title, genomic, transcripts, proteins, external, coordinates)) =
+        projected_aliases(&value)
     else {
         return empty(
             input,
@@ -427,6 +430,10 @@ pub(crate) fn decode_normalize_response(
     item.caid = Some(caid);
     item.canonical_title = canonical_title;
     item.genomic_aliases = CarAliasCollection::bounded(genomic, 12);
+    item.genomic_coordinates = coordinates
+        .into_iter()
+        .filter(|record| item.genomic_aliases.values.contains(&record.coordinate))
+        .collect();
     item.transcript_aliases = CarAliasCollection::bounded(transcripts, 12);
     item.protein_aliases = CarAliasCollection::bounded(proteins, 8);
     item.external_ids = external;
@@ -443,6 +450,7 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
         None => None,
     };
     let mut genomic = Vec::new();
+    let mut coordinates = Vec::new();
     if let Some(alleles) = value.get("genomicAlleles") {
         for allele in alleles.as_array().ok_or(())? {
             let rank = match allele.get("referenceGenome") {
@@ -457,7 +465,22 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
             };
             let hgvs = allele.get("hgvs").and_then(Value::as_array).ok_or(())?;
             for alias in hgvs {
-                genomic.push((rank, alias.as_str().ok_or(())?.to_owned()));
+                let alias = alias.as_str().ok_or(())?.to_owned();
+                let record = crate::entities::GenomicCoordinate {
+                    coordinate: alias.clone(),
+                    genome_build: allele
+                        .get("referenceGenome")
+                        .and_then(Value::as_str)
+                        .filter(|build| !build.trim().is_empty())
+                        .unwrap_or("unknown")
+                        .into(),
+                    source: "clingen_car".into(),
+                    provenance: Some("genomicAlleles.referenceGenome".into()),
+                };
+                if !coordinates.contains(&record) {
+                    coordinates.push(record);
+                }
+                genomic.push((rank, alias));
             }
         }
     }
@@ -515,6 +538,7 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
             source_count,
             truncated,
         },
+        coordinates,
     ))
 }
 

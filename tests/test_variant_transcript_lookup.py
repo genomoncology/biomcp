@@ -5,6 +5,7 @@ from hang_guard import HANG_TIMEOUT
 
 import json
 import os
+import select
 from pathlib import Path
 import subprocess
 import sys
@@ -71,6 +72,8 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
                         "primary_assembly_loci": {"grch38": {"hgvs_genomic_description": FIXTURE["genomic"]}},
                     }})
                 return self.reply({"message": "Authored unavailable normalizer control"}, 404)
+            if path == "/normalize/NM_000000.0:c.1A>T":
+                return self.reply({"normalized_description": FIXTURE["genomic"]})
             if path.startswith("/normalize/"):
                 return self.reply({"message": "Authored unavailable normalizer control"}, 404)
             if path == "/allele":
@@ -91,6 +94,15 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
                 return self.reply({"total": 1, "hits": [hit]})
             misses.append(self.path)
             self.reply({"error": "Unexpected fixture request"}, 404)
+
+        def do_POST(self) -> None:  # noqa: N802
+            body = self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode()
+            if urlsplit(self.path).path != "/alleles":
+                misses.append(self.path)
+                return self.reply({}, 404)
+            return self.reply([{"@id": "http://reg.genome.network/allele/CA011561",
+                                "genomicAlleles": [{"hgvs": [FIXTURE["genomic"]], "referenceGenome": "GRCh38"}]}
+                               for _ in body.splitlines()])
 
         def log_message(self, *_args: object) -> None:
             pass
@@ -125,6 +137,31 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
             return
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)
+        if normalizer == "variantvalidator" and case == "same_allele" and identifier == FIXTURE["inputs"][0]:
+            normalized = subprocess.run(
+                [binary, "--no-cache", "--json", "variant", "normalize", "variantvalidator", identifier],
+                env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+            )
+            assert normalized.returncode == 0, normalized.stdout + normalized.stderr
+            aggregate = json.loads(normalized.stdout)
+            assert FIXTURE["genomic"] in aggregate["results"]
+            unknown_command = [binary, "--no-cache", "variant", "normalize", "mutalyzer", "NM_000000.0:c.1A>T"]
+            unknown_json = subprocess.run([*unknown_command, "--json"], env=env, cwd=REPO_ROOT,
+                                          capture_output=True, text=True, timeout=HANG_TIMEOUT)
+            assert unknown_json.returncode == 0, unknown_json.stdout + unknown_json.stderr
+            unknown = json.loads(unknown_json.stdout)
+            assert unknown["genomic_coordinates"][0]["genome_build"] == "unknown"
+            assert unknown["services"][0]["genomic_descriptions"] == []
+            unknown_markdown = subprocess.run(unknown_command, env=env, cwd=REPO_ROOT,
+                                              capture_output=True, text=True, timeout=HANG_TIMEOUT)
+            assert unknown_markdown.returncode == 0, unknown_markdown.stdout + unknown_markdown.stderr
+            assert f"Genomic coordinate (unknown): {FIXTURE['genomic']}" in unknown_markdown.stdout
+            assert aggregate["genomic_coordinates"] == [{
+                "coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
+                "source": "VariantValidator", "provenance": "primary_assembly_loci.grch38",
+            }]
+        if normalizer == "car" and case == "same_allele" and identifier == FIXTURE["inputs"][0]:
+            assert_car_coordinates(binary, identifier, env)
         transcript, coding = identifier.split(":", 1)
         assert payload["id"] == ("chr1:g.45797228C>T" if case == "alias_fallback" else "chr1:g.45331556C>T")
         assert payload["rsid"] == "rs36053993"
@@ -149,3 +186,37 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
+
+
+def assert_car_coordinates(binary: str, identifier: str, env: dict[str, str]) -> None:
+    expected = [{"coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
+                 "source": "clingen_car", "provenance": "genomicAlleles.referenceGenome"}]
+    direct = subprocess.run([binary, "--no-cache", "--json", "variant", "normalize", "car", identifier],
+                            env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT)
+    assert direct.returncode == 0, direct.stdout + direct.stderr
+    assert json.loads(direct.stdout)["genomic_coordinates"] == expected
+    from test_mcp_2026_protocol import RawStdioMcp
+
+    with pytest.MonkeyPatch.context() as isolated:
+        for key in set(os.environ) - set(env):
+            isolated.delenv(key)
+        for key, value in env.items():
+            isolated.setenv(key, value)
+        client = RawStdioMcp()
+        try:
+            client.send({"jsonrpc": "2.0", "id": "init", "method": "initialize",
+                         "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                                    "clientInfo": {"name": "assembly-contract", "version": "1"}}})
+            ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+            assert ready
+            assert client.receive()["id"] == "init"
+            client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+            client.send({"jsonrpc": "2.0", "id": "car", "method": "tools/call",
+                         "params": {"name": "variant_normalize_car", "arguments": {"inputs": [identifier]}}})
+            ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+            assert ready
+            result = client.receive()["result"]
+            assert result.get("isError") is not True, result
+            assert json.loads(result["content"][0]["text"])["items"][0]["genomic_coordinates"] == expected
+        finally:
+            client.close()

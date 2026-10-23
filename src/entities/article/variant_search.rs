@@ -158,6 +158,7 @@ pub struct VariantArticleRow {
     pub article: ArticleSearchResult,
     pub requested_variant: RequestedVariantIdentity,
     pub matched_aliases: Vec<String>,
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub match_reason: &'static str,
     pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub retrieval_routes: Vec<String>,
@@ -203,6 +204,7 @@ pub struct CanonicalEquivalenceObservation {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CanonicalEquivalence {
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub status: String,
     pub caid: Option<String>,
     pub exhaustive: bool,
@@ -1366,6 +1368,7 @@ pub struct CompactVariantArticleRow {
     pub date: Option<String>,
     pub match_reason: &'static str,
     pub matched_aliases: Vec<String>,
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub routes: Vec<String>,
     pub sources: Vec<String>,
@@ -2070,6 +2073,7 @@ fn canonical_equivalence(
     let count = observations.len();
     if count == 0 {
         return CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "inapplicable".into(),
             caid: None,
             exhaustive: true,
@@ -2083,6 +2087,7 @@ fn canonical_equivalence(
     if count == 1 {
         let observation = &observations[0];
         return CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "single_identity".into(),
             caid: observation.caid.clone(),
             exhaustive: observation.provider_exhaustive,
@@ -2156,6 +2161,7 @@ fn canonical_equivalence(
         )
     };
     CanonicalEquivalence {
+        genomic_coordinates: Vec::new(),
         status: status.to_string(),
         caid,
         exhaustive: provider_exhaustive
@@ -2191,7 +2197,7 @@ async fn resolve_search_context(
     ),
     BioMcpError,
 > {
-    let context = if strategy == VariantArticleStrategy::Exact {
+    let mut context = if strategy == VariantArticleStrategy::Exact {
         unresolved_exact_context(requested)
     } else {
         let mut resolved_context =
@@ -2206,6 +2212,20 @@ async fn resolve_search_context(
     } else {
         resolve_canonical_equivalence(&context.requested, execution).await
     };
+    for record in &canonical_equivalence.genomic_coordinates {
+        if !context
+            .resolution
+            .normalized_aliases
+            .genomic_coordinates
+            .contains(record)
+        {
+            context
+                .resolution
+                .normalized_aliases
+                .genomic_coordinates
+                .push(record.clone());
+        }
+    }
     let (mut aliases, mut truncated) = if strategy == VariantArticleStrategy::Exact {
         (vec![input.trim().to_string()], false)
     } else {
@@ -2463,11 +2483,15 @@ fn gene_symbol_coverage(
 fn unresolved_exact_context(
     requested: RequestedVariantIdentity,
 ) -> VariantArticleResolutionContext {
+    let normalized_aliases = NormalizedVariantAliases {
+        genomic_coordinates: requested.normalized_aliases().genomic_coordinates,
+        ..NormalizedVariantAliases::default()
+    };
     VariantArticleResolutionContext {
         requested,
         resolution: VariantArticleResolution {
             status: VariantResolutionStatus::Unresolved,
-            normalized_aliases: NormalizedVariantAliases::default(),
+            normalized_aliases,
             exhaustive: false,
             basis: None,
             provider_validation: VariantProviderValidation {
@@ -2490,6 +2514,7 @@ fn unresolved_exact_context(
 /// serialized in the response.
 fn unattempted_canonical_equivalence() -> CanonicalEquivalence {
     CanonicalEquivalence {
+        genomic_coordinates: Vec::new(),
         status: "not_attempted".into(),
         caid: None,
         exhaustive: false,
@@ -2582,7 +2607,15 @@ pub(crate) async fn resolve_canonical_equivalence(
     }
     let mut seen = BTreeSet::new();
     aliases.retain(|alias| seen.insert(alias.clone()));
-    canonical_equivalence(observations, aliases)
+    let mut equivalence = canonical_equivalence(observations, aliases);
+    for record in items.into_iter().flat_map(|item| item.genomic_coordinates) {
+        if equivalence.aliases.contains(&record.coordinate)
+            && !equivalence.genomic_coordinates.contains(&record)
+        {
+            equivalence.genomic_coordinates.push(record);
+        }
+    }
+    equivalence
 }
 
 /// The gene symbol every gene-tied alias spelling shares: the requested
@@ -2880,6 +2913,13 @@ fn combined_normalized_aliases(
     let mut aliases = context.requested.normalized_aliases();
     if context.requested.is_authoritative_refseq() {
         return aliases;
+    }
+    for source in context
+        .source_identity
+        .iter()
+        .chain(&context.fallback_source_identities)
+    {
+        aliases.retain_source_coordinate(source);
     }
     if let Some(source) = context.source_identity.as_ref() {
         aliases.protein_changes.extend(
@@ -3266,7 +3306,6 @@ async fn planned_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let filters = article_filters();
     let plans = provider_variant_query_plan_with_gene_aliases(
         input,
         context,
@@ -3276,11 +3315,11 @@ async fn planned_candidates(
     )
     .into_iter()
     .filter(|plan| matches!(plan.route.as_str(), "strict" | "exact_lexical"));
-    let mut candidates = Vec::new();
-    let mut incomplete = false;
-    let mut succeeded = false;
-
-    for plan in plans {
+    let searches = plans.map(|plan| async move {
+        let filters = article_filters();
+        let mut candidates = Vec::new();
+        let mut incomplete = false;
+        let mut succeeded = false;
         let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
@@ -3291,10 +3330,8 @@ async fn planned_candidates(
         };
         let execution = &scoped;
         if execution.route_stopped(route) {
-            incomplete = true;
-            continue;
+            return (candidates, true, false);
         }
-        let stopped_before = execution.route_stopped(route);
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
@@ -3370,8 +3407,7 @@ async fn planned_candidates(
             }
             "pubtator" => {
                 let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
-                    incomplete = true;
-                    break;
+                    return (candidates, true, false);
                 };
                 let pubtator = crate::sources::pubtator::PubTatorClient::new_with_deadline(
                     execution.deadline(),
@@ -3421,10 +3457,10 @@ async fn planned_candidates(
                     }
                 }
             }
-            _ => continue,
+            _ => return (candidates, false, false),
         };
         match rows {
-            Ok((rows, degraded, total)) if !execution.route_stopped(route) || stopped_before => {
+            Ok((rows, degraded, total)) => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
                 //.
@@ -3432,6 +3468,8 @@ async fn planned_candidates(
                     incomplete = true;
                 }
                 succeeded = true;
+                // A peer stopping admission cannot revoke committed provider rows.
+                incomplete |= execution.route_stopped(route);
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
                     || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
@@ -3469,14 +3507,22 @@ async fn planned_candidates(
                     candidate
                 }));
             }
-            Ok(_) | Err(_) if execution.route_stopped(route) => {
-                incomplete = true;
-                continue;
-            }
-            Ok(_) | Err(_) => {
+            Err(_) => {
                 incomplete = true;
             }
         }
+        (candidates, incomplete, succeeded)
+    });
+    // Poll independent plans together while collecting their rows in plan order.
+    // Provider units retain the shared concurrency and source pacing limits.
+    let mut searches = stream::iter(searches).buffered(PROVIDER_CONCURRENCY_LIMIT);
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    while let Some((rows, partial, available)) = searches.next().await {
+        candidates.extend(rows);
+        incomplete |= partial;
+        succeeded |= available;
     }
     let calls = execution.events();
     let mut statuses = provider_statuses_for_route("strict", &calls);
@@ -5259,6 +5305,23 @@ fn resolution_status_rows(
     statuses
 }
 
+fn variant_article_retrieval_path(
+    strategy: VariantArticleStrategy,
+    resolved: bool,
+) -> &'static str {
+    if strategy == VariantArticleStrategy::Exact {
+        "exact-name phrase search"
+    } else if !resolved {
+        VARIANT_FALLBACK_RETRIEVAL_PATH
+    } else if strategy == VariantArticleStrategy::Annotation {
+        VARIANT_ENTITY_RETRIEVAL_PATH
+    } else if strategy == VariantArticleStrategy::Lexical {
+        "resolved exact-alias article search"
+    } else {
+        "resolved exact-variant route union"
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
@@ -5826,6 +5889,11 @@ async fn search_variant_articles_identity(
                 metadata_status: metadata_status.remove(&candidate.row.pmid),
                 article: candidate.row,
                 requested_variant: context.requested.clone(),
+                genomic_coordinates: context
+                    .resolution
+                    .normalized_aliases
+                    .genomic_coordinates
+                    .clone(),
                 matched_aliases,
                 match_reason: if alias_only {
                     "unverified_alias_match"
@@ -5851,17 +5919,7 @@ async fn search_variant_articles_identity(
     let hard_error =
         rows.is_empty() && (!failed_sources.is_empty() || execution.deadline.is_exhausted());
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
-    let retrieval_path = if strategy == VariantArticleStrategy::Exact {
-        "exact-name phrase search"
-    } else if !resolved {
-        VARIANT_FALLBACK_RETRIEVAL_PATH
-    } else if strategy == VariantArticleStrategy::Annotation {
-        VARIANT_ENTITY_RETRIEVAL_PATH
-    } else if strategy == VariantArticleStrategy::Lexical {
-        "resolved exact-alias article search"
-    } else {
-        "resolved exact-variant route union"
-    };
+    let retrieval_path = variant_article_retrieval_path(strategy, resolved);
     let alias_coverage = alias_coverage(
         input,
         &context,
@@ -6257,6 +6315,7 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         date: row.article.date,
         match_reason: row.match_reason,
         matched_aliases: row.matched_aliases,
+        genomic_coordinates: row.genomic_coordinates,
         alias_matches: row.alias_matches,
         routes: row.retrieval_routes,
         sources: row.sources,
@@ -7121,6 +7180,43 @@ mod tests {
                 }
             }
         }
+    }
+
+    // Concurrency needs this inner boundary: a peer can stop admission while an
+    // already admitted provider response is being committed.
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn stopped_strict_admission_keeps_inflight_rows() {
+        let execution = VariantArticleExecutionContext::single();
+        let stopping_peer = execution.clone();
+        let mut fixture = TestHttpFixture::spawn(move |_| {
+            stopping_peer.stop("strict");
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"total":1,"data":[{"paperId":"admitted-row","externalIds":{"PubMed":"71000030"},"title":"Admitted response survives a peer stopping the route","year":2026}]}"#,
+            ))
+        })
+        .await;
+        let mut env = gene_aliases_disabled_env();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_DISABLE_SOURCES",
+            "mygene-info,pubmed,europe-pmc,pubtator3",
+        );
+        let (rows, _, succeeded, _) = planned_candidates(
+            "BRAF p.V600E",
+            &resolved_context(),
+            VariantArticleStrategy::Lexical,
+            &["BRAF p.V600E".into()],
+            &execution,
+        )
+        .await;
+        assert!(execution.route_stopped("strict"));
+        assert!(succeeded, "the admitted response succeeded");
+        assert!(rows.iter().any(|row| row.row.pmid == "71000030"));
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -8957,6 +9053,7 @@ mod tests {
         // id they must carry the gene symbol, while the variant-unique
         // transcript, protein and identifier aliases stay bare.
         let equivalence = CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "confirmed".into(),
             caid: Some("CA000072".into()),
             exhaustive: true,
@@ -10159,6 +10256,7 @@ mod tests {
             metadata_status: None,
             article: candidate.row,
             requested_variant: RequestedVariantIdentity::default(),
+            genomic_coordinates: Vec::new(),
             matched_aliases: vec!["BRAF V600E".into()],
             match_reason: "exact_variant",
             alias_matches: Vec::new(),
@@ -10216,6 +10314,7 @@ mod tests {
         context.source_identity = None;
         context.resolution.normalized_aliases = NormalizedVariantAliases::default();
         let equivalence = CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "confirmed".into(),
             caid: None,
             exhaustive: true,

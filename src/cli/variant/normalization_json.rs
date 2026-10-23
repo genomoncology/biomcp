@@ -6,6 +6,7 @@ struct VariantNormalizationJsonResponse<'a> {
     status: &'static str,
     message: String,
     results: Vec<&'a str>,
+    genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     services: &'a [crate::entities::variant::VariantNormalizationAggregate],
     _meta: VariantNormalizationJsonMeta,
 }
@@ -19,6 +20,23 @@ pub(super) fn render(
     result: &crate::entities::variant::VariantNormalizationResponse,
 ) -> Result<String, crate::error::BioMcpError> {
     let mut results = Vec::new();
+    let mut genomic_coordinates = Vec::new();
+    for service in &result.services {
+        if let crate::entities::variant::VariantNormalizationAggregate::Car(car) = service {
+            for coordinate in &car.item.genomic_coordinates {
+                if !genomic_coordinates.contains(coordinate) {
+                    genomic_coordinates.push(coordinate.clone());
+                }
+            }
+        }
+        if let crate::entities::variant::VariantNormalizationAggregate::Legacy(service) = service {
+            for coordinate in service.display_genomic_coordinates() {
+                if !genomic_coordinates.contains(&coordinate) {
+                    genomic_coordinates.push(coordinate);
+                }
+            }
+        }
+    }
     for value in result.services.iter().flat_map(|service| match service {
         crate::entities::variant::VariantNormalizationAggregate::Legacy(service) => service
             .genomic_descriptions
@@ -50,6 +68,7 @@ pub(super) fn render(
         status,
         message,
         results,
+        genomic_coordinates,
         services: &result.services,
         _meta: VariantNormalizationJsonMeta {
             next_commands: vec![

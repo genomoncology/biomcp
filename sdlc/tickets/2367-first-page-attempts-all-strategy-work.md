@@ -10,6 +10,8 @@ Priority: 1
 
 The union and legacy variant article strategies attempt every planned work item for the first page within the invocation deadline, or plan fewer items so the page completes.
 
+- Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_recovery.py`, `tests/test_variant_article_first_page.py`. Run independent planned provider work concurrently and exercise first-page accounting.
+
 ## Evidence
 
 - Research recheck of the 0.9.4 candidate b56138d27 (research repo f1c305c, sdlc/records/0042-test-the-0-9-4-candidate-hard.md; raw outputs on Blue under /home/ian/workspace/data/research/runs/0042/), relayed by Jarvis in m3902. These are observations: reproduce on current main first, and withdraw with evidence if it does not reproduce.
