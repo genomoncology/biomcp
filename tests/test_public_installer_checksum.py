@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import platform
+import select
 import shutil
 import stat
 import subprocess
@@ -462,3 +463,77 @@ def test_installer_reads_existing_version_when_install_path_contains_spaces(tmp_
     assert result.returncode == 0, result.stderr
     assert "/.biomcp-stage." in smoke_log.read_text()
     assert "existing binary called" in smoke_log.read_text()
+
+
+def _paused_installer(tmp_path: Path, install_dir: Path, *, phase: str = "binary") -> subprocess.Popen[str]:
+    """Pause a real foreground rename through its executable boundary."""
+    fixture, _ = _fixture(tmp_path, "{digest}\n")
+    tools = _tools(tmp_path, "curl", "system")
+    real_mv = shutil.which("mv")
+    (tools / "mv").unlink()
+    _write_executable(
+        tools / "mv",
+        f"#!{sys.executable}\n"
+        "import json, os, subprocess, sys\n"
+        f"result = subprocess.run([{real_mv!r}, *sys.argv[1:]])\n"
+        "destination = sys.argv[-1]\n"
+        f"pause = destination.endswith('/biomcp') if {phase!r} == 'binary' else destination.endswith('/biomcp.install.json') and json.load(open(destination))['state'] == 'pending'\n"
+        "if result.returncode == 0 and pause:\n"
+        "    print('INSTALLER_PAUSED', flush=True)\n"
+        "    sys.stdin.readline()\n"
+        "raise SystemExit(result.returncode)\n",
+    )
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    process = subprocess.Popen(
+        ["bash", str(INSTALLER)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, text=True,
+        env=os.environ | {"HOME": str(tmp_path), "BIOMCP_INSTALL_DIR": str(install_dir),
+                          "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture),
+                          "TMPDIR": str(scratch), "PATH": str(tools)},
+    )
+    assert process.stdout is not None
+    while True:
+        ready, _, _ = select.select([process.stdout], [], [], 60)
+        assert ready, "installer did not reach controlled rename"
+        line = process.stdout.readline()
+        assert line, process.stderr.read() if process.stderr else "installer exited"
+        if line.strip() == "INSTALLER_PAUSED":
+            return process
+
+
+def _resume_installer(process: subprocess.Popen[str]) -> tuple[str, str]:
+    return process.communicate("continue\n", timeout=60)
+
+
+def test_concurrent_installers_preserve_binary_receipt_agreement(tmp_path: Path) -> None:
+    first = tmp_path / "first"
+    first.mkdir()
+    install_dir = tmp_path / "install"
+    process = _paused_installer(first, install_dir)
+    before = (install_dir / "biomcp.install.json").read_bytes()
+    try:
+        second = tmp_path / "second"
+        second.mkdir()
+        fixture, _ = _fixture(second, "{digest}\n")
+        binary = fixture / "biomcp"
+        _write_executable(binary, "#!/bin/sh\n# distinct second writer\necho 'biomcp 0.0.0'\n")
+        archive = fixture / ASSET
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(binary, arcname="biomcp")
+        (fixture / "sidecar").write_text(hashlib.sha256(archive.read_bytes()).hexdigest() + "\n")
+        tools = _tools(second, "curl", "system")
+        contender = subprocess.run(
+            ["bash", str(INSTALLER)], capture_output=True, text=True, timeout=60,
+            env=os.environ | {"BIOMCP_INSTALL_DIR": str(install_dir), "BIOMCP_VERSION": "0.0.0",
+                              "FIXTURE_DIR": str(fixture), "PATH": str(tools), "HOME": str(second)},
+        )
+        during = (install_dir / "biomcp.install.json").read_bytes()
+    finally:
+        _, stderr = _resume_installer(process)
+    assert process.returncode == 0, stderr
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["sha256"] == hashlib.sha256((install_dir / "biomcp").read_bytes()).hexdigest()
+    assert contender.returncode != 0
+    assert "lock" in contender.stderr.lower()
+    assert during == before
