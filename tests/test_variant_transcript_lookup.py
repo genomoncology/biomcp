@@ -5,6 +5,7 @@ from hang_guard import HANG_TIMEOUT
 
 import json
 import os
+import select
 from pathlib import Path
 import subprocess
 import sys
@@ -137,6 +138,8 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
                 "coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
                 "source": "VariantValidator", "provenance": "primary_assembly_loci.grch38",
             }]
+        if normalizer == "car" and case == "same_allele" and identifier == FIXTURE["inputs"][0]:
+            assert_car_coordinates(binary, identifier, env)
         transcript, coding = identifier.split(":", 1)
         assert payload["id"] == ("chr1:g.45797228C>T" if case == "alias_fallback" else "chr1:g.45331556C>T")
         assert payload["rsid"] == "rs36053993"
@@ -161,3 +164,37 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
+
+
+def assert_car_coordinates(binary: str, identifier: str, env: dict[str, str]) -> None:
+    expected = [{"coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
+                 "source": "clingen_car", "provenance": "genomicAlleles.referenceGenome"}]
+    direct = subprocess.run([binary, "--no-cache", "--json", "variant", "normalize", "car", identifier],
+                            env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT)
+    assert direct.returncode == 0, direct.stdout + direct.stderr
+    assert json.loads(direct.stdout)["genomic_coordinates"] == expected
+    from test_mcp_2026_protocol import RawStdioMcp
+
+    with pytest.MonkeyPatch.context() as isolated:
+        for key in set(os.environ) - set(env):
+            isolated.delenv(key)
+        for key, value in env.items():
+            isolated.setenv(key, value)
+        client = RawStdioMcp()
+        try:
+            client.send({"jsonrpc": "2.0", "id": "init", "method": "initialize",
+                         "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                                    "clientInfo": {"name": "assembly-contract", "version": "1"}}})
+            ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+            assert ready
+            assert client.receive()["id"] == "init"
+            client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+            client.send({"jsonrpc": "2.0", "id": "car", "method": "tools/call",
+                         "params": {"name": "variant_normalize_car", "arguments": {"inputs": [identifier]}}})
+            ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+            assert ready
+            result = client.receive()["result"]
+            assert result.get("isError") is not True, result
+            assert json.loads(result["content"][0]["text"])["items"][0]["genomic_coordinates"] == expected
+        finally:
+            client.close()

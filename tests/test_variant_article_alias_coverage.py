@@ -195,6 +195,13 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         assert payload["debug_plan"]["normalized_aliases"]["genomic_coordinates"] == coordinates
         assert not any(path.startswith("/v1/") or path == "/allele" for path, _ in requests)
         return
+    if surface == "requested38":
+        assert payload["resolution"]["normalized_aliases"]["genomic_coordinates"] == [{
+            "coordinate": hit["_id"], "genome_build": "GRCh38", "source": "requested",
+            "provenance": "requested variant identity",
+        }]
+        assert payload["resolution"]["status"] == "ambiguous"
+        return
     assert payload["resolution"]["status"] == "resolved", payload
     coordinates = payload["resolution"]["normalized_aliases"]["genomic_coordinates"]
     build = "GRCh38" if surface == "requested38" else "GRCh37"
