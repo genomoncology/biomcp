@@ -204,6 +204,7 @@ pub struct CanonicalEquivalenceObservation {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CanonicalEquivalence {
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub status: String,
     pub caid: Option<String>,
     pub exhaustive: bool,
@@ -2072,6 +2073,7 @@ fn canonical_equivalence(
     let count = observations.len();
     if count == 0 {
         return CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "inapplicable".into(),
             caid: None,
             exhaustive: true,
@@ -2085,6 +2087,7 @@ fn canonical_equivalence(
     if count == 1 {
         let observation = &observations[0];
         return CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "single_identity".into(),
             caid: observation.caid.clone(),
             exhaustive: observation.provider_exhaustive,
@@ -2158,6 +2161,7 @@ fn canonical_equivalence(
         )
     };
     CanonicalEquivalence {
+        genomic_coordinates: Vec::new(),
         status: status.to_string(),
         caid,
         exhaustive: provider_exhaustive
@@ -2193,7 +2197,7 @@ async fn resolve_search_context(
     ),
     BioMcpError,
 > {
-    let context = if strategy == VariantArticleStrategy::Exact {
+    let mut context = if strategy == VariantArticleStrategy::Exact {
         unresolved_exact_context(requested)
     } else {
         let mut resolved_context =
@@ -2208,6 +2212,20 @@ async fn resolve_search_context(
     } else {
         resolve_canonical_equivalence(&context.requested, execution).await
     };
+    for record in &canonical_equivalence.genomic_coordinates {
+        if !context
+            .resolution
+            .normalized_aliases
+            .genomic_coordinates
+            .contains(record)
+        {
+            context
+                .resolution
+                .normalized_aliases
+                .genomic_coordinates
+                .push(record.clone());
+        }
+    }
     let (mut aliases, mut truncated) = if strategy == VariantArticleStrategy::Exact {
         (vec![input.trim().to_string()], false)
     } else {
@@ -2496,6 +2514,7 @@ fn unresolved_exact_context(
 /// serialized in the response.
 fn unattempted_canonical_equivalence() -> CanonicalEquivalence {
     CanonicalEquivalence {
+        genomic_coordinates: Vec::new(),
         status: "not_attempted".into(),
         caid: None,
         exhaustive: false,
@@ -2588,7 +2607,15 @@ pub(crate) async fn resolve_canonical_equivalence(
     }
     let mut seen = BTreeSet::new();
     aliases.retain(|alias| seen.insert(alias.clone()));
-    canonical_equivalence(observations, aliases)
+    let mut equivalence = canonical_equivalence(observations, aliases);
+    for record in items.into_iter().flat_map(|item| item.genomic_coordinates) {
+        if equivalence.aliases.contains(&record.coordinate)
+            && !equivalence.genomic_coordinates.contains(&record)
+        {
+            equivalence.genomic_coordinates.push(record);
+        }
+    }
+    equivalence
 }
 
 /// The gene symbol every gene-tied alias spelling shares: the requested
@@ -9026,6 +9053,7 @@ mod tests {
         // id they must carry the gene symbol, while the variant-unique
         // transcript, protein and identifier aliases stay bare.
         let equivalence = CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "confirmed".into(),
             caid: Some("CA000072".into()),
             exhaustive: true,
@@ -10286,6 +10314,7 @@ mod tests {
         context.source_identity = None;
         context.resolution.normalized_aliases = NormalizedVariantAliases::default();
         let equivalence = CanonicalEquivalence {
+            genomic_coordinates: Vec::new(),
             status: "confirmed".into(),
             caid: None,
             exhaustive: true,

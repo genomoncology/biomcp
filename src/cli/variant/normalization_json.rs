@@ -22,6 +22,13 @@ pub(super) fn render(
     let mut results = Vec::new();
     let mut genomic_coordinates = Vec::new();
     for service in &result.services {
+        if let crate::entities::variant::VariantNormalizationAggregate::Car(car) = service {
+            for coordinate in &car.item.genomic_coordinates {
+                if !genomic_coordinates.contains(coordinate) {
+                    genomic_coordinates.push(coordinate.clone());
+                }
+            }
+        }
         if let crate::entities::variant::VariantNormalizationAggregate::Legacy(service) = service {
             for coordinate in &service.genomic_descriptions {
                 if !genomic_coordinates.contains(coordinate) {

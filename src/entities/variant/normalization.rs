@@ -143,6 +143,8 @@ pub struct CarNormalizationItem {
     pub caid: Option<String>,
     pub canonical_title: Option<String>,
     pub genomic_aliases: CarAliasCollection,
+    #[serde(default)]
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub transcript_aliases: CarAliasCollection,
     pub protein_aliases: CarAliasCollection,
     pub external_ids: CarAliasCollection,
@@ -333,6 +335,7 @@ pub(crate) fn unavailable_car_item(input: &str) -> CarNormalizationItem {
         caid: None,
         canonical_title: None,
         genomic_aliases: CarAliasCollection::default(),
+        genomic_coordinates: Vec::new(),
         transcript_aliases: CarAliasCollection::default(),
         protein_aliases: CarAliasCollection::default(),
         external_ids: CarAliasCollection::default(),
