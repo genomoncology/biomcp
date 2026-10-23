@@ -6,6 +6,7 @@ struct VariantNormalizationJsonResponse<'a> {
     status: &'static str,
     message: String,
     results: Vec<&'a str>,
+    genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     services: &'a [crate::entities::variant::VariantNormalizationAggregate],
     _meta: VariantNormalizationJsonMeta,
 }
@@ -19,6 +20,29 @@ pub(super) fn render(
     result: &crate::entities::variant::VariantNormalizationResponse,
 ) -> Result<String, crate::error::BioMcpError> {
     let mut results = Vec::new();
+    let mut genomic_coordinates = Vec::new();
+    for service in &result.services {
+        if let crate::entities::variant::VariantNormalizationAggregate::Legacy(service) = service {
+            for coordinate in &service.genomic_descriptions {
+                if !genomic_coordinates.contains(coordinate) {
+                    genomic_coordinates.push(coordinate.clone());
+                }
+            }
+            if let Some(value) = service.normalized_description.as_ref().filter(|value| value.contains(":g.")) {
+                if !service.genomic_descriptions.iter().any(|record| record.coordinate == *value) {
+                    let coordinate = crate::entities::GenomicCoordinate {
+                        coordinate: value.clone(),
+                        genome_build: "unknown".into(),
+                        source: service.service.clone(),
+                        provenance: Some("normalized description without assembly evidence".into()),
+                    };
+                    if !genomic_coordinates.contains(&coordinate) {
+                        genomic_coordinates.push(coordinate);
+                    }
+                }
+            }
+        }
+    }
     for value in result.services.iter().flat_map(|service| match service {
         crate::entities::variant::VariantNormalizationAggregate::Legacy(service) => service
             .genomic_descriptions
@@ -50,6 +74,7 @@ pub(super) fn render(
         status,
         message,
         results,
+        genomic_coordinates,
         services: &result.services,
         _meta: VariantNormalizationJsonMeta {
             next_commands: vec![
