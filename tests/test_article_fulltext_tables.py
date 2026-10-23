@@ -10,6 +10,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+from xml.etree import ElementTree
 
 import pytest
 
@@ -19,10 +20,28 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(tmp_path: Path) -> None:
+@pytest.mark.parametrize("placement", ["back", "body", "floats-group"])
+def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(
+    placement: str, tmp_path: Path,
+) -> None:
     """Feature: article. Source tables remain searchable in returned lines."""
     identifier = "20516115"
     missed: list[str] = []
+    source = (ROOT / "testdata/sources/ncbi_efetch/pmc3040717.xml").read_bytes()
+    if placement != "back":
+        # Authored placements check that the final pass does not repeat tables
+        # rendered in place, including source tables without optional IDs.
+        document = ElementTree.fromstring(source)
+        parents = {child: parent for parent in document.iter() for child in parent}
+        article = document.find("article")
+        assert article is not None
+        destination = article.find("body") if placement == "body" else ElementTree.SubElement(article, placement)
+        assert destination is not None
+        for table in list(document.iter("table-wrap")):
+            parents[table].remove(table)
+            table.attrib.pop("id", None)
+            destination.append(table)
+        source = ElementTree.tostring(document)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
@@ -40,8 +59,7 @@ def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(tmp_path: Pat
             if target.path.endswith("/fullTextXML"):
                 return self.reply({}, 404)
             if target.path.endswith("/efetch.fcgi"):
-                body = (ROOT / "testdata/sources/ncbi_efetch/pmc3040717.xml").read_bytes()
-                return self.body(body, 200, "application/xml")
+                return self.body(source, 200, "application/xml")
             if target.path == "/":
                 return self.body(b"<ListBucketResult></ListBucketResult>", 200, "application/xml")
             if target.path == "/articles/PMC3040717/" or target.path.startswith("/PMC3040717"):
@@ -89,7 +107,7 @@ def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(tmp_path: Pat
     assert not missed, missed
     payload = json.loads(result.stdout)
     assert payload["truncated"] is False, payload
-    assert "**Table 1." in payload["text"]
-    assert "**Table 2." in payload["text"]
+    assert payload["text"].count("**Table 1.") == 1
+    assert payload["text"].count("**Table 2.") == 1
     assert "P1749R" in payload["text"], "Table 2 source token is missing from full-text lines"
     assert "|" in next(line for line in payload["text"].splitlines() if "P1749R" in line)

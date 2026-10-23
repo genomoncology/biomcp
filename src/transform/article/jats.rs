@@ -244,7 +244,10 @@ fn convert_floats_group(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mu
 // Tables can appear in back matter or nested containers outside the body walk.
 // Retain their source order without repeating tables already rendered in place.
 fn convert_remaining_tables(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mut RenderState) {
-    for table in root.descendants().filter(|node| node.has_tag_name("table-wrap")) {
+    for table in root
+        .descendants()
+        .filter(|node| node.has_tag_name("table-wrap"))
+    {
         if should_skip_rendered_float(table, state) {
             continue;
         }
