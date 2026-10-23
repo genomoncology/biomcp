@@ -127,6 +127,8 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
         args += ["--source", "pubtator"]
     if mode in {"retracted", "facets"}:
         args = ["--sort", "date", "--limit", "1"]
+    if mode == "retracted":
+        args += ["--include-retracted"]
     if mode == "facets":
         args += ["--date-from", str(today)]
     if mode == "bounds":
