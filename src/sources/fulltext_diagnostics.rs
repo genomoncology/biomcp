@@ -195,4 +195,53 @@ mod tests {
             assert!(safe.contains("REDACTED"));
         }
     }
+
+    // Isolation is a diagnostic security contract: concurrent providers cannot
+    // lend each other URLs or HTTP statuses, even on the same executor task.
+    #[tokio::test]
+    async fn concurrent_source_observations_keep_their_own_request_and_status() {
+        let client = reqwest_middleware::ClientBuilder::new(
+            reqwest::Client::builder().no_proxy().build().unwrap(),
+        )
+        .build();
+        let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(2));
+        let observe = |path: &'static str, status: u16| {
+            let client = client.clone();
+            let barrier = barrier.clone();
+            async move {
+                CURRENT_REQUEST
+                    .scope(RequestObservation::default(), async move {
+                        record_request(
+                            &client
+                                .get(format!("https://example.org/{path}?token=SYNTHETIC_SECRET")),
+                            SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS),
+                        );
+                        let response: Response = http::Response::builder()
+                            .status(status)
+                            .body("")
+                            .unwrap()
+                            .into();
+                        record_response(&response);
+                        barrier.wait().await;
+                        safe_error(&BioMcpError::Api {
+                            api: "provider".into(),
+                            message: "SYNTHETIC_UNSAFE_BODY".into(),
+                        })
+                    })
+                    .await
+            }
+        };
+        let (first, second) = tokio::join!(observe("first", 503), observe("second", 200));
+        assert!(first.contains("HTTP 503; request https://example.org/first?token=REDACTED"));
+        assert!(second.contains(
+            "HTTP 200; response error (decode); request https://example.org/second?token=REDACTED"
+        ));
+        assert!(!first.contains("second"));
+        assert!(!second.contains("first"));
+        assert!(!format!("{first}{second}").contains("SYNTHETIC"));
+        assert_eq!(
+            RequestObservation::default().timeout_detail(),
+            " No request URL was observed."
+        );
+    }
 }
