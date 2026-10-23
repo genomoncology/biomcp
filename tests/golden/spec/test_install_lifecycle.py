@@ -65,6 +65,7 @@ def test_uninstall_removes_owned_binary_and_receipt_only(
     assert result["changed"] is True
     assert not executable.exists()
     assert not receipt.exists()
+    assert not (executable.parent / ".biomcp-install.lock").exists()
     assert sibling.read_text(encoding="utf-8") == "unrelated installation content"
 
 
@@ -95,6 +96,7 @@ def test_uninstall_refuses_unproven_ownership_without_removing_files(
     assert completed.returncode != 0
     assert "installer" in completed.stderr
     assert executable.read_bytes() == binary_before
+    assert not (executable.parent / ".biomcp-install.lock").exists()
     assert (receipt.read_bytes() if receipt.exists() else None) == receipt_before
     assert sibling.read_text(encoding="utf-8") == "unrelated installation content"
 

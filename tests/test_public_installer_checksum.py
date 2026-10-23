@@ -613,7 +613,20 @@ def test_interrupted_installer_releases_lock_after_foreground_child_finishes(tmp
     install_dir = tmp_path / "install"
     process = _paused_installer(first, install_dir)
     process.terminate()
-    _resume_installer(process)
+    try:
+        second = tmp_path / "second"
+        second.mkdir()
+        fixture, _ = _fixture(second, "{digest}\n")
+        tools = _tools(second, "curl", "system")
+        contender = subprocess.run(
+            ["bash", str(INSTALLER)], capture_output=True, text=True, timeout=60,
+            env=os.environ | {"HOME": str(second), "BIOMCP_INSTALL_DIR": str(install_dir),
+                              "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "PATH": str(tools)},
+        )
+        assert contender.returncode != 0
+        assert "installation lock" in contender.stderr
+    finally:
+        _resume_installer(process)
     assert process.returncode == 143
     assert not (install_dir / ".biomcp-install.lock").exists()
     assert not list(install_dir.glob(".biomcp-stage.*"))

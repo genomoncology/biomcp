@@ -169,7 +169,10 @@ pub(crate) fn validate_owned(
     executable: &Path,
     lock: &InstallationLock,
 ) -> Result<OwnedInstallation, BioMcpError> {
-    if executable.parent() != lock.path.parent() {
+    let parent = executable
+        .parent()
+        .ok_or_else(|| BioMcpError::InvalidArgument("Executable has no parent directory".into()))?;
+    if Some(std::fs::canonicalize(parent)?.as_path()) != lock.path.parent() {
         return Err(BioMcpError::InvalidArgument(
             "Installation lock does not cover executable".into(),
         ));
