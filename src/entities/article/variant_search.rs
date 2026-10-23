@@ -5209,7 +5209,7 @@ fn resolution_unavailable_outcome(
                 limit,
                 returned: 0,
                 total: None,
-                has_more: true,
+                has_more: false,
                 next_page_token: None,
             },
             source_status,
@@ -5924,7 +5924,7 @@ async fn search_variant_articles_identity(
                 limit,
                 returned: rows.len(),
                 total: complete.then_some(total_candidates),
-                has_more: if complete { has_more } else { true },
+                has_more,
                 next_page_token: None,
             },
             source_status: statuses,
@@ -6737,7 +6737,7 @@ mod tests {
                     )
                     .await
                     .expect("deadline is an in-band terminal state");
-                    assert!(outcome.hard_error && outcome.response.pagination.has_more);
+                    assert!(outcome.hard_error && !outcome.response.pagination.has_more);
                     assert!(
                         outcome
                             .response
