@@ -453,6 +453,7 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
             } else {
                 context
             };
+            fulltext_diagnostics::record_error(&error, context);
             error.with_source_context(context)
         })?;
         fulltext_diagnostics::record_response(&response, context);

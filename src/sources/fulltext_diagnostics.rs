@@ -104,6 +104,35 @@ pub(crate) fn record_response(response: &Response, context: SourceContext) {
     });
 }
 
+pub(crate) fn record_error(error: &BioMcpError, context: SourceContext) {
+    let url = match error.underlying() {
+        BioMcpError::Http(error) | BioMcpError::HttpClientInit(error) => error.url(),
+        BioMcpError::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => error.url(),
+        BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(error)) => {
+            error.chain().find_map(|cause| {
+                cause
+                    .downcast_ref::<reqwest::Error>()
+                    .and_then(reqwest::Error::url)
+            })
+        }
+        _ => None,
+    };
+    if let Some(url) = url {
+        let _ = CURRENT_REQUEST.try_with(|observation| {
+            *observation
+                .0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(RequestDiagnostic {
+                url: safe_url(url),
+                status: error
+                    .external_failure(context.provider(), "article retrieval")
+                    .status,
+                context,
+            });
+        });
+    }
+}
+
 pub(crate) fn annotate_current_error(error: BioMcpError) -> BioMcpError {
     match CURRENT_REQUEST.try_with(Clone::clone) {
         Ok(observation) => observation.annotate(error),
@@ -244,5 +273,42 @@ mod tests {
             RequestObservation::default().timeout_detail(),
             " No request URL was observed."
         );
+    }
+
+    // A redirected transport failure has no response. Its typed error still
+    // owns the final URL, and no provider text is needed to describe it.
+    #[tokio::test]
+    async fn redirected_disconnect_names_the_failed_request_without_credentials() {
+        use crate::sources::RequestBuilderSourceContextExt;
+        let mut server = crate::test_support::TestHttpServer::respond(|request| async move {
+            if String::from_utf8_lossy(&request).contains("/initial") {
+                Ok(b"HTTP/1.1 302 Found\r\nLocation: /final?token=SYNTHETIC_SECRET\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".to_vec())
+            } else {
+                Ok(Vec::new())
+            }
+        }).unwrap();
+        let client = reqwest_middleware::ClientBuilder::new(
+            reqwest::Client::builder().no_proxy().build().unwrap(),
+        )
+        .build();
+        let origin = server.base.clone();
+        let diagnostic = CURRENT_REQUEST
+            .scope(RequestObservation::default(), async {
+                let error = client
+                    .get(format!("{origin}/initial"))
+                    .send_with_source_context(SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS))
+                    .await
+                    .unwrap_err();
+                safe_error(&error)
+            })
+            .await;
+        server.finish().unwrap();
+        assert!(
+            diagnostic.contains(&format!("request {origin}/final?token=REDACTED")),
+            "{diagnostic}"
+        );
+        assert!(diagnostic.contains("transport error"));
+        assert!(!diagnostic.contains("SYNTHETIC_SECRET"));
+        assert!(!diagnostic.contains("/initial"));
     }
 }
