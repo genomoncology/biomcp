@@ -140,3 +140,40 @@ def test_cargo_deny_reuses_only_the_exact_policy_version_without_network(tmp_pat
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.strip() == env["BIOMCP_TOOL_DIR"]
     assert not Path(env["CURL_LOG"]).exists()
+
+
+@pytest.mark.parametrize("cached_version", [None, "28.30", "28.3"])
+def test_protoc_bootstrap_reuses_only_the_exact_declared_version(
+    tmp_path: Path, cached_version: str | None,
+) -> None:
+    root, env = _cargo_fixture(tmp_path)
+    if cached_version:
+        _write_executable(Path(env["BIOMCP_TOOL_DIR"]) / "protoc",
+                          f"#!/bin/sh\necho libprotoc {cached_version}\n")
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools", "--protoc"],
+                            cwd=root, env=env, capture_output=True, text=True)
+    if cached_version == "28.3":
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == env["BIOMCP_TOOL_DIR"]
+        assert not Path(env["CURL_LOG"]).exists()
+    else:
+        assert result.returncode != 0
+        assert "https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protoc-28.3-linux-x86_64.zip" in Path(env["CURL_LOG"]).read_text()
+
+
+@pytest.mark.parametrize("failure", ["checksum", "policy", "platform"])
+def test_protoc_bootstrap_refuses_unverified_tools(tmp_path: Path, failure: str) -> None:
+    root, env = _cargo_fixture(tmp_path)
+    env["CURL_STATUS"] = "0"
+    if failure == "policy":
+        policy = root / ".github/workflows/ci.yml"
+        policy.write_text(policy.read_text().replace("PROTOC_VERSION: 28.3", "PROTOC_VERSION: 28.4"))
+    elif failure == "platform":
+        env["TEST_ARCH"] = "unsupported"
+    result = subprocess.run(["bash", "tools/bootstrap-lint-tools", "--protoc"],
+                            cwd=root, env=env, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert not (Path(env["BIOMCP_TOOL_DIR"]) / "protoc").exists()
+    assert ("checksum mismatch for protoc" if failure == "checksum" else "No pinned protoc archive") in result.stderr
+    if failure != "checksum":
+        assert not Path(env["CURL_LOG"]).exists()
