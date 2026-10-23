@@ -507,6 +507,7 @@ def _resume_installer(process: subprocess.Popen[str]) -> tuple[str, str]:
     return process.communicate("continue\n", timeout=60)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="controlled child descriptors require Unix")
 def test_concurrent_installers_preserve_binary_receipt_agreement(tmp_path: Path) -> None:
     first = tmp_path / "first"
     first.mkdir()
@@ -575,6 +576,7 @@ def test_failed_smoke_releases_only_its_own_installation_lock(tmp_path: Path) ->
     assert not list(install_dir.glob(".biomcp-stage.*"))
 
 
+@pytest.mark.skipif(os.name != "posix", reason="controlled child descriptors require Unix")
 def test_crashed_installer_requires_quiescence_before_pending_recovery(tmp_path: Path) -> None:
     first = tmp_path / "first"
     first.mkdir()
@@ -602,3 +604,19 @@ def test_crashed_installer_requires_quiescence_before_pending_recovery(tmp_path:
     assert receipt["state"] == "installed"
     assert receipt["sha256"] == hashlib.sha256((install_dir / "biomcp").read_bytes()).hexdigest()
     assert not lock.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="controlled child descriptors require Unix")
+def test_interrupted_installer_releases_lock_after_foreground_child_finishes(tmp_path: Path) -> None:
+    first = tmp_path / "first"
+    first.mkdir()
+    install_dir = tmp_path / "install"
+    process = _paused_installer(first, install_dir)
+    process.terminate()
+    _resume_installer(process)
+    assert process.returncode == 143
+    assert not (install_dir / ".biomcp-install.lock").exists()
+    assert not list(install_dir.glob(".biomcp-stage.*"))
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["state"] == "pending"
+    assert receipt["new_sha256"] == hashlib.sha256((install_dir / "biomcp").read_bytes()).hexdigest()

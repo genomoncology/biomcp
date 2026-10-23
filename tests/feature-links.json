@@ -303,7 +303,8 @@
         "test_concurrent_installers_preserve_binary_receipt_agreement": "install-update",
         "test_installer_preserves_existing_lock_entries": "install-update",
         "test_failed_smoke_releases_only_its_own_installation_lock": "install-update",
-        "test_crashed_installer_requires_quiescence_before_pending_recovery": "install-update"
+        "test_crashed_installer_requires_quiescence_before_pending_recovery": "install-update",
+        "test_interrupted_installer_releases_lock_after_foreground_child_finishes": "install-update"
       },
       "internal": {
         "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",

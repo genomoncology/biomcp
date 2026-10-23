@@ -165,9 +165,14 @@ fn validate_receipt_identity(
     Ok(())
 }
 
-pub(crate) fn validate_owned(executable: &Path, lock: &InstallationLock) -> Result<OwnedInstallation, BioMcpError> {
+pub(crate) fn validate_owned(
+    executable: &Path,
+    lock: &InstallationLock,
+) -> Result<OwnedInstallation, BioMcpError> {
     if executable.parent() != lock.path.parent() {
-        return Err(BioMcpError::InvalidArgument("Installation lock does not cover executable".into()));
+        return Err(BioMcpError::InvalidArgument(
+            "Installation lock does not cover executable".into(),
+        ));
     }
     let canonical = std::fs::canonicalize(executable).map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
@@ -344,12 +349,20 @@ mod tests {
     fn valid_receipt_proves_ownership_and_pending_new_state_recovers() {
         let root = TempDirGuard::new("install-owned");
         let executable = seed_owned(root.path());
-        let owned = validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()).unwrap();
+        let owned = validate_owned(
+            &executable,
+            &InstallationLock::acquire(&executable).unwrap(),
+        )
+        .unwrap();
         let new_hash = sha256_hex(b"new-binary");
         let pending = pending_receipt(&owned, "2.0.0", &new_hash, "nonce");
         write_receipt_atomic(&owned.receipt_path, &pending).unwrap();
         std::fs::write(&executable, b"new-binary").unwrap();
-        let recovered = validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()).unwrap();
+        let recovered = validate_owned(
+            &executable,
+            &InstallationLock::acquire(&executable).unwrap(),
+        )
+        .unwrap();
         assert_eq!(recovered.receipt.state, ReceiptState::Installed);
         assert_eq!(recovered.receipt.version, "2.0.0");
     }
@@ -361,12 +374,18 @@ mod tests {
         std::fs::write(&executable, b"binary").unwrap();
         let executable = std::fs::canonicalize(executable).unwrap();
         assert!(matches!(
-            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
+            validate_owned(
+                &executable,
+                &InstallationLock::acquire(&executable).unwrap()
+            ),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
         std::fs::write(receipt_path(&executable).unwrap(), b"{").unwrap();
         assert!(matches!(
-            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
+            validate_owned(
+                &executable,
+                &InstallationLock::acquire(&executable).unwrap()
+            ),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
     }
@@ -377,7 +396,10 @@ mod tests {
         let executable = seed_owned(root.path());
         std::fs::write(&executable, b"tampered").unwrap();
         assert!(matches!(
-            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
+            validate_owned(
+                &executable,
+                &InstallationLock::acquire(&executable).unwrap()
+            ),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
         assert!(
@@ -404,7 +426,10 @@ mod tests {
         std::fs::rename(&receipt, &receipt_target).unwrap();
         std::os::unix::fs::symlink(&receipt_target, &receipt).unwrap();
         assert!(matches!(
-            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
+            validate_owned(
+                &executable,
+                &InstallationLock::acquire(&executable).unwrap()
+            ),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
 
