@@ -6,7 +6,7 @@ Milestone: 0.9.5
 
 Priority: 2
 
-Changes: scripts/run-nightly-checks.sh, Makefile
+- Changes: `scripts/run-nightly-checks.sh`, `tools/bootstrap-lint-tools`, `tests/test_release_check_counterparts.py`, `tests/test_advisory_bootstrap.py`.
 
 ## Outcome
 
