@@ -1,6 +1,7 @@
 # 2360 — Article full text stays bounded
 
-Status: OPEN.
+Status: COMPLETE.
+Landed: 17e452ef7bfd3135898aee837325c72853f91863
 
 Milestone: 0.9.4
 
@@ -9,6 +10,8 @@ Priority: 1
 ## Outcome
 
 `biomcp get article PMID fulltext` returns the full text, or a bounded failure that names each route it tried and why it failed, well inside an agent's tool deadline. It never runs past that deadline with empty output while a working route exists.
+
+- Changes: `CHANGELOG.md`, `src/entities/article/detail.rs`, `src/entities/article/fulltext.rs`, `src/entities/article/fulltext_budget.rs`, `src/entities/article/mod.rs`, `src/error.rs`, `tests/feature-links.json`, `tests/article_asset_terminal/source_outcomes.rs`, `tests/test_article_fulltext_deadline.py`, `tools/test-wait-exceptions.json`.
 
 ## Evidence
 

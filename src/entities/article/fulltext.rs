@@ -77,6 +77,7 @@ pub(super) enum PdfDiscoveryAttempt {
 struct FulltextAttemptState {
     healthy_sources: Vec<String>,
     failure: Option<BioMcpError>,
+    failures: Vec<String>,
     best_partial: Option<ArticleFulltextCoverageKind>,
     attempts: Vec<ArticleFulltextAttempt>,
 }
@@ -89,6 +90,7 @@ impl FulltextAttemptState {
     }
 
     fn record_failure(&mut self, err: BioMcpError) {
+        self.failures.push(err.to_string());
         if self.failure.is_none() {
             self.failure = Some(err);
         }
@@ -722,13 +724,16 @@ pub(super) async fn resolve_fulltext(
     if resolved_pmcid.is_none() {
         match NcbiIdConverterClient::new() {
             Ok(ncbi) => {
-                let result = if let Some(pmid) = article.pmid.as_deref() {
-                    ncbi.pmid_to_pmcid(pmid).await
-                } else if let Some(doi) = article.doi.as_deref() {
-                    ncbi.doi_to_pmcid(doi).await
-                } else {
-                    Ok(None)
-                };
+                let result = super::fulltext_budget::route("NCBI ID Converter", async {
+                    if let Some(pmid) = article.pmid.as_deref() {
+                        ncbi.pmid_to_pmcid(pmid).await
+                    } else if let Some(doi) = article.doi.as_deref() {
+                        ncbi.doi_to_pmcid(doi).await
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .await;
                 match result {
                     Ok(value) => {
                         identity_bridge_was_healthy = true;
@@ -748,68 +753,66 @@ pub(super) async fn resolve_fulltext(
     for attempt in xml_fulltext_attempts(article, resolved_pmcid.as_deref()) {
         let source = xml_source_metadata(attempt.winner());
         let mut preprint_metadata = None;
-        let fetched = match attempt {
-            XmlFulltextAttempt::PreprintJats => {
-                fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
-                    .await
-                    .map(|value| {
-                        value.map(|(xml, metadata)| {
-                            preprint_metadata = Some(metadata);
-                            (xml, None)
-                        })
-                    })
-            }
-            XmlFulltextAttempt::EuropePmcPmc => match europe.as_ref() {
-                Some(client) => client
-                    .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
-                    .await
-                    .map(|value| value.map(|xml| (xml, None))),
-                None => {
-                    state.record_attempt(
-                        &source,
-                        ArticleFulltextAttemptSourceKind::JatsXml,
-                        ArticleFulltextAttemptCoverage::Unavailable,
-                        ArticleFulltextAttemptOutcome::Unavailable,
-                        ArticleFulltextCacheState::Bypass,
-                        ArticleFulltextAttemptReason::SourceUnavailable,
-                    );
-                    continue;
-                }
-            },
-            XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
-                Ok(client) => client
-                    .get_full_text_xml(resolved_pmcid.as_deref().expect("PMC attempt"))
-                    .await
-                    .map(|value| value.map(|xml| (xml, None))),
-                Err(err) => Err(err),
-            },
-            XmlFulltextAttempt::PmcOaArchive => match PmcOaClient::new() {
-                Ok(client) => client
-                    .get_full_text_xml_with_manifest(
-                        resolved_pmcid.as_deref().expect("PMC attempt"),
-                    )
-                    .await
-                    .map(|value| value.map(|(xml, manifest)| (xml, Some(manifest)))),
-                Err(err) => Err(err),
-            },
-            XmlFulltextAttempt::EuropePmcMed => match europe.as_ref() {
-                Some(client) => client
-                    .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
-                    .await
-                    .map(|value| value.map(|xml| (xml, None))),
-                None => {
-                    state.record_attempt(
-                        &source,
-                        ArticleFulltextAttemptSourceKind::JatsXml,
-                        ArticleFulltextAttemptCoverage::Unavailable,
-                        ArticleFulltextAttemptOutcome::Unavailable,
-                        ArticleFulltextCacheState::Bypass,
-                        ArticleFulltextAttemptReason::SourceUnavailable,
-                    );
-                    continue;
-                }
-            },
+        let route_name = match attempt {
+            XmlFulltextAttempt::EuropePmcPmc => "Europe PMC PMC XML",
+            XmlFulltextAttempt::EuropePmcMed => "Europe PMC MED XML",
+            XmlFulltextAttempt::NcbiEfetchPmc => "NCBI EFetch PMC XML",
+            XmlFulltextAttempt::PmcOaArchive => "PMC Open Access archive",
+            XmlFulltextAttempt::PreprintJats => "preprint JATS XML",
         };
+        let fetched = super::fulltext_budget::route(route_name, async {
+            match attempt {
+                XmlFulltextAttempt::PreprintJats => {
+                    fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
+                        .await
+                        .map(|value| {
+                            value.map(|(xml, metadata)| {
+                                preprint_metadata = Some(metadata);
+                                (xml, None)
+                            })
+                        })
+                }
+                XmlFulltextAttempt::EuropePmcPmc => match europe.as_ref() {
+                    Some(client) => client
+                        .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
+                        .await
+                        .map(|value| value.map(|xml| (xml, None))),
+                    None => Err(BioMcpError::SourceUnavailable {
+                        source_name: "Europe PMC".into(),
+                        reason: "client unavailable".into(),
+                        suggestion: "Retry the article request".into(),
+                    }),
+                },
+                XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
+                    Ok(client) => client
+                        .get_full_text_xml(resolved_pmcid.as_deref().expect("PMC attempt"))
+                        .await
+                        .map(|value| value.map(|xml| (xml, None))),
+                    Err(err) => Err(err),
+                },
+                XmlFulltextAttempt::PmcOaArchive => match PmcOaClient::new() {
+                    Ok(client) => client
+                        .get_full_text_xml_with_manifest(
+                            resolved_pmcid.as_deref().expect("PMC attempt"),
+                        )
+                        .await
+                        .map(|value| value.map(|(xml, manifest)| (xml, Some(manifest)))),
+                    Err(err) => Err(err),
+                },
+                XmlFulltextAttempt::EuropePmcMed => match europe.as_ref() {
+                    Some(client) => client
+                        .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
+                        .await
+                        .map(|value| value.map(|xml| (xml, None))),
+                    None => Err(BioMcpError::SourceUnavailable {
+                        source_name: "Europe PMC".into(),
+                        reason: "client unavailable".into(),
+                        suggestion: "Retry the article request".into(),
+                    }),
+                },
+            }
+        })
+        .await;
 
         let Some((xml, oa_manifest)) = (match fetched {
             Ok(value) => value,
@@ -964,7 +967,14 @@ pub(super) async fn resolve_fulltext(
 
     if let Some(pmcid) = resolved_pmcid.as_deref() {
         let source = html_source_metadata();
-        let resolution = try_resolve_html(pmcid, requested_id).await;
+        let resolution = super::fulltext_budget::route("PMC HTML", async {
+            Ok(try_resolve_html(pmcid, requested_id).await)
+        })
+        .await
+        .unwrap_or_else(|error| HtmlResolution {
+            outcome: FulltextStepOutcome::Failed(error),
+            cache_state: ArticleFulltextCacheState::Bypass,
+        });
         match resolution.outcome {
             FulltextStepOutcome::Data(classified) => {
                 merge_source_abstract(article, classified.abstract_text.clone());
@@ -1112,104 +1122,111 @@ pub(super) async fn resolve_fulltext(
             );
             state.record_failure(err);
         }
-        PdfDiscoveryAttempt::Data(pdf_url) => match try_resolve_pdf(&pdf_url, requested_id).await {
-            FulltextStepOutcome::Data(text) => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::FullText,
-                    ArticleFulltextAttemptOutcome::Data,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::BodyDetected,
-                );
-                let mut source_identifier =
-                    parse_pdf_url(&pdf_url).expect("successful PDF resolution validates the URL");
-                source_identifier.set_query(None);
-                source_identifier.set_fragment(None);
-                let license = article
-                    .semantic_scholar
-                    .as_ref()
-                    .and_then(|value| value.open_access_pdf.as_ref())
-                    .and_then(|value| value.license.as_deref())
-                    .and_then(clean_manifest_string);
-                let manifest = ArticleFulltextManifest {
-                    source_kind: ArticleFulltextManifestKind::Pdf,
-                    provider: manifest_provider(&pdf_source),
-                    source_identifier: source_identifier.to_string(),
-                    quality: manifest_quality(true),
-                    reuse: manifest_reuse(license),
-                    provenance: manifest_provenance(article, true, None, None),
-                };
-                article.full_text_coverage = Some(ArticleFulltextCoverage {
-                    coverage: ArticleFulltextCoverageKind::FullText,
-                    attempts: std::mem::take(&mut state.attempts),
-                });
-                return save_resolved_fulltext(
-                    article,
-                    requested_id,
-                    ArticleFulltextKind::Pdf,
-                    text,
-                    pdf_source,
-                    manifest,
-                )
-                .await;
+        PdfDiscoveryAttempt::Data(pdf_url) => {
+            match super::fulltext_budget::route("open PDF", async {
+                Ok(try_resolve_pdf(&pdf_url, requested_id).await)
+            })
+            .await
+            .unwrap_or_else(FulltextStepOutcome::Failed)
+            {
+                FulltextStepOutcome::Data(text) => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::FullText,
+                        ArticleFulltextAttemptOutcome::Data,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::BodyDetected,
+                    );
+                    let mut source_identifier = parse_pdf_url(&pdf_url)
+                        .expect("successful PDF resolution validates the URL");
+                    source_identifier.set_query(None);
+                    source_identifier.set_fragment(None);
+                    let license = article
+                        .semantic_scholar
+                        .as_ref()
+                        .and_then(|value| value.open_access_pdf.as_ref())
+                        .and_then(|value| value.license.as_deref())
+                        .and_then(clean_manifest_string);
+                    let manifest = ArticleFulltextManifest {
+                        source_kind: ArticleFulltextManifestKind::Pdf,
+                        provider: manifest_provider(&pdf_source),
+                        source_identifier: source_identifier.to_string(),
+                        quality: manifest_quality(true),
+                        reuse: manifest_reuse(license),
+                        provenance: manifest_provenance(article, true, None, None),
+                    };
+                    article.full_text_coverage = Some(ArticleFulltextCoverage {
+                        coverage: ArticleFulltextCoverageKind::FullText,
+                        attempts: std::mem::take(&mut state.attempts),
+                    });
+                    return save_resolved_fulltext(
+                        article,
+                        requested_id,
+                        ArticleFulltextKind::Pdf,
+                        text,
+                        pdf_source,
+                        manifest,
+                    )
+                    .await;
+                }
+                FulltextStepOutcome::Empty => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::None,
+                        ArticleFulltextAttemptOutcome::Empty,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::OpenPdfDownloadAbsent,
+                    );
+                    state.record_empty("Semantic Scholar");
+                }
+                FulltextStepOutcome::Unusable(err) => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::Unusable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::OpenPdfTextUnusable,
+                    );
+                    state.record_failure(err);
+                }
+                FulltextStepOutcome::BotChallenge(err) => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::Unusable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::BotChallenge,
+                    );
+                    state.record_failure(err);
+                }
+                FulltextStepOutcome::Failed(err) => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::Unavailable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::OpenPdfDownloadFailed,
+                    );
+                    state.record_failure(err);
+                }
+                FulltextStepOutcome::Refused(err) => {
+                    state.record_attempt(
+                        &pdf_source,
+                        ArticleFulltextAttemptSourceKind::Pdf,
+                        ArticleFulltextAttemptCoverage::Unavailable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::OpenPdfLinkRejected,
+                    );
+                    state.record_failure(err);
+                }
             }
-            FulltextStepOutcome::Empty => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::None,
-                    ArticleFulltextAttemptOutcome::Empty,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::OpenPdfDownloadAbsent,
-                );
-                state.record_empty("Semantic Scholar");
-            }
-            FulltextStepOutcome::Unusable(err) => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::Unusable,
-                    ArticleFulltextAttemptOutcome::Unavailable,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::OpenPdfTextUnusable,
-                );
-                state.record_failure(err);
-            }
-            FulltextStepOutcome::BotChallenge(err) => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::Unusable,
-                    ArticleFulltextAttemptOutcome::Unavailable,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::BotChallenge,
-                );
-                state.record_failure(err);
-            }
-            FulltextStepOutcome::Failed(err) => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::Unavailable,
-                    ArticleFulltextAttemptOutcome::Unavailable,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::OpenPdfDownloadFailed,
-                );
-                state.record_failure(err);
-            }
-            FulltextStepOutcome::Refused(err) => {
-                state.record_attempt(
-                    &pdf_source,
-                    ArticleFulltextAttemptSourceKind::Pdf,
-                    ArticleFulltextAttemptCoverage::Unavailable,
-                    ArticleFulltextAttemptOutcome::Unavailable,
-                    ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::OpenPdfLinkRejected,
-                );
-                state.record_failure(err);
-            }
-        },
+        }
     }
 
     if state.failure.is_none() && state.healthy_sources.is_empty() && identity_bridge_was_healthy {
@@ -1224,6 +1241,13 @@ pub(super) async fn resolve_fulltext(
                 Some(empty_fulltext_note(&state.healthy_sources))
             }
         });
+    if !state.failures.is_empty() {
+        article
+            .full_text_note
+            .as_mut()
+            .expect("failure note")
+            .push_str(&format!(" Attempts: {}", state.failures.join("; ")));
+    }
     article
         .section_outcomes
         .complete("fulltext", final_fulltext_outcome(&state));
