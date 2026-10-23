@@ -259,11 +259,7 @@ async fn bounded_source_attempt<T>(
     budget: std::time::Duration,
     future: impl std::future::Future<Output = SourceAttempt<T>>,
 ) -> SourceAttempt<T> {
-    let observation = crate::sources::fulltext_diagnostics::RequestObservation::default();
-    match crate::sources::fulltext_diagnostics::CURRENT_REQUEST
-        .scope(observation, tokio::time::timeout(budget, future))
-        .await
-    {
+    match tokio::time::timeout(budget, future).await {
         Ok(attempt) => attempt,
         Err(_) => SourceAttempt::TimedOut,
     }
@@ -392,26 +388,13 @@ pub(super) async fn resolve_article_assets(
 
 async fn resolve_article_assets_for(
     requested_id: &str,
-    article: Article,
-    wanted: Option<&str>,
-) -> Result<ResolvedArticleAssets, BioMcpError> {
-    crate::sources::fulltext_diagnostics::CURRENT_REQUEST
-        .scope(
-            crate::sources::fulltext_diagnostics::RequestObservation::default(),
-            resolve_article_assets_observed(requested_id, article, wanted),
-        )
-        .await
-}
-
-async fn resolve_article_assets_observed(
-    requested_id: &str,
     mut article: Article,
     wanted: Option<&str>,
 ) -> Result<ResolvedArticleAssets, BioMcpError> {
     let (pmcid, mut any_failed) = match resolve_article_pmcid(&article).await {
         Ok(pmcid) => (pmcid, false),
-        Err(error) => {
-            tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "Article asset identity resolution failed");
+        Err(_) => {
+            tracing::warn!("Article asset identity resolution failed");
             (None, true)
         }
     };
@@ -2242,9 +2225,9 @@ async fn figshare_collection(
         };
         match client.article(&reference).await {
             Ok(article) => articles.push(article),
-            Err(error) => {
+            Err(_) => {
                 failed = true;
-                tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "Figshare sibling article request failed");
+                tracing::warn!("Figshare sibling article request failed");
             }
         }
     }
@@ -2261,8 +2244,8 @@ async fn append_figshare_search_ids(
 ) -> (usize, bool) {
     let rows = match client.search_articles(query).await {
         Ok(rows) => rows,
-        Err(error) => {
-            tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "Figshare sibling search request failed");
+        Err(_) => {
+            tracing::warn!("Figshare sibling search request failed");
             return (0, true);
         }
     };

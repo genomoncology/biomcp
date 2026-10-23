@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("failure", ["manifest_http", "manifest_transport", "manifest_decode", "manifest_redirect", "xml_http", "xml_decode", "figshare_http", "figshare_decode"])
+@pytest.mark.parametrize("failure", ["manifest_http", "manifest_transport", "manifest_decode", "manifest_redirect", "xml_http", "xml_decode"])
 def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure: str) -> None:
     """Feature: article. Failed full-text routes name safe URLs and failure details."""
     sentinel = "SYNTHETIC_CREDENTIAL_SENTINEL"
@@ -37,11 +37,6 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
                 content_type = "application/xml"
                 body = ("<article><body><sec><title>Results</title>"
                         + "<p>Available body.</p>" * 30 + "</sec></body></article>").encode()
-            elif path == "/s2/graph/v1/paper/PMID:33766116" and failure.startswith("figshare"):
-                body = json.dumps({"paperId": "control", "title": "Route warning control",
-                                   "openAccessPdf": {"url": "https://figshare.com/articles/journal_contribution/control/123"}}).encode()
-            elif path == "/v2/articles/123" and failure.startswith("figshare"):
-                body = json.dumps({"id": 123, "title": "Route warning control", "files": []}).encode()
             elif failure == "manifest_redirect" and "list-type=" in self.path:
                 self.send_response(302)
                 self.send_header("Location", origin + "/redirected?token=" + sentinel)
@@ -65,15 +60,6 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
             self.end_headers()
             self.wfile.write(body)
 
-        def do_POST(self) -> None:  # noqa: N802
-            self.rfile.read(int(self.headers.get("Content-Length", "0")))
-            body = (unsafe_body + sentinel).encode()
-            self.send_response(200 if failure == "figshare_decode" else 503)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
         def log_message(self, *_args: object) -> None:
             pass
 
@@ -85,7 +71,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         ("BIOMCP_EUROPEPMC_BASE", "/epmc"), ("BIOMCP_PUBTATOR_BASE", "/pubtator"),
         ("BIOMCP_S2_BASE", "/s2"), ("BIOMCP_NCBI_IDCONV_BASE", "/idconv"),
         ("BIOMCP_PMC_HTML_BASE", "/html"), ("BIOMCP_PMC_OA_BASE", "/oa"),
-        ("BIOMCP_PUBMED_BASE", "/pubmed"), ("BIOMCP_FIGSHARE_BASE", ""),
+        ("BIOMCP_PUBMED_BASE", "/pubmed"),
     )}
     env = isolated_command_env(tmp_path, provider_env, origin)
     env.update({"NCBI_API_KEY": sentinel, "RUST_LOG": "warn"})
@@ -102,21 +88,15 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
-    if failure.startswith("figshare"):
-        warning = next((line for line in result.stderr.splitlines()
-                        if "Figshare sibling search request failed" in line), None)
-        assert warning is not None, result.stderr
-        assert origin + "/v2/articles/search" in warning, warning
+    warning = next(line for line in result.stderr.splitlines()
+                   if "PMC OA manifest request failed" in line)
+    if failure == "manifest_redirect":
+        assert origin + "/redirected?token=REDACTED" in warning, warning
     else:
-        warning = next(line for line in result.stderr.splitlines()
-                       if "PMC OA manifest request failed" in line)
-        if failure == "manifest_redirect":
-            assert origin + "/redirected?token=REDACTED" in warning, warning
-        else:
-            assert origin + "/oa" in warning, warning
-            assert "prefix=PMC8010000" in warning, warning
+        assert origin + "/oa" in warning, warning
+        assert "prefix=PMC8010000" in warning, warning
     expected = ("transport error" if failure == "manifest_transport" else
-                "HTTP 200; response error (decode)" if failure in {"manifest_decode", "figshare_decode"} else "HTTP 503")
+                "HTTP 200; response error (decode)" if failure == "manifest_decode" else "HTTP 503")
     assert expected in warning, warning
     assert sentinel not in result.stdout + result.stderr
     assert unsafe_body not in result.stdout + result.stderr
