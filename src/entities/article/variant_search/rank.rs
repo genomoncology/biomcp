@@ -164,7 +164,8 @@ mod tests {
     use super::super::VariantArticleProvenance;
     use super::*;
 
-    // Numeric policy contract: aliases cannot fabricate independent evidence,
+    // Authored numeric policy contract; these facts create no identity observations.
+    // Aliases cannot fabricate independent evidence,
     // and no amount of native-rank support may outweigh a preceding factor.
     #[test]
     fn source_families_and_curation_have_lexicographic_priority() {

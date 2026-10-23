@@ -1,4 +1,8 @@
-"""Replay public recorded article metadata through isolated provider endpoints."""
+"""Replay reconstructed retrieval lists from public recorded article metadata.
+
+Stored PubTator/LitVar provenance is inventory only; those sources are disabled.
+This helper does not recreate original annotation-family agreement or identity.
+"""
 
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
