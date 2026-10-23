@@ -15,13 +15,13 @@ import pytest
 from hang_guard import HANG_TIMEOUT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal"])
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume"])
 def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
@@ -30,12 +30,16 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     requests: list[str] = []
     peer_started = threading.Event()
     wait_failures: list[str] = []
+    allow_tail = threading.Event()
+    europe_starts: list[str] = []
+    europe_tails: list[str] = []
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, value: object, status: int = 200) -> None:
             body = json.dumps(value).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -47,7 +51,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.endswith("/esearch.fcgi"):
                 term = query["term"][0]
                 requests.append(term)
-                ids = expected if term == "AKT1 E17K" else []
+                ids = expected if term == "AKT1 E17K" and case != "provider_resume" else []
                 if "[Title/Abstract]" in term:
                     peer_started.set()
                 if ids and case == "slow_literal" and not peer_started.wait(HANG_TIMEOUT):
@@ -77,6 +81,22 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path == "/search/":
                 return self.reply({"results": [], "count": 0, "total_pages": 0, "current": 1})
             if path == "/search":
+                term = query.get("query", [""])[0]
+                if case == "provider_resume" and "TITLE_ABS" in term:
+                    cursor = query.get("cursorMark", ["*"])[0]
+                    if cursor == "*":
+                        europe_starts.append(term)
+                        pmid = "99999991"
+                        continuation = {"nextCursorMark": "tail"}
+                    else:
+                        europe_tails.append(term)
+                        if not allow_tail.is_set():
+                            return self.reply({"error": "Authored unavailable tail"}, 503)
+                        pmid = "99999992"
+                        continuation = {}
+                    return self.reply({"hitCount": 2, **continuation,
+                                       "resultList": {"result": [{"id": pmid, "pmid": pmid,
+                                                                  "source": "MED", "title": "Authored retained provider row"}]}})
                 return self.reply({"hitCount": 0, "resultList": {"result": []}})
             if path.startswith("/graph/v1/paper/search"):
                 return self.reply({"total": 0, "data": []})
@@ -102,12 +122,21 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     )}
     providers.update({"BIOMCP_MYVARIANT_BASE": origin + "/v1",
                       "BIOMCP_PUBMED_BASE": origin + "/entrez/eutils"})
-    env = isolated_command_env(tmp_path, providers, origin)
+    env = (retained_cache_env(tmp_path, providers, origin) if case == "provider_resume"
+           else isolated_command_env(tmp_path, providers, origin))
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     found: set[str] = set()
     try:
-        offsets = [0] if case == "hard_limit" else range(0, len(expected), 50)
-        for offset in offsets:
+        initial_starts = 0
+        offsets = [0, 0] if case == "provider_resume" else (
+            [0] if case == "hard_limit" else range(0, len(expected), 50))
+        for invocation, offset in enumerate(offsets):
+            if case == "provider_resume" and invocation == 1:
+                initial_starts = len(europe_starts)
+                assert initial_starts > 0
+                assert "99999991" in found
+                assert "99999992" not in found
+                allow_tail.set()
             process = subprocess.run([
                 os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
                 "--json", "variant", "articles", "AKT1 E17K", "--limit", "50",
@@ -120,6 +149,11 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert row["identity"]["status"] == "unverified"
                 if case == "missing_summary" and row["pmid"] == "33123537":
                     assert row["metadata_status"]["status"] != "available"
+        if case == "provider_resume":
+            assert {"99999991", "99999992"} <= found
+            assert len(europe_starts) == initial_starts, europe_starts
+            assert europe_tails
+            return
         assert not wait_failures, wait_failures
         if case == "slow_literal":
             assert peer_started.is_set()

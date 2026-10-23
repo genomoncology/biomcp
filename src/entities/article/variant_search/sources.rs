@@ -16,6 +16,8 @@ pub(crate) struct ProviderProgress {
     pub cursor: Option<String>,
     pub total: Option<usize>,
     pub complete: bool,
+    #[serde(default)]
+    pub aliases: BTreeMap<String, Vec<String>>,
 }
 
 impl ProviderProgress {
@@ -40,14 +42,140 @@ impl ProviderProgress {
             cursor,
             total,
             complete,
+            aliases: BTreeMap::new(),
         }
     }
 }
 
-pub(crate) fn provider_progress_key(route: &str, source: &str, query: &str) -> String {
+fn retained_candidates(
+    progress: &ProviderProgress,
+    route: &str,
+    source: &str,
+) -> Vec<ArticleCandidate> {
+    progress
+        .restored_rows()
+        .into_iter()
+        .map(|row| {
+            let aliases = progress
+                .aliases
+                .get(&stable_article_identifier(&row))
+                .cloned()
+                .unwrap_or_default();
+            candidate_with_provenance(row, route, source, aliases)
+        })
+        .collect()
+}
+
+fn save_candidates(
+    execution: &VariantArticleExecutionContext,
+    key: String,
+    candidates: &[ArticleCandidate],
+    complete: bool,
+) {
+    let rows = candidates
+        .iter()
+        .map(|candidate| candidate.row.clone())
+        .collect::<Vec<_>>();
+    let mut progress = ProviderProgress::capture(&rows, 0, None, Some(rows.len()), complete);
+    for candidate in candidates {
+        progress.aliases.insert(
+            stable_article_identifier(&candidate.row),
+            candidate
+                .variant_provenance
+                .iter()
+                .flat_map(|fact| fact.query_aliases.iter().cloned())
+                .collect(),
+        );
+    }
+    execution.set_provider_progress(key, progress);
+}
+
+pub(super) async fn requested_pubtator_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+    route: &str,
+) -> Result<RequestedPubTatorResult, BioMcpError> {
+    let query = format!("requested-entity:{input}");
+    let (key, progress) = retained_provider_progress(Some(execution), route, "pubtator", &query);
+    let mut retained = retained_candidates(&progress, route, "pubtator");
+    if progress.complete {
+        return Ok((retained, false, true, false));
+    }
+    let (rows, incomplete, succeeded, stopped) =
+        match super::requested_pubtator_candidates(input, context, execution, route).await {
+            Ok(result) => result,
+            Err(error) if retained.is_empty() => return Err(error),
+            Err(_) => (Vec::new(), true, false, false),
+        };
+    retained.extend(rows);
+    let retained = super::merge::merge_candidates(retained);
+    save_candidates(execution, key, &retained, succeeded && !incomplete);
+    Ok((retained, incomplete, succeeded, stopped))
+}
+
+pub(super) async fn litvar_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
+    let (key, progress) =
+        retained_provider_progress(Some(execution), "litvar_variant", "litvar", input);
+    let mut retained = retained_candidates(&progress, "litvar_variant", "litvar");
+    if progress.complete {
+        return Ok((retained, false, true));
+    }
+    let (rows, incomplete, succeeded) =
+        match super::litvar_candidates(input, context, execution).await {
+            Ok(result) => result,
+            Err(error) if retained.is_empty() => return Err(error),
+            Err(_) => (Vec::new(), true, false),
+        };
+    retained.extend(rows);
+    let retained = super::merge::merge_candidates(retained);
+    save_candidates(execution, key, &retained, succeeded && !incomplete);
+    Ok((retained, incomplete, succeeded))
+}
+
+pub(crate) fn provider_progress_key(_route: &str, source: &str, query: &str) -> String {
     // A provider's query semantics, rather than its enclosing union strategy,
     // bind successful membership and its native continuation.
-    format!("{source}\u{1f}{route}\u{1f}{query}")
+    format!("{source}\u{1f}{query}")
+}
+
+pub(crate) fn retained_provider_progress(
+    execution: Option<&VariantArticleExecutionContext>,
+    route: &str,
+    source: &str,
+    query: &str,
+) -> (String, ProviderProgress) {
+    let key = provider_progress_key(route, source, query);
+    let progress = execution
+        .and_then(|execution| execution.provider_progress(&key))
+        .unwrap_or_default();
+    if progress.complete
+        && let Some(execution) = execution
+    {
+        execution.record(route, source, Instant::now(), "ok", 0);
+    }
+    (key, progress)
+}
+
+pub(crate) fn save_provider_progress(
+    execution: Option<&VariantArticleExecutionContext>,
+    key: &str,
+    rows: &[ArticleSearchResult],
+    offset: usize,
+    cursor: Option<String>,
+    total: Option<usize>,
+    complete: bool,
+) {
+    if let Some(execution) = execution {
+        execution.set_provider_progress(
+            key.into(),
+            ProviderProgress::capture(rows, offset, cursor, total, complete),
+        );
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
