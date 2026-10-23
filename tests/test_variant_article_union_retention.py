@@ -25,7 +25,8 @@ from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
 pytestmark = [pytest.mark.needs_binary]
 
 
-def test_union_pages_keep_component_pmids_when_source_support_changes(tmp_path: Path) -> None:
+@pytest.mark.parametrize("scenario", ["changing_support", "shared_doi", "secondary_bridge"])
+def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None:
     control = json.loads(
         (REPO_ROOT / "tests/fixtures/article/gene-aliases/authored.json").read_text()
     )
@@ -54,10 +55,18 @@ def test_union_pages_keep_component_pmids_when_source_support_changes(tmp_path: 
                 body = {"results": [], "count": 0, "total_pages": 0, "current": 1}
             elif target.path == "/search":
                 metadata = "EXT_ID:" in query.get("query", [""])[0]
-                ids = [first, second] if metadata else ([second] if phase["support"] else [])
+                ids = ([first, second] if metadata or scenario != "changing_support"
+                       else ([second] if phase["support"] else []))
                 rows = [{"id": pmid, "pmid": pmid, "source": "MED",
                          "title": "Authored retrieval membership control", "pubYear": "2026"}
                         for pmid in ids]
+                if scenario != "changing_support":
+                    for row in rows:
+                        row["doi"] = "10.0000/authored-shared-secondary"
+                    if scenario == "secondary_bridge" and not metadata:
+                        rows.append({"id": "PMC99999993", "source": "PMC",
+                                     "doi": "10.0000/authored-shared-secondary",
+                                     "title": "Authored PMID-less bridge"})
                 body = {"hitCount": len(rows), "resultList": {"result": rows}}
             elif target.path.endswith("/esearch.fcgi"):
                 body = {"esearchresult": {"idlist": [], "count": "0"}}
@@ -101,13 +110,14 @@ def test_union_pages_keep_component_pmids_when_source_support_changes(tmp_path: 
     pages: dict[str, list[dict]] = {"annotation": [], "union": []}
     try:
         for strategy in pages:
-            for offset in (0, 1):
+            for offset in ((0, 1) if scenario == "changing_support" else (0,)):
                 phase["support"] = strategy == "union" and offset == 0
                 env = isolated_command_env(tmp_path / f"{strategy}-{offset}", providers, origin)
                 env["BIOMCP_DISABLE_SOURCES"] = "mygene-info,pubmed,pubtator3"
                 result = subprocess.run(
                     [binary, "--no-cache", "--json", "variant", "articles", "ABCC8 R1437Q",
-                     "--strategy", strategy, "--limit", "1", "--offset", str(offset), "--debug-plan"],
+                     "--strategy", strategy, "--limit", "1" if scenario == "changing_support" else "50",
+                     "--offset", str(offset), "--debug-plan"],
                     env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
                 )
                 assert result.returncode == 0, result.stdout + result.stderr
