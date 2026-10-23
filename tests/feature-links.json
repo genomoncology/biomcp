@@ -46,6 +46,9 @@
     "tests/test_article_disease_filter.py": {
       "feature": "article"
     },
+    "tests/test_article_fulltext_deadline.py": {
+      "feature": "article"
+    },
     "tests/test_article_fulltext_license.py": {
       "feature": "article"
     },
