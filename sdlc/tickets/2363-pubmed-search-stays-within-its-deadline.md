@@ -15,7 +15,7 @@ Article search returns PubMed results when PubMed answers promptly, and reports 
 - Research recheck of the 0.9.4 candidate b56138d27 (research repo f1c305c, sdlc/records/0042-test-the-0-9-4-candidate-hard.md; raw outputs on Blue under /home/ian/workspace/data/research/runs/0042/), relayed by Jarvis in m3902. These are observations: reproduce on current main first, and withdraw with evidence if it does not reproduce.
 - C003-PUBMED and C004-PUBMED: `biomcp search article -g CHEK2 --date-from 2026-09-01 --limit 50 --max-per-source 50 --sort date --json` and the CDKN2A c.149A>C query report "PubMed timed out after 12s" with complete=false, twice each. Direct ESearch from Blue returned 200 in 0.25 s, with and without the key. Find what in the PubMed path (follow-up efetch/esummary calls, rate pacing, queueing behind other sources) spends the 12 s.
 
-- Changes: `src/sources/pubmed.rs`, `tests/test_article_pubmed_deadline.py`, `CHANGELOG.md`. Pair the PubMed date bounds and cover prompt and stalled provider replies.
+- Changes: `src/sources/pubmed.rs`, `tests/test_article_pubmed_deadline.py`, `tests/feature-links.json`, `CHANGELOG.md`. Pair the PubMed date bounds and cover prompt and stalled provider replies.
 
 ## Proof
 
