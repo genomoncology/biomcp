@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 1
 
-- Changes: `install.sh`, `docs/install.sh`, `src/cli/install.rs`, `src/cli/update.rs`, `src/cli/system/dispatch.rs`, `tests/test_public_installer_checksum.py`, `tests/golden/spec/test_install_lifecycle.py`, `CHANGELOG.md`.
+- Changes: `install.sh`, `docs/install.sh`, `src/cli/install.rs`, `src/cli/update.rs`, `src/cli/update/tests.rs`, `src/cli/system/dispatch.rs`, `tests/test_public_installer_checksum.py`, `tests/golden/spec/test_install_lifecycle.py`, `CHANGELOG.md`, `tests/feature-links.json`.
 
 ## Outcome
 

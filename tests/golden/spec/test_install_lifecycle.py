@@ -13,6 +13,7 @@ import pytest
 
 from replay_env import ReplayEnvironment
 from test_golden_output import BINARY
+from test_public_installer_checksum import _paused_installer, _resume_installer
 
 pytestmark = [
     pytest.mark.needs_binary,
@@ -96,3 +97,58 @@ def test_uninstall_refuses_unproven_ownership_without_removing_files(
     assert executable.read_bytes() == binary_before
     assert (receipt.read_bytes() if receipt.exists() else None) == receipt_before
     assert sibling.read_text(encoding="utf-8") == "unrelated installation content"
+
+
+def test_uninstall_never_recovers_a_live_installers_pending_receipt(
+    tmp_path: Path, replay: ReplayEnvironment
+) -> None:
+    executable, receipt, sibling = _installation(tmp_path)
+    first = tmp_path / "installer"
+    first.mkdir()
+    process = _paused_installer(first, executable.parent, phase="pending")
+    pending = receipt.read_bytes()
+    before_binary = executable.read_bytes()
+    try:
+        refused = subprocess.run(
+            [str(executable), "uninstall"], env=replay.command_env(tmp_path),
+            capture_output=True, text=True, timeout=60, check=False,
+        )
+        assert refused.returncode != 0
+        assert "installation lock" in refused.stderr
+        assert receipt.read_bytes() == pending
+        assert executable.read_bytes() == before_binary
+    finally:
+        _, stderr = _resume_installer(process)
+    assert process.returncode == 0, stderr
+    installed = json.loads(receipt.read_text())
+    assert installed["state"] == "installed"
+    assert installed["sha256"] == hashlib.sha256(executable.read_bytes()).hexdigest()
+    assert sibling.exists()
+    assert not (executable.parent / ".biomcp-install.lock").exists()
+
+
+@pytest.mark.parametrize("entry", ["directory", "file", "symlink"])
+def test_uninstall_preserves_existing_lock_entries(
+    tmp_path: Path, replay: ReplayEnvironment, entry: str
+) -> None:
+    executable, receipt, _ = _installation(tmp_path)
+    lock = executable.parent / ".biomcp-install.lock"
+    target = tmp_path / "target"
+    target.mkdir()
+    if entry == "directory":
+        lock.mkdir()
+    elif entry == "file":
+        lock.write_text("untouched")
+    else:
+        lock.symlink_to(target, target_is_directory=True)
+    before = receipt.read_bytes()
+    refused = subprocess.run(
+        [str(executable), "uninstall"], env=replay.command_env(tmp_path),
+        capture_output=True, text=True, timeout=60, check=False,
+    )
+    assert refused.returncode != 0
+    assert "installation lock" in refused.stderr
+    assert receipt.read_bytes() == before
+    assert executable.exists()
+    assert lock.is_symlink() if entry == "symlink" else lock.exists()
+    assert target.is_dir()

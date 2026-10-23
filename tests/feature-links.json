@@ -300,7 +300,10 @@
         "test_latest_install_receipt_carries_the_true_version": "install-update",
         "test_pinned_install_still_refuses_a_version_mismatch": "install-update",
         "test_installer_reads_existing_version_when_install_path_contains_spaces": "install-update",
-        "test_concurrent_installers_preserve_binary_receipt_agreement": "install-update"
+        "test_concurrent_installers_preserve_binary_receipt_agreement": "install-update",
+        "test_installer_preserves_existing_lock_entries": "install-update",
+        "test_failed_smoke_releases_only_its_own_installation_lock": "install-update",
+        "test_crashed_installer_requires_quiescence_before_pending_recovery": "install-update"
       },
       "internal": {
         "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",

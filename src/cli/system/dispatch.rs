@@ -564,8 +564,9 @@ pub(super) fn uninstall_self() -> Result<String, crate::error::BioMcpError> {
 
 #[cfg(unix)]
 pub(super) fn uninstall_owned_at(current: &Path) -> Result<String, crate::error::BioMcpError> {
-    let owned = crate::cli::install::validate_owned(current)?;
-    let revalidated = crate::cli::install::validate_owned(current)?;
+    let lock = crate::cli::install::InstallationLock::acquire(current)?;
+    let owned = crate::cli::install::validate_owned(current, &lock)?;
+    let revalidated = crate::cli::install::validate_owned(current, &lock)?;
     if owned.receipt != revalidated.receipt {
         return Err(crate::error::BioMcpError::PackageManagedInstall {
             guidance: "The installer receipt changed during uninstall; no files were removed."

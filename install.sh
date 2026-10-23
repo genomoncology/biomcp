@@ -304,6 +304,32 @@ mkdir -p "$INSTALL_DIR"
 INSTALL_DIR="$(cd "$INSTALL_DIR" && pwd -P)"
 installed_bin="$INSTALL_DIR/$(basename "$bin_path")"
 receipt="$INSTALL_DIR/biomcp.install.json"
+# mkdir is atomic on every supported shell platform. Existing entries fail closed.
+installation_lock="$INSTALL_DIR/.biomcp-install.lock"
+if ! mkdir "$installation_lock" 2>/dev/null; then
+  echo "Cannot acquire installation lock $installation_lock. Stop all installers, updaters and uninstallers before manually removing this empty lock directory with rmdir, then retry." >&2
+  exit 1
+fi
+cleanup_installation() {
+  cleanup_stage
+  # Only the successful acquirer reaches this trap. Never recursively remove it.
+  rmdir "$installation_lock" || true
+  cleanup
+}
+cleanup_stage() {
+  if [[ -n "${stage_path:-}" && -e "$stage_path" ]]; then
+    rm -f "$stage_path"
+  fi
+  if [[ -n "${receipt_stage_path:-}" && -e "$receipt_stage_path" ]]; then
+    rm -f "$receipt_stage_path"
+  fi
+  return 0
+}
+trap cleanup_installation EXIT
+# Bash waits for synchronous children before these traps release the lock.
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 if [[ -L "$installed_bin" || -L "$receipt" ]]; then
   echo "Refusing symbolic-link installation path." >&2
   exit 1
@@ -329,16 +355,6 @@ if [[ -f "$receipt" ]] && [[ "$(receipt_value state "$receipt" || true)" == "pen
 fi
 
 stage_path="$(mktemp "$INSTALL_DIR/.biomcp-stage.XXXXXX")"
-cleanup_stage() {
-  if [[ -n "${stage_path:-}" && -e "$stage_path" ]]; then
-    rm -f "$stage_path"
-  fi
-  if [[ -n "${receipt_stage_path:-}" && -e "$receipt_stage_path" ]]; then
-    rm -f "$receipt_stage_path"
-  fi
-  return 0
-}
-trap 'cleanup_stage; cleanup' EXIT
 cp "$bin_path" "$stage_path"
 chmod 755 "$stage_path"
 sync_path "$stage_path"

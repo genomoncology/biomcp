@@ -171,7 +171,8 @@ fn replace_owned_binary_at(
     new_bytes: &[u8],
     new_version: &str,
 ) -> Result<(), BioMcpError> {
-    let owned = crate::cli::install::validate_owned(current)?;
+    let lock = crate::cli::install::InstallationLock::acquire(current)?;
+    let owned = crate::cli::install::validate_owned(current, &lock)?;
     let Some(parent) = current.parent() else {
         return Err(BioMcpError::InvalidArgument(
             "Cannot determine current executable directory".into(),
@@ -234,7 +235,7 @@ fn replace_owned_binary_at(
             )));
         }
         let new_sha = sha256_hex(new_bytes);
-        let revalidated = crate::cli::install::validate_owned(current)
+        let revalidated = crate::cli::install::validate_owned(current, &lock)
             .map_err(|error| std::io::Error::other(error.to_string()))?;
         if revalidated.receipt != owned.receipt {
             return Err(std::io::Error::other(

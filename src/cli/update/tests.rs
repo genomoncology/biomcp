@@ -176,7 +176,7 @@ fn owned_update_smokes_and_atomically_replaces_with_agreeing_receipt() {
     let root = TempDirGuard::new("update-owned");
     let executable = seed_owned_script(root.path(), "1.0.0");
     std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o750)).unwrap();
-    let mut owned = crate::cli::install::validate_owned(&executable).unwrap();
+    let mut owned = crate::cli::install::validate_owned(&executable, &crate::cli::install::InstallationLock::acquire(&executable).unwrap()).unwrap();
     owned.receipt.sha256 = crate::cli::install::sha256_file(&executable).unwrap();
     crate::cli::install::write_receipt_atomic(&owned.receipt_path, &owned.receipt).unwrap();
     let predictable = root.path().join(".biomcp.new");
@@ -184,7 +184,7 @@ fn owned_update_smokes_and_atomically_replaces_with_agreeing_receipt() {
     let new_bytes = b"#!/bin/sh\necho 'biomcp 2.0.0'\n";
     replace_owned_binary_at(&executable, new_bytes, "v2.0.0").unwrap();
     assert_eq!(std::fs::read(&executable).unwrap(), new_bytes);
-    let owned = crate::cli::install::validate_owned(&executable).unwrap();
+    let owned = crate::cli::install::validate_owned(&executable, &crate::cli::install::InstallationLock::acquire(&executable).unwrap()).unwrap();
     assert_eq!(owned.receipt.version, "v2.0.0");
     assert_eq!(owned.receipt.sha256, sha256_hex(new_bytes));
     assert_eq!(
@@ -196,6 +196,29 @@ fn owned_update_smokes_and_atomically_replaces_with_agreeing_receipt() {
         0o750
     );
     assert!(predictable.is_symlink());
+}
+
+// The production release URL is fixed. Exercise the existing replacement
+// boundary to prove update joins the same exclusion used by real CLI uninstall.
+#[cfg(unix)]
+#[test]
+fn owned_update_refuses_a_live_installers_pending_receipt() {
+    use crate::test_support::TempDirGuard;
+    let root = TempDirGuard::new("update-busy");
+    let executable = seed_owned_script(root.path(), "1.0.0");
+    let lock = crate::cli::install::InstallationLock::acquire(&executable).unwrap();
+    let owned = crate::cli::install::validate_owned(&executable, &lock).unwrap();
+    let pending = crate::cli::install::pending_receipt(&owned, "2.0.0", "new-hash", "live");
+    crate::cli::install::write_receipt_atomic(&owned.receipt_path, &pending).unwrap();
+    let before_receipt = std::fs::read(&owned.receipt_path).unwrap();
+    let before_binary = std::fs::read(&executable).unwrap();
+    let error = replace_owned_binary_at(&executable, b"#!/bin/sh\necho 'biomcp 2.0.0'\n", "2.0.0")
+        .unwrap_err();
+    assert!(error.to_string().contains("installation lock"));
+    assert_eq!(std::fs::read(&owned.receipt_path).unwrap(), before_receipt);
+    assert_eq!(std::fs::read(&executable).unwrap(), before_binary);
+    drop(lock);
+    replace_owned_binary_at(&executable, b"#!/bin/sh\necho 'biomcp 2.0.0'\n", "2.0.0").unwrap();
 }
 
 #[cfg(unix)]

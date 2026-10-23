@@ -15,6 +15,41 @@ pub(crate) const RECEIPT_SCHEMA_VERSION: u8 = 1;
 pub(crate) const INSTALLER_IDENTITY: &str = "biomcp-standalone-installer";
 static RECEIPT_NONCE: AtomicU64 = AtomicU64::new(0);
 
+/// One invocation owns this empty directory until all mutations finish.
+/// Never reclaim an existing entry: a crashed owner needs manual quiescence.
+#[derive(Debug)]
+pub(crate) struct InstallationLock {
+    path: PathBuf,
+}
+
+impl InstallationLock {
+    pub(crate) fn acquire(executable: &Path) -> Result<Self, BioMcpError> {
+        let parent = executable.parent().ok_or_else(|| {
+            BioMcpError::InvalidArgument("Executable has no parent directory".into())
+        })?;
+        let path = std::fs::canonicalize(parent)?.join(".biomcp-install.lock");
+        let mut builder = std::fs::DirBuilder::new();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            builder.mode(0o700);
+        }
+        builder.create(&path).map_err(|error| {
+            BioMcpError::Io(std::io::Error::new(error.kind(), format!(
+                "Cannot acquire installation lock {}: {error}. Stop all installers, updaters and uninstallers before manually removing this empty lock directory with rmdir, then retry.", path.display()
+            )))
+        })?;
+        Ok(Self { path })
+    }
+}
+
+impl Drop for InstallationLock {
+    fn drop(&mut self) {
+        // Remove only our empty directory; never recursively delete lock content.
+        let _ = std::fs::remove_dir(&self.path);
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum ReceiptState {
@@ -130,7 +165,10 @@ fn validate_receipt_identity(
     Ok(())
 }
 
-pub(crate) fn validate_owned(executable: &Path) -> Result<OwnedInstallation, BioMcpError> {
+pub(crate) fn validate_owned(executable: &Path, lock: &InstallationLock) -> Result<OwnedInstallation, BioMcpError> {
+    if executable.parent() != lock.path.parent() {
+        return Err(BioMcpError::InvalidArgument("Installation lock does not cover executable".into()));
+    }
     let canonical = std::fs::canonicalize(executable).map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
             BioMcpError::NotInstalled {
@@ -306,12 +344,12 @@ mod tests {
     fn valid_receipt_proves_ownership_and_pending_new_state_recovers() {
         let root = TempDirGuard::new("install-owned");
         let executable = seed_owned(root.path());
-        let owned = validate_owned(&executable).unwrap();
+        let owned = validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()).unwrap();
         let new_hash = sha256_hex(b"new-binary");
         let pending = pending_receipt(&owned, "2.0.0", &new_hash, "nonce");
         write_receipt_atomic(&owned.receipt_path, &pending).unwrap();
         std::fs::write(&executable, b"new-binary").unwrap();
-        let recovered = validate_owned(&executable).unwrap();
+        let recovered = validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()).unwrap();
         assert_eq!(recovered.receipt.state, ReceiptState::Installed);
         assert_eq!(recovered.receipt.version, "2.0.0");
     }
@@ -323,12 +361,12 @@ mod tests {
         std::fs::write(&executable, b"binary").unwrap();
         let executable = std::fs::canonicalize(executable).unwrap();
         assert!(matches!(
-            validate_owned(&executable),
+            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
         std::fs::write(receipt_path(&executable).unwrap(), b"{").unwrap();
         assert!(matches!(
-            validate_owned(&executable),
+            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
     }
@@ -339,7 +377,7 @@ mod tests {
         let executable = seed_owned(root.path());
         std::fs::write(&executable, b"tampered").unwrap();
         assert!(matches!(
-            validate_owned(&executable),
+            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
         assert!(
@@ -366,7 +404,7 @@ mod tests {
         std::fs::rename(&receipt, &receipt_target).unwrap();
         std::os::unix::fs::symlink(&receipt_target, &receipt).unwrap();
         assert!(matches!(
-            validate_owned(&executable),
+            validate_owned(&executable, &InstallationLock::acquire(&executable).unwrap()),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
 
@@ -375,7 +413,7 @@ mod tests {
         let link = root.path().join("biomcp-link");
         std::os::unix::fs::symlink(&executable, &link).unwrap();
         assert!(matches!(
-            validate_owned(&link),
+            validate_owned(&link, &InstallationLock::acquire(&link).unwrap()),
             Err(BioMcpError::PackageManagedInstall { .. })
         ));
     }

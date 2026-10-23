@@ -98,7 +98,7 @@ def _tools(tmp_path: Path, downloader: str, sha_tool: str) -> Path:
     tools = tmp_path / "tools"
     tools.mkdir()
     _fake_downloader(tools, downloader)
-    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "chmod", "mv", "head", "cp", "sync", "tr"):
+    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "rmdir", "chmod", "mv", "head", "cp", "sync", "tr"):
         target = shutil.which(name)
         assert target, name
         (tools / name).symlink_to(target)
@@ -479,27 +479,28 @@ def _paused_installer(tmp_path: Path, install_dir: Path, *, phase: str = "binary
         "destination = sys.argv[-1]\n"
         f"pause = destination.endswith('/biomcp') if {phase!r} == 'binary' else destination.endswith('/biomcp.install.json') and json.load(open(destination))['state'] == 'pending'\n"
         "if result.returncode == 0 and pause:\n"
-        "    print('INSTALLER_PAUSED', flush=True)\n"
+        "    os.write(int(os.environ['INSTALL_EVENT_FD']), b'paused\\n')\n"
         "    sys.stdin.readline()\n"
         "raise SystemExit(result.returncode)\n",
     )
     scratch = tmp_path / "scratch"
     scratch.mkdir()
+    event_read, event_write = os.pipe()
     process = subprocess.Popen(
-        ["bash", str(INSTALLER)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        ["bash", str(INSTALLER)], pass_fds=(event_write,), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, text=True,
         env=os.environ | {"HOME": str(tmp_path), "BIOMCP_INSTALL_DIR": str(install_dir),
                           "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture),
-                          "TMPDIR": str(scratch), "PATH": str(tools)},
+                          "TMPDIR": str(scratch), "PATH": str(tools), "INSTALL_EVENT_FD": str(event_write)},
     )
-    assert process.stdout is not None
-    while True:
-        ready, _, _ = select.select([process.stdout], [], [], 60)
+    os.close(event_write)
+    try:
+        ready, _, _ = select.select([event_read], [], [], 60)
         assert ready, "installer did not reach controlled rename"
-        line = process.stdout.readline()
-        assert line, process.stderr.read() if process.stderr else "installer exited"
-        if line.strip() == "INSTALLER_PAUSED":
-            return process
+        assert os.read(event_read, 32) == b"paused\n"
+    finally:
+        os.close(event_read)
+    return process
 
 
 def _resume_installer(process: subprocess.Popen[str]) -> tuple[str, str]:
@@ -537,3 +538,67 @@ def test_concurrent_installers_preserve_binary_receipt_agreement(tmp_path: Path)
     assert contender.returncode != 0
     assert "lock" in contender.stderr.lower()
     assert during == before
+
+
+@pytest.mark.parametrize("entry", ["directory", "file", "symlink"])
+def test_installer_preserves_existing_lock_entries(tmp_path: Path, entry: str) -> None:
+    install_dir = tmp_path / "install"
+    install_dir.mkdir()
+    lock = install_dir / ".biomcp-install.lock"
+    target = tmp_path / "target"
+    target.mkdir()
+    if entry == "directory":
+        lock.mkdir()
+        (lock / "keep").write_text("owned by another writer")
+    elif entry == "file":
+        lock.write_text("unrelated file")
+    else:
+        lock.symlink_to(target, target_is_directory=True)
+    result = _run_installer(tmp_path, "{digest}\n")
+    assert result.returncode != 0
+    assert "Stop all installers" in result.stderr
+    assert lock.is_symlink() if entry == "symlink" else lock.exists()
+    if entry == "directory":
+        assert (lock / "keep").read_text() == "owned by another writer"
+    if entry == "file":
+        assert lock.read_text() == "unrelated file"
+    assert target.is_dir()
+    assert not (install_dir / "biomcp").exists()
+
+
+def test_failed_smoke_releases_only_its_own_installation_lock(tmp_path: Path) -> None:
+    result, install_dir = _run_installer_with_staged_release(
+        tmp_path, _release_shaped_binary(VERSION_FLAG_BANNER), "0.9.1"
+    )
+    assert result.returncode != 0
+    assert not (install_dir / ".biomcp-install.lock").exists()
+    assert not list(install_dir.glob(".biomcp-stage.*"))
+
+
+def test_crashed_installer_requires_quiescence_before_pending_recovery(tmp_path: Path) -> None:
+    first = tmp_path / "first"
+    first.mkdir()
+    install_dir = tmp_path / "install"
+    process = _paused_installer(first, install_dir)
+    process.kill()
+    _resume_installer(process)  # Reap the foreground rename child before manual recovery.
+    lock = install_dir / ".biomcp-install.lock"
+    assert lock.is_dir()
+    pending = (install_dir / "biomcp.install.json").read_bytes()
+    second = tmp_path / "second"
+    second.mkdir()
+    fixture, _ = _fixture(second, "{digest}\n")
+    tools = _tools(second, "curl", "system")
+    env = os.environ | {"HOME": str(second), "BIOMCP_INSTALL_DIR": str(install_dir),
+                        "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "PATH": str(tools)}
+    refused = subprocess.run(["bash", str(INSTALLER)], env=env, capture_output=True, text=True, timeout=60)
+    assert refused.returncode != 0
+    assert "Stop all installers" in refused.stderr
+    assert (install_dir / "biomcp.install.json").read_bytes() == pending
+    lock.rmdir()  # Every fixture writer and child has stopped.
+    recovered = subprocess.run(["bash", str(INSTALLER)], env=env, capture_output=True, text=True, timeout=60)
+    assert recovered.returncode == 0, recovered.stderr
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["state"] == "installed"
+    assert receipt["sha256"] == hashlib.sha256((install_dir / "biomcp").read_bytes()).hexdigest()
+    assert not lock.exists()
