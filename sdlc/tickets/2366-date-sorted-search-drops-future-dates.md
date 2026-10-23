@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+- Changes: `CHANGELOG.md`, `src/entities/article/backends.rs`, `src/entities/article/backends/tests.rs`, `src/entities/article/candidates.rs`, `src/entities/article/enrichment.rs`, `src/entities/article/enrichment/publication_dates.rs`, `src/entities/article/enrichment/visible_metadata.rs`, `src/entities/article/filters.rs`, `src/entities/article/ranking.rs`, `src/entities/article/search.rs`, `src/sources/pubmed.rs`, `src/transform/article.rs`, `src/transform/article/federation.rs`, `src/transform/article/federation/tests.rs`, `tests/feature-links.json`, `tests/test_article_metadata_recovery.py`, `tests/test_article_publication_dates.py`.
+
 ## Outcome
 
 A date-sorted article search orders by a real publication date and never puts future-dated issue placeholders ahead of published papers; the PubTator metadata request that returns HTTP 400 is fixed or no longer sent.
