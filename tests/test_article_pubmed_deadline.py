@@ -106,7 +106,8 @@ def test_pubmed_date_search_finishes_when_provider_answers(
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     env["NCBI_API_KEY"] = "fixture-only-ncbi-secret"
     env["S2_API_KEY"] = "fixture-only-s2-secret"
-    env["BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS"] = "1500"
+    if held:
+        env["BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS"] = "1500"
     args = ["-g", gene, *bounds]
     if keyword:
         args.extend(["-k", keyword])
