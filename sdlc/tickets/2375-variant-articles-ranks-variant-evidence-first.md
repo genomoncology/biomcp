@@ -10,7 +10,7 @@ Priority: 0
 
 The first page of `variant articles` leads with papers about the variant: the variant in the title or abstract, and the landmark discovery and clinical papers, ahead of papers that only mention the gene.
 
-- Changes: `src/entities/article/variant_search/rank.rs`, `src/entities/article/ranking.rs`, `tests/test_variant_article_evidence_ranking.py`, `tests/variant_article_evidence_replay.py`, `tests/fixtures/article/evidence-ranking/akt1-e17k.json`, `tests/fixtures/article/evidence-ranking/README.md`. The pool owner integrates the stage calls in its shared orchestration file.
+- Changes: `src/entities/article/variant_search/rank.rs`, `src/entities/article/ranking.rs`, `tests/test_variant_article_evidence_ranking.py`, `tests/variant_article_evidence_replay.py`, `tests/fixtures/article/evidence-ranking/akt1-e17k.json`, `tests/fixtures/article/evidence-ranking/README.md`, `spec/fixtures/run-variant-article-entity-fixture.sh`. The pool owner integrates the stage calls in its shared orchestration file.
 
 ## Evidence
 
