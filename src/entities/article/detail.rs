@@ -844,6 +844,45 @@ pub(super) async fn enrich_article_with_semantic_scholar(
     Ok(())
 }
 
+async fn get_fulltext_base(
+    id: &str,
+    include_annotation_positions: bool,
+) -> Result<Article, BioMcpError> {
+    let initial = super::fulltext_budget::route(
+        "article metadata",
+        get_article_base(id, include_annotation_positions),
+    )
+    .await;
+    match initial {
+        Ok(article) => Ok(article),
+        Err(error) if matches!(parse_article_id(id), ArticleIdType::Invalid) || id.len() > 512 => {
+            Err(error)
+        }
+        Err(initial_error) => {
+            let europe = EuropePmcClient::new()?.with_abstracts(true);
+            let fallback = super::fulltext_budget::route("Europe PMC metadata", async {
+                let search = match parse_article_id(id) {
+                    ArticleIdType::Pmid(pmid) => europe.search_by_pmid(&pmid.to_string()).await?,
+                    ArticleIdType::Doi(doi) => europe.search_by_doi(&doi).await?,
+                    ArticleIdType::Pmc(pmcid) => europe.search_by_pmcid(&pmcid).await?,
+                    ArticleIdType::Invalid => unreachable!(),
+                };
+                let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(id, id))?;
+                Ok(article_from_europepmc_fallback(&hit))
+            })
+            .await;
+            fallback.map_err(|error| BioMcpError::SourceUnavailable {
+                source_name: "article metadata".into(),
+                reason: format!(
+                    "{} {initial_error}; {error}",
+                    super::ARTICLE_FULLTEXT_FAILURE_PREFIX
+                ),
+                suggestion: "Retry the article request".into(),
+            })
+        }
+    }
+}
+
 pub async fn get(
     id: &str,
     sections: &[String],
@@ -858,13 +897,25 @@ pub async fn get(
         ));
     }
     let section_only = is_section_only_request(sections, section_flags.include_all);
-    let mut article = get_article_base(id, options.include_annotation_positions).await?;
+    let mut article = if section_flags.include_fulltext {
+        get_fulltext_base(id, options.include_annotation_positions).await?
+    } else {
+        get_article_base(id, options.include_annotation_positions).await?
+    };
 
     if section_flags.include_indexing {
         enrich_article_with_indexing(&mut article).await;
     }
 
-    let semantic_scholar_enrichment = enrich_article_with_semantic_scholar(&mut article).await;
+    let semantic_scholar_enrichment = if section_flags.include_fulltext {
+        super::fulltext_budget::route(
+            "Semantic Scholar",
+            enrich_article_with_semantic_scholar(&mut article),
+        )
+        .await
+    } else {
+        enrich_article_with_semantic_scholar(&mut article).await
+    };
     // The Semantic Scholar lookup feeds PDF discovery even when its own
     // section was not requested; only requests that carry the tldr section
     // (tldr, all, or a base card with no sections) report its outcome.
@@ -892,7 +943,14 @@ pub async fn get(
     if section_flags.include_fulltext {
         fulltext::resolve_fulltext(&mut article, id, pdf_discovery).await?;
         if options.include_asset_summary {
-            super::assets::attach_not_included(&mut article, id).await;
+            if let Err(error) = super::fulltext_budget::route("article asset summary", async {
+                super::assets::attach_not_included(&mut article, id).await;
+                Ok(())
+            })
+            .await
+            {
+                tracing::warn!("Article asset summary unavailable: {error}");
+            }
         }
     }
 

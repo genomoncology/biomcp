@@ -10,6 +10,8 @@ Priority: 1
 
 `biomcp get article PMID fulltext` returns the full text, or a bounded failure that names each route it tried and why it failed, well inside an agent's tool deadline. It never runs past that deadline with empty output while a working route exists.
 
+- Changes: `CHANGELOG.md`, `src/entities/article/detail.rs`, `src/entities/article/fulltext.rs`, `src/entities/article/fulltext_budget.rs`, `src/entities/article/mod.rs`, `src/error.rs`, `tests/feature-links.json`, `tests/article_asset_terminal/source_outcomes.rs`, `tests/test_article_fulltext_deadline.py`, `tools/test-wait-exceptions.json`.
+
 ## Evidence
 
 - Research recheck on the 0.9.4 candidate b56138d27 (practice release 39857815354), relayed by Jarvis in m3705: `biomcp get article 40966517 fulltext --json` on Blue, fresh isolated cache, keys set, produced empty stdout and was killed at the 120-second deadline (exit 124) twice, at 11:22:13 and 11:29:26 UTC.
