@@ -323,7 +323,7 @@
       "feature": "variant"
     },
     "tests/test_variant_article_pubmed_floor.py": {
-      "feature": "variant-articles"
+      "feature": "variant"
     }
   },
   "rust": {
