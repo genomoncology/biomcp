@@ -3292,7 +3292,6 @@ async fn planned_candidates(
         if execution.route_stopped(route) {
             return (candidates, true, false);
         }
-        let stopped_before = execution.route_stopped(route);
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
@@ -3421,7 +3420,7 @@ async fn planned_candidates(
             _ => return (candidates, false, false),
         };
         match rows {
-            Ok((rows, degraded, total)) if !execution.route_stopped(route) || stopped_before => {
+            Ok((rows, degraded, total)) => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
                 //.
@@ -3429,6 +3428,8 @@ async fn planned_candidates(
                     incomplete = true;
                 }
                 succeeded = true;
+                // A peer stopping admission cannot revoke committed provider rows.
+                incomplete |= execution.route_stopped(route);
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
                     || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
@@ -3466,10 +3467,7 @@ async fn planned_candidates(
                     candidate
                 }));
             }
-            Ok(_) | Err(_) if execution.route_stopped(route) => {
-                incomplete = true;
-            }
-            Ok(_) | Err(_) => {
+            Err(_) => {
                 incomplete = true;
             }
         }
@@ -7150,7 +7148,10 @@ mod tests {
         let mut env = gene_aliases_disabled_env();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_S2_BASE", &fixture.base);
-        env.set("BIOMCP_DISABLE_SOURCES", "mygene-info,pubmed,europe-pmc,pubtator3");
+        env.set(
+            "BIOMCP_DISABLE_SOURCES",
+            "mygene-info,pubmed,europe-pmc,pubtator3",
+        );
         let (rows, _, succeeded, _) = planned_candidates(
             "BRAF p.V600E",
             &resolved_context(),
