@@ -538,15 +538,24 @@ def test_markdown_discloses_provider_specific_omitted_queries(tmp_path):
     assert "chr17:g.41209100G" in text
 
 
-@pytest.mark.parametrize("saturated", [False, True], ids=["complete", "incomplete"])
-def test_variant_article_pages_reach_the_end_once(saturated, tmp_path):
-    case = next(case for case in cases if case["case"] == "c003")
+@pytest.mark.parametrize(
+    ("case_id", "saturated"),
+    [("c001", False), ("c003", False), ("c003", True)],
+    ids=["complete", "ambiguous", "source-capped"],
+)
+def test_variant_article_pages_reach_the_end_once(case_id, saturated, tmp_path):
+    case = next(case for case in cases if case["case"] == case_id)
     case = {**case, "saturated": saturated}
     whole, _ = execute_case(case, tmp_path / "whole")
     expected = [row["pmid"] for row in whole["results"]]
     assert expected
     assert len(expected) == len(set(expected))
-    assert whole["complete"] is not saturated
+    assert set(expected) == (
+        {"99002001"}
+        if case_id == "c001"
+        else {*(str(99001000 + i) for i in range(25 if saturated else 3)), "99002003"}
+    )
+    assert whole["complete"] is (case_id == "c001")
 
     # The reported late page must terminate even when upstream coverage is partial.
     late, _ = execute_case(
@@ -558,7 +567,7 @@ def test_variant_article_pages_reach_the_end_once(saturated, tmp_path):
     assert late["complete"] == whole["complete"]
 
     seen = []
-    page_size = 10
+    page_size = 10 if saturated else 2
     for offset in range(0, len(expected) + page_size, page_size):
         argv = [*case["argv"]]
         argv[argv.index("--limit") + 1] = str(page_size)
@@ -571,6 +580,6 @@ def test_variant_article_pages_reach_the_end_once(saturated, tmp_path):
         assert page["pagination"]["returned"] == len(rows)
         assert page["pagination"]["has_more"] == (offset + page_size < len(expected))
         assert page["complete"] == whole["complete"]
-        assert page["pagination"]["total"] == (None if saturated else len(expected))
+        assert page["pagination"]["total"] == (len(expected) if whole["complete"] else None)
         seen.extend(rows)
     assert seen == expected
