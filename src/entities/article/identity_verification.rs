@@ -16,8 +16,8 @@ pub(crate) use paper_anchors::verify_paper_anchors;
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v3";
 pub(crate) const PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION: &str =
     "pubtator-export-biocjson-fulltext-v1";
-const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
-const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
+pub(super) const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
+pub(super) const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
 const MAX_ANNOTATION_ID_BYTES: usize = 256;
 const MAX_HGVS_BYTES: usize = 1024;
 const MAX_IDENTIFIER_TOKENS: usize = 16;
@@ -130,36 +130,36 @@ pub(crate) enum ProviderLinkage {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct LdhProvenance {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     source: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     request_template_version: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     response_subset_version: &'static str,
     canonical_response_subset_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct ProviderLinkageProvenance {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     source: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     request_template_version: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     verifier_version: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     response_subset_version: &'static str,
     canonical_response_subset_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct VariantArticleVerificationPlan {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub verifier_version: &'static str,
     pub provider_template_version: String,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub response_subset_version: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub content_subset_version: &'static str,
     pub canonical_response_subset_hash: String,
     pub canonical_content_subset_hash: String,

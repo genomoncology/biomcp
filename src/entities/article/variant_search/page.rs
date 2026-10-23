@@ -55,3 +55,28 @@ pub(super) fn unavailable() -> BioMcpError {
             .into(),
     )
 }
+
+/// Display hydration happens after slicing and cannot change rank or membership.
+pub(super) async fn enrich_visible(
+    mut outcome: super::VariantArticleOutcome,
+    execution: &super::VariantArticleExecutionContext,
+) -> super::VariantArticleOutcome {
+    let mut candidates = outcome
+        .response
+        .results
+        .iter()
+        .map(|row| {
+            let mut candidate =
+                super::super::candidates::article_candidate_from_row(row.article.clone());
+            candidate.identity = row.identity.clone();
+            candidate.variant_provenance = row.provenance.clone();
+            candidate
+        })
+        .collect::<Vec<_>>();
+    let mut statuses = super::enrich_candidates(&mut candidates, execution).await;
+    for (row, candidate) in outcome.response.results.iter_mut().zip(candidates) {
+        row.article = candidate.row;
+        row.metadata_status = statuses.remove(&row.article.pmid);
+    }
+    outcome
+}

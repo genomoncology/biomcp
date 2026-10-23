@@ -7,6 +7,7 @@ use std::sync::{
 };
 use std::time::Instant;
 
+pub(crate) mod atoms;
 mod merge;
 mod page;
 mod pool;
@@ -138,7 +139,7 @@ pub struct VariantArticleSourceStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     pub work: VariantArticleSourceWork,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::list")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
     pub reason_codes: Vec<&'static str>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub omitted_aliases: Vec<String>,
@@ -179,7 +180,7 @@ pub struct VariantArticleRow {
 pub struct VariantArticleAliasMatch {
     pub alias: String,
     pub source_transcript: Option<String>,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub reason: &'static str,
 }
 
@@ -228,24 +229,24 @@ pub struct VariantArticleAliasCoverage {
     pub alias: String,
     pub planned: bool,
     pub attempted: bool,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub disposition: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub reason: &'static str,
 }
 
 /// MyGene's recorded alias field and the actual variant-query coverage it enabled.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleGeneSymbolCoverage {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub source: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub source_field: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub status: &'static str,
     pub entrez_id: Option<String>,
     pub recorded_aliases: Vec<String>,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::optional")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::optional")]
     pub restriction: Option<&'static str>,
     pub aliases: Vec<VariantArticleAliasCoverage>,
 }
@@ -1315,7 +1316,7 @@ pub struct VariantArticleProviderPlan {
     pub latency_ms: u64,
     pub calls: usize,
     pub pages: usize,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub cache: &'static str,
 }
 
@@ -1335,9 +1336,9 @@ pub struct VariantArticleCountsPlan {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleRankingPlan {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub method: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::triple")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::triple")]
     pub inputs: [&'static str; 3],
 }
 
@@ -1402,7 +1403,7 @@ pub struct VariantArticleCandidateTraceRecord {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleCandidateTrace {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub schema_version: &'static str,
     pub observed_total: usize,
     pub dropped: usize,
@@ -1448,7 +1449,7 @@ pub struct VariantArticleDebugPlan {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleDeadlinePlan {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub scope: &'static str,
     pub limit_ms: u64,
     pub exhausted: bool,
@@ -1488,7 +1489,7 @@ pub struct CompactVariantArticleRow {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleItemError {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub code: &'static str,
     pub message: String,
 }

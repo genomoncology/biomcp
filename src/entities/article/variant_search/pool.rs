@@ -93,7 +93,7 @@ pub(super) fn query_key(
         "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN",
     ] {
         if let Ok(value) = std::env::var(name) {
-            let url = url::Url::parse(value.trim()).ok()?;
+            let url = reqwest::Url::parse(value.trim()).ok()?;
             if !url.username().is_empty()
                 || url.password().is_some()
                 || url.query().is_some()
@@ -133,11 +133,11 @@ pub(super) fn query_key(
 /// internal graph here so restoration cannot discard typed linkage fields.
 #[derive(Clone, Serialize, Deserialize)]
 struct StoredIdentity {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     status: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     basis: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::optional")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::optional")]
     reason: Option<&'static str>,
     requested_gene: Option<String>,
     requested_allele: Option<String>,
@@ -148,7 +148,7 @@ struct StoredIdentity {
 
 #[derive(Clone, Serialize, Deserialize)]
 struct StoredObservation {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     source: &'static str,
     section: String,
     locator: String,
@@ -243,7 +243,7 @@ struct StoredContext {
     complete: bool,
     truncated: bool,
     source_status: Vec<super::VariantArticleSourceStatus>,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     retrieval_path: &'static str,
     error: Option<super::VariantArticleItemError>,
     debug_plan: Option<super::VariantArticleDebugPlan>,
@@ -253,7 +253,7 @@ struct StoredContext {
 struct StoredRow {
     candidate: StoredCandidate,
     matched_aliases: Vec<String>,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     match_reason: &'static str,
     alias_matches: Vec<super::VariantArticleAliasMatch>,
     retrieval_routes: Vec<String>,
@@ -412,6 +412,11 @@ pub(super) async fn execute(
 ) -> Result<super::VariantArticleOutcome, crate::error::BioMcpError> {
     use crate::cache::variant_article_pool::PoolStore;
     use crate::error::BioMcpError;
+    if limit == 0 || limit > 50 {
+        return Err(BioMcpError::InvalidArgument(
+            "--limit must be between 1 and 50".into(),
+        ));
+    }
     let key = query_key(input, &requested, strategy, verification);
     let persistent = key.is_some() && !crate::sources::cache_is_bypassed();
     if !persistent && (offset != 0 || page_token.is_some()) {
@@ -463,7 +468,8 @@ pub(super) async fn execute(
         let next =
             page_offset.saturating_add(limit.min(pool.ordered.len().saturating_sub(page_offset)));
         let token = Some(super::page::Continuation::encode(&snapshot.id, &key, next));
-        return pool.into_response(page_offset, limit, token, debug);
+        let outcome = pool.into_response(page_offset, limit, token, debug)?;
+        return Ok(super::page::enrich_visible(outcome, &execution).await);
     }
     let retained = loaded
         .as_ref()
@@ -538,5 +544,10 @@ pub(super) async fn execute(
     let next = page_offset
         .saturating_add(limit.min(selected_pool.ordered.len().saturating_sub(page_offset)));
     let token = selected_id.map(|id| super::page::Continuation::encode(&id, &key, next));
-    selected_pool.into_response(page_offset, limit, token, debug)
+    let outcome = selected_pool.into_response(page_offset, limit, token, debug)?;
+    if existing.is_some() {
+        Ok(super::page::enrich_visible(outcome, &execution).await)
+    } else {
+        Ok(outcome)
+    }
 }

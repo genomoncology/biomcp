@@ -2,7 +2,15 @@
 use serde::{Deserialize, Deserializer};
 
 fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
+    use super::super::identity_verification::{
+        CONTENT_SUBSET_VERSION, PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION, RESPONSE_SUBSET_VERSION,
+        VERIFIER_VERSION,
+    };
     const ATOMS: &[&str] = &[
+        VERIFIER_VERSION,
+        PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
+        RESPONSE_SUBSET_VERSION,
+        CONTENT_SUBSET_VERSION,
         "incomplete",
         "citation_count",
         "http_status",
@@ -108,10 +116,6 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "unverified_alias_match",
         "visible",
         "variant-article-candidate-trace-v2",
-        "pubtator-export-biocjson-fulltext-v1",
-        "article-identity-v3",
-        "clinically-relevant-response-v1",
-        "clinically-relevant-content-v1",
         "exact-name phrase search",
         "resolved exact-alias article search",
         "resolved exact-variant route union",

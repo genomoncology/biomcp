@@ -802,13 +802,13 @@ pub struct ArticleBatchEntitySummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleMetadataStatus {
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub status: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::list")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
     pub missing_fields: Vec<&'static str>,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub source: &'static str,
-    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub failure_class: &'static str,
 }
 
