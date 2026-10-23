@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Update Tokio to fix AsyncFd I/O safety and retain existing CLI and MCP behavior. (2361)
 - Provision the pinned protoc compiler before nightly generated-source checks, verify its archive checksum, and reject incompatible cached versions. (2359)
 - Retain article tables from back matter and nested source containers in saved full text and line reads. (2362)
 - Pair PubMed date bounds so one-sided article date searches retrieve the requested window without scanning historical pages until timeout. (2363)
