@@ -8,15 +8,22 @@ const DIAGNOSTIC_API: &str = "article-fulltext-route";
 
 tokio::task_local! {
     pub(crate) static CURRENT_REQUEST: RequestObservation;
+    pub(crate) static CURRENT_SEND: RequestObservation;
 }
 
 /// One route owns this observation, including cancellation before send returns.
 #[derive(Clone, Default)]
-pub(crate) struct RequestObservation(std::sync::Arc<std::sync::Mutex<Option<RequestDiagnostic>>>);
+pub(crate) struct RequestObservation {
+    state: RequestState,
+    active_send: std::sync::Arc<std::sync::Mutex<Option<RequestState>>>,
+}
+
+type RequestState = std::sync::Arc<std::sync::Mutex<Option<RequestDiagnostic>>>;
 
 #[derive(Clone)]
 struct RequestDiagnostic {
     url: String,
+    initial_url: String,
     status: Option<u16>,
     context: SourceContext,
 }
@@ -28,8 +35,16 @@ impl RequestObservation {
             .unwrap_or_else(|| " No request URL was observed.".into())
     }
 
+    fn current_state(&self) -> RequestState {
+        self.active_send
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .unwrap_or_else(|| self.state.clone())
+    }
+
     fn snapshot(&self) -> Option<RequestDiagnostic> {
-        self.0
+        self.current_state()
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
@@ -72,35 +87,65 @@ impl RequestObservation {
     }
 }
 
-pub(crate) fn record_request(request: &RequestBuilder, context: SourceContext) {
-    let _ = CURRENT_REQUEST.try_with(|observation| {
-        let diagnostic = request
-            .try_clone()
-            .and_then(|req| req.build().ok())
-            .map(|request| RequestDiagnostic {
-                url: safe_url(request.url()),
+pub(crate) fn record_request(
+    request: &RequestBuilder,
+    context: SourceContext,
+) -> RequestObservation {
+    let observation = RequestObservation::default();
+    if CURRENT_REQUEST.try_with(|_| ()).is_err() {
+        return observation;
+    }
+    let diagnostic = request
+        .try_clone()
+        .and_then(|req| req.build().ok())
+        .map(|request| {
+            let url = safe_url(request.url());
+            RequestDiagnostic {
+                initial_url: url.clone(),
+                url,
                 status: None,
                 context,
-            });
-        *observation
-            .0
+            }
+        });
+    *observation
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = diagnostic;
+    let _ = CURRENT_REQUEST.try_with(|route| {
+        *route
+            .active_send
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = diagnostic;
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(observation.state.clone());
+    });
+    observation
+}
+
+/// Called after admission and before each transport attempt, including retries.
+pub(crate) fn record_attempt(url: &Url) {
+    let _ = CURRENT_SEND.try_with(|observation| {
+        if let Some(request) = observation
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
+            request.url = safe_url(url);
+            request.status = None;
+        }
     });
 }
 
-pub(crate) fn record_response(response: &Response, context: SourceContext) {
-    let _ = CURRENT_REQUEST.try_with(|observation| {
-        // Replace the whole snapshot from this response. Do not combine one
-        // concurrent request's status with a different request's URL.
-        *observation
-            .0
+pub(crate) fn record_response(response: &Response) {
+    let _ = CURRENT_SEND.try_with(|observation| {
+        if let Some(request) = observation
+            .state
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(RequestDiagnostic {
-            url: safe_url(response.url()),
-            status: Some(response.status().as_u16()),
-            context,
-        });
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
+            request.url = safe_url(response.url());
+            request.status = Some(response.status().as_u16());
+        }
     });
 }
 
@@ -117,20 +162,27 @@ pub(crate) fn record_error(error: &BioMcpError, context: SourceContext) {
         }
         _ => None,
     };
-    if let Some(url) = url {
-        let _ = CURRENT_REQUEST.try_with(|observation| {
-            *observation
-                .0
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(RequestDiagnostic {
-                url: safe_url(url),
-                status: error
-                    .external_failure(context.provider(), "article retrieval")
-                    .status,
-                context,
-            });
-        });
-    }
+    let _ = CURRENT_SEND.try_with(|observation| {
+        if let Some(request) = observation
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
+            // Reqwest can report the initial URL after a redirect disconnect.
+            // An observed validated follow target is the stronger evidence.
+            if request.url == request.initial_url
+                && let Some(url) = url
+            {
+                request.url = safe_url(url);
+            }
+            request.status = error
+                .external_failure(context.provider(), "article retrieval")
+                .status
+                .or(request.status);
+            request.context = context;
+        }
+    });
 }
 
 pub(crate) fn annotate_current_error(error: BioMcpError) -> BioMcpError {
@@ -250,7 +302,7 @@ mod tests {
                         CURRENT_REQUEST.with(|observation| {
                             let mut diagnostic = observation.snapshot().unwrap();
                             diagnostic.status = Some(status);
-                            *observation.0.lock().unwrap() = Some(diagnostic);
+                            *observation.current_state().lock().unwrap() = Some(diagnostic);
                         });
                         barrier.wait().await;
                         safe_error(&BioMcpError::Api {
@@ -287,11 +339,12 @@ mod tests {
                 Ok(Vec::new())
             }
         }).unwrap();
-        let client = reqwest_middleware::ClientBuilder::new(
-            reqwest::Client::builder().no_proxy().build().unwrap(),
-        )
-        .build();
         let origin = server.base.clone();
+        let client = crate::sources::ordinary_url_policy::test_middleware_client_for_base(
+            &origin,
+            |builder| builder,
+        )
+        .unwrap();
         let diagnostic = CURRENT_REQUEST
             .scope(RequestObservation::default(), async {
                 let error = client

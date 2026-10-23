@@ -108,6 +108,7 @@ impl OrdinaryProviderPolicy {
             {
                 return attempt.error("ordinary provider policy rejected redirect target");
             }
+            crate::sources::fulltext_diagnostics::record_attempt(attempt.url());
             attempt.follow()
         })
     }

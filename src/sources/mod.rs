@@ -405,61 +405,70 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
         self,
         context: SourceContext,
     ) -> Result<reqwest::Response, BioMcpError> {
-        fulltext_diagnostics::record_request(&self, context);
-        let observation = literature_retry::applies(context.provider())
-            .then(literature_retry::current_observation);
-        let request = match observation.as_ref() {
-            Some(observation) => {
-                observation.start();
-                self.with_extension(observation.clone())
-                    .with_extension(context)
-            }
-            None => self,
-        };
-        let request = attach_variant_article_deadline(request);
-        let response = match current_variant_article_deadline() {
-            Some(deadline) => {
-                let publication = CachePublicationState::default();
-                let send =
-                    VARIANT_ARTICLE_CACHE_PUBLICATION.scope(publication.clone(), request.send());
-                deadline
-                    .run_with_safe_return(send, publication.marker())
-                    .await
-                    .unwrap_or_else(|error| {
-                        Err(match observation.as_ref() {
-                            Some(observation) => reqwest_middleware::Error::middleware(
-                                observation.deadline_timeout(),
-                            ),
-                            None => reqwest_middleware::Error::middleware(error),
-                        })
-                    })
-            }
-            None => request.send().await,
-        };
-        // The cache wrapper may stringify middleware errors. Rebuild only a
-        // terminal decision from this request, never an earlier transient reply.
-        let response = response.map_err(|error| {
-            match observation
-                .as_ref()
-                .and_then(literature_retry::Observation::terminal)
-            {
-                Some(failure) => reqwest_middleware::Error::middleware(failure),
-                None => error,
-            }
-        });
-        let mut response = response.map_err(BioMcpError::from).map_err(|error| {
-            let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
-                SourceContext::narrow(context.provider())
-            } else {
-                context
-            };
-            fulltext_diagnostics::record_error(&error, context);
-            error.with_source_context(context)
-        })?;
-        fulltext_diagnostics::record_response(&response, context);
-        note_stale_cache_serve(&mut response, context.provider().label());
-        Ok(response)
+        let observation = fulltext_diagnostics::record_request(&self, context);
+        fulltext_diagnostics::CURRENT_SEND
+            .scope(observation, send_source_request(self, context))
+            .await
     }
+}
+
+async fn send_source_request(
+    builder: RequestBuilder,
+    context: SourceContext,
+) -> Result<reqwest::Response, BioMcpError> {
+    let observation =
+        literature_retry::applies(context.provider()).then(literature_retry::current_observation);
+    let request = match observation.as_ref() {
+        Some(observation) => {
+            observation.start();
+            builder
+                .with_extension(observation.clone())
+                .with_extension(context)
+        }
+        None => builder,
+    };
+    let request = attach_variant_article_deadline(request);
+    let response = match current_variant_article_deadline() {
+        Some(deadline) => {
+            let publication = CachePublicationState::default();
+            let send = VARIANT_ARTICLE_CACHE_PUBLICATION.scope(publication.clone(), request.send());
+            deadline
+                .run_with_safe_return(send, publication.marker())
+                .await
+                .unwrap_or_else(|error| {
+                    Err(match observation.as_ref() {
+                        Some(observation) => {
+                            reqwest_middleware::Error::middleware(observation.deadline_timeout())
+                        }
+                        None => reqwest_middleware::Error::middleware(error),
+                    })
+                })
+        }
+        None => request.send().await,
+    };
+    // The cache wrapper may stringify middleware errors. Rebuild only a
+    // terminal decision from this request, never an earlier transient reply.
+    let response = response.map_err(|error| {
+        match observation
+            .as_ref()
+            .and_then(literature_retry::Observation::terminal)
+        {
+            Some(failure) => reqwest_middleware::Error::middleware(failure),
+            None => error,
+        }
+    });
+    let mut response = response.map_err(BioMcpError::from).map_err(|error| {
+        let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
+            SourceContext::narrow(context.provider())
+        } else {
+            context
+        };
+        fulltext_diagnostics::record_error(&error, context);
+        error.with_source_context(context)
+    })?;
+    fulltext_diagnostics::record_response(&response);
+    note_stale_cache_serve(&mut response, context.provider().label());
+    Ok(response)
 }
 
 impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
@@ -1333,6 +1342,7 @@ impl Middleware for ResponseBodyLimitMiddleware {
         extensions: &mut Extensions,
         next: Next<'_>,
     ) -> reqwest_middleware::Result<reqwest::Response> {
+        fulltext_diagnostics::record_attempt(req.url());
         let policy =
             extensions
                 .get::<ResponseBodyPolicy>()
@@ -1342,6 +1352,7 @@ impl Middleware for ResponseBodyLimitMiddleware {
                     max_bytes: DEFAULT_MAX_BODY_BYTES,
                 });
         let mut response = next.run(req, extensions).await?;
+        fulltext_diagnostics::record_response(&response);
         if extensions.get::<StatusBeforeBodyLimit>().is_some() && !response.status().is_success() {
             return Ok(response);
         }

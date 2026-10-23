@@ -480,7 +480,10 @@ impl ProviderUrlPolicy {
                 return attempt.error("provider URL policy rejected too many redirects");
             }
             match policy.validate_url(attempt.url()) {
-                Ok(()) => attempt.follow(),
+                Ok(()) => {
+                    crate::sources::fulltext_diagnostics::record_attempt(attempt.url());
+                    attempt.follow()
+                }
                 Err(_) => attempt.error("provider URL policy rejected redirect target"),
             }
         })
