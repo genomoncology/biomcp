@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.needs_binary, pytest.mark.long]
 
 
 def test_recorded_variant_warm_page_reuses_completed_literal_discovery(tmp_path):
-    """Feature: variant-articles. A stored page does not repeat settled discovery."""
+    """Feature: variant. A stored page does not repeat settled discovery."""
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     with akt1_replay(tmp_path, cache=True) as replay:
         def page(offset):

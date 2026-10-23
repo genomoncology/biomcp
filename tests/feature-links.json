@@ -24,6 +24,18 @@
     "tests/golden/test_search_all_provider_failure.py": {
       "feature": "search-all"
     },
+    "tests/surface/test_article_graph_empty_contract.py": {
+      "feature": "article"
+    },
+    "tests/surface/test_public_entity_contract_docs.py": {
+      "tests": {
+        "test_public_docs_label_search_only_entities": "cli-reference"
+      },
+      "internal": {
+        "test_public_docs_do_not_imply_get_gwas_or_get_phenotype": "Tooling or source/documentation contract, not a product invocation.",
+        "test_spec_architecture_routes_public_search_only_surfaces": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
     "tests/surface/test_semantic_scholar_retry_after_contract.py": {
       "feature": "provider-retry"
     },
@@ -68,6 +80,9 @@
       "feature": "article"
     },
     "tests/test_article_rsid_search.py": {
+      "feature": "article"
+    },
+    "tests/test_article_typed_gene.py": {
       "feature": "article"
     },
     "tests/test_author_surface_docs.py": {
@@ -141,6 +156,9 @@
         "test_public_docs_document_json_list_shape": "Source/documentation or harness contract, not an outside product invocation."
       }
     },
+    "tests/test_literature_transient_retries.py": {
+      "feature": "provider-retry"
+    },
     "tests/test_live_suspect_regressions.py": {
       "feature": "drug",
       "tests": {
@@ -148,9 +166,6 @@
         "test_discovery_requires_structured_drug_identity": "drug",
         "test_diagnostic_synonym_and_literal_matching_explain_missing_resolution": "diagnostic"
       }
-    },
-    "tests/test_literature_transient_retries.py": {
-      "feature": "provider-retry"
     },
     "tests/test_mcp_2026_protocol.py": {
       "feature": "mcp-stdio"
@@ -181,6 +196,16 @@
     "tests/test_no_cache_managed_state.py": {
       "feature": "no-cache"
     },
+    "tests/test_output_footprint_benchmark.py": {
+      "tests": {
+        "test_offline_corpus_is_deterministic_and_reports_real_token_counts": "output-safety"
+      },
+      "internal": {
+        "test_compact_ratchet_rejects_first_byte_above_each_ceiling": "Tooling or source/documentation contract, not a product invocation.",
+        "test_tokenizer_vocabulary_is_available_offline": "Tooling or source/documentation contract, not a product invocation.",
+        "test_benchmark_env_points_every_provider_base_at_the_replay_server": "Tooling or source/documentation contract, not a product invocation."
+      }
+    },
     "tests/test_pgx_cpic_sections.py": {
       "feature": "pgx"
     },
@@ -193,6 +218,33 @@
       "internal": {
         "test_public_diagnostic_surfaces_use_live_gtr_accession": "Source/documentation or harness contract, not an outside product invocation."
       }
+    },
+    "tests/test_public_installer_checksum.py": {
+      "tests": {
+        "test_installer_accepts_one_valid_checksum_record": "install-update",
+        "test_installer_refuses_unproven_checksum_before_destination_change": "install-update",
+        "test_installer_accepts_uppercase_checksum_hex": "install-update",
+        "test_installer_rejects_mismatched_checksum_without_touching_existing_destination": "install-update",
+        "test_installer_refuses_when_checksum_computation_is_unavailable_or_fails": "install-update",
+        "test_installer_uses_openssl_when_other_checksum_tools_are_unavailable": "install-update",
+        "test_installer_handles_checksum_download_failures_for_both_downloaders": "install-update",
+        "test_installer_smokes_destination_stage_before_replacing_existing_binary": "install-update",
+        "test_installer_never_edits_shell_startup_files": "install-update",
+        "test_installer_refuses_symlink_destination_without_changing_target": "install-update",
+        "test_pinned_install_reads_the_version_flag_against_a_staged_release": "install-update",
+        "test_pinned_install_falls_back_to_the_second_word_of_the_version_banner": "install-update",
+        "test_latest_install_receipt_carries_the_true_version": "install-update",
+        "test_pinned_install_still_refuses_a_version_mismatch": "install-update",
+        "test_installer_reads_existing_version_when_install_path_contains_spaces": "install-update"
+      },
+      "internal": {
+        "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_ci_proves_installer_identity_before_the_version_sync_check": "Compares installer source, documentation or workflow wiring without running the public installer.",
+        "test_public_installer_verifier_compares_deployed_bytes": "Compares installer source, documentation or workflow wiring without running the public installer."
+      }
+    },
+    "tests/test_python_lane_cache_isolation.py": {
+      "feature": "cache"
     },
     "tests/test_section_provider_credits.py": {
       "feature": "source-policy"
@@ -222,7 +274,13 @@
     "tests/test_variant_article_disabled_sources.py": {
       "feature": "variant"
     },
+    "tests/test_variant_article_evidence_ranking.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_article_exact_fulltext.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_field_scope.py": {
       "feature": "variant"
     },
     "tests/test_variant_article_gene_aliases.py": {
@@ -234,6 +292,9 @@
     "tests/test_variant_article_paper_anchors.py": {
       "feature": "variant"
     },
+    "tests/test_variant_article_recovery.py": {
+      "feature": "variant"
+    },
     "tests/test_variant_article_source_status.py": {
       "feature": "variant"
     },
@@ -241,6 +302,9 @@
       "feature": "variant"
     },
     "tests/test_variant_cgi_source.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_frameshift_inputs.py": {
       "feature": "variant"
     },
     "tests/test_variant_normalize_json_contract.py": {
@@ -252,68 +316,10 @@
     "tests/test_variant_transcript_allele_guard.py": {
       "feature": "variant"
     },
-    "tests/test_variant_frameshift_inputs.py": {
-      "feature": "variant"
-    },
     "tests/test_variant_transcript_lookup.py": {
       "feature": "variant"
     },
-    "tests/surface/test_article_graph_empty_contract.py": {
-      "feature": "article"
-    },
-    "tests/surface/test_public_entity_contract_docs.py": {
-      "tests": {
-        "test_public_docs_label_search_only_entities": "cli-reference"
-      },
-      "internal": {
-        "test_public_docs_do_not_imply_get_gwas_or_get_phenotype": "Tooling or source/documentation contract, not a product invocation.",
-        "test_spec_architecture_routes_public_search_only_surfaces": "Tooling or source/documentation contract, not a product invocation."
-      }
-    },
-    "tests/test_output_footprint_benchmark.py": {
-      "tests": {
-        "test_offline_corpus_is_deterministic_and_reports_real_token_counts": "output-safety"
-      },
-      "internal": {
-        "test_compact_ratchet_rejects_first_byte_above_each_ceiling": "Tooling or source/documentation contract, not a product invocation.",
-        "test_tokenizer_vocabulary_is_available_offline": "Tooling or source/documentation contract, not a product invocation.",
-        "test_benchmark_env_points_every_provider_base_at_the_replay_server": "Tooling or source/documentation contract, not a product invocation."
-      }
-    },
-    "tests/test_python_lane_cache_isolation.py": {
-      "feature": "cache"
-    },
-    "tests/test_public_installer_checksum.py": {
-      "tests": {
-        "test_installer_accepts_one_valid_checksum_record": "install-update",
-        "test_installer_refuses_unproven_checksum_before_destination_change": "install-update",
-        "test_installer_accepts_uppercase_checksum_hex": "install-update",
-        "test_installer_rejects_mismatched_checksum_without_touching_existing_destination": "install-update",
-        "test_installer_refuses_when_checksum_computation_is_unavailable_or_fails": "install-update",
-        "test_installer_uses_openssl_when_other_checksum_tools_are_unavailable": "install-update",
-        "test_installer_handles_checksum_download_failures_for_both_downloaders": "install-update",
-        "test_installer_smokes_destination_stage_before_replacing_existing_binary": "install-update",
-        "test_installer_never_edits_shell_startup_files": "install-update",
-        "test_installer_refuses_symlink_destination_without_changing_target": "install-update",
-        "test_pinned_install_reads_the_version_flag_against_a_staged_release": "install-update",
-        "test_pinned_install_falls_back_to_the_second_word_of_the_version_banner": "install-update",
-        "test_latest_install_receipt_carries_the_true_version": "install-update",
-        "test_pinned_install_still_refuses_a_version_mismatch": "install-update",
-        "test_installer_reads_existing_version_when_install_path_contains_spaces": "install-update"
-      },
-      "internal": {
-        "test_root_installer_is_the_canonical_deployed_copy": "Compares installer source, documentation or workflow wiring without running the public installer.",
-        "test_ci_proves_installer_identity_before_the_version_sync_check": "Compares installer source, documentation or workflow wiring without running the public installer.",
-        "test_public_installer_verifier_compares_deployed_bytes": "Compares installer source, documentation or workflow wiring without running the public installer."
-      }
-    },
-    "tests/test_variant_article_recovery.py": {
-      "feature": "variant"
-    },
-    "tests/test_article_typed_gene.py": {
-      "feature": "article"
-    },
-    "tests/test_variant_article_field_scope.py": {
+    "tests/test_variant_warm_page_speed.py": {
       "feature": "variant"
     }
   },
