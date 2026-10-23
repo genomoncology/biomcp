@@ -32,7 +32,7 @@ pub struct VariantNormalizationResponse {
 #[serde(untagged)]
 pub enum VariantNormalizationAggregate {
     Legacy(VariantNormalizationServiceResult),
-    Car(CarNormalizationAggregate),
+    Car(Box<CarNormalizationAggregate>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -307,10 +307,10 @@ pub async fn normalize_variant(
                 VariantNormalizationAggregate::Legacy(variantvalidator.unwrap_or_else(|err| {
                     service_error_result(VariantNormalizationService::VariantValidator, err)
                 })),
-                VariantNormalizationAggregate::Car(CarNormalizationAggregate {
+                VariantNormalizationAggregate::Car(Box::new(CarNormalizationAggregate {
                     service: "car".into(),
                     item: car.unwrap_or_else(|_| unavailable_car_item(&input)),
-                }),
+                })),
             ],
         });
     }
@@ -330,12 +330,12 @@ pub async fn normalize_variant(
                     .await
             }
             VariantNormalizationService::Car => {
-                results.push(VariantNormalizationAggregate::Car(
+                results.push(VariantNormalizationAggregate::Car(Box::new(
                     CarNormalizationAggregate {
                         service: "car".into(),
                         item: normalize_car(&input).await?,
                     },
-                ));
+                )));
                 continue;
             }
         }
