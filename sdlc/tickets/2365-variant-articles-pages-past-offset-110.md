@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+- Changes: `CHANGELOG.md`, `docs/how-to/find-articles.md`, `src/entities/article/variant_search.rs`, `tests/test_variant_article_recovery.py`.
+
 ## Outcome
 
 Variant article paging returns rows up to the true end of results; has_more is true only when a later page can return rows.
