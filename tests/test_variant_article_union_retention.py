@@ -142,6 +142,8 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
     for page in pages["union"]:
         for row in page["results"]:
             if row["pmid"] in component_pmids:
+                if scenario != "changing_support":
+                    assert {"litvar", "europepmc"} <= set(row["sources"]), row
                 assert {("litvar_variant", "litvar", int(row["pmid"]) - int(first) + 1)} <= {
                     (fact["route"], fact["source"], fact["native_position"])
                     for fact in row["provenance"]
