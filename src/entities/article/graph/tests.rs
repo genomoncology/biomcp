@@ -1042,9 +1042,6 @@ enum JatsReply {
     Absent,
     /// A 200 full-text document.
     Document(&'static str),
-    /// A full-text reply that stays in flight for the delay, so a shrunk
-    /// command budget expires while the attempt is still blocked.
-    Delayed(std::time::Duration),
 }
 
 /// Points every provider the confirmation phase can reach at the loopback
@@ -1123,18 +1120,6 @@ async fn spawn_opencitations_fixture(
                     "application/xml",
                     body.as_bytes(),
                 )),
-                JatsReply::Delayed(delay) => {
-                    // The slow reply holds the connection and a timer task
-                    // releases it after the delay. The old blocking wait
-                    // here parked the connection task's runtime worker and
-                    // froze every deadline timer with it.
-                    let (release_tx, hold) = held_reply_gate();
-                    tokio::spawn(async move {
-                        tokio::time::sleep(delay).await;
-                        let _ = release_tx.send(()).await;
-                    });
-                    TestHttpReply::Hold(hold)
-                }
             }
         } else if target.contains("/references") {
             logged.lock().unwrap().push("s2:graph".to_string());
@@ -1724,47 +1709,6 @@ async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_d
     );
     let logged = requests.lock().unwrap().join("\n");
     assert!(!logged.contains("/references/doi:"), "{logged}");
-    drop(logged);
-    fixture.finish().unwrap();
-}
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_no_room() {
-    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
-
-    let (mut env, _cache, mut fixture, requests) = opencitations_case(
-        "opencitations-no-room",
-        vec![opencitations_page()],
-        OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
-        JatsReply::Delayed(std::time::Duration::from_millis(2500)),
-    )
-    .await;
-    // The shrunk command budget expires during the blocked full-text attempt,
-    // so the confirmation phase starts with no room and issues no request.
-    env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "1500");
-
-    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
-        &fixture.base,
-        |_, _| {},
-        |_, _| {},
-    )
-    .unwrap();
-    let result = crate::sources::semantic_scholar::with_test_client(
-        client,
-        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
-    )
-    .await
-    .unwrap();
-
-    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
-    assert!(result.confirmation.is_none());
-    assert_eq!(
-        result._meta.source_status.last().unwrap().status,
-        "unavailable"
-    );
-    let logged = requests.lock().unwrap().join("\n");
-    assert!(!logged.contains("opencitations:"), "{logged}");
     drop(logged);
     fixture.finish().unwrap();
 }

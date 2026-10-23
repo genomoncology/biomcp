@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 2
 
-- Changes: `CHANGELOG.md`, `scripts/run-nightly-checks.sh`, `tools/bootstrap-lint-tools`, `tests/test_release_check_counterparts.py`, `tests/test_advisory_bootstrap.py`. `Cargo.lock` carries the accepted 2361 Tokio dependency repair authorized by PM m4030 for this batch candidate. `sdlc/tickets/2361-clear-tokio-asyncfd-advisory.md`, `sdlc/tickets/2371-serialize-installation-mutations.md`, `sdlc/tickets/2372-serialize-release-publication.md` carry coordinator-authorized intake of the reviewed open records for 2361, 2371 and 2372; this intake adds no implementation for 2371 or 2372.
+- Changes: `CHANGELOG.md`, `scripts/run-nightly-checks.sh`, `tools/bootstrap-lint-tools`, `tests/test_release_check_counterparts.py`, `tests/test_advisory_bootstrap.py`, `src/entities/article/graph/tests.rs`, `src/entities/article/graph/citation_evidence.rs`. The candidate deadline-test repair replaces the elapsed-time confirmation setup with a direct expired-deadline boundary test and removes its unused delayed JATS reply. `Cargo.lock` carries the accepted 2361 Tokio dependency repair authorized by PM m4030 for this batch candidate. `sdlc/tickets/2361-clear-tokio-asyncfd-advisory.md`, `sdlc/tickets/2371-serialize-installation-mutations.md`, `sdlc/tickets/2372-serialize-release-publication.md` carry coordinator-authorized intake of the reviewed open records for 2361, 2371 and 2372; this intake adds no implementation for 2371 or 2372.
 
 ## Outcome
 

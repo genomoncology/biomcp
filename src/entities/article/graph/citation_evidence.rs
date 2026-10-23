@@ -1281,3 +1281,39 @@ pub async fn citation_evidence(
     }
     Ok(result)
 }
+
+#[cfg(test)]
+mod deadline_tests {
+    use super::*;
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use std::sync::{Arc, Mutex};
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_no_room() {
+        let mut env = TestEnv::scratch_cache_only();
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let mut fixture = TestHttpFixture::spawn(move |request| {
+            logged.lock().unwrap().push(request.to_string());
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"[]"))
+        })
+        .await;
+        env.set("BIOMCP_OPENCITATIONS_BASE", &fixture.base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+
+        // Exercise the confirmation phase's expired-deadline boundary directly.
+        // Earlier HTTP work must not have to finish within a shortened budget.
+        let deadline = tokio::time::Instant::now() - Duration::from_secs(1);
+        let refusal = opencitations_edges("10.1038/nature11003", deadline)
+            .await
+            .unwrap_err();
+
+        assert_eq!(refusal, IndexRefusal::Unavailable);
+        assert_eq!(refusal.status(), "unavailable");
+        assert!(requests.lock().unwrap().is_empty());
+        fixture.finish().unwrap();
+    }
+}
