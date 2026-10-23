@@ -330,24 +330,29 @@ impl PubMedClient {
             ("retstart", params.retstart.to_string()),
             ("retmax", params.retmax.to_string()),
         ];
-        if params.date_from.is_some() || params.date_to.is_some() {
-            query_params.push(("datetype", "pdat".to_string()));
-        }
-        if let Some(date_from) = params
+        let date_from = params
             .date_from
             .as_deref()
             .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            query_params.push(("mindate", format_pubmed_date(date_from)));
-        }
-        if let Some(date_to) = params
+            .filter(|value| !value.is_empty());
+        let date_to = params
             .date_to
             .as_deref()
             .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            query_params.push(("maxdate", format_pubmed_date(date_to)));
+            .filter(|value| !value.is_empty());
+        if date_from.is_some() || date_to.is_some() {
+            // ESearch ignores a one-sided range. Supply the other endpoint
+            // across the full four-digit calendar instead of paging history.
+            // https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch
+            query_params.push(("datetype", "pdat".to_string()));
+            query_params.push((
+                "mindate",
+                format_pubmed_date(date_from.unwrap_or("0001-01-01")),
+            ));
+            query_params.push((
+                "maxdate",
+                format_pubmed_date(date_to.unwrap_or("9999-12-31")),
+            ));
         }
         if let Some(key) = clean_api_key(api_key) {
             query_params.push(("api_key", key.to_string()));
