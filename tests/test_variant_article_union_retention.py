@@ -107,7 +107,10 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
     providers["BIOMCP_MYVARIANT_BASE"] = origin + "/v1"
     providers["BIOMCP_PUBMED_BASE"] = origin + "/entrez/eutils"
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
-    pages: dict[str, list[dict]] = {"annotation": [], "union": []}
+    strategies = ("annotation", "union") if scenario == "changing_support" else (
+        "annotation", "lexical", "exact", "union",
+    )
+    pages: dict[str, list[dict]] = {strategy: [] for strategy in strategies}
     try:
         for strategy in pages:
             for offset in ((0, 1) if scenario == "changing_support" else (0,)):
@@ -127,7 +130,8 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
         server.server_close()
         thread.join()
     assert not misses, misses
-    component_pmids = {row["pmid"] for page in pages["annotation"] for row in page["results"]}
+    component_pmids = {row["pmid"] for strategy, results in pages.items() if strategy != "union"
+                       for page in results for row in page["results"] if row["pmid"]}
     union_pmids = {row["pmid"] for page in pages["union"] for row in page["results"]}
     assert component_pmids == {first, second}, pages
     assert component_pmids <= union_pmids, {
@@ -135,3 +139,10 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
         "union_pages": [[row["pmid"] for row in page["results"]] for page in pages["union"]],
         "counts": [page["debug_plan"]["counts"] for page in pages["union"]],
     }
+    for page in pages["union"]:
+        for row in page["results"]:
+            if row["pmid"] in component_pmids:
+                assert {("litvar_variant", "litvar", int(row["pmid"]) - int(first) + 1)} <= {
+                    (fact["route"], fact["source"], fact["native_position"])
+                    for fact in row["provenance"]
+                }, row
