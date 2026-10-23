@@ -173,4 +173,3 @@ fn append_ext_link(node: Node<'_, '_>, buffer: &mut InlineBuffer) {
         (true, None) => {}
     }
 }
-
