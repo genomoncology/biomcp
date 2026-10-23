@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+- Changes: `src/cli/variant/articles.rs`, `src/cli/variant/normalization_json.rs`, `src/entities/article/variant_search.rs`, `src/entities/variant/normalization.rs`, `src/entities/variant/resolution.rs`, `src/render/markdown/variant.rs`, `src/sources/clingen_allele_registry.rs`, `tests/test_variant_article_alias_coverage.py`, `tests/test_variant_transcript_lookup.py`.
+
 ## Outcome
 
 Every genomic coordinate BioMCP prints names its assembly, so a GRCh37 position is never read as GRCh38.
