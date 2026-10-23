@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+- Changes: `CHANGELOG.md`, `src/entities/article/assets.rs`, `src/entities/article/fulltext.rs`, `src/entities/article/fulltext_budget.rs`, `src/sources/fulltext_diagnostics.rs`, `src/sources/mod.rs`, `src/sources/ordinary_url_policy.rs`, `src/sources/provider_url_policy.rs`, `tests/test_article_fulltext_warnings.py`.
+
 ## Outcome
 
 Every full-text route warning names the request it made (URL without key values) and the HTTP status or transport error.
