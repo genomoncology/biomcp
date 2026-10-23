@@ -76,7 +76,9 @@ def akt1_replay(tmp_path, cache=True, *, capture=None):
                 limit = int(query.get("pageSize", [1000])[0])
                 body = {"hitCount": len(ids), "resultList": {"result": [
                     {"id": pmid, "pmid": pmid, "source": "MED", "title": rows[pmid]["title"],
-                     "abstractText": rows[pmid].get("abstract", "")}
+                     "abstractText": rows[pmid].get("abstract", ""),
+                     **({"citedByCount": rows[pmid]["citation_count"]}
+                        if "citation_count" in rows[pmid] else {})}
                     for pmid in ids[(page - 1) * limit:page * limit]]}}
             elif path in ("/graph/v1/paper/search", "/graph/v1/paper/search/bulk"):
                 ids = native["semanticscholar"]
@@ -126,7 +128,11 @@ def akt1_replay(tmp_path, cache=True, *, capture=None):
                 for lookup in ids:
                     row = rows.get(lookup.removeprefix("PMID:"))
                     body.append({"paperId": "recorded-" + row["pmid"],
-                                 "title": row["title"], "abstract": row.get("abstract")}
+                                 "title": row["title"], "abstract": row.get("abstract"),
+                                 **({"citationCount": row["citation_count"]}
+                                    if "citation_count" in row else {}),
+                                 **({"influentialCitationCount": row["influential_citation_count"]}
+                                    if "influential_citation_count" in row else {})}
                                 if row else None)
                 self.reply(json.dumps(body).encode(), "application/json")
                 return
