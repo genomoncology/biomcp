@@ -22,13 +22,16 @@ cases = json.loads(
 )["cases"]
 
 
-def execute_case(case, tmp_path, *, markdown=False):
+def execute_case(case, tmp_path, *, markdown=False, overlap=None):
     mode = case.get("mode", "normal")
     row_count = 25 if case.get("saturated") else 3
     req = case["requested"]
     aliases = case["resolution"]["normalized_aliases"]
     requests = []
     misses = []
+    first_bulk = threading.Event()
+    second_bulk = threading.Event()
+    bulk_lock = threading.Lock()
     hit = {
         "_id": (aliases["genomic_ids"] or ["chr22:g.1A>G"])[0],
         "dbnsfp": {
@@ -54,6 +57,15 @@ def execute_case(case, tmp_path, *, markdown=False):
             t = urlsplit(self.path)
             q = parse_qs(t.query)
             requests.append((t.path, q))
+            if overlap is not None and t.path == "/graph/v1/paper/search/bulk":
+                with bulk_lock:
+                    first = not first_bulk.is_set()
+                    first_bulk.set()
+                    if not first:
+                        second_bulk.set()
+                if first:
+                    # Wait for an independent request, with a fixture escape hatch.
+                    overlap.append(second_bulk.wait(timeout=1))
             if t.path == "/query":
                 body = {
                     "total": 1,
@@ -166,6 +178,12 @@ def execute_case(case, tmp_path, *, markdown=False):
                     if case["case"] == "c003"
                     else []
                 )
+                if mode == "first-page" and not metadata:
+                    rows = [
+                        {"id": str(99004000 + i), "source": "MED", "pmid": str(99004000 + i),
+                         "title": "Authored first page control", "pubYear": "2026"}
+                        for i in range(25)
+                    ]
                 if case["case"] == "c003" and q.get("query", [""])[0].startswith(
                     "CHEK2 p.Gly167Arg AND NOT"
                 ):
@@ -265,6 +283,12 @@ def execute_case(case, tmp_path, *, markdown=False):
                     and target[0] in q.get("query", [""])[0]
                     else []
                 )
+                if mode == "first-page":
+                    rows = [
+                        {"paperId": f"authored-{i}", "externalIds": {"PubMed": str(99003000 + i)},
+                         "title": "Authored first page control", "year": 2026}
+                        for i in range(25)
+                    ]
                 body = {"total": len(rows), "data": rows}
             else:
                 misses.append(self.path)
