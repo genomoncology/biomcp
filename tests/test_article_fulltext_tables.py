@@ -44,7 +44,7 @@ def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(
             parents[table].remove(table)
             table.attrib.pop("id", None)
             destination.append(table)
-        source = ElementTree.tostring(document)
+        source = ElementTree.tostring(article)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
