@@ -9,6 +9,7 @@ async fn live_esearch_returns_braf_hits() {
     let response = client
         .esearch(&PubMedESearchParams {
             term: "BRAF melanoma".into(),
+            sort: None,
             retstart: 0,
             retmax: 1,
             date_from: None,

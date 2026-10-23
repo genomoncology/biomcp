@@ -249,6 +249,7 @@ pub(super) async fn search_pubmed_page_with_context(
             &mut first_unit,
             client.esearch(&PubMedESearchParams {
                 term: term.clone(),
+                sort: None,
                 retstart: batch_start,
                 retmax: PUBMED_PAGE_SIZE,
                 date_from: normalized_date_from.clone(),

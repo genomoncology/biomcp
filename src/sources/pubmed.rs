@@ -25,10 +25,16 @@ pub struct PubMedClient {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PubMedESearchParams {
     pub term: String,
+    pub sort: Option<PubMedSearchSort>,
     pub retstart: usize,
     pub retmax: usize,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PubMedSearchSort {
+    Relevance,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -332,6 +338,9 @@ impl PubMedClient {
             ("retstart", params.retstart.to_string()),
             ("retmax", params.retmax.to_string()),
         ];
+        if let Some(PubMedSearchSort::Relevance) = params.sort {
+            query_params.push(("sort", "relevance".to_string()));
+        }
         let date_from = params
             .date_from
             .as_deref()

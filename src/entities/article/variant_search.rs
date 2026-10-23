@@ -8,6 +8,8 @@ use std::sync::{
 };
 use std::time::Instant;
 
+pub(super) mod sources;
+
 // Keep atomic budget updates available on the declared minimum Rust version.
 // AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
 trait AtomicBudgetUpdate {
@@ -82,7 +84,6 @@ use super::{
     MAX_FEDERATED_FETCH_RESULTS,
 };
 
-const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
 const MAX_EXACT_ALIASES: usize = 10;
 const LEGACY_DISCOVERY_ALIAS_LIMIT: usize = 16;
 
@@ -372,7 +373,7 @@ pub(crate) struct VariantArticleExecutionContext {
     boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
     lexical_aliases: Arc<Mutex<Option<Vec<String>>>>,
     discovery_plan: Arc<Mutex<Option<VariantArticleDiscoveryPlan>>>,
-    pubtator_discovery: Arc<Mutex<Option<RequestedPubTatorResult>>>,
+    pubtator_discovery: Arc<tokio::sync::Mutex<Option<RequestedPubTatorResult>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
     route_alias_attempts: Arc<Mutex<BTreeSet<(String, String, String)>>>,
     route_alias_omissions: Arc<Mutex<RouteAliasSets>>,
@@ -383,6 +384,8 @@ pub(crate) struct VariantArticleExecutionContext {
     alias_setup_failures: Arc<Mutex<BTreeMap<String, BTreeSet<&'static str>>>>,
     ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
+    provider_work: Arc<Mutex<BTreeMap<(String, String), usize>>>,
+    literal_pubmed_progress: Arc<Mutex<Option<sources::LiteralPubMedProgress>>>,
 }
 
 impl VariantArticleExecutionContext {
@@ -428,7 +431,7 @@ impl VariantArticleExecutionContext {
             boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
             lexical_aliases: Arc::new(Mutex::new(None)),
             discovery_plan: Arc::new(Mutex::new(None)),
-            pubtator_discovery: Arc::new(Mutex::new(None)),
+            pubtator_discovery: Arc::new(tokio::sync::Mutex::new(None)),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
             route_alias_attempts: Arc::new(Mutex::new(BTreeSet::new())),
             route_alias_omissions: Arc::new(Mutex::new(BTreeMap::new())),
@@ -439,6 +442,8 @@ impl VariantArticleExecutionContext {
             alias_setup_failures: Arc::new(Mutex::new(BTreeMap::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
+            provider_work: Arc::new(Mutex::new(BTreeMap::new())),
+            literal_pubmed_progress: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -663,7 +668,7 @@ impl VariantArticleExecutionContext {
         route: &str,
         source: &str,
     ) -> Option<super::backends::VariantArticleProviderUnit<'_>> {
-        let Some(started) = self.reserve(route) else {
+        let Some(started) = self.reserve_provider(route, source) else {
             self.record_not_attempted(route, source);
             return None;
         };
@@ -676,6 +681,55 @@ impl VariantArticleExecutionContext {
                 None
             }
         }
+    }
+
+    // Reservations never move between providers or component strategies.
+    // The discovery reservations sum to DISCOVERY_WORK_LIMIT; exact lexical
+    // and identity verification retain their existing separate allowances.
+    fn reserve_provider(&self, route: &str, source: &str) -> Option<Instant> {
+        if matches!(route, "identity_verification" | "clingen_ldh_medium" | "clingen_ldh_direct") {
+            return self.reserve(route);
+        }
+        if self.deadline.is_exhausted() {
+            self.stop(route);
+            return None;
+        }
+        let exact = matches!(route, "exact_lexical" | "exact_name");
+        let (family, limit) = if exact {
+            (source, EXACT_WORK_LIMIT / 5)
+        } else {
+            match (route, source) {
+                ("literal_pubmed", "pubmed") => ("literal_pubmed", 17),
+                (_, "pubmed") => ("pubmed", 17),
+                (_, "europepmc") => ("europepmc", 17),
+                (_, "semanticscholar") => ("semanticscholar", 39),
+                (_, "pubtator") => ("pubtator", super::MAX_PAGE_FETCHES + 1),
+                (_, "litvar") => ("litvar", 3),
+                (_, "myvariant") => ("myvariant", 3),
+                (_, "mygene") => ("mygene", 1),
+                (_, "clingen_car") => ("clingen_car", 13),
+                _ => ("other", 36),
+            }
+        };
+        let key = (if exact { "exact" } else { "discovery" }.into(), family.into());
+        let mut work = self.provider_work.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let consumed = work.entry(key).or_default();
+        if *consumed >= limit {
+            return None;
+        }
+        *consumed += 1;
+        let (item, request) = if exact { (&self.exact_item, &self.exact_request) } else { (&self.item, &self.request) };
+        item.consumed.fetch_add(1, AtomicOrdering::SeqCst);
+        request.consumed.fetch_add(1, AtomicOrdering::SeqCst);
+        Some(Instant::now())
+    }
+
+    pub(super) fn literal_pubmed_progress(&self) -> Option<sources::LiteralPubMedProgress> {
+        self.literal_pubmed_progress.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    pub(super) fn set_literal_pubmed_progress(&self, progress: Option<sources::LiteralPubMedProgress>) {
+        *self.literal_pubmed_progress.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = progress;
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
@@ -3030,12 +3084,8 @@ async fn shared_pubtator_candidates(
     execution: &VariantArticleExecutionContext,
     route: &str,
 ) -> Result<RequestedPubTatorResult, BioMcpError> {
-    if let Some(mut cached) = execution
-        .pubtator_discovery
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .clone()
-    {
+    let mut shared = execution.pubtator_discovery.lock().await;
+    if let Some(mut cached) = shared.clone() {
         for candidate in &mut cached.0 {
             for fact in &mut candidate.variant_provenance {
                 fact.route = route.into();
@@ -3053,10 +3103,7 @@ async fn shared_pubtator_candidates(
         .as_ref()
         .cloned()
         .unwrap_or_else(|_| (Vec::new(), true, false, false));
-    *execution
-        .pubtator_discovery
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(cached);
+    *shared = Some(cached);
     result
 }
 
@@ -3101,7 +3148,7 @@ async fn requested_pubtator_candidates(
         tokens
     };
     let fetch_limit = if route == "strict" && !resolved {
-        LEXICAL_ALIAS_FETCH_LIMIT
+        MAX_FEDERATED_FETCH_RESULTS
     } else {
         MAX_FEDERATED_FETCH_RESULTS
     };
@@ -3189,7 +3236,7 @@ async fn federated_alias_candidates(
         filters.keyword = Some(alias.clone());
         acquire_federated_article_rows_with_context(
             &filters,
-            LEXICAL_ALIAS_FETCH_LIMIT,
+            MAX_FEDERATED_FETCH_RESULTS,
             Some(&execution),
             route,
         )
@@ -3335,7 +3382,7 @@ async fn planned_candidates(
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 0,
                 Some(execution),
                 route,
@@ -3351,7 +3398,7 @@ async fn planned_candidates(
             }),
             "europepmc" => search_europepmc_page_with_context(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 0,
                 Some(execution),
                 route,
@@ -3367,7 +3414,7 @@ async fn planned_candidates(
             }),
             "semanticscholar" => search_semantic_scholar_candidates(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 Some(execution),
                 route,
                 Some(&plan.query),
@@ -3397,7 +3444,7 @@ async fn planned_candidates(
                         (
                             candidates
                                 .into_iter()
-                                .take(LEXICAL_ALIAS_FETCH_LIMIT)
+                                .take(MAX_FEDERATED_FETCH_RESULTS)
                                 .map(|candidate| candidate.row)
                                 .collect(),
                             incomplete,
@@ -3431,7 +3478,7 @@ async fn planned_candidates(
                             execution.add_route_unit(route, "pubtator");
                             search_pubtator_page_with_context(
                                 &filters,
-                                LEXICAL_ALIAS_FETCH_LIMIT,
+                                MAX_FEDERATED_FETCH_RESULTS,
                                 0,
                                 Some(execution),
                                 route,
@@ -3472,9 +3519,9 @@ async fn planned_candidates(
                 incomplete |= execution.route_stopped(route);
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
-                    || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
+                    || (total.is_none() && rows.len() >= MAX_FEDERATED_FETCH_RESULTS);
                 if !plan.query_aliases.is_empty()
-                    && (cut || rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT)
+                    && (cut || rows.len() >= MAX_FEDERATED_FETCH_RESULTS)
                 {
                     incomplete = true;
                     execution
@@ -3696,7 +3743,7 @@ async fn exact_name_candidates(
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 0,
                 Some(execution),
                 "exact_name",
@@ -3712,7 +3759,7 @@ async fn exact_name_candidates(
             }),
             "europepmc" => search_europepmc_page_with_context(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 0,
                 Some(execution),
                 "exact_name",
@@ -3728,7 +3775,7 @@ async fn exact_name_candidates(
             }),
             "pubtator" => search_pubtator_page_with_context(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 0,
                 Some(execution),
                 "exact_name",
@@ -3744,7 +3791,7 @@ async fn exact_name_candidates(
             }),
             "semanticscholar" => search_semantic_scholar_candidates(
                 &filters,
-                LEXICAL_ALIAS_FETCH_LIMIT,
+                MAX_FEDERATED_FETCH_RESULTS,
                 Some(execution),
                 "exact_name",
                 Some(&plan.query),
@@ -3773,7 +3820,7 @@ async fn exact_name_candidates(
                 succeeded = true;
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
-                    || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
+                    || (total.is_none() && rows.len() >= MAX_FEDERATED_FETCH_RESULTS);
                 execution.record_alias_yield(
                     "exact_name",
                     &plan.query_alias,
@@ -4260,8 +4307,9 @@ fn boolean_query_fits(provider: &str, query: &str) -> bool {
         crate::sources::pubmed::PubMedClient::esearch_plan(
             &crate::sources::pubmed::PubMedESearchParams {
                 term: query.to_string(),
+                sort: None,
                 retstart: 0,
-                retmax: LEXICAL_ALIAS_FETCH_LIMIT,
+                retmax: MAX_FEDERATED_FETCH_RESULTS,
                 date_from: None,
                 date_to: None,
             },
@@ -4272,7 +4320,7 @@ fn boolean_query_fits(provider: &str, query: &str) -> bool {
         crate::sources::europepmc::EuropePmcClient::search_query_plan(
             query,
             "*",
-            LEXICAL_ALIAS_FETCH_LIMIT,
+            MAX_FEDERATED_FETCH_RESULTS,
             crate::sources::europepmc::EuropePmcSort::Relevance,
         )
         .is_ok()
@@ -4878,7 +4926,7 @@ fn build_debug_plan(
         context.resolution.provider_validation.status,
         VariantProviderValidationStatus::Contradictory
     );
-    let route_names: Vec<&str> = if contradictory {
+    let mut route_names: Vec<&str> = if contradictory {
         match strategy {
             VariantArticleStrategy::Union => vec!["best_effort_free_text"],
             VariantArticleStrategy::Annotation
@@ -4920,11 +4968,16 @@ fn build_debug_plan(
             VariantArticleStrategy::Exact => vec!["exact_name"],
         }
     };
+    if execution.literal_pubmed_progress().is_some() {
+        route_names.push("literal_pubmed");
+    }
     let events = execution.events();
     let routes = route_names
         .into_iter()
         .map(|route| {
-            let queries = if route == "pubtator_variant" {
+            let queries = if route == "literal_pubmed" {
+                execution.literal_pubmed_progress().map(|progress| vec![progress.query]).unwrap_or_default()
+            } else if route == "pubtator_variant" {
                 execution.pubtator_variant_queries()
             } else {
                 plan_queries(input, context, route, canonical_aliases, execution)
@@ -4974,6 +5027,14 @@ fn build_debug_plan(
         canonical_aliases,
         execution,
     );
+    if let Some(progress) = execution.literal_pubmed_progress() {
+        provider_queries.push(ProviderVariantQueryPlan {
+            provider: "pubmed".into(), route: "literal_pubmed".into(),
+            query_alias: progress.query.clone(), query_aliases: Vec::new(),
+            coverage_aliases: vec![progress.query.clone()], query: progress.query,
+            query_template_version: "pubmed-literal-relevance-v1".into(),
+        });
+    }
     for plan in &mut provider_queries {
         if plan.provider == "pubtator"
             && plan.route == "strict"
@@ -5352,8 +5413,28 @@ async fn search_variant_articles_identity(
         execution.set_route_unit_plan("resolution", "myvariant", None);
         execution.set_route_unit_plan("canonical_equivalence", "clingen_car", None);
     }
-    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) =
-        resolve_search_context(input, requested, strategy, &execution).await?;
+    let literal_query = (strategy == VariantArticleStrategy::Union)
+        .then(|| sources::literal_query(input, &requested)).flatten();
+    let requested_backup = requested.clone();
+    let mut resolution_execution = execution.clone();
+    resolution_execution.deadline = execution.deadline.capped(VARIANT_ARTICLE_DEADLINE_LIMIT / 2);
+    // Poll literal enumeration and resolution together. Membership discovery
+    // has its own reservation and cannot wait for an identity provider.
+    let (resolution, literal) = tokio::join!(
+        resolve_search_context(input, requested, strategy, &resolution_execution),
+        sources::acquire_literal_pubmed(literal_query.as_deref(), execution.literal_pubmed_progress(), &execution),
+    );
+    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) = match resolution {
+        Ok(resolution) => resolution,
+        Err(_) if !literal.candidates.is_empty() => {
+            let mut context = unresolved_exact_context(requested_backup);
+            context.available = false;
+            context.resolution.provider_validation.status = VariantProviderValidationStatus::Unavailable;
+            (context, unattempted_canonical_equivalence(), Vec::new(), false)
+        }
+        Err(error) => return Err(error),
+    };
+    execution.set_literal_pubmed_progress(literal.progress.clone());
     if context.available {
         materialize_discovery_route_plans(
             input,
@@ -5363,7 +5444,7 @@ async fn search_variant_articles_identity(
             &execution,
         );
     }
-    if !context.available {
+    if !context.available && literal.candidates.is_empty() {
         return Ok(resolution_unavailable_outcome(
             context,
             canonical_equivalence,
@@ -5380,253 +5461,21 @@ async fn search_variant_articles_identity(
         execution.reserve_identity_verification(1);
     }
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
-    let mut candidates = Vec::new();
+    let mut candidates = literal.candidates;
     let events = execution.events();
     let mut statuses = resolution_status_rows(strategy, &events);
-    let mut succeeded_routes = 0usize;
-    let mut failed_routes = 0usize;
+    statuses.extend(literal.status);
+    let mut succeeded_routes = usize::from(!candidates.is_empty());
+    let mut failed_routes = usize::from(literal.progress.is_some_and(|progress| !progress.complete));
 
-    // LitVar2 links a variant to its papers through the provider's own
-    // exact match, so it runs beside the other routes whenever the provider
-    // identity was not contradicted — including an unresolved request,
-    // where PubTator's annotation route cannot run yet.
-    let (litvar_succeeded, litvar_failed) = litvar_route_outcome(
-        input,
-        &context,
-        strategy,
-        &execution,
-        &mut candidates,
-        &mut statuses,
-    )
-    .await;
-    succeeded_routes += usize::from(litvar_succeeded);
-    failed_routes += usize::from(litvar_failed);
-
-    if !resolved {
-        match strategy {
-            VariantArticleStrategy::Union => {
-                match context.resolution.provider_validation.status {
-                    VariantProviderValidationStatus::Contradictory => {
-                        statuses.push(status_with_detail(
-                            "source_citation",
-                            "myvariant",
-                            VariantArticleSourceStatusKind::Skipped,
-                            Some("provider identity contradicted request"),
-                        ))
-                    }
-                    VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
-                        "source_citation",
-                        "myvariant",
-                        VariantArticleSourceStatusKind::Skipped,
-                        Some("no compatible MyVariant record"),
-                    )),
-                    VariantProviderValidationStatus::Indeterminate => {
-                        statuses.push(status_with_detail(
-                            "source_citation",
-                            "myvariant",
-                            VariantArticleSourceStatusKind::Skipped,
-                            Some("provider identity was not confirmable"),
-                        ))
-                    }
-                    VariantProviderValidationStatus::Unavailable => {
-                        statuses.push(status_with_detail(
-                            "source_citation",
-                            "myvariant",
-                            VariantArticleSourceStatusKind::Skipped,
-                            Some("provider validation unavailable"),
-                        ))
-                    }
-                    VariantProviderValidationStatus::Confirmed => {}
-                    // Only the exact-name strategy leaves validation
-                    // unattempted, and it never reaches this union arm.
-                    VariantProviderValidationStatus::NotAttempted => {}
-                }
-                if !matches!(
-                    context.resolution.provider_validation.status,
-                    VariantProviderValidationStatus::Contradictory
-                ) {
-                    let (rows, incomplete, succeeded, route_statuses) = planned_candidates(
-                        input,
-                        &context,
-                        strategy,
-                        &selected_exact_aliases,
-                        &execution,
-                    )
-                    .await;
-                    candidates.extend(rows);
-                    statuses.extend(route_statuses);
-                    succeeded_routes += usize::from(succeeded);
-                    failed_routes += usize::from(incomplete || !succeeded);
-                }
-                let (rows, incomplete, succeeded, route_statuses) =
-                    fallback_candidates(input, &context, &execution).await;
-                candidates.extend(rows);
-                statuses.extend(route_statuses);
-                succeeded_routes += usize::from(succeeded);
-                failed_routes += usize::from(incomplete || !succeeded);
-            }
-            VariantArticleStrategy::Annotation => {
-                if matches!(
-                    context.resolution.provider_validation.status,
-                    VariantProviderValidationStatus::Contradictory
-                ) {
-                    statuses.push(status_with_detail(
-                        "pubtator_variant",
-                        "pubtator",
-                        VariantArticleSourceStatusKind::Skipped,
-                        Some("provider identity contradicted request"),
-                    ));
-                } else {
-                    statuses.push(status(
-                        "pubtator_variant",
-                        "pubtator",
-                        VariantArticleSourceStatusKind::Ok,
-                    ));
-                }
-                succeeded_routes += 1;
-            }
-            VariantArticleStrategy::Lexical => {
-                if matches!(
-                    context.resolution.provider_validation.status,
-                    VariantProviderValidationStatus::Contradictory
-                ) {
-                    statuses.push(status_with_detail(
-                        "exact_lexical",
-                        "federated",
-                        VariantArticleSourceStatusKind::Skipped,
-                        Some("provider identity contradicted request"),
-                    ));
-                } else {
-                    statuses.push(status(
-                        "exact_lexical",
-                        "federated",
-                        VariantArticleSourceStatusKind::Ok,
-                    ));
-                }
-                succeeded_routes += 1;
-            }
-            VariantArticleStrategy::Exact => {
-                let (rows, incomplete, succeeded, route_statuses) =
-                    exact_name_candidates(input, &execution).await;
-                candidates.extend(rows);
-                statuses.extend(route_statuses);
-                succeeded_routes += usize::from(succeeded);
-                failed_routes += usize::from(incomplete || !succeeded);
-            }
-        }
-    } else {
-        if matches!(
-            strategy,
-            VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
-        ) {
-            let (rows, incomplete, succeeded, route_statuses) = planned_candidates(
-                input,
-                &context,
-                strategy,
-                &selected_exact_aliases,
-                &execution,
-            )
-            .await;
-            candidates.extend(rows);
-            statuses.extend(route_statuses);
-            succeeded_routes += usize::from(succeeded);
-            failed_routes += usize::from(incomplete || !succeeded);
-        }
-        if matches!(
-            strategy,
-            VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
-        ) {
-            match annotation_candidates(input, &context, &execution).await {
-                Ok((rows, incomplete, succeeded, _pre_call_stopped)) => {
-                    candidates.extend(rows);
-                    let calls = execution.events();
-                    statuses.extend(provider_statuses_for_route("pubtator_variant", &calls));
-                    succeeded_routes += usize::from(succeeded);
-                    failed_routes += usize::from(incomplete || !succeeded);
-                }
-                Err(_) => {
-                    statuses.push(status(
-                        "pubtator_variant",
-                        "pubtator",
-                        VariantArticleSourceStatusKind::Unavailable,
-                    ));
-                    failed_routes += 1;
-                }
-            }
-        }
-        if matches!(
-            strategy,
-            VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
-        ) {
-            let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
-                execution.lexical_aliases(&selected_exact_aliases),
-                selected_exact_aliases_truncated,
-                &execution,
-            )
-            .await;
-            candidates.extend(rows);
-            statuses.extend(route_statuses);
-            succeeded_routes += usize::from(succeeded);
-            failed_routes += usize::from(incomplete || !succeeded);
-        }
-        if strategy == VariantArticleStrategy::Union {
-            match context.resolution.provider_validation.status {
-                VariantProviderValidationStatus::Confirmed => {
-                    match citation_candidates(&context, &execution).await {
-                        Ok((rows, pre_call_stopped)) => {
-                            candidates.extend(rows);
-                            if pre_call_stopped {
-                                failed_routes += 1;
-                            } else {
-                                statuses.push(status(
-                                    "source_citation",
-                                    "myvariant",
-                                    VariantArticleSourceStatusKind::Ok,
-                                ));
-                                succeeded_routes += 1;
-                            }
-                        }
-                        Err(_) => {
-                            statuses.push(status(
-                                "source_citation",
-                                "myvariant",
-                                VariantArticleSourceStatusKind::Unavailable,
-                            ));
-                            failed_routes += 1;
-                        }
-                    }
-                }
-                VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
-                    "source_citation",
-                    "myvariant",
-                    VariantArticleSourceStatusKind::Skipped,
-                    Some("no compatible MyVariant record"),
-                )),
-                VariantProviderValidationStatus::Indeterminate => {
-                    statuses.push(status_with_detail(
-                        "source_citation",
-                        "myvariant",
-                        VariantArticleSourceStatusKind::Skipped,
-                        Some("provider identity was not confirmable"),
-                    ));
-                    failed_routes += 1;
-                }
-                VariantProviderValidationStatus::Unavailable => {
-                    statuses.push(status_with_detail(
-                        "source_citation",
-                        "myvariant",
-                        VariantArticleSourceStatusKind::Skipped,
-                        Some("provider validation unavailable"),
-                    ));
-                    failed_routes += 1;
-                }
-                VariantProviderValidationStatus::Contradictory => {}
-                // Only the exact-name strategy leaves validation unattempted,
-                // and it never reaches this resolved union arm.
-                VariantProviderValidationStatus::NotAttempted => {}
-            }
-        }
-    }
+    let (rows, incomplete, succeeded, route_statuses) = sources::acquire_components(
+        input, &context, strategy, &selected_exact_aliases,
+        selected_exact_aliases_truncated, &execution,
+    ).await;
+    candidates.extend(rows);
+    statuses.extend(route_statuses);
+    succeeded_routes += usize::from(succeeded);
+    failed_routes += usize::from(incomplete);
 
     let pre_dedup = candidates.len();
     for candidate in &mut candidates {
@@ -5822,12 +5671,18 @@ async fn search_variant_articles_identity(
     let prior_statuses = statuses;
     statuses = terminal_reconciled_statuses(&execution, &final_events);
     for status in &mut statuses {
-        if matches!(status.status, VariantArticleSourceStatusKind::Skipped)
+        if (matches!(status.status, VariantArticleSourceStatusKind::Skipped) || status.route == "literal_pubmed")
             && let Some(prior) = prior_statuses
                 .iter()
                 .find(|prior| prior.route == status.route && prior.source == status.source)
         {
             status.detail.clone_from(&prior.detail);
+            if status.route == "literal_pubmed" && !prior.reason_codes.is_empty() {
+                status.reason_codes.extend(prior.reason_codes.iter().copied());
+                status.reason_codes.sort_unstable();
+                status.reason_codes.dedup();
+                status.status = prior.status;
+            }
         }
     }
     name_pubtator_variant_no_entity(&mut statuses);

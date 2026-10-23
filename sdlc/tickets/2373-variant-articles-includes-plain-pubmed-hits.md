@@ -12,7 +12,7 @@ For a gene plus protein change, `variant articles` returns every PMID that a pla
 
 ## Changes
 
-- Changes: `src/entities/article/variant_search.rs`, `tests/test_variant_article_pubmed_floor.py`, `tests/fixtures/article/pubmed-floor/**`.
+- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/variant_search/sources.rs`, `src/entities/article/backends.rs`, `src/entities/article/query.rs`, `src/sources/mod.rs`, `src/sources/pubmed.rs`, `src/sources/pubmed/tests/construction.rs`, `src/sources/pubmed/tests/live.rs`, `src/sources/pubmed/tests/parsing.rs`, `tests/test_variant_article_pubmed_floor.py`, `tests/fixtures/article/pubmed-floor/**`, `tests/feature-links.json`.
 
 ## Evidence
 

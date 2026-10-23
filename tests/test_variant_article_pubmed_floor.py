@@ -21,7 +21,8 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path) -> None:
+@pytest.mark.parametrize("missing_summary", [False, True])
+def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, missing_summary: bool) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
     recorded = json.loads(CAPTURE.read_text())
@@ -45,13 +46,16 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 term = query["term"][0]
                 requests.append(term)
                 ids = expected if term == "AKT1 E17K" else []
+                if ids:
+                    assert query.get("sort") == ["relevance"]
                 start = int(query.get("retstart", ["0"])[0])
                 size = int(query.get("retmax", ["25"])[0])
                 return self.reply({"esearchresult": {
                     "count": str(len(ids)), "idlist": ids[start:start + size],
                 }})
             if path.endswith("/esummary.fcgi"):
-                ids = query["id"][0].split(",")
+                ids = [pmid for pmid in query["id"][0].split(",")
+                       if not (missing_summary and pmid == "33123537")]
                 return self.reply({"result": {"uids": ids, **{
                     pmid: {"uid": pmid, "title": "Authored metadata control",
                            "pubdate": "2020", "articleids": []}
@@ -106,6 +110,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             for row in result["results"]:
                 found.add(row["pmid"])
                 assert row["identity"]["status"] == "unverified"
+                if missing_summary and row["pmid"] == "33123537":
+                    assert row["metadata_status"]["status"] != "available"
         assert set(expected) <= found, {
             "missing_plain_pubmed_pmids": [pmid for pmid in expected if pmid not in found],
             "requested_pubmed_queries": sorted(set(requests)),
