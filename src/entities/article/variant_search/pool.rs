@@ -103,6 +103,12 @@ pub(super) fn query_key(
         disabled.dedup();
         settings.insert("BIOMCP_DISABLE_SOURCES", disabled.join(","));
     }
+    if let Ok(assembly) = std::env::var("BIOMCP_DEFAULT_ASSEMBLY") {
+        settings.insert(
+            "BIOMCP_DEFAULT_ASSEMBLY",
+            assembly.trim().to_ascii_lowercase(),
+        );
+    }
     let binding = serde_json::to_vec(&(
         1_u32,
         super::page::ORDERING_VERSION,
@@ -123,11 +129,11 @@ pub(super) fn query_key(
 #[derive(Clone, Serialize, Deserialize)]
 struct StoredIdentity {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    status: &'static str,
+    status: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    basis: &'static str,
+    basis: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::optional")]
-    reason: Option<&'static str>,
+    reason: Option<crate::entities::article::variant_search::atoms::Atom>,
     requested_gene: Option<String>,
     requested_allele: Option<String>,
     observations: Vec<StoredObservation>,
@@ -138,7 +144,7 @@ struct StoredIdentity {
 #[derive(Clone, Serialize, Deserialize)]
 struct StoredObservation {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    source: &'static str,
+    source: crate::entities::article::variant_search::atoms::Atom,
     section: String,
     locator: String,
     linked_gene: String,
@@ -233,7 +239,7 @@ struct StoredContext {
     truncated: bool,
     source_status: Vec<super::VariantArticleSourceStatus>,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    retrieval_path: &'static str,
+    retrieval_path: crate::entities::article::variant_search::atoms::Atom,
     error: Option<super::VariantArticleItemError>,
     debug_plan: Option<super::VariantArticleDebugPlan>,
 }
@@ -243,7 +249,7 @@ struct StoredRow {
     candidate: StoredCandidate,
     matched_aliases: Vec<String>,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    match_reason: &'static str,
+    match_reason: crate::entities::article::variant_search::atoms::Atom,
     alias_matches: Vec<super::VariantArticleAliasMatch>,
     retrieval_routes: Vec<String>,
     sources: Vec<String>,
@@ -466,7 +472,7 @@ pub(super) async fn execute(
             page_offset.saturating_add(limit.min(pool.ordered.len().saturating_sub(page_offset)));
         let token = Some(super::page::Continuation::encode(&snapshot.id, &key, next));
         let outcome = pool.into_response(page_offset, limit, token, debug)?;
-        return Ok(super::page::enrich_visible(outcome, &execution).await);
+        return Ok(super::page::enrich_visible(outcome, &execution, verification).await);
     }
     let retained = loaded
         .as_ref()
@@ -569,7 +575,7 @@ pub(super) async fn execute(
     let token = selected_id.map(|id| super::page::Continuation::encode(&id, &key, next));
     let outcome = selected_pool.into_response(page_offset, limit, token, debug)?;
     if existing.is_some() {
-        Ok(super::page::enrich_visible(outcome, &execution).await)
+        Ok(super::page::enrich_visible(outcome, &execution, verification).await)
     } else {
         Ok(outcome)
     }

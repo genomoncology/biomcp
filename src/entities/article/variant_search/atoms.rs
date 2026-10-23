@@ -1,6 +1,9 @@
 //! Checked vocabulary for the private pool format's borrowed runtime labels.
 use serde::{Deserialize, Deserializer};
 
+// The alias prevents serde from implicitly borrowing input for runtime labels.
+pub(crate) type Atom = &'static str;
+
 fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
     use super::super::identity_verification::{
         CONTENT_SUBSET_VERSION, PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION, RESPONSE_SUBSET_VERSION,

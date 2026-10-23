@@ -141,7 +141,7 @@ pub struct VariantArticleSourceStatus {
     pub detail: Option<String>,
     pub work: VariantArticleSourceWork,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
-    pub reason_codes: Vec<&'static str>,
+    pub reason_codes: Vec<crate::entities::article::variant_search::atoms::Atom>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub omitted_aliases: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -182,7 +182,7 @@ pub struct VariantArticleAliasMatch {
     pub alias: String,
     pub source_transcript: Option<String>,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub reason: &'static str,
+    pub reason: crate::entities::article::variant_search::atoms::Atom,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -231,24 +231,24 @@ pub struct VariantArticleAliasCoverage {
     pub planned: bool,
     pub attempted: bool,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub disposition: &'static str,
+    pub disposition: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub reason: &'static str,
+    pub reason: crate::entities::article::variant_search::atoms::Atom,
 }
 
 /// MyGene's recorded alias field and the actual variant-query coverage it enabled.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleGeneSymbolCoverage {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub source: &'static str,
+    pub source: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub source_field: &'static str,
+    pub source_field: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub status: &'static str,
+    pub status: crate::entities::article::variant_search::atoms::Atom,
     pub entrez_id: Option<String>,
     pub recorded_aliases: Vec<String>,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::optional")]
-    pub restriction: Option<&'static str>,
+    pub restriction: Option<crate::entities::article::variant_search::atoms::Atom>,
     pub aliases: Vec<VariantArticleAliasCoverage>,
 }
 
@@ -1353,7 +1353,7 @@ pub struct VariantArticleProviderPlan {
     pub calls: usize,
     pub pages: usize,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub cache: &'static str,
+    pub cache: crate::entities::article::variant_search::atoms::Atom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1373,9 +1373,9 @@ pub struct VariantArticleCountsPlan {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleRankingPlan {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub method: &'static str,
+    pub method: crate::entities::article::variant_search::atoms::Atom,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::triple")]
-    pub inputs: [&'static str; 3],
+    pub inputs: [crate::entities::article::variant_search::atoms::Atom; 3],
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1440,7 +1440,7 @@ pub struct VariantArticleCandidateTraceRecord {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleCandidateTrace {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub schema_version: &'static str,
+    pub schema_version: crate::entities::article::variant_search::atoms::Atom,
     pub observed_total: usize,
     pub dropped: usize,
     pub bounded: bool,
@@ -1486,7 +1486,7 @@ pub struct VariantArticleDebugPlan {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleDeadlinePlan {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub scope: &'static str,
+    pub scope: crate::entities::article::variant_search::atoms::Atom,
     pub limit_ms: u64,
     pub exhausted: bool,
     pub provider_concurrency_limit: usize,
@@ -1526,7 +1526,7 @@ pub struct CompactVariantArticleRow {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleItemError {
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
-    pub code: &'static str,
+    pub code: crate::entities::article::variant_search::atoms::Atom,
     pub message: String,
 }
 
@@ -5666,111 +5666,21 @@ async fn acquire_variant_article_pool(
             &execution,
         );
         execution.reserve_identity_verification_through(verification_count);
-        for candidate in candidates
-            .iter_mut()
-            .skip(verification_start)
-            .take(verification_count)
-        {
-            let captured = verify_captured_abstract(
-                &context.requested,
-                candidate
-                    .row
-                    .abstract_snippet
-                    .as_deref()
-                    .unwrap_or(&candidate.row.normalized_abstract),
-            );
-            if captured.status != "unverified" {
-                verification_content_subsets.push(canonical_content_subset(&captured));
-                candidate.identity = Some(captured);
-                continue;
-            }
-            let incomplete = match candidate.row.pmid.parse::<u64>() {
-                Ok(pmid) => {
-                    let Some(unit) = execution
-                        .begin_provider_unit("identity_verification", "pubtator")
-                        .await
-                    else {
-                        verification_incomplete = true;
-                        candidate.identity = Some(combine_identities(
-                            captured.clone(),
-                            verify_pubtator(
-                                &context.requested,
-                                &pmid.to_string(),
-                                &crate::sources::pubtator::PubTatorExportResponse {
-                                    documents: Vec::new(),
-                                },
-                                true,
-                            ),
-                        ));
-                        continue;
-                    };
-                    let response =
-                        match crate::sources::pubtator::PubTatorClient::new_with_deadline(
-                            execution.deadline(),
-                        )
-                        .await
-                        {
-                            Ok(client) => client.export_biocjson_fulltext(pmid).await,
-                            Err(error) => Err(error),
-                        };
-                    match response {
-                        Ok(response) => {
-                            verification_response_subsets
-                                .push(canonical_response_subset(&response));
-                            let mut fetched = verify_pubtator(
-                                &context.requested,
-                                &pmid.to_string(),
-                                &response,
-                                false,
-                            );
-                            unit.commit("ok", 1, || {});
-                            verification_incomplete |= verify_paper_anchors(
-                                &context.requested,
-                                &pmid.to_string(),
-                                &response,
-                                &canonical_equivalence,
-                                &execution,
-                                &mut fetched,
-                            )
-                            .await;
-                            let identity = combine_identities(captured.clone(), fetched);
-                            verification_content_subsets.push(canonical_content_subset(&identity));
-                            candidate.identity = Some(identity);
-                            false
-                        }
-                        Err(error) => {
-                            unit.record_error(&error);
-                            true
-                        }
-                    }
-                }
-                Err(_) => true,
-            };
-            verification_incomplete |= incomplete;
-            if candidate.identity.is_none() {
-                candidate.identity = Some(combine_identities(
-                    captured.clone(),
-                    verify_pubtator(
-                        &context.requested,
-                        &candidate.row.pmid,
-                        &crate::sources::pubtator::PubTatorExportResponse {
-                            documents: Vec::new(),
-                        },
-                        incomplete,
-                    ),
-                ));
-            }
-        }
-        verification_incomplete |=
-            verification.confirmed_only && candidates.len() > verification_count;
-        let ldh_incomplete = add_ldh_observations(
-            &mut candidates,
+        let verification_end = verification_start
+            .saturating_add(verification_count)
+            .min(candidates.len());
+        let verified = page::verify_candidates(
+            &mut candidates[verification_start.min(verification_end)..verification_end],
             &context.requested,
             &canonical_equivalence,
             &execution,
         )
         .await;
-        verification_incomplete |= ldh_incomplete;
+        verification_incomplete |= verified.incomplete;
+        verification_response_subsets = verified.responses;
+        verification_content_subsets = verified.contents;
+        verification_incomplete |=
+            verification.confirmed_only && candidates.len() > verification_count;
         for candidate in &mut candidates {
             let disposition = candidate
                 .identity
