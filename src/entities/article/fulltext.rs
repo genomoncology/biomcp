@@ -769,17 +769,11 @@ pub(super) async fn resolve_fulltext(
                     .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
                     .await
                     .map(|value| value.map(|xml| (xml, None))),
-                None => {
-                    state.record_attempt(
-                        &source,
-                        ArticleFulltextAttemptSourceKind::JatsXml,
-                        ArticleFulltextAttemptCoverage::Unavailable,
-                        ArticleFulltextAttemptOutcome::Unavailable,
-                        ArticleFulltextCacheState::Bypass,
-                        ArticleFulltextAttemptReason::SourceUnavailable,
-                    );
-                    continue;
-                }
+                None => Err(BioMcpError::SourceUnavailable {
+                    source_name: "Europe PMC".into(),
+                    reason: "client unavailable".into(),
+                    suggestion: "Retry the article request".into(),
+                }),
             },
             XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
                 Ok(client) => client
@@ -802,17 +796,11 @@ pub(super) async fn resolve_fulltext(
                     .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
                     .await
                     .map(|value| value.map(|xml| (xml, None))),
-                None => {
-                    state.record_attempt(
-                        &source,
-                        ArticleFulltextAttemptSourceKind::JatsXml,
-                        ArticleFulltextAttemptCoverage::Unavailable,
-                        ArticleFulltextAttemptOutcome::Unavailable,
-                        ArticleFulltextCacheState::Bypass,
-                        ArticleFulltextAttemptReason::SourceUnavailable,
-                    );
-                    continue;
-                }
+                None => Err(BioMcpError::SourceUnavailable {
+                    source_name: "Europe PMC".into(),
+                    reason: "client unavailable".into(),
+                    suggestion: "Retry the article request".into(),
+                }),
             },
             }
         }).await;
