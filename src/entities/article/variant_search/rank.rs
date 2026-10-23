@@ -21,9 +21,6 @@ pub(super) fn descriptor() -> super::VariantArticleRankingPlan {
 }
 
 use std::collections::BTreeMap;
-use std::sync::OnceLock;
-
-use regex::Regex;
 
 use crate::entities::variant::{NormalizedVariantAliases, RequestedVariantIdentity};
 use crate::transform::article::normalize_article_search_text;
@@ -40,6 +37,35 @@ fn source_family(source: &str) -> &str {
     }
 }
 
+/// Expand spellings from a parsed alias, rather than reparsing lowercase
+/// abstract text with the identity parser's case-sensitive HGVS grammar.
+fn protein_spellings(alias: &str) -> Vec<String> {
+    let Some(normalized) = crate::entities::variant::normalize_protein_change(alias) else {
+        return vec![alias.to_string()];
+    };
+    let mut spellings = vec![String::new()];
+    for character in normalized.chars() {
+        if (character.is_ascii_uppercase() || character == '*')
+            && let Some(three_letter) = crate::entities::variant::amino_acid_three_letter(character)
+        {
+            spellings = spellings
+                .into_iter()
+                .flat_map(|prefix| {
+                    [
+                        format!("{prefix}{character}"),
+                        format!("{prefix}{three_letter}"),
+                    ]
+                })
+                .collect();
+        } else {
+            for spelling in &mut spellings {
+                spelling.push(character);
+            }
+        }
+    }
+    spellings
+}
+
 fn text_evidence(
     text: &str,
     requested: &RequestedVariantIdentity,
@@ -48,37 +74,20 @@ fn text_evidence(
     let Some(gene) = requested.gene.as_deref() else {
         return false;
     };
-    let normalized_text = normalize_article_search_text(text);
-    if !anchor_matches_text(&normalized_text, &gene.to_ascii_lowercase()) {
+    let text = normalize_article_search_text(text);
+    if !anchor_matches_text(&text, &gene.to_ascii_lowercase()) {
         return false;
     }
-    if aliases
-        .protein_changes
+    aliases.protein_changes.iter().any(|alias| {
+        protein_spellings(alias)
+            .iter()
+            .any(|spelling| anchor_matches_text(&text, &spelling.to_ascii_lowercase()))
+    }) || aliases
+        .coding_changes
         .iter()
-        .chain(&aliases.coding_changes)
         .chain(&aliases.genomic_ids)
         .chain(&aliases.rsids)
-        .any(|alias| anchor_matches_text(&normalized_text, &alias.to_ascii_lowercase()))
-    {
-        return true;
-    }
-    // Normalize only spellings the existing variant parser supports. This is
-    // lexical relevance; it supplies no identity observation or confirmation.
-    static PROTEIN: OnceLock<Regex> = OnceLock::new();
-    let protein = PROTEIN.get_or_init(|| {
-        Regex::new(r"(?i)\b[a-z*]+[0-9]+(?:_[a-z*]*[0-9]+)?[a-z0-9*]*")
-            .expect("valid protein spelling regex")
-    });
-    protein.find_iter(text).any(|matched| {
-        crate::entities::variant::normalize_protein_change(matched.as_str()).is_some_and(
-            |observed| {
-                aliases.protein_changes.iter().any(|alias| {
-                    crate::entities::variant::normalize_protein_change(alias).as_ref()
-                        == Some(&observed)
-                })
-            },
-        )
-    })
+        .any(|alias| anchor_matches_text(&text, &alias.to_ascii_lowercase()))
 }
 
 fn typed_annotation(linkage: &ProviderLinkage) -> bool {
