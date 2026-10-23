@@ -6,6 +6,7 @@ from hang_guard import HANG_TIMEOUT
 
 import json
 import os
+import select
 from pathlib import Path
 import subprocess
 import sys
@@ -22,8 +23,8 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/coding-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene"])
-def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path) -> None:
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene", "requested38", "unknown", "mcp"])
+def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     control = json.loads(FIXTURE.read_text())
     hit = control["hit"]
     if surface == "complete":
@@ -119,9 +120,14 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     command += ["variant", "articles", "ABCC8 R1437Q", "--limit", "5"]
     if surface in ("complete", "lexical"):
         command += ["--strategy", "lexical"]
-    if surface == "batch":
+    if surface in ("batch", "requested38", "unknown"):
         request = tmp_path / "input.json"
-        request.write_text(json.dumps([{"gene": "ABCC8", "protein": "R1437Q"}]))
+        item = {"gene": "ABCC8", "protein": "R1437Q"}
+        if surface in ("requested38", "unknown"):
+            item["genomic"] = hit["_id"]
+        if surface == "requested38":
+            item["build"] = "GRCh38"
+        request.write_text(json.dumps([item]))
         command.remove("ABCC8 R1437Q")
         command += ["--input", str(request)]
     if surface in ("debug", "batch", "reported", "gene"):
@@ -129,14 +135,43 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface == "reported":
         command.append("--verify-identity")
     try:
-        result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=HANG_TIMEOUT)
+        if surface == "mcp":
+            from test_mcp_2026_protocol import RawStdioMcp
+
+            with monkeypatch.context() as isolated:
+                for key in set(os.environ) - set(env):
+                    isolated.delenv(key)
+                for key, value in env.items():
+                    isolated.setenv(key, value)
+                client = RawStdioMcp()
+                try:
+                    client.send({"jsonrpc": "2.0", "id": "init", "method": "initialize",
+                                 "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                                            "clientInfo": {"name": "assembly-contract", "version": "1"}}})
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+                    assert ready
+                    assert client.receive()["id"] == "init"
+                    client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+                    client.send({"jsonrpc": "2.0", "id": "articles", "method": "tools/call",
+                                 "params": {"name": "variant_articles", "arguments": {
+                                     "items": [{"gene": "ABCC8", "protein": "R1437Q"}], "limit": 5}}})
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+                    assert ready
+                    response = client.receive()["result"]
+                    assert response.get("isError") is not True, response
+                    payload = json.loads(response["content"][0]["text"])["items"][0]
+                finally:
+                    client.close()
+        else:
+            result = subprocess.run(command, env=env, cwd=REPO_ROOT,
+                                    capture_output=True, text=True, timeout=HANG_TIMEOUT)
     finally:
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
     assert not misses, misses
-    assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
+    if surface != "mcp":
+        assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
     if surface in ("markdown", "disabled-markdown"):
         text = result.stderr if disabled else result.stdout
         assert "chr11:g.17417157C>T (GRCh37; myvariant)" in text
@@ -146,13 +181,20 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         if disabled:
             assert "ABCC8 R1437Q: omitted (source_disabled; planned: true)" in text
         return
-    payload = json.loads(result.stdout)
-    if surface == "batch":
+    if surface != "mcp":
+        payload = json.loads(result.stdout)
+    if surface in ("batch", "requested38", "unknown"):
         payload = payload["items"][0]
     assert payload["resolution"]["status"] == "resolved", payload
     coordinates = payload["resolution"]["normalized_aliases"]["genomic_coordinates"]
-    assert coordinates == [{"coordinate": hit["_id"], "genome_build": "GRCh37",
-                            "source": "myvariant", "provenance": "resolved source identity"}]
+    build = "GRCh38" if surface == "requested38" else "GRCh37"
+    expected = [{"coordinate": hit["_id"], "genome_build": build,
+                 "source": "myvariant", "provenance": "resolved source identity"}]
+    if surface in ("requested38", "unknown"):
+        expected.insert(0, {"coordinate": hit["_id"], "genome_build": (
+            "GRCh38" if surface == "requested38" else "unknown"),
+            "source": "requested", "provenance": "requested variant identity"})
+    assert coordinates == expected
     assert payload["resolution"]["normalized_aliases"]["genomic_ids"] == [hit["_id"]]
     for row in payload["results"]:
         assert row["genomic_coordinates"] == coordinates
