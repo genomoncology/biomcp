@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 2
 
-- Changes: `CHANGELOG.md`, `scripts/run-nightly-checks.sh`, `tools/bootstrap-lint-tools`, `tests/test_release_check_counterparts.py`, `tests/test_advisory_bootstrap.py`.
+- Changes: `CHANGELOG.md`, `scripts/run-nightly-checks.sh`, `tools/bootstrap-lint-tools`, `tests/test_release_check_counterparts.py`, `tests/test_advisory_bootstrap.py`. `Cargo.lock` carries the accepted 2361 Tokio dependency repair authorized by PM m4030 for this batch candidate.
 
 ## Outcome
 
