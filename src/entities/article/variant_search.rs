@@ -3266,7 +3266,6 @@ async fn planned_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let filters = article_filters();
     let plans = provider_variant_query_plan_with_gene_aliases(
         input,
         context,
@@ -3276,11 +3275,11 @@ async fn planned_candidates(
     )
     .into_iter()
     .filter(|plan| matches!(plan.route.as_str(), "strict" | "exact_lexical"));
-    let mut candidates = Vec::new();
-    let mut incomplete = false;
-    let mut succeeded = false;
-
-    for plan in plans {
+    let searches = plans.map(|plan| async move {
+        let filters = article_filters();
+        let mut candidates = Vec::new();
+        let mut incomplete = false;
+        let mut succeeded = false;
         let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
@@ -3291,10 +3290,8 @@ async fn planned_candidates(
         };
         let execution = &scoped;
         if execution.route_stopped(route) {
-            incomplete = true;
-            continue;
+            return (candidates, true, false);
         }
-        let stopped_before = execution.route_stopped(route);
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
                 &filters,
@@ -3370,8 +3367,7 @@ async fn planned_candidates(
             }
             "pubtator" => {
                 let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
-                    incomplete = true;
-                    break;
+                    return (candidates, true, false);
                 };
                 let pubtator = crate::sources::pubtator::PubTatorClient::new_with_deadline(
                     execution.deadline(),
@@ -3421,10 +3417,10 @@ async fn planned_candidates(
                     }
                 }
             }
-            _ => continue,
+            _ => return (candidates, false, false),
         };
         match rows {
-            Ok((rows, degraded, total)) if !execution.route_stopped(route) || stopped_before => {
+            Ok((rows, degraded, total)) => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
                 //.
@@ -3432,6 +3428,8 @@ async fn planned_candidates(
                     incomplete = true;
                 }
                 succeeded = true;
+                // A peer stopping admission cannot revoke committed provider rows.
+                incomplete |= execution.route_stopped(route);
                 let cut = degraded
                     || total.is_some_and(|total| total > rows.len())
                     || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
@@ -3469,14 +3467,22 @@ async fn planned_candidates(
                     candidate
                 }));
             }
-            Ok(_) | Err(_) if execution.route_stopped(route) => {
-                incomplete = true;
-                continue;
-            }
-            Ok(_) | Err(_) => {
+            Err(_) => {
                 incomplete = true;
             }
         }
+        (candidates, incomplete, succeeded)
+    });
+    // Poll independent plans together while collecting their rows in plan order.
+    // Provider units retain the shared concurrency and source pacing limits.
+    let mut searches = stream::iter(searches).buffered(PROVIDER_CONCURRENCY_LIMIT);
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    while let Some((rows, partial, available)) = searches.next().await {
+        candidates.extend(rows);
+        incomplete |= partial;
+        succeeded |= available;
     }
     let calls = execution.events();
     let mut statuses = provider_statuses_for_route("strict", &calls);
@@ -7121,6 +7127,43 @@ mod tests {
                 }
             }
         }
+    }
+
+    // Concurrency needs this inner boundary: a peer can stop admission while an
+    // already admitted provider response is being committed.
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn stopped_strict_admission_keeps_inflight_rows() {
+        let execution = VariantArticleExecutionContext::single();
+        let stopping_peer = execution.clone();
+        let mut fixture = TestHttpFixture::spawn(move |_| {
+            stopping_peer.stop("strict");
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"total":1,"data":[{"paperId":"admitted-row","externalIds":{"PubMed":"71000030"},"title":"Admitted response survives a peer stopping the route","year":2026}]}"#,
+            ))
+        })
+        .await;
+        let mut env = gene_aliases_disabled_env();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_DISABLE_SOURCES",
+            "mygene-info,pubmed,europe-pmc,pubtator3",
+        );
+        let (rows, _, succeeded, _) = planned_candidates(
+            "BRAF p.V600E",
+            &resolved_context(),
+            VariantArticleStrategy::Lexical,
+            &["BRAF p.V600E".into()],
+            &execution,
+        )
+        .await;
+        assert!(execution.route_stopped("strict"));
+        assert!(succeeded, "the admitted response succeeded");
+        assert!(rows.iter().any(|row| row.row.pmid == "71000030"));
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
