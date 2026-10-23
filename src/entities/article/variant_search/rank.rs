@@ -117,3 +117,41 @@ pub(super) fn rank_candidates(
         )
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::super::candidates::article_candidate_from_row;
+    use super::super::VariantArticleProvenance;
+
+    // Numeric policy contract: aliases cannot fabricate independent evidence,
+    // and no amount of native-rank support may outweigh a preceding factor.
+    #[test]
+    fn source_families_and_curation_have_lexicographic_priority() {
+        let candidate = |pmid: &str, facts: &[(&str, &str, usize)]| {
+            let row = serde_json::from_value(serde_json::json!({
+                "pmid": pmid, "title": "AKT1 signaling", "source": "pubmed"
+            })).expect("article row");
+            let mut candidate = article_candidate_from_row(row);
+            candidate.variant_provenance = facts.iter().map(|(source, route, position)| {
+                VariantArticleProvenance {
+                    source: (*source).into(), route: (*route).into(),
+                    native_position: *position, query_aliases: Vec::new(), matched_alias: None,
+                }
+            }).collect();
+            candidate
+        };
+        let mut candidates = vec![
+            candidate("81001", &[("pubtator", "strict", 0), ("litvar", "annotation", 0),
+                                  ("pubtator", "alias", 1)]),
+            candidate("81002", &[("pubmed", "strict", 1000), ("europepmc", "strict", 1000)]),
+            candidate("81003", &[("civic", "source_citation", 1000)]),
+            candidate("81004", &[("pubmed", "strict", 1001), ("europepmc", "strict", 1001)]),
+            candidate("81005", &[("civic", "generic_citation", 0)]),
+        ];
+        let requested = RequestedVariantIdentity::from_variant_input("AKT1 E17K").expect("identity");
+        rank_candidates(&mut candidates, &requested, &requested.normalized_aliases());
+        assert_eq!(candidates.iter().map(|row| row.row.pmid.as_str()).collect::<Vec<_>>(),
+                   ["81003", "81002", "81004", "81001", "81005"]);
+    }
+}
