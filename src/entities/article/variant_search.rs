@@ -686,7 +686,7 @@ impl VariantArticleExecutionContext {
     // Reservations never move between providers or component strategies.
     // The discovery reservations sum to DISCOVERY_WORK_LIMIT; exact lexical
     // and identity verification retain their existing separate allowances.
-    fn reserve_provider(&self, route: &str, source: &str) -> Option<Instant> {
+    pub(crate) fn reserve_provider(&self, route: &str, source: &str) -> Option<Instant> {
         if matches!(
             route,
             "identity_verification" | "clingen_ldh_medium" | "clingen_ldh_direct"
@@ -732,8 +732,23 @@ impl VariantArticleExecutionContext {
         } else {
             (&self.item, &self.request)
         };
-        item.consumed.fetch_add(1, AtomicOrdering::SeqCst);
-        request.consumed.fetch_add(1, AtomicOrdering::SeqCst);
+        let admit = |budget: &SharedWorkBudget| {
+            budget
+                .consumed
+                .update_budget(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                    (current < budget.limit).then(|| current + 1)
+                })
+                .is_ok()
+        };
+        if !admit(item) {
+            *consumed -= 1;
+            return None;
+        }
+        if !admit(request) {
+            item.consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+            *consumed -= 1;
+            return None;
+        }
         Some(Instant::now())
     }
 
@@ -3118,7 +3133,20 @@ async fn shared_pubtator_candidates(
         }
         return Ok(cached);
     }
-    let result = requested_pubtator_candidates(input, context, execution, route).await;
+    // The ledger's reuse edge has one fixed producer even if the annotation
+    // future acquires this lock before strict's other provider plans settle.
+    let producer = if execution
+        .route_unit_plans
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(&("pubtator_variant".into(), "pubtator".into()))
+        == Some(&RouteUnitPlan::Reused("strict"))
+    {
+        "strict"
+    } else {
+        route
+    };
+    let mut result = requested_pubtator_candidates(input, context, execution, producer).await;
     // The originating provider events retain typed failures. Reuse their
     // terminal outcome without constructing a replacement error or retrying.
     let cached = result
@@ -3126,6 +3154,16 @@ async fn shared_pubtator_candidates(
         .cloned()
         .unwrap_or_else(|_| (Vec::new(), true, false, false));
     *shared = Some(cached);
+    if let Ok((candidates, _, _, _)) = &mut result {
+        for candidate in candidates {
+            for fact in &mut candidate.variant_provenance {
+                fact.route = route.into();
+            }
+            for trace in &mut candidate.candidate_trace {
+                trace.route = route.into();
+            }
+        }
+    }
     result
 }
 

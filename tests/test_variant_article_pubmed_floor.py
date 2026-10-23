@@ -21,13 +21,15 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("missing_summary", [False, True])
-def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, missing_summary: bool) -> None:
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal"])
+def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
     recorded = json.loads(CAPTURE.read_text())
     expected = recorded["esearchresult"]["idlist"]
     requests: list[str] = []
+    peer_started = threading.Event()
+    wait_failures: list[str] = []
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, value: object, status: int = 200) -> None:
@@ -46,16 +48,21 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 term = query["term"][0]
                 requests.append(term)
                 ids = expected if term == "AKT1 E17K" else []
+                if "[Title/Abstract]" in term:
+                    peer_started.set()
+                if ids and case == "slow_literal" and not peer_started.wait(HANG_TIMEOUT):
+                    wait_failures.append("resolution-dependent PubMed worker did not start")
                 if ids:
                     assert query.get("sort") == ["relevance"]
                 start = int(query.get("retstart", ["0"])[0])
                 size = int(query.get("retmax", ["25"])[0])
                 return self.reply({"esearchresult": {
-                    "count": str(len(ids)), "idlist": ids[start:start + size],
+                    "count": str(10001 if ids and case == "hard_limit" else len(ids)),
+                    "idlist": ids[start:start + size],
                 }})
             if path.endswith("/esummary.fcgi"):
                 ids = [pmid for pmid in query["id"][0].split(",")
-                       if not (missing_summary and pmid == "33123537")]
+                       if not (case == "missing_summary" and pmid == "33123537")]
                 return self.reply({"result": {"uids": ids, **{
                     pmid: {"uid": pmid, "title": "Authored metadata control",
                            "pubdate": "2020", "articleids": []}
@@ -99,7 +106,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     found: set[str] = set()
     try:
-        for offset in range(0, len(expected), 50):
+        offsets = [0] if case == "hard_limit" else range(0, len(expected), 50)
+        for offset in offsets:
             process = subprocess.run([
                 os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
                 "--json", "variant", "articles", "AKT1 E17K", "--limit", "50",
@@ -110,8 +118,20 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             for row in result["results"]:
                 found.add(row["pmid"])
                 assert row["identity"]["status"] == "unverified"
-                if missing_summary and row["pmid"] == "33123537":
+                if case == "missing_summary" and row["pmid"] == "33123537":
                     assert row["metadata_status"]["status"] != "available"
+        assert not wait_failures, wait_failures
+        if case == "slow_literal":
+            assert peer_started.is_set()
+        if case == "hard_limit":
+            assert found
+            assert not result["complete"]
+            literal_status = next(status for status in result["source_status"]
+                                  if status["route"] == "literal_pubmed")
+            assert literal_status["status"] == "degraded"
+            assert "query_result_cap" in literal_status["reason_codes"]
+            assert "10000-ID" in literal_status["detail"]
+            return
         assert set(expected) <= found, {
             "missing_plain_pubmed_pmids": [pmid for pmid in expected if pmid not in found],
             "requested_pubmed_queries": sorted(set(requests)),

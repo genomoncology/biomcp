@@ -247,27 +247,69 @@ pub(super) async fn acquire_literal_pubmed(
     let events = execution.events();
     let mut status = provider_statuses_for_route(LITERAL_PUBMED_ROUTE, &events);
     if !progress.complete {
-        let mut unfinished = status_with_detail(
-            LITERAL_PUBMED_ROUTE,
-            "pubmed",
-            VariantArticleSourceStatusKind::Degraded,
-            Some(if progress.hard_limit {
+        let mut unfinished = status.pop().unwrap_or_else(|| {
+            status_with_detail(
+                LITERAL_PUBMED_ROUTE,
+                "pubmed",
+                VariantArticleSourceStatusKind::Degraded,
+                None,
+            )
+        });
+        unfinished.status = VariantArticleSourceStatusKind::Degraded;
+        unfinished.detail = Some(
+            if progress.hard_limit {
                 "PubMed's 10000-ID retrieval limit prevents a complete literal query floor"
             } else {
                 "literal PubMed enumeration is unfinished; retained PMIDs remain available"
-            }),
+            }
+            .into(),
         );
-        unfinished.reason_codes = vec![if progress.hard_limit {
+        unfinished.reason_codes.push(if progress.hard_limit {
             "query_result_cap"
         } else {
             "logical_work_cap"
-        }];
+        });
         status.push(unfinished);
     }
     SourceAcquisition {
         candidates,
         status,
         progress: Some(progress),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Atomic resource admission needs direct boundary coverage in addition to
+    // the caller-facing provider replay.
+    #[test]
+    fn provider_reservations_respect_both_shared_ceilings_without_leaking_units() {
+        for item_full in [true, false] {
+            let execution = VariantArticleExecutionContext::single();
+            let (full, unchanged) = if item_full {
+                (&execution.item, &execution.request)
+            } else {
+                (&execution.request, &execution.item)
+            };
+            full.consumed.store(full.limit, AtomicOrdering::SeqCst);
+            assert!(
+                execution
+                    .reserve_provider("literal_pubmed", "pubmed")
+                    .is_none()
+            );
+            assert_eq!(full.consumed.load(AtomicOrdering::SeqCst), full.limit);
+            assert_eq!(unchanged.consumed.load(AtomicOrdering::SeqCst), 0);
+            assert!(
+                execution
+                    .provider_work
+                    .lock()
+                    .unwrap()
+                    .values()
+                    .all(|count| *count == 0)
+            );
+        }
     }
 }
 
