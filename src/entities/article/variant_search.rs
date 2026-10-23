@@ -687,7 +687,10 @@ impl VariantArticleExecutionContext {
     // The discovery reservations sum to DISCOVERY_WORK_LIMIT; exact lexical
     // and identity verification retain their existing separate allowances.
     fn reserve_provider(&self, route: &str, source: &str) -> Option<Instant> {
-        if matches!(route, "identity_verification" | "clingen_ldh_medium" | "clingen_ldh_direct") {
+        if matches!(
+            route,
+            "identity_verification" | "clingen_ldh_medium" | "clingen_ldh_direct"
+        ) {
             return self.reserve(route);
         }
         if self.deadline.is_exhausted() {
@@ -711,25 +714,44 @@ impl VariantArticleExecutionContext {
                 _ => ("other", 36),
             }
         };
-        let key = (if exact { "exact" } else { "discovery" }.into(), family.into());
-        let mut work = self.provider_work.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let key = (
+            if exact { "exact" } else { "discovery" }.into(),
+            family.into(),
+        );
+        let mut work = self
+            .provider_work
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let consumed = work.entry(key).or_default();
         if *consumed >= limit {
             return None;
         }
         *consumed += 1;
-        let (item, request) = if exact { (&self.exact_item, &self.exact_request) } else { (&self.item, &self.request) };
+        let (item, request) = if exact {
+            (&self.exact_item, &self.exact_request)
+        } else {
+            (&self.item, &self.request)
+        };
         item.consumed.fetch_add(1, AtomicOrdering::SeqCst);
         request.consumed.fetch_add(1, AtomicOrdering::SeqCst);
         Some(Instant::now())
     }
 
     pub(super) fn literal_pubmed_progress(&self) -> Option<sources::LiteralPubMedProgress> {
-        self.literal_pubmed_progress.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+        self.literal_pubmed_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
-    pub(super) fn set_literal_pubmed_progress(&self, progress: Option<sources::LiteralPubMedProgress>) {
-        *self.literal_pubmed_progress.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = progress;
+    pub(super) fn set_literal_pubmed_progress(
+        &self,
+        progress: Option<sources::LiteralPubMedProgress>,
+    ) {
+        *self
+            .literal_pubmed_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = progress;
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
@@ -4976,7 +4998,10 @@ fn build_debug_plan(
         .into_iter()
         .map(|route| {
             let queries = if route == "literal_pubmed" {
-                execution.literal_pubmed_progress().map(|progress| vec![progress.query]).unwrap_or_default()
+                execution
+                    .literal_pubmed_progress()
+                    .map(|progress| vec![progress.query])
+                    .unwrap_or_default()
             } else if route == "pubtator_variant" {
                 execution.pubtator_variant_queries()
             } else {
@@ -5029,9 +5054,12 @@ fn build_debug_plan(
     );
     if let Some(progress) = execution.literal_pubmed_progress() {
         provider_queries.push(ProviderVariantQueryPlan {
-            provider: "pubmed".into(), route: "literal_pubmed".into(),
-            query_alias: progress.query.clone(), query_aliases: Vec::new(),
-            coverage_aliases: vec![progress.query.clone()], query: progress.query,
+            provider: "pubmed".into(),
+            route: "literal_pubmed".into(),
+            query_alias: progress.query.clone(),
+            query_aliases: Vec::new(),
+            coverage_aliases: vec![progress.query.clone()],
+            query: progress.query,
             query_template_version: "pubmed-literal-relevance-v1".into(),
         });
     }
@@ -5414,26 +5442,40 @@ async fn search_variant_articles_identity(
         execution.set_route_unit_plan("canonical_equivalence", "clingen_car", None);
     }
     let literal_query = (strategy == VariantArticleStrategy::Union)
-        .then(|| sources::literal_query(input, &requested)).flatten();
+        .then(|| sources::literal_query(input, &requested))
+        .flatten();
     let requested_backup = requested.clone();
     let mut resolution_execution = execution.clone();
-    resolution_execution.deadline = execution.deadline.capped(VARIANT_ARTICLE_DEADLINE_LIMIT / 2);
+    resolution_execution.deadline = execution
+        .deadline
+        .capped(VARIANT_ARTICLE_DEADLINE_LIMIT / 2);
     // Poll literal enumeration and resolution together. Membership discovery
     // has its own reservation and cannot wait for an identity provider.
     let (resolution, literal) = tokio::join!(
         resolve_search_context(input, requested, strategy, &resolution_execution),
-        sources::acquire_literal_pubmed(literal_query.as_deref(), execution.literal_pubmed_progress(), &execution),
+        sources::acquire_literal_pubmed(
+            literal_query.as_deref(),
+            execution.literal_pubmed_progress(),
+            &execution
+        ),
     );
-    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) = match resolution {
-        Ok(resolution) => resolution,
-        Err(_) if !literal.candidates.is_empty() => {
-            let mut context = unresolved_exact_context(requested_backup);
-            context.available = false;
-            context.resolution.provider_validation.status = VariantProviderValidationStatus::Unavailable;
-            (context, unattempted_canonical_equivalence(), Vec::new(), false)
-        }
-        Err(error) => return Err(error),
-    };
+    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) =
+        match resolution {
+            Ok(resolution) => resolution,
+            Err(_) if !literal.candidates.is_empty() => {
+                let mut context = unresolved_exact_context(requested_backup);
+                context.available = false;
+                context.resolution.provider_validation.status =
+                    VariantProviderValidationStatus::Unavailable;
+                (
+                    context,
+                    unattempted_canonical_equivalence(),
+                    Vec::new(),
+                    false,
+                )
+            }
+            Err(error) => return Err(error),
+        };
     execution.set_literal_pubmed_progress(literal.progress.clone());
     if context.available {
         materialize_discovery_route_plans(
@@ -5466,12 +5508,18 @@ async fn search_variant_articles_identity(
     let mut statuses = resolution_status_rows(strategy, &events);
     statuses.extend(literal.status);
     let mut succeeded_routes = usize::from(!candidates.is_empty());
-    let mut failed_routes = usize::from(literal.progress.is_some_and(|progress| !progress.complete));
+    let mut failed_routes =
+        usize::from(literal.progress.is_some_and(|progress| !progress.complete));
 
     let (rows, incomplete, succeeded, route_statuses) = sources::acquire_components(
-        input, &context, strategy, &selected_exact_aliases,
-        selected_exact_aliases_truncated, &execution,
-    ).await;
+        input,
+        &context,
+        strategy,
+        &selected_exact_aliases,
+        selected_exact_aliases_truncated,
+        &execution,
+    )
+    .await;
     candidates.extend(rows);
     statuses.extend(route_statuses);
     succeeded_routes += usize::from(succeeded);
@@ -5671,14 +5719,17 @@ async fn search_variant_articles_identity(
     let prior_statuses = statuses;
     statuses = terminal_reconciled_statuses(&execution, &final_events);
     for status in &mut statuses {
-        if (matches!(status.status, VariantArticleSourceStatusKind::Skipped) || status.route == "literal_pubmed")
+        if (matches!(status.status, VariantArticleSourceStatusKind::Skipped)
+            || status.route == "literal_pubmed")
             && let Some(prior) = prior_statuses
                 .iter()
                 .find(|prior| prior.route == status.route && prior.source == status.source)
         {
             status.detail.clone_from(&prior.detail);
             if status.route == "literal_pubmed" && !prior.reason_codes.is_empty() {
-                status.reason_codes.extend(prior.reason_codes.iter().copied());
+                status
+                    .reason_codes
+                    .extend(prior.reason_codes.iter().copied());
                 status.reason_codes.sort_unstable();
                 status.reason_codes.dedup();
                 status.status = prior.status;
