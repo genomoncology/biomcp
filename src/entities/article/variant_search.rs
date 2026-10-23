@@ -8,6 +8,7 @@ use std::sync::{
 };
 use std::time::Instant;
 
+mod merge;
 pub(super) mod sources;
 
 // Keep atomic budget updates available on the declared minimum Rust version.
@@ -5526,17 +5527,7 @@ async fn search_variant_articles_identity(
     failed_routes += usize::from(incomplete);
 
     let pre_dedup = candidates.len();
-    for candidate in &mut candidates {
-        for trace in &mut candidate.candidate_trace {
-            trace.after_union = true;
-        }
-    }
-    let mut candidates = merge_article_candidate_pool(candidates);
-    for candidate in &mut candidates {
-        for trace in &mut candidate.candidate_trace {
-            trace.after_dedup = true;
-        }
-    }
+    let mut candidates = merge::merge_candidates(candidates);
     // With the merged pool settled, each recorded alias yield can name how
     // many of its received rows still carry provenance in the final pool.
     execution.finalize_alias_yields(&candidates);
