@@ -6,7 +6,10 @@ use roxmltree::{Node, NodeId};
 use crate::entities::article::ArticleFulltextQuality;
 use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
-use super::{ArticleDocumentCoverage, ArticleDocumentUnusable, ClassifiedArticleDocument};
+use super::{
+    ArticleDocumentCoverage, ArticleDocumentUnusable, ClassifiedArticleDocument,
+    collapse_whitespace,
+};
 
 mod inline;
 mod refs;

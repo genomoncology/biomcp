@@ -2,7 +2,7 @@
 
 use roxmltree::{Node, NodeType};
 
-use super::super::collapse_whitespace;
+use super::collapse_whitespace;
 
 pub(super) fn inline_text(node: Node<'_, '_>) -> String {
     let mut buffer = InlineBuffer::default();
