@@ -9,6 +9,7 @@
 ### Fixes
 
 - Provision the pinned protoc compiler before nightly generated-source checks, verify its archive checksum, and reject incompatible cached versions. (2359)
+- Retain article tables from back matter and nested source containers in saved full text and line reads. (2362)
 
 - Bound article full-text provider waits, recover stalled metadata through Europe PMC, and report failed retrieval routes. Limit optional asset-summary work so available text returns promptly. (2360)
 

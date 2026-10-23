@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+- Changes: `CHANGELOG.md`, `src/transform/article/jats.rs`, `tests/feature-links.json`, `tests/test_article_fulltext_tables.py`.
+
 ## Outcome
 
 Article full text includes every table in the source document, so a variant named only in a table is found by line reads and searches.
