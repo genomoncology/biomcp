@@ -474,6 +474,7 @@ impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
     }
 }
 
+pub(crate) mod fulltext_diagnostics;
 pub(crate) mod literature_retry;
 
 mod archive_budget;

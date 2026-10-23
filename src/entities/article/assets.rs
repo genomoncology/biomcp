@@ -1940,8 +1940,8 @@ async fn resolve_archive_package(article: &mut Article) -> SourceAttempt<Archive
     let mut failed = false;
     let mut pmc_manifest = match pmc.oa_archive_manifest(&pmcid).await {
         Ok(manifest) => manifest,
-        Err(_) => {
-            tracing::warn!("PMC OA manifest request failed for article assets");
+        Err(error) => {
+            tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "PMC OA manifest request failed for article assets");
             failed = true;
             None
         }
@@ -1968,8 +1968,8 @@ async fn resolve_archive_package(article: &mut Article) -> SourceAttempt<Archive
             Ok(package) => {
                 return SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package });
             }
-            Err(_) => {
-                tracing::warn!("PMC OA archive request failed for article assets");
+            Err(error) => {
+                tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "PMC OA archive request failed for article assets");
                 failed = true;
             }
         }
@@ -1990,8 +1990,8 @@ async fn resolve_archive_package(article: &mut Article) -> SourceAttempt<Archive
         }),
         Ok(None) if !failed => SourceAttempt::Absent,
         Ok(None) => SourceAttempt::Failed(None),
-        Err(_) => {
-            tracing::warn!("Europe PMC supplementary request failed for article assets");
+        Err(error) => {
+            tracing::warn!(error = %crate::sources::fulltext_diagnostics::safe_error(&error), "Europe PMC supplementary request failed for article assets");
             SourceAttempt::Failed(None)
         }
     }

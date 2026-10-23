@@ -1,3 +1,4 @@
+use crate::sources::fulltext_diagnostics::FulltextRequestExt;
 use reqwest::Url;
 use tracing::debug;
 
@@ -10,7 +11,6 @@ use super::{
 };
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
-use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
@@ -335,7 +335,7 @@ async fn preprint_response(
 ) -> Result<Option<Vec<u8>>, BioMcpError> {
     let context = crate::error::SourceContext::retry(crate::error::SourceProvider::BIORXIV_MEDRXIV);
     let response = crate::sources::apply_cache_mode(client.get(url))
-        .send_with_source_context(context)
+        .send_fulltext(context, true)
         .await?;
     if documented_fulltext_absence(response.status()) {
         return Ok(None);
@@ -534,9 +534,10 @@ async fn resolve_pdf_url_with_client(
         PDF_MAX_BODY_BYTES,
         ARTICLE_FULLTEXT_API,
     )
-    .send_with_source_context(crate::error::SourceContext::retry(
-        crate::error::SourceProvider::SEMANTIC_SCHOLAR,
-    ))
+    .send_fulltext(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::SEMANTIC_SCHOLAR),
+        true,
+    )
     .await
     {
         Ok(response) => response,

@@ -1,3 +1,4 @@
+use crate::sources::fulltext_diagnostics::FulltextRequestExt;
 use std::borrow::Cow;
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
@@ -291,7 +292,7 @@ pub(crate) async fn fetch_html_with_client(
     };
     let cache_bypassed = crate::sources::cache_is_bypassed();
     let response = match crate::sources::apply_cache_mode(client.get(url.clone()))
-        .send_with_source_context(SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS))
+        .send_fulltext(SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS), true)
         .await
     {
         Ok(response) => response,
