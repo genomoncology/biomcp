@@ -97,8 +97,15 @@ pub(super) async fn handle(
         BioMcpError::InvalidArgument("variant articles requires an ID or --input".into())
     })?;
     let outcome = crate::entities::article::search_variant_articles_with_page_token(
-        &id, strategy, limit, offset, debug_plan, verification, page_token.as_deref(),
-    ).await?;
+        &id,
+        strategy,
+        limit,
+        offset,
+        debug_plan,
+        verification,
+        page_token.as_deref(),
+    )
+    .await?;
     let settled_empty_page = outcome.response.complete
         && outcome.response.results.is_empty()
         && outcome

@@ -58,14 +58,42 @@ impl PoolStore {
             // Snapshot IDs are immutable, even if a caller retries publication.
             if let Some(old) = sqlite::read_record(tx, root, SNAPSHOTS, &snapshot.id)? {
                 if old.body != bytes {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "article pool ID already exists"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "article pool ID already exists",
+                    ));
                 }
                 return Ok(());
             }
-            sqlite::put_record(tx, root, SNAPSHOTS, &snapshot.id, &snapshot.query_key, &[], &bytes, Some(snapshot.expires_ms))?;
-            sqlite::put_record(tx, root, POINTERS, &format!("newest:{}", snapshot.query_key), &snapshot.query_key, &[], snapshot.id.as_bytes(), Some(snapshot.expires_ms))
+            sqlite::put_record(
+                tx,
+                root,
+                SNAPSHOTS,
+                &snapshot.id,
+                &snapshot.query_key,
+                &[],
+                &bytes,
+                Some(snapshot.expires_ms),
+            )?;
+            sqlite::put_record(
+                tx,
+                root,
+                POINTERS,
+                &format!("newest:{}", snapshot.query_key),
+                &snapshot.query_key,
+                &[],
+                snapshot.id.as_bytes(),
+                Some(snapshot.expires_ms),
+            )
         })?;
-        sqlite::maintain(&mut store, &self.config, None, None, false, sqlite::Maintenance::Pressure)?;
+        sqlite::maintain(
+            &mut store,
+            &self.config,
+            None,
+            None,
+            false,
+            sqlite::Maintenance::Pressure,
+        )?;
         Ok(())
     }
 
@@ -74,48 +102,97 @@ impl PoolStore {
             return Ok(None);
         }
         let mut store = sqlite::Store::open(&self.config.cache_root)?;
-        let Some(record) = store.get(SNAPSHOTS, id)? else { return Ok(None) };
+        let Some(record) = store.get(SNAPSHOTS, id)? else {
+            return Ok(None);
+        };
         let snapshot: Snapshot = serde_json::from_slice(&record.body).map_err(io::Error::other)?;
-        if snapshot.schema_version != SCHEMA_VERSION || snapshot.id != id || snapshot.query_key != query_key {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "article pool identity or version mismatch"));
+        if snapshot.schema_version != SCHEMA_VERSION
+            || snapshot.id != id
+            || snapshot.query_key != query_key
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "article pool identity or version mismatch",
+            ));
         }
         Ok((snapshot.expires_ms > sqlite::now_ms()).then_some(snapshot))
     }
 
     pub(crate) fn selected(&self, query_key: &str, active: bool) -> io::Result<Option<Snapshot>> {
-        if crate::sources::cache_is_bypassed() { return Ok(None) }
+        if crate::sources::cache_is_bypassed() {
+            return Ok(None);
+        }
         let mut store = sqlite::Store::open(&self.config.cache_root)?;
         let kind = if active { "active" } else { "newest" };
-        let Some(record) = store.get(POINTERS, &format!("{kind}:{query_key}"))? else { return Ok(None) };
+        let Some(record) = store.get(POINTERS, &format!("{kind}:{query_key}"))? else {
+            return Ok(None);
+        };
         let id = std::str::from_utf8(&record.body).map_err(io::Error::other)?;
         self.read(query_key, id)
     }
 
     /// Only an explicit offset-zero session start calls this operation.
     pub(crate) fn activate(&self, snapshot: &Snapshot) -> io::Result<()> {
-        if crate::sources::cache_is_bypassed() { return Ok(()) }
+        if crate::sources::cache_is_bypassed() {
+            return Ok(());
+        }
         let mut store = sqlite::Store::open(&self.config.cache_root)?;
-        store.put(POINTERS, &format!("active:{}", snapshot.query_key), &snapshot.query_key, &[], snapshot.id.as_bytes(), Some(snapshot.expires_ms))
+        store.put(
+            POINTERS,
+            &format!("active:{}", snapshot.query_key),
+            &snapshot.query_key,
+            &[],
+            snapshot.id.as_bytes(),
+            Some(snapshot.expires_ms),
+        )
     }
 
     pub(crate) fn progress(&self, query_key: &str, source: &str) -> io::Result<Option<Value>> {
-        if crate::sources::cache_is_bypassed() { return Ok(None) }
+        if crate::sources::cache_is_bypassed() {
+            return Ok(None);
+        }
         let mut store = sqlite::Store::open(&self.config.cache_root)?;
-        let Some(record) = store.get(PROGRESS, &format!("{query_key}:{source}"))? else { return Ok(None) };
+        let Some(record) = store.get(PROGRESS, &format!("{query_key}:{source}"))? else {
+            return Ok(None);
+        };
         let value: Snapshot = serde_json::from_slice(&record.body).map_err(io::Error::other)?;
         if value.schema_version != SCHEMA_VERSION || value.query_key != query_key {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "article source progress version mismatch"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "article source progress version mismatch",
+            ));
         }
         Ok((value.expires_ms > sqlite::now_ms()).then_some(value.payload))
     }
 
-    pub(crate) fn save_progress(&self, query_key: &str, source: &str, payload: Value) -> io::Result<()> {
-        if crate::sources::cache_is_bypassed() { return Ok(()) }
+    pub(crate) fn save_progress(
+        &self,
+        query_key: &str,
+        source: &str,
+        payload: Value,
+    ) -> io::Result<()> {
+        if crate::sources::cache_is_bypassed() {
+            return Ok(());
+        }
         let value = self.snapshot(query_key, payload);
         let bytes = serde_json::to_vec(&value).map_err(io::Error::other)?;
         let mut store = sqlite::Store::open(&self.config.cache_root)?;
-        store.put(PROGRESS, &format!("{query_key}:{source}"), query_key, &[], &bytes, Some(value.expires_ms))?;
-        sqlite::maintain(&mut store, &self.config, None, None, false, sqlite::Maintenance::Pressure)?;
+        store.put(
+            PROGRESS,
+            &format!("{query_key}:{source}"),
+            query_key,
+            &[],
+            &bytes,
+            Some(value.expires_ms),
+        )?;
+        sqlite::maintain(
+            &mut store,
+            &self.config,
+            None,
+            None,
+            false,
+            sqlite::Maintenance::Pressure,
+        )?;
         Ok(())
     }
 }

@@ -8,10 +8,10 @@ use std::sync::{
 use std::time::Instant;
 
 mod merge;
-pub(super) mod sources;
-mod pool;
 mod page;
+mod pool;
 mod rank;
+pub(super) mod sources;
 
 // Keep atomic budget updates available on the declared minimum Rust version.
 // AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
@@ -4145,7 +4145,6 @@ async fn fallback_candidates(
     .await
 }
 
-
 async fn enrich_candidates(
     candidates: &mut [ArticleCandidate],
     execution: &VariantArticleExecutionContext,
@@ -5170,7 +5169,16 @@ pub(crate) async fn search_variant_articles_with_options(
     debug_plan: bool,
     verification: VariantArticleVerificationOptions,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
-    search_variant_articles_with_page_token(input, strategy, limit, offset, debug_plan, verification, None).await
+    search_variant_articles_with_page_token(
+        input,
+        strategy,
+        limit,
+        offset,
+        debug_plan,
+        verification,
+        None,
+    )
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -5206,7 +5214,18 @@ async fn search_variant_articles_with_deadline(
     debug_plan: bool,
     verification: VariantArticleVerificationOptions,
     deadline_limit: std::time::Duration,
-) -> Result<VariantArticleOutcome, BioMcpError> {    search_variant_articles_with_deadline_and_token(input, strategy, limit, offset, debug_plan, verification, deadline_limit, None).await
+) -> Result<VariantArticleOutcome, BioMcpError> {
+    search_variant_articles_with_deadline_and_token(
+        input,
+        strategy,
+        limit,
+        offset,
+        debug_plan,
+        verification,
+        deadline_limit,
+        None,
+    )
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -5449,7 +5468,18 @@ async fn search_variant_articles_identity(
     verification: VariantArticleVerificationOptions,
     execution: VariantArticleExecutionContext,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
-    pool::execute(input, requested, strategy, limit, offset, include_debug_plan, verification, execution, None).await
+    pool::execute(
+        input,
+        requested,
+        strategy,
+        limit,
+        offset,
+        include_debug_plan,
+        verification,
+        execution,
+        None,
+    )
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -5498,35 +5528,61 @@ async fn acquire_variant_article_pool(
             materialize_discovery_route_plans(input, &context, strategy, &aliases, &execution);
         }
         let components = sources::acquire_components(
-            input, &context, strategy, &aliases, aliases_truncated, &execution,
-        ).await;
+            input,
+            &context,
+            strategy,
+            &aliases,
+            aliases_truncated,
+            &execution,
+        )
+        .await;
         Ok::<_, BioMcpError>((context, canonical, aliases, aliases_truncated, components))
     };
     let (resolution, literal) = tokio::join!(
         dependent,
-        sources::acquire_literal_pubmed(literal_query.as_deref(), execution.literal_pubmed_progress(), &execution),
+        sources::acquire_literal_pubmed(
+            literal_query.as_deref(),
+            execution.literal_pubmed_progress(),
+            &execution
+        ),
     );
-    let (context, canonical_equivalence, selected_exact_aliases, _selected_exact_aliases_truncated, components) = match resolution {
+    let (
+        context,
+        canonical_equivalence,
+        selected_exact_aliases,
+        _selected_exact_aliases_truncated,
+        components,
+    ) = match resolution {
         Ok(resolution) => resolution,
         Err(_) if !literal.candidates.is_empty() => {
             let mut context = unresolved_exact_context(requested_backup);
             context.available = false;
-            context.resolution.provider_validation.status = VariantProviderValidationStatus::Unavailable;
-            (context, unattempted_canonical_equivalence(), Vec::new(), false, (Vec::new(), false, false, Vec::new()))
+            context.resolution.provider_validation.status =
+                VariantProviderValidationStatus::Unavailable;
+            (
+                context,
+                unattempted_canonical_equivalence(),
+                Vec::new(),
+                false,
+                (Vec::new(), false, false, Vec::new()),
+            )
         }
         Err(error) => return Err(error),
     };
     execution.set_literal_pubmed_progress(literal.progress.clone());
     if !context.available && literal.candidates.is_empty() {
-        return Ok((resolution_unavailable_outcome(
-            context,
-            canonical_equivalence,
-            strategy,
-            limit,
-            offset,
-            include_debug_plan,
-            &execution,
-        ), Vec::new()));
+        return Ok((
+            resolution_unavailable_outcome(
+                context,
+                canonical_equivalence,
+                strategy,
+                limit,
+                offset,
+                include_debug_plan,
+                &execution,
+            ),
+            Vec::new(),
+        ));
     }
     if verification.verify_identity {
         // Keep one verification unit before discovery. Each discovery page then
@@ -5558,7 +5614,11 @@ async fn acquire_variant_article_pool(
     let mut verification_response_subsets = Vec::new();
     let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
-    rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
+    rank::rank_candidates(
+        &mut candidates,
+        &context.requested,
+        &context.resolution.normalized_aliases,
+    );
     if verification.verify_identity {
         let (verification_start, verification_count) = materialize_identity_verification_plan(
             &candidates,
@@ -5699,7 +5759,7 @@ async fn acquire_variant_article_pool(
             });
         }
     }
-    
+
     for (index, candidate) in candidates.iter_mut().enumerate() {
         for trace in &mut candidate.candidate_trace {
             trace.rank_position = Some(index.saturating_add(1));
@@ -5722,7 +5782,11 @@ async fn acquire_variant_article_pool(
     let mut visible_candidates = candidates;
     let window_end = offset.saturating_add(limit).min(visible_candidates.len());
     let window_start = offset.min(window_end);
-    let mut metadata_status = enrich_candidates(&mut visible_candidates[window_start..window_end], &execution).await;
+    let mut metadata_status = enrich_candidates(
+        &mut visible_candidates[window_start..window_end],
+        &execution,
+    )
+    .await;
     let snapshot_candidates = visible_candidates.clone();
     // Rebuild after every identity, enrichment, and LDH unit settles, retaining
     // only zero-work/skipped skeleton rows without real events.
@@ -5886,32 +5950,35 @@ async fn acquire_variant_article_pool(
     let outage_message = variant_article_outage_message(&statuses);
     let canonical_equivalence =
         (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
-    Ok((VariantArticleOutcome {
-        response: VariantArticleResponse {
-            gene_symbol_coverage: gene_symbol_coverage(&execution, &alias_coverage),
-            alias_coverage,
-            requested_variant: context.requested,
-            resolution: context.resolution,
-            canonical_equivalence,
-            strategy,
-            complete,
-            truncated,
-            pagination: VariantArticlePagination {
-                offset,
-                limit,
-                returned: rows.len(),
-                total: complete.then_some(total_candidates),
-                has_more: if complete { has_more } else { true },
-                next_page_token: None,
+    Ok((
+        VariantArticleOutcome {
+            response: VariantArticleResponse {
+                gene_symbol_coverage: gene_symbol_coverage(&execution, &alias_coverage),
+                alias_coverage,
+                requested_variant: context.requested,
+                resolution: context.resolution,
+                canonical_equivalence,
+                strategy,
+                complete,
+                truncated,
+                pagination: VariantArticlePagination {
+                    offset,
+                    limit,
+                    returned: rows.len(),
+                    total: complete.then_some(total_candidates),
+                    has_more: if complete { has_more } else { true },
+                    next_page_token: None,
+                },
+                source_status: statuses,
+                retrieval_path,
+                results: rows,
+                error: hard_error.then(|| terminal_item_error(&execution, outage_message)),
+                debug_plan,
             },
-            source_status: statuses,
-            retrieval_path,
-            results: rows,
-            error: hard_error.then(|| terminal_item_error(&execution, outage_message)),
-            debug_plan,
+            hard_error,
         },
-        hard_error,
-    }, snapshot_candidates))
+        snapshot_candidates,
+    ))
 }
 
 /// Providers disagree on how to spell a PMC identifier: Europe PMC and PubTator
@@ -9459,7 +9526,8 @@ mod tests {
             lexical_candidate("1", &[1]),
         ];
 
-        let requested = RequestedVariantIdentity::from_variant_input("BRAF V600E").expect("identity");
+        let requested =
+            RequestedVariantIdentity::from_variant_input("BRAF V600E").expect("identity");
         rank::rank_candidates(&mut candidates, &requested, &requested.normalized_aliases());
 
         assert_eq!(
