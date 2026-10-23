@@ -14,8 +14,8 @@ use crate::sources::semantic_scholar::{
 use crate::transform;
 
 use super::filters::{
-    filter_semantic_disease_rows, matches_result_filters, normalized_date_bounds,
-    resolve_semantic_disease_terms, semantic_disease_unavailable_status,
+    filter_semantic_disease_rows, matches_result_filters as matches_filters,
+    normalized_date_bounds, resolve_semantic_disease_terms, semantic_disease_unavailable_status,
 };
 use super::query::{
     build_free_text_article_query, build_pubmed_search_term, build_pubtator_query,
@@ -28,6 +28,21 @@ use super::{
     MAX_FEDERATED_FETCH_RESULTS, MAX_PAGE_FETCHES, PUBMED_PAGE_SIZE, PUBTATOR_PAGE_SIZE,
     WARN_PAGE_THRESHOLD,
 };
+
+// Date-sorted candidates receive publication-date correction before local day
+// bounds. Native provider windows still bound which records are discovered.
+fn matches_result_filters(
+    row: &ArticleSearchResult,
+    filters: &ArticleSearchFilters,
+    from: Option<&str>,
+    to: Option<&str>,
+) -> bool {
+    if filters.sort == ArticleSort::Date {
+        matches_filters(row, filters, None, None)
+    } else {
+        matches_filters(row, filters, from, to)
+    }
+}
 
 fn normalized_bound_year(value: &str) -> Option<&str> {
     let year = value.get(..4)?;
@@ -366,7 +381,7 @@ fn append_pubmed_entries(
             continue;
         }
         state.out.push(row);
-        if state.out.len() >= limit {
+        if state.out.len() >= limit && filters.sort != ArticleSort::Date {
             break;
         }
     }
@@ -469,7 +484,7 @@ pub(super) async fn search_europepmc_page_with_context(
                     row.source_local_position = source_position;
                     source_position = source_position.saturating_add(1);
                     out.push(row);
-                    if out.len() >= limit {
+                    if out.len() >= limit && filters.sort != ArticleSort::Date {
                         break;
                     }
                 }
@@ -549,10 +564,10 @@ pub(super) async fn search_europepmc_page_with_context(
                             )
                     });
                 if let Some(mut row) = replacement {
-                    if out.len() >= limit && !out.is_empty() {
+                    if filters.sort != ArticleSort::Date && out.len() >= limit && !out.is_empty() {
                         out.pop();
                     }
-                    if out.len() < limit {
+                    if filters.sort == ArticleSort::Date || out.len() < limit {
                         row.source_local_position = out.len();
                         seen_pmids.insert(row.pmid.clone());
                         out.push(row);
@@ -675,7 +690,7 @@ pub(super) async fn search_pubtator_page_with_context(
                     row.source_local_position = source_position;
                     source_position = source_position.saturating_add(1);
                     out.push(row);
-                    if out.len() >= limit {
+                    if out.len() >= limit && filters.sort != ArticleSort::Date {
                         break;
                     }
                 }
@@ -710,7 +725,7 @@ pub(super) async fn search_pubtator_page_with_context(
             // year facet removes historical pages, including for open bounds.
             // Keep first-page rows only as a failure backup. A successful native
             // query owns its own order, scores and duplicate selection.
-            if !years.is_empty() && out.len() < limit {
+            if !years.is_empty() && (filters.sort == ArticleSort::Date || out.len() < limit) {
                 probe_rows = std::mem::take(&mut out);
                 seen_pmids.clear();
                 source_position = 0;

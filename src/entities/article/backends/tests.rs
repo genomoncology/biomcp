@@ -148,6 +148,7 @@ fn pubmed_entry(
         title: title.to_string(),
         sortpubdate: date.map(str::to_string),
         pubdate: None,
+        epubdate: None,
         edat: None,
         lr: None,
         fulljournalname: journal.map(str::to_string),

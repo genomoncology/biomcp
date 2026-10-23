@@ -3,6 +3,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 mod abstracts;
+pub(super) mod publication_dates;
 mod visible_metadata;
 
 use crate::entities::SearchPage;
@@ -577,42 +578,55 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
     filters: &ArticleSearchFilters,
     enrichment_sources: &[ArticleSource],
 ) -> ArticleEnrichmentOutcome {
-    let mut timings = Vec::new();
-    let mut statuses = Vec::new();
-    let source_status = if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
-        let started = std::time::Instant::now();
-        let status = enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
-        timings.push(ArticleSearchTiming {
-            source: Some(ArticleSource::SemanticScholar),
-            stage: "enrichment",
-            elapsed_ms: started.elapsed().as_millis() as u64,
-        });
-        status
-    } else {
-        None
-    };
-    let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
-    if filters.include_abstracts {
-        statuses.extend(abstracts::enrich(&mut page.results).await);
-    }
-    if enrichment_sources.contains(&ArticleSource::PubTator)
-        || enrichment_sources.contains(&ArticleSource::EuropePmc)
-    {
-        let started = std::time::Instant::now();
-        statuses
-            .extend(enrich_visible_article_search_rows_with_article_base(&mut page.results).await);
-        timings.push(ArticleSearchTiming {
-            source: None,
-            stage: "metadata_fallback",
-            elapsed_ms: started.elapsed().as_millis() as u64,
-        });
-    }
-    ArticleEnrichmentOutcome {
-        page,
-        semantic_scholar_status: source_status,
-        statuses,
-        timings,
-    }
+    publication_dates::with_today(async {
+        let mut timings = Vec::new();
+        let mut statuses = Vec::new();
+        if filters.sort == super::ArticleSort::Date {
+            let started = std::time::Instant::now();
+            statuses.extend(publication_dates::enrich(&mut rows).await);
+            timings.push(ArticleSearchTiming {
+                source: Some(ArticleSource::PubMed),
+                stage: "publication_dates",
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            });
+        }
+        let source_status = if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
+            let started = std::time::Instant::now();
+            let status = enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
+            timings.push(ArticleSearchTiming {
+                source: Some(ArticleSource::SemanticScholar),
+                stage: "enrichment",
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            });
+            status
+        } else {
+            None
+        };
+        let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
+        if filters.include_abstracts {
+            statuses.extend(abstracts::enrich(&mut page.results).await);
+        }
+        if enrichment_sources.contains(&ArticleSource::PubTator)
+            || enrichment_sources.contains(&ArticleSource::EuropePmc)
+        {
+            let started = std::time::Instant::now();
+            statuses.extend(
+                enrich_visible_article_search_rows_with_article_base(&mut page.results).await,
+            );
+            timings.push(ArticleSearchTiming {
+                source: None,
+                stage: "metadata_fallback",
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            });
+        }
+        ArticleEnrichmentOutcome {
+            page,
+            semantic_scholar_status: source_status,
+            statuses,
+            timings,
+        }
+    })
+    .await
 }
 
 pub(super) async fn enrich_and_finalize_article_candidates(
