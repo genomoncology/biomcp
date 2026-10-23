@@ -1035,6 +1035,9 @@ async fn search_page_dispatch(
         }
         return search_relevance_page(filters, limit, offset, plan, enrichment_sources).await;
     }
+    if filters.sort == ArticleSort::Date && plan != BackendPlan::Both {
+        return search_relevance_page(filters, limit, offset, plan, enrichment_sources).await;
+    }
     match plan {
         BackendPlan::EuropeOnly => {
             let (result, timing) = timed_source_call(

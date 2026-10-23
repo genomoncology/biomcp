@@ -93,6 +93,7 @@ pub(crate) struct ESummaryEntry {
     pub title: String,
     pub sortpubdate: Option<String>,
     pub pubdate: Option<String>,
+    pub epubdate: Option<String>,
     pub edat: Option<String>,
     pub lr: Option<String>,
     pub fulljournalname: Option<String>,
@@ -128,6 +129,7 @@ struct ESummaryEntryRaw {
     title: Option<String>,
     sortpubdate: Option<String>,
     pubdate: Option<String>,
+    epubdate: Option<String>,
     #[serde(default)]
     history: Vec<HistoryEntry>,
     fulljournalname: Option<String>,
@@ -568,6 +570,7 @@ impl PubMedClient {
                 title: raw.title.unwrap_or_default(),
                 sortpubdate: raw.sortpubdate,
                 pubdate: raw.pubdate,
+                epubdate: raw.epubdate,
                 edat,
                 lr,
                 fulljournalname: raw.fulljournalname,

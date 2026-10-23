@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Recover visible article abstracts and citation counts through Europe PMC core metadata without redundant PubTator annotation exports. (2366)
+- Sort returned article candidates by supported publication dates before day filters and pagination, and keep unresolved future issue dates after published papers. Recover visible article abstracts and citation counts through Europe PMC core metadata without redundant PubTator annotation exports. (2366)
 
 - Pair PubMed date bounds so one-sided article date searches retrieve the requested window without scanning historical pages until timeout. (2363)
 

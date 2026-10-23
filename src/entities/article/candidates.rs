@@ -336,6 +336,15 @@ pub(super) fn finalize_article_candidates(
     total: Option<usize>,
     filters: &ArticleSearchFilters,
 ) -> SearchPage<ArticleSearchResult> {
+    if filters.sort == super::ArticleSort::Date {
+        // Inputs were validated at dispatch. Reapply day bounds only after all
+        // duplicate provider rows have received the same publication date.
+        let (from, to) = super::filters::normalized_date_bounds(filters)
+            .expect("article search date bounds were validated");
+        rows.retain(|row| super::filters::matches_optional_date_filter(
+            row.date.as_deref(), from.as_deref(), to.as_deref(),
+        ));
+    }
     for row in rows.iter_mut() {
         ensure_matched_sources(row);
     }

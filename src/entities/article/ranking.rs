@@ -561,11 +561,17 @@ pub(super) fn sort_article_rows(
                 .then_with(|| compare_optional_dates_desc(Some(&left.row), Some(&right.row)))
                 .then_with(|| left.row.pmid.cmp(&right.row.pmid))
         }),
-        ArticleSort::Date => rows.sort_by(|left, right| {
-            compare_optional_dates_desc(Some(&left.row), Some(&right.row))
-                .then_with(|| compare_optional_citations_desc(Some(&left.row), Some(&right.row)))
-                .then_with(|| left.row.pmid.cmp(&right.row.pmid))
-        }),
+        ArticleSort::Date => {
+            let today = super::enrichment::publication_dates::today().to_string();
+            let published_date = |row: &ArticleSearchResult| {
+                parse_row_date(row.date.as_deref()).filter(|date| date <= &today)
+            };
+            rows.sort_by(|left, right| {
+                published_date(&right.row).cmp(&published_date(&left.row))
+                    .then_with(|| compare_optional_citations_desc(Some(&left.row), Some(&right.row)))
+                    .then_with(|| left.row.pmid.cmp(&right.row.pmid))
+            });
+        }
     }
 }
 
