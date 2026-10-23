@@ -77,7 +77,7 @@ def test_pubmed_date_search_finishes_when_provider_answers(
         def do_POST(self) -> None:  # noqa: N802
             self.rfile.read(int(self.headers.get("Content-Length", "0")))
             self.reply([{"paperId": "fixture-paper", "abstract": "Fixture abstract.",
-                         "citationCount": 0, "influentialCitationCount": 0}])
+                         "citationCount": 2, "influentialCitationCount": 1}])
 
         def reply(self, body: object) -> None:
             payload = json.dumps(body).encode()
