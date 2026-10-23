@@ -5278,6 +5278,23 @@ fn resolution_status_rows(
     statuses
 }
 
+fn variant_article_retrieval_path(
+    strategy: VariantArticleStrategy,
+    resolved: bool,
+) -> &'static str {
+    if strategy == VariantArticleStrategy::Exact {
+        "exact-name phrase search"
+    } else if !resolved {
+        VARIANT_FALLBACK_RETRIEVAL_PATH
+    } else if strategy == VariantArticleStrategy::Annotation {
+        VARIANT_ENTITY_RETRIEVAL_PATH
+    } else if strategy == VariantArticleStrategy::Lexical {
+        "resolved exact-alias article search"
+    } else {
+        "resolved exact-variant route union"
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
@@ -5875,17 +5892,7 @@ async fn search_variant_articles_identity(
     let hard_error =
         rows.is_empty() && (!failed_sources.is_empty() || execution.deadline.is_exhausted());
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
-    let retrieval_path = if strategy == VariantArticleStrategy::Exact {
-        "exact-name phrase search"
-    } else if !resolved {
-        VARIANT_FALLBACK_RETRIEVAL_PATH
-    } else if strategy == VariantArticleStrategy::Annotation {
-        VARIANT_ENTITY_RETRIEVAL_PATH
-    } else if strategy == VariantArticleStrategy::Lexical {
-        "resolved exact-alias article search"
-    } else {
-        "resolved exact-variant route union"
-    };
+    let retrieval_path = variant_article_retrieval_path(strategy, resolved);
     let alias_coverage = alias_coverage(
         input,
         &context,
