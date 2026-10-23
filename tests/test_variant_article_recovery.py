@@ -536,3 +536,41 @@ def test_markdown_discloses_provider_specific_omitted_queries(tmp_path):
     assert "source_citation/myvariant: logical_work_cap. Omitted queries:" in text
     assert "BRCA1 p.Pro645Arg" in text
     assert "chr17:g.41209100G" in text
+
+
+@pytest.mark.parametrize("saturated", [False, True], ids=["complete", "incomplete"])
+def test_variant_article_pages_reach_the_end_once(saturated, tmp_path):
+    case = next(case for case in cases if case["case"] == "c003")
+    case = {**case, "saturated": saturated}
+    whole, _ = execute_case(case, tmp_path / "whole")
+    expected = [row["pmid"] for row in whole["results"]]
+    assert expected
+    assert len(expected) == len(set(expected))
+    assert whole["complete"] is not saturated
+
+    # The reported late page must terminate even when upstream coverage is partial.
+    late, _ = execute_case(
+        {**case, "argv": [*case["argv"], "--offset", "110"]},
+        tmp_path / "late",
+    )
+    assert late["results"] == []
+    assert late["pagination"]["has_more"] is False
+    assert late["complete"] == whole["complete"]
+
+    seen = []
+    page_size = 10
+    for offset in range(0, len(expected) + page_size, page_size):
+        argv = [*case["argv"]]
+        argv[argv.index("--limit") + 1] = str(page_size)
+        page, _ = execute_case(
+            {**case, "argv": [*argv, "--offset", str(offset)]},
+            tmp_path / f"page-{offset}",
+        )
+        rows = [row["pmid"] for row in page["results"]]
+        assert rows == expected[offset : offset + page_size]
+        assert page["pagination"]["returned"] == len(rows)
+        assert page["pagination"]["has_more"] == (offset + page_size < len(expected))
+        assert page["complete"] == whole["complete"]
+        assert page["pagination"]["total"] == (None if saturated else len(expected))
+        seen.extend(rows)
+    assert seen == expected
