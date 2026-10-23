@@ -2884,15 +2884,15 @@ fn combined_normalized_aliases(
     context: &VariantArticleResolutionContext,
 ) -> NormalizedVariantAliases {
     let mut aliases = context.requested.normalized_aliases();
+    if context.requested.is_authoritative_refseq() {
+        return aliases;
+    }
     for source in context
         .source_identity
         .iter()
         .chain(&context.fallback_source_identities)
     {
         aliases.retain_source_coordinate(source);
-    }
-    if context.requested.is_authoritative_refseq() {
-        return aliases;
     }
     if let Some(source) = context.source_identity.as_ref() {
         aliases.protein_changes.extend(
