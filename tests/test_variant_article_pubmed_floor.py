@@ -105,7 +105,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             result = json.loads(process.stdout)
             for row in result["results"]:
                 found.add(row["pmid"])
-                assert row.get("identity_verification", {}).get("status") != "confirmed"
+                assert row["identity"]["status"] == "unverified"
         assert set(expected) <= found, {
             "missing_plain_pubmed_pmids": [pmid for pmid in expected if pmid not in found],
             "requested_pubmed_queries": sorted(set(requests)),
