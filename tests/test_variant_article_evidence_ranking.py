@@ -54,11 +54,17 @@ def test_variant_article_lexical_evidence_precedes_source_agreement(tmp_path):
                      capture={"pubmed_order": [], "rows": rows}) as replay:
         result = subprocess.run(
             [os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
-             "--json", "--no-cache", "variant", "articles", "AKT1 E17K", "--limit", "5"],
+             "--json", "--no-cache", "variant", "articles", "AKT1 E17K", "--limit", "5", "--debug-plan"],
             env=replay.env, capture_output=True, text=True, timeout=HANG_TIMEOUT,
         )
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)
+        ranking = payload["debug_plan"]["ranking"]
+        assert ranking["version"] == 1
+        assert ranking["method"].startswith("descending lexicographic variant evidence")
+        assert len(ranking["inputs"]) == 6
+        assert ranking["inputs"][0] == "title_gene_and_supported_variant"
+        assert ranking["inputs"][-1] == "stable_identifier"
         assert [row["pmid"] for row in payload["results"]] == [
             "81004", "81002", "81001", "81003", "81005"]
         assert all(row.get("identity", {}).get("status") != "confirmed"
