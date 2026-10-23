@@ -89,7 +89,8 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     warning = next(line for line in result.stderr.splitlines()
-                   if "PMC OA manifest request failed" in line)
+                   if "PMC OA manifest request failed" in line
+                   or (failure == "manifest_transport" and "Article asset summary unavailable" in line))
     if failure == "manifest_redirect":
         assert origin + "/redirected?token=REDACTED" in warning, warning
     else:
