@@ -139,6 +139,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
     if surface in ("markdown", "disabled-markdown"):
         text = result.stderr if disabled else result.stdout
+        assert "chr11:g.17417157C>T (GRCh37; myvariant)" in text
         assert "ABCC8 c.4310G>A" in text
         assert "ABCC8 c.4373G>A" in text
         assert ("source_disabled" if disabled else "provider_query_attempted") in text
@@ -149,6 +150,12 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface == "batch":
         payload = payload["items"][0]
     assert payload["resolution"]["status"] == "resolved", payload
+    coordinates = payload["resolution"]["normalized_aliases"]["genomic_coordinates"]
+    assert coordinates == [{"coordinate": hit["_id"], "genome_build": "GRCh37",
+                            "source": "myvariant", "provenance": "resolved source identity"}]
+    assert payload["resolution"]["normalized_aliases"]["genomic_ids"] == [hit["_id"]]
+    for row in payload["results"]:
+        assert row["genomic_coordinates"] == coordinates
     coverage = payload["alias_coverage"]
     forms = hit["dbnsfp"]["hgvsp"] + hit["dbnsfp"]["hgvsc"]
     assert {row["alias"] for row in coverage} >= {f"ABCC8 {form}" for form in forms}
@@ -190,6 +197,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface in ("debug", "batch", "reported", "gene"):
         assert payload["debug_plan"]["alias_coverage"] == coverage
         plan = payload["debug_plan"]
+        assert plan["normalized_aliases"]["genomic_coordinates"] == coordinates
         lexical_queries = next(row["queries"] for row in plan["routes"]
                                if row["route"] == "exact_lexical")
         if surface == "gene":
