@@ -9,7 +9,9 @@ install_archive_binary() {
   local name="$1" version="$2" url="$3" expected="$4" member="$5" current
   if [ -x "$tool_dir/$name" ]; then
     current="$("$tool_dir/$name" --version 2>&1)" || current=""
-    if [ "$name" = cargo-deny ]; then
+    if [ "$name" = protoc ]; then
+      [ "$current" != "libprotoc $version" ] || return 0
+    elif [ "$name" = cargo-deny ]; then
       [ "$current" != "cargo-deny $version" ] || return 0
     elif printf '%s\n' "$current" | grep -Fq "$version"; then
       return
@@ -32,10 +34,38 @@ install_archive_binary() {
   case "$url" in
     *.tar.xz) tar -xJf "$archive" -C "$temp_dir" "$member" ;;
     *.tar.gz) tar -xzf "$archive" -C "$temp_dir" "$member" ;;
+    *.zip) python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extract(sys.argv[3], sys.argv[2])' "$archive" "$temp_dir" "$member" ;;
     *) printf 'unsupported lint-tool archive: %s\n' "$url" >&2; return 1 ;;
   esac
   install -m 0755 "$temp_dir/$member" "$tool_dir/$name"
 }
+
+
+# https://github.com/protocolbuffers/protobuf/releases/tag/v28.3
+# CI owns the version; checksums bind the reviewed official release archives.
+if [ "${1:-}" = --protoc ]; then
+  protoc_version="$(sed -n 's/^  PROTOC_VERSION: \([0-9.]*\)$/\1/p' "$repo_root/.github/workflows/ci.yml")"
+  case "$protoc_version-$(uname -s)-$(uname -m)" in
+    28.3-Linux-x86_64)
+      protoc_platform=linux-x86_64
+      protoc_digest=0ad949f04a6a174da83cdcbdb36dee0a4925272a5b6d83f79a6bf9852076d53f
+      ;;
+    28.3-Linux-aarch64|28.3-Linux-arm64)
+      protoc_platform=linux-aarch_64
+      protoc_digest=1de522032a8b194002fe35cab86d747848238b5e4de4f99648372079f5b46f9a
+      ;;
+    *) printf 'No pinned protoc archive for policy %s on %s\n' "$protoc_version" "$(uname -s)-$(uname -m)" >&2; exit 1 ;;
+  esac
+  install_archive_binary protoc "$protoc_version" \
+    "https://github.com/protocolbuffers/protobuf/releases/download/v$protoc_version/protoc-$protoc_version-$protoc_platform.zip" \
+    "$protoc_digest" bin/protoc
+  [ "$("$tool_dir/protoc" --version)" = "libprotoc $protoc_version" ] || {
+    printf 'Installed protoc does not match policy %s\n' "$protoc_version" >&2
+    exit 1
+  }
+  printf '%s\n' "$tool_dir"
+  exit
+fi
 
 
 # Official release assets and SHA-256 values:

@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run from an exact-revision build job. The scheduler prepares the same pinned
-# Rust, nextest and protoc toolchain as release qualification. This entry point
-# does not schedule jobs, fetch a moving branch or publish anything.
+# Run from an exact-revision build job with Rust and nextest available.
+# This entry point provisions its pinned protoc and lint tools. It does not
+# schedule jobs, fetch a moving branch or publish anything.
 cd "$(dirname "$0")/.."
+
+tool_dir="$(tools/bootstrap-lint-tools --protoc)"
+export PATH="$tool_dir:$PATH"
 
 make prepare-test
 make lint BIOMCP_ADVISORY_SCOPE=always
