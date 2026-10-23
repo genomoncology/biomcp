@@ -158,6 +158,7 @@ pub struct VariantArticleRow {
     pub article: ArticleSearchResult,
     pub requested_variant: RequestedVariantIdentity,
     pub matched_aliases: Vec<String>,
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub match_reason: &'static str,
     pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub retrieval_routes: Vec<String>,
@@ -1366,6 +1367,7 @@ pub struct CompactVariantArticleRow {
     pub date: Option<String>,
     pub match_reason: &'static str,
     pub matched_aliases: Vec<String>,
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub routes: Vec<String>,
     pub sources: Vec<String>,
@@ -2463,11 +2465,15 @@ fn gene_symbol_coverage(
 fn unresolved_exact_context(
     requested: RequestedVariantIdentity,
 ) -> VariantArticleResolutionContext {
+    let normalized_aliases = NormalizedVariantAliases {
+        genomic_coordinates: requested.normalized_aliases().genomic_coordinates,
+        ..NormalizedVariantAliases::default()
+    };
     VariantArticleResolutionContext {
         requested,
         resolution: VariantArticleResolution {
             status: VariantResolutionStatus::Unresolved,
-            normalized_aliases: NormalizedVariantAliases::default(),
+            normalized_aliases,
             exhaustive: false,
             basis: None,
             provider_validation: VariantProviderValidation {
@@ -2878,6 +2884,13 @@ fn combined_normalized_aliases(
     context: &VariantArticleResolutionContext,
 ) -> NormalizedVariantAliases {
     let mut aliases = context.requested.normalized_aliases();
+    for source in context
+        .source_identity
+        .iter()
+        .chain(&context.fallback_source_identities)
+    {
+        aliases.retain_source_coordinate(source);
+    }
     if context.requested.is_authoritative_refseq() {
         return aliases;
     }
@@ -5832,6 +5845,11 @@ async fn search_variant_articles_identity(
                 metadata_status: metadata_status.remove(&candidate.row.pmid),
                 article: candidate.row,
                 requested_variant: context.requested.clone(),
+                genomic_coordinates: context
+                    .resolution
+                    .normalized_aliases
+                    .genomic_coordinates
+                    .clone(),
                 matched_aliases,
                 match_reason: if alias_only {
                     "unverified_alias_match"
@@ -6263,6 +6281,7 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         date: row.article.date,
         match_reason: row.match_reason,
         matched_aliases: row.matched_aliases,
+        genomic_coordinates: row.genomic_coordinates,
         alias_matches: row.alias_matches,
         routes: row.retrieval_routes,
         sources: row.sources,
@@ -10202,6 +10221,7 @@ mod tests {
             metadata_status: None,
             article: candidate.row,
             requested_variant: RequestedVariantIdentity::default(),
+            genomic_coordinates: Vec::new(),
             matched_aliases: vec!["BRAF V600E".into()],
             match_reason: "exact_variant",
             alias_matches: Vec::new(),
