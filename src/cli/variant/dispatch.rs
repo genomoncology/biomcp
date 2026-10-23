@@ -108,6 +108,7 @@ pub(crate) async fn handle_command(
             strategy,
             limit,
             offset,
+            page_token,
         } => {
             return Box::pin(super::articles::handle(
                 id,
@@ -118,6 +119,7 @@ pub(crate) async fn handle_command(
                 strategy,
                 limit,
                 offset,
+                page_token,
                 json,
             ))
             .await;

@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::ser::SerializeStruct;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -88,7 +88,7 @@ impl Serialize for VariantArticleIdentityObservation {
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind")]
 pub(crate) enum ProviderLinkage {
     #[serde(rename = "pubtator_corresponding_gene")]
@@ -128,28 +128,38 @@ pub(crate) enum ProviderLinkage {
     },
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct LdhProvenance {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     source: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     request_template_version: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     response_subset_version: &'static str,
     canonical_response_subset_sha256: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct ProviderLinkageProvenance {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     source: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     request_template_version: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     verifier_version: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     response_subset_version: &'static str,
     canonical_response_subset_sha256: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct VariantArticleVerificationPlan {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub verifier_version: &'static str,
     pub provider_template_version: String,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub response_subset_version: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub content_subset_version: &'static str,
     pub canonical_response_subset_hash: String,
     pub canonical_content_subset_hash: String,

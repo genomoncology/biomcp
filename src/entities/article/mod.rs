@@ -48,6 +48,7 @@ pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 pub(crate) use self::variant_search::{
     parse_variant_article_batch, search_variant_article_batch,
     search_variant_article_batch_with_options, search_variant_articles_with_options,
+    search_variant_articles_with_page_token,
     search_variant_articles_with_plan,
 };
 use crate::entities::section_outcome::SectionOutcomes;

@@ -747,6 +747,8 @@ fn normalize_protein_range_deletion(value: &str) -> Option<String> {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct VariantArticleRequest {
+    /// Bound continuation returned for this item by variant_articles.
+    pub page_token: Option<String>,
     pub request_id: Option<String>,
     pub gene: Option<String>,
     pub protein: Option<String>,

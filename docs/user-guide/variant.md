@@ -416,7 +416,28 @@ default `get variant` output.
 `--strategy union` plans provider-specific strict requests before retaining the
 ordinary discovery federation and source-backed PubMed citations. BioMCP merges
 duplicate papers with route/source request provenance, ranks the union, and
-applies `--offset` and `--limit` once. `provenance.query_aliases` records only
+applies `--offset` and `--limit` once. A call at offset 0 without a token starts a session and makes its pool active
+for legacy offset calls. Continue with the returned
+`pagination.next_page_token`:
+
+```bash
+biomcp --json variant articles "BRAF V600E" --page-token TOKEN --limit 25
+```
+
+A token selects its original ordered pool and next offset. Page size may change.
+Conflicting query options fail. Expired, evicted or cleared pools fail explicitly
+and require a restart at offset 0 without a token. A nonzero offset without a
+token requires an existing active pool. Two legacy walkers share that active
+pool; another caller's offset-0 search can switch it to a newer pool. Concurrent
+callers should use tokens. Cache bypass performs a fresh offset-0 search and
+cannot provide a persisted continuation.
+
+Retries may publish a successor pool. Publication alone changes neither the
+active pool nor any token's membership. `pagination.total` counts the stored
+pool even when sources remain unfinished. `complete` reports whether source
+acquisition finished; the last stored page does not establish completeness.
+
+`provenance.query_aliases` records only
 the aliases sent to retrieve a row; it does not claim that an article contains
 or verifies an alias. `--debug-plan` exposes each provider request, route,
 query alias, exact query, and template version. It also includes a bounded,
@@ -439,7 +460,7 @@ request; discovery rows remain labeled `best_effort_free_text`.
 JSON repeats `requested_variant` on every row and reports `resolution`,
 `complete`, `truncated`, full pagination state, and per-route `source_status`.
 An incomplete provider route keeps available rows but sets `complete: false`,
-`truncated: true`, and `pagination.total: null`. A route stopped before BioMCP
+`truncated: true`. The pool total still describes its retained membership. A route stopped before BioMCP
 makes a provider request is reported as source-neutral `internal` /
 `not_attempted`, rather than attributing an outage to an uncalled provider.
 
@@ -535,7 +556,7 @@ identifiers, route/stage dispositions, and bounded rank positions; it excludes
 provider URLs, credentials, headers, and raw response bodies. Ordinary single
 and batch output omit plans. The typed MCP
 `variant_articles` tool accepts the same structured item fields directly without
-server-local paths.
+server-local paths. Each item accepts `page_token` to continue its own immutable pool.
 
 ## Search GWAS associations
 

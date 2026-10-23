@@ -45,6 +45,7 @@ pub(super) async fn handle(
     strategy: VariantArticleStrategy,
     limit: usize,
     offset: usize,
+    page_token: Option<String>,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
     if confirmed_only && !verify_identity {
@@ -95,27 +96,9 @@ pub(super) async fn handle(
     let id = id.ok_or_else(|| {
         BioMcpError::InvalidArgument("variant articles requires an ID or --input".into())
     })?;
-    let outcome = if debug_plan {
-        crate::entities::article::search_variant_articles_with_options(
-            &id,
-            strategy,
-            limit,
-            offset,
-            true,
-            verification,
-        )
-        .await?
-    } else {
-        crate::entities::article::search_variant_articles_with_options(
-            &id,
-            strategy,
-            limit,
-            offset,
-            false,
-            verification,
-        )
-        .await?
-    };
+    let outcome = crate::entities::article::search_variant_articles_with_page_token(
+        &id, strategy, limit, offset, debug_plan, verification, page_token.as_deref(),
+    ).await?;
     let settled_empty_page = outcome.response.complete
         && outcome.response.results.is_empty()
         && outcome
