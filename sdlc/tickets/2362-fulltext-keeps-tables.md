@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 1
 
-- Changes: `CHANGELOG.md`, `src/transform/article/jats.rs`, `tests/feature-links.json`, `tests/test_article_fulltext_tables.py`.
+- Changes: `CHANGELOG.md`, `src/transform/article/jats.rs`, `src/transform/article/jats/inline.rs`, `tests/article_transform_structure.rs`, `tests/feature-links.json`, `tests/test_article_fulltext_tables.py`.
 
 ## Outcome
 
