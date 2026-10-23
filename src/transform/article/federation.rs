@@ -486,7 +486,6 @@ fn publication_date_key(value: &str) -> Option<NaiveDate> {
     NaiveDate::parse_from_str(&normalized, "%Y-%m-%d").ok()
 }
 
-
 pub fn from_pubmed_esummary_entry(entry: &ESummaryEntry) -> Option<ArticleSearchResult> {
     let title = clean_title(&entry.title);
     if title.is_empty() {
@@ -507,10 +506,13 @@ pub fn from_pubmed_esummary_entry(entry: &ESummaryEntry) -> Option<ArticleSearch
                 .filter(|value| !value.is_empty())
                 .map(|value| value.to_string())
         });
-    let issue = entry.pubdate.as_deref().and_then(parse_pubdate).or_else(|| {
-        entry.sortpubdate.as_deref().and_then(parse_sortpubdate)
-    });
-    let date = issue.into_iter()
+    let issue = entry
+        .pubdate
+        .as_deref()
+        .and_then(parse_pubdate)
+        .or_else(|| entry.sortpubdate.as_deref().and_then(parse_sortpubdate));
+    let date = issue
+        .into_iter()
         .chain(entry.epubdate.as_deref().and_then(parse_pubdate))
         .min_by_key(|value| publication_date_key(value));
     let first_index_date = entry

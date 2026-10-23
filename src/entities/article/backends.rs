@@ -14,8 +14,8 @@ use crate::sources::semantic_scholar::{
 use crate::transform;
 
 use super::filters::{
-    filter_semantic_disease_rows, matches_result_filters as matches_filters, normalized_date_bounds,
-    resolve_semantic_disease_terms, semantic_disease_unavailable_status,
+    filter_semantic_disease_rows, matches_result_filters as matches_filters,
+    normalized_date_bounds, resolve_semantic_disease_terms, semantic_disease_unavailable_status,
 };
 use super::query::{
     build_free_text_article_query, build_pubmed_search_term, build_pubtator_query,
