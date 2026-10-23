@@ -1,5 +1,25 @@
 //! Rank captured variant evidence without changing identity confirmation.
 
+pub(super) const RANKING_VERSION: u32 = 1;
+pub(super) const METHOD: &str =
+    "descending lexicographic variant evidence; stable identifier ascending";
+pub(super) const INPUTS: [&str; 6] = [
+    "title_gene_and_supported_variant",
+    "abstract_gene_and_supported_variant_or_validated_annotation",
+    "compatible_civic_citation",
+    "independent_source_families",
+    "source_family_reciprocal_native_rank",
+    "stable_identifier",
+];
+
+pub(super) fn descriptor() -> super::VariantArticleRankingPlan {
+    super::VariantArticleRankingPlan {
+        version: RANKING_VERSION,
+        method: METHOD,
+        inputs: INPUTS.to_vec(),
+    }
+}
+
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
