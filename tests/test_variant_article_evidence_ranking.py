@@ -34,3 +34,32 @@ def test_variant_article_recorded_evidence_reaches_first_page(tmp_path):
         assert sum(has_evidence(pmid) for pmid in ids[:10]) >= 9
         assert all(row.get("identity", {}).get("status") != "confirmed"
                    for row in payload["results"])
+
+
+def test_variant_article_lexical_evidence_precedes_source_agreement(tmp_path):
+    # Native provider order favors generic gene papers. The caller should see
+    # title evidence first, then abstract evidence, then gene-only papers.
+    rows = [
+        {"pmid": "81001", "title": "AKT1 signaling", "abstract": "AKT1 E17K response"},
+        {"pmid": "81002", "title": "AKT1 E17K response", "abstract": ""},
+        {"pmid": "81003", "title": "AKT1 signaling", "abstract": "Gene pathways"},
+        {"pmid": "81004", "title": "AKT1 Glu17Lys response", "abstract": "AKT1 E17K response"},
+        {"pmid": "81005", "title": "AKT1 E17KX unrelated spelling", "abstract": ""},
+    ]
+    for index, row in enumerate(rows):
+        row["provenance"] = [{"route": "strict", "source": "europepmc",
+                              "native_position": index}]
+    rows[0]["provenance"].append({"route": "strict", "source": "pubmed", "native_position": 0})
+    with akt1_replay(tmp_path, cache=False,
+                     capture={"pubmed_order": [], "rows": rows}) as replay:
+        result = subprocess.run(
+            [os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
+             "--json", "--no-cache", "variant", "articles", "AKT1 E17K", "--limit", "5"],
+            env=replay.env, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert [row["pmid"] for row in payload["results"]] == [
+            "81004", "81002", "81001", "81003", "81005"]
+        assert all(row.get("identity", {}).get("status") != "confirmed"
+                   for row in payload["results"])
