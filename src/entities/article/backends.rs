@@ -564,10 +564,10 @@ pub(super) async fn search_europepmc_page_with_context(
                             )
                     });
                 if let Some(mut row) = replacement {
-                    if out.len() >= limit && !out.is_empty() {
+                    if filters.sort != ArticleSort::Date && out.len() >= limit && !out.is_empty() {
                         out.pop();
                     }
-                    if out.len() < limit {
+                    if filters.sort == ArticleSort::Date || out.len() < limit {
                         row.source_local_position = out.len();
                         seen_pmids.insert(row.pmid.clone());
                         out.push(row);
@@ -725,7 +725,7 @@ pub(super) async fn search_pubtator_page_with_context(
             // year facet removes historical pages, including for open bounds.
             // Keep first-page rows only as a failure backup. A successful native
             // query owns its own order, scores and duplicate selection.
-            if !years.is_empty() && out.len() < limit {
+            if !years.is_empty() && (filters.sort == ArticleSort::Date || out.len() < limit) {
                 probe_rows = std::mem::take(&mut out);
                 seen_pmids.clear();
                 source_position = 0;

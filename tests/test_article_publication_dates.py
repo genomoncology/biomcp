@@ -67,9 +67,9 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
                                 for row in [rows[0], rows[4]]]
                 else:
                     hits = [{
-                    "id": "90001", "pmid": "90001", "title": rows[0]["title"],
-                    "firstPublicationDate": issue, "citedByCount": 0,
-                }]
+                        "id": "90001", "pmid": "90001", "title": rows[0]["title"],
+                        "firstPublicationDate": issue, "citedByCount": 0,
+                    }]
                 body = {"hitCount": len(hits), "resultList": {"result": hits}}
             elif target.path.endswith("esearch.fcgi"):
                 body = {"esearchresult": {"count": "0", "idlist": []}}
