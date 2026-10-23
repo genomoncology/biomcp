@@ -45,7 +45,7 @@ fn text_evidence(
     // lexical relevance; it supplies no identity observation or confirmation.
     static PROTEIN: OnceLock<Regex> = OnceLock::new();
     let protein = PROTEIN.get_or_init(|| {
-        Regex::new(r"(?i)\b[a-z*]+[0-9]+(?:_[a-z*]*[0-9]+)?[a-z0-9*]*\b")
+        Regex::new(r"(?i)\b[a-z*]+[0-9]+(?:_[a-z*]*[0-9]+)?[a-z0-9*]*")
             .expect("valid protein spelling regex")
     });
     protein.find_iter(&text).any(|matched| {
@@ -57,12 +57,20 @@ fn text_evidence(
     })
 }
 
+fn typed_annotation(linkage: &ProviderLinkage) -> bool {
+    match linkage {
+        ProviderLinkage::Pubtator { .. } => true,
+        ProviderLinkage::PaperTranscript { paper_linkage, .. } => typed_annotation(paper_linkage),
+        ProviderLinkage::Ldh { .. } => false,
+    }
+}
+
 fn validated_annotation(candidate: &ArticleCandidate) -> bool {
     candidate.identity.as_ref().is_some_and(|identity| {
         identity.status == "confirmed"
             && identity.contradictions.is_empty()
             && identity.observations.iter().any(|observation| {
-                matches!(observation.provider_linkage, Some(ProviderLinkage::Pubtator { .. }))
+                observation.provider_linkage.as_ref().is_some_and(typed_annotation)
             })
     })
 }
