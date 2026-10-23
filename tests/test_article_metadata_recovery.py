@@ -1,7 +1,7 @@
 """Visible search rows recover metadata once, in one overlapping request wave.
 
-Search scaffolding and successful recovery are synthetic. Missing-metadata
-replies are unmodified upstream captures described beside the fixture bodies.
+Search scaffolding and successful core recovery are synthetic. Missing-metadata
+replies use recorded empty Europe PMC results described beside the fixtures.
 """
 from __future__ import annotations
 
@@ -52,7 +52,8 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
                 }}})
             if target.path == "/search" and params.get("query", [""])[0].startswith("EXT_ID:"):
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
-                assert params["resultType"] == ["core"]
+                if params.get("resultType") != ["core"]:
+                    missed.append("metadata request missing core")
                 recovery.append(pmid)
                 try:
                     barrier.wait(timeout=HANG_TIMEOUT)
