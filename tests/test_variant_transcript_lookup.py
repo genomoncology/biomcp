@@ -125,6 +125,18 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
             return
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)
+        if normalizer == "variantvalidator" and case == "same_allele" and identifier == FIXTURE["inputs"][0]:
+            normalized = subprocess.run(
+                [binary, "--no-cache", "--json", "variant", "normalize", "variantvalidator", identifier],
+                env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+            )
+            assert normalized.returncode == 0, normalized.stdout + normalized.stderr
+            aggregate = json.loads(normalized.stdout)
+            assert FIXTURE["genomic"] in aggregate["results"]
+            assert aggregate["genomic_coordinates"] == [{
+                "coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
+                "source": "VariantValidator", "provenance": "primary_assembly_loci.grch38",
+            }]
         transcript, coding = identifier.split(":", 1)
         assert payload["id"] == ("chr1:g.45797228C>T" if case == "alias_fallback" else "chr1:g.45331556C>T")
         assert payload["rsid"] == "rs36053993"
