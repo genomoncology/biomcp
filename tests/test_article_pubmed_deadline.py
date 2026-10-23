@@ -131,7 +131,7 @@ def test_pubmed_date_search_finishes_when_provider_answers(
     else:
         assert result.returncode == 0, result.stderr + result.stdout
         assert [row["pmid"] for row in payload["results"]] == ["90001"], payload
-        assert payload["complete"] is True, payload
+        assert payload["complete"] is True, payload.get("_meta", {})
         assert not statuses, statuses
         assert [route for route, _ in requests] == ["esearch.fcgi", "esummary.fcgi"]
     assert not misses, misses
