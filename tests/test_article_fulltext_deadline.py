@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 import pytest
 
 from golden.replay_env import isolated_command_env
+from hang_guard import HANG_TIMEOUT
 
 pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,7 +36,7 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
                         and not (held == "assets" and path.endswith("fullTextXML"))
                         and "biocjson" not in path and "/graph/" not in path
                         and not ("efetch" in path and "db=pubmed" in self.path))):
-                release.wait(60)
+                release.wait(HANG_TIMEOUT)
                 return
             code, content_type = 200, "application/json"
             if path == "/search":
@@ -83,7 +84,7 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
         release.set()
         server.shutdown()
         server.server_close()
-        thread.join(timeout=5)
+        thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     payload = json.loads(result.stdout)
     if held == "fulltext":
