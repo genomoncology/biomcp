@@ -1,6 +1,7 @@
 # 2360 — Article full text stays bounded
 
-Status: OPEN.
+Status: COMPLETE.
+Landed: 17e452ef7bfd3135898aee837325c72853f91863
 
 Milestone: 0.9.4
 
