@@ -21,6 +21,11 @@ pub(super) async fn route<T>(
                 suggestion: "Retry the article request".into(),
             })
         });
-    tracing::debug!(source, elapsed_ms = started.elapsed().as_millis(), ok = result.is_ok(), "Article full-text route finished");
+    tracing::debug!(
+        source,
+        elapsed_ms = started.elapsed().as_millis(),
+        ok = result.is_ok(),
+        "Article full-text route finished"
+    );
     result
 }
