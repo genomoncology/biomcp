@@ -142,7 +142,7 @@ fn body_has_meaningful_content(body: Node<'_, '_>) -> bool {
 fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
     let mut blocks = Vec::new();
     let mut state = RenderState::default();
-    convert_front(root, &mut blocks);
+    convert_front(root, &mut blocks, &mut state);
     convert_body(root, &mut blocks, &mut state);
     convert_floats_group(root, &mut blocks, &mut state);
     convert_remaining_tables(root, &mut blocks, &mut state);
@@ -174,7 +174,7 @@ fn remember_float_id(node: Node<'_, '_>, state: &mut RenderState) {
     }
 }
 
-fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>) {
+fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mut RenderState) {
     let Some(front) = find_child(root, "front") else {
         return;
     };
@@ -193,8 +193,7 @@ fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>) {
         .find(|node| node.is_element() && node.has_tag_name("abstract"))
     {
         blocks.push("## Abstract".into());
-        let mut state = RenderState::default();
-        append_content_blocks(abstract_node, 2, blocks, &mut state);
+        append_content_blocks(abstract_node, 2, blocks, state);
     }
 }
 

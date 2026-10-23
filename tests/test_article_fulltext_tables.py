@@ -20,7 +20,7 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("placement", ["back", "body", "floats-group"])
+@pytest.mark.parametrize("placement", ["back", "body", "floats-group", "abstract"])
 def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(
     placement: str, tmp_path: Path,
 ) -> None:
@@ -35,7 +35,10 @@ def test_fulltext_lines_keep_back_matter_tables_from_ncbi_fallback(
         parents = {child: parent for parent in document.iter() for child in parent}
         article = document.find("article")
         assert article is not None
-        destination = article.find("body") if placement == "body" else ElementTree.SubElement(article, placement)
+        destination = (
+            ElementTree.SubElement(article, placement) if placement == "floats-group"
+            else article.find("front/article-meta/abstract" if placement == "abstract" else "body")
+        )
         assert destination is not None
         for table in list(document.iter("table-wrap")):
             parents[table].remove(table)
