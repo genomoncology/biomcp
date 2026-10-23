@@ -354,8 +354,7 @@ budget, so a slow optional source cannot withhold assets already returned by a
 successful source. Normal calls reuse the resolved manifest for five minutes,
 including paging continuations; `--no-cache` bypasses that reuse.
 PMC's `pmc_proof_of_work` outcome means PMC returned a proof-of-work challenge
-instead of the named file; it has no `asset_key` or handle. A linked binary
-received as HTML or XHTML is rejected rather than exposed as asset bytes.
+instead of the named file. Its coverage row carries a stable `unavailable-` asset key and no download `handle`. Other named coverage rows receive an `unavailable-` key when no retrieval route assigned a key. The key identifies the coverage row; it does not promise downloadable bytes. A linked binary received as HTML or XHTML is rejected rather than exposed as asset bytes.
 `get article <id> asset <asset-key>`
 returns the selected member as raw bytes with no conversion; downstream tools
 parse CSV, XLSX, DOC, PDF, or images. Manifest handles remain BioMCP commands,

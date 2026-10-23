@@ -12,6 +12,7 @@
 - Retain article tables from back matter and nested source containers in saved full text and line reads. (2362)
 - Pair PubMed date bounds so one-sided article date searches retrieve the requested window without scanning historical pages until timeout. (2363)
 - Stop variant article paging at the last retained row while preserving incomplete source coverage. (2365)
+- Align the article and supplementary-materials guides with challenge coverage that carries a stable unavailable asset key and no download handle. (2369)
 
 - Bound article full-text provider waits, recover stalled metadata through Europe PMC, and report failed retrieval routes. Limit optional asset-summary work so available text returns promptly. (2360)
 
