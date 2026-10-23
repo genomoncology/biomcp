@@ -6,6 +6,7 @@ from hang_guard import HANG_TIMEOUT
 
 import json
 import os
+import select
 from pathlib import Path
 import subprocess
 import sys
@@ -22,8 +23,8 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/coding-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene"])
-def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path) -> None:
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene", "requested38", "unknown", "mcp", "exact-unknown"])
+def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     control = json.loads(FIXTURE.read_text())
     hit = control["hit"]
     if surface == "complete":
@@ -117,11 +118,19 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface not in ("markdown", "disabled-markdown"):
         command.append("--json")
     command += ["variant", "articles", "ABCC8 R1437Q", "--limit", "5"]
+    if surface == "exact-unknown":
+        command[command.index("ABCC8 R1437Q")] = hit["_id"]
+        command += ["--strategy", "exact", "--debug-plan"]
     if surface in ("complete", "lexical"):
         command += ["--strategy", "lexical"]
-    if surface == "batch":
+    if surface in ("batch", "requested38", "unknown"):
         request = tmp_path / "input.json"
-        request.write_text(json.dumps([{"gene": "ABCC8", "protein": "R1437Q"}]))
+        item = {"gene": "ABCC8", "protein": "R1437Q"}
+        if surface in ("requested38", "unknown"):
+            item["genomic"] = hit["_id"]
+        if surface == "requested38":
+            item["build"] = "GRCh38"
+        request.write_text(json.dumps([item]))
         command.remove("ABCC8 R1437Q")
         command += ["--input", str(request)]
     if surface in ("debug", "batch", "reported", "gene"):
@@ -129,26 +138,84 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface == "reported":
         command.append("--verify-identity")
     try:
-        result = subprocess.run(command, env=env, cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=HANG_TIMEOUT)
+        if surface == "mcp":
+            from test_mcp_2026_protocol import RawStdioMcp
+
+            with monkeypatch.context() as isolated:
+                for key in set(os.environ) - set(env):
+                    isolated.delenv(key)
+                for key, value in env.items():
+                    isolated.setenv(key, value)
+                client = RawStdioMcp()
+                try:
+                    client.send({"jsonrpc": "2.0", "id": "init", "method": "initialize",
+                                 "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                                            "clientInfo": {"name": "assembly-contract", "version": "1"}}})
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+                    assert ready
+                    assert client.receive()["id"] == "init"
+                    client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+                    client.send({"jsonrpc": "2.0", "id": "articles", "method": "tools/call",
+                                 "params": {"name": "variant_articles", "arguments": {
+                                     "items": [{"gene": "ABCC8", "protein": "R1437Q"}], "limit": 5}}})
+                    ready, _, _ = select.select([client.process.stdout], [], [], HANG_TIMEOUT)
+                    assert ready
+                    response = client.receive()["result"]
+                    assert response.get("isError") is not True, response
+                    payload = json.loads(response["content"][0]["text"])["items"][0]
+                finally:
+                    client.close()
+        else:
+            result = subprocess.run(command, env=env, cwd=REPO_ROOT,
+                                    capture_output=True, text=True, timeout=HANG_TIMEOUT)
     finally:
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
     assert not misses, misses
-    assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
+    if surface != "mcp":
+        assert result.returncode == (1 if disabled else 0), result.stdout + result.stderr
     if surface in ("markdown", "disabled-markdown"):
         text = result.stderr if disabled else result.stdout
+        assert "chr11:g.17417157C>T (GRCh37; myvariant)" in text
         assert "ABCC8 c.4310G>A" in text
         assert "ABCC8 c.4373G>A" in text
         assert ("source_disabled" if disabled else "provider_query_attempted") in text
         if disabled:
             assert "ABCC8 R1437Q: omitted (source_disabled; planned: true)" in text
         return
-    payload = json.loads(result.stdout)
-    if surface == "batch":
+    if surface != "mcp":
+        payload = json.loads(result.stdout)
+    if surface in ("batch", "requested38", "unknown"):
         payload = payload["items"][0]
+    if surface == "exact-unknown":
+        coordinates = [{"coordinate": hit["_id"], "genome_build": "unknown",
+                        "source": "requested", "provenance": "requested variant identity"}]
+        assert payload["resolution"]["normalized_aliases"]["genomic_coordinates"] == coordinates
+        assert payload["debug_plan"]["normalized_aliases"]["genomic_coordinates"] == coordinates
+        assert not any(path.startswith("/v1/") or path == "/allele" for path, _ in requests)
+        return
+    if surface == "requested38":
+        assert payload["resolution"]["normalized_aliases"]["genomic_coordinates"] == [{
+            "coordinate": hit["_id"], "genome_build": "GRCh38", "source": "requested",
+            "provenance": "requested variant identity",
+        }, {"coordinate": hit["_id"], "genome_build": "GRCh37", "source": "myvariant",
+            "provenance": "resolved source identity"}]
+        assert payload["resolution"]["status"] == "ambiguous"
+        return
     assert payload["resolution"]["status"] == "resolved", payload
+    coordinates = payload["resolution"]["normalized_aliases"]["genomic_coordinates"]
+    build = "GRCh38" if surface == "requested38" else "GRCh37"
+    expected = [{"coordinate": hit["_id"], "genome_build": build,
+                 "source": "myvariant", "provenance": "resolved source identity"}]
+    if surface in ("requested38", "unknown"):
+        expected.insert(0, {"coordinate": hit["_id"], "genome_build": (
+            "GRCh38" if surface == "requested38" else "unknown"),
+            "source": "requested", "provenance": "requested variant identity"})
+    assert coordinates == expected
+    assert payload["resolution"]["normalized_aliases"]["genomic_ids"] == [hit["_id"]]
+    for row in payload["results"]:
+        assert row["genomic_coordinates"] == coordinates
     coverage = payload["alias_coverage"]
     forms = hit["dbnsfp"]["hgvsp"] + hit["dbnsfp"]["hgvsc"]
     assert {row["alias"] for row in coverage} >= {f"ABCC8 {form}" for form in forms}
@@ -190,6 +257,7 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface in ("debug", "batch", "reported", "gene"):
         assert payload["debug_plan"]["alias_coverage"] == coverage
         plan = payload["debug_plan"]
+        assert plan["normalized_aliases"]["genomic_coordinates"] == coordinates
         lexical_queries = next(row["queries"] for row in plan["routes"]
                                if row["route"] == "exact_lexical")
         if surface == "gene":

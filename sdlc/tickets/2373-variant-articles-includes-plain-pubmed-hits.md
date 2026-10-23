@@ -10,6 +10,10 @@ Priority: 0
 
 For a gene plus protein change, `variant articles` returns every PMID that a plain PubMed search for the same gene and change words returns. Plain PubMed is the floor; BioMCP adds to it and never drops from it.
 
+## Changes
+
+- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/variant_search/sources.rs`, `src/entities/article/backends.rs`, `src/entities/article/query.rs`, `src/sources/mod.rs`, `src/sources/pubmed.rs`, `src/sources/pubmed/tests/construction.rs`, `src/sources/pubmed/tests/live.rs`, `src/sources/pubmed/tests/parsing.rs`, `tests/test_variant_article_pubmed_floor.py`, `tests/fixtures/article/pubmed-floor/**`, `tests/feature-links.json`.
+
 ## Evidence
 
 - Research test of the 0.9.4 practice artifact (run 39857815354, SHA-256 6dbc3a83...4739) on Blue, 2026-10-23, relayed by Jarvis in m4147. Plain PubMed ESearch for 'AKT1 E17K' (relevance sort) returns 192 PMIDs. `biomcp --json variant articles 'AKT1 E17K'` (union, --limit 50, 35 pages) returns about 1,386 PMIDs, yet 20 of PubMed's 192 never appear. Ian's ruling: the worst case is variant articles failing to return what a plain PubMed search finds.

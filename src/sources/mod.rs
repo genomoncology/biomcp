@@ -70,6 +70,17 @@ impl Drop for CacheInitializationSettlement {
 }
 
 impl VariantArticleDeadline {
+    pub(crate) fn capped(&self, limit: Duration) -> Self {
+        let limit = limit.min(self.remaining());
+        Self {
+            inner: std::sync::Arc::new(VariantArticleDeadlineInner {
+                at: tokio::time::Instant::now() + limit,
+                limit,
+                providers: self.inner.providers.clone(),
+            }),
+        }
+    }
+
     pub(crate) fn from_now(limit: Duration) -> Self {
         Self {
             inner: std::sync::Arc::new(VariantArticleDeadlineInner {

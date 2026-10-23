@@ -35,6 +35,7 @@ fn seven_variant_corpus_pubmed_requests_and_decoders_remain_production_exact() {
     for case in cases {
         let params = PubMedESearchParams {
             term: case.term.into(),
+            sort: None,
             retstart: 0,
             retmax: 100,
             date_from: None,

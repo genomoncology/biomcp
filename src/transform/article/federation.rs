@@ -424,7 +424,9 @@ fn parse_sortpubdate(value: &str) -> Option<String> {
     {
         return None;
     }
-    Some(prefix.replace('/', "-"))
+    NaiveDate::parse_from_str(prefix, "%Y/%m/%d")
+        .ok()
+        .map(|date| date.to_string())
 }
 
 fn parse_europepmc_index_date(value: &str) -> Option<NaiveDate> {
@@ -461,26 +463,40 @@ fn pubmed_month_number(value: &str) -> Option<&'static str> {
 
 fn parse_pubdate(value: &str) -> Option<String> {
     let mut parts = value.split_whitespace();
-    let year = parts.next()?.trim();
-    if year.len() != 4 || !year.chars().all(|ch| ch.is_ascii_digit()) {
+    let year_token = parts.next()?;
+    if year_token.len() != 4 || !year_token.bytes().all(|byte| byte.is_ascii_digit()) {
         return None;
     }
-
-    let Some(month) = parts.next().and_then(pubmed_month_number) else {
-        return Some(year.to_string());
+    let year = year_token.parse::<i32>().ok()?;
+    let Some(month_token) = parts.next() else {
+        NaiveDate::from_ymd_opt(year, 1, 1)?;
+        return Some(format!("{year:04}"));
     };
-    let Some(day_token) = parts.next() else {
-        return Some(format!("{year}-{month}"));
-    };
-    let day = day_token
-        .trim_matches(|ch: char| !ch.is_ascii_digit())
-        .parse::<u8>()
-        .ok()
-        .filter(|day| (1..=31).contains(day));
-    match day {
-        Some(day) => Some(format!("{year}-{month}-{day:02}")),
-        None => Some(format!("{year}-{month}")),
+    if matches!(
+        month_token.to_ascii_lowercase().as_str(),
+        "spring" | "summer" | "fall" | "autumn" | "winter"
+    ) {
+        NaiveDate::from_ymd_opt(year, 1, 1)?;
+        return Some(year_token.to_string());
     }
+    let month = pubmed_month_number(month_token)?.parse::<u32>().ok()?;
+    let Some(day_token) = parts.next() else {
+        NaiveDate::from_ymd_opt(year, month, 1)?;
+        return Some(format!("{year:04}-{month:02}"));
+    };
+    let day = day_token.parse::<u32>().ok()?;
+    NaiveDate::from_ymd_opt(year, month, day).map(|date| date.to_string())
+}
+
+pub(crate) fn publication_date_key(value: &str) -> Option<NaiveDate> {
+    let value = value.trim();
+    let value = value.get(..10).unwrap_or(value);
+    let normalized = match value.len() {
+        4 => format!("{value}-01-01"),
+        7 => format!("{value}-01"),
+        _ => value.to_string(),
+    };
+    NaiveDate::parse_from_str(&normalized, "%Y-%m-%d").ok()
 }
 
 pub fn from_pubmed_esummary_entry(entry: &ESummaryEntry) -> Option<ArticleSearchResult> {
@@ -503,11 +519,15 @@ pub fn from_pubmed_esummary_entry(entry: &ESummaryEntry) -> Option<ArticleSearch
                 .filter(|value| !value.is_empty())
                 .map(|value| value.to_string())
         });
-    let date = entry
-        .sortpubdate
+    let issue = entry
+        .pubdate
         .as_deref()
-        .and_then(parse_sortpubdate)
-        .or_else(|| entry.pubdate.as_deref().and_then(parse_pubdate));
+        .and_then(parse_pubdate)
+        .or_else(|| entry.sortpubdate.as_deref().and_then(parse_sortpubdate));
+    let date = issue
+        .into_iter()
+        .chain(entry.epubdate.as_deref().and_then(parse_pubdate))
+        .min_by_key(|value| publication_date_key(value));
     let first_index_date = entry
         .edat
         .as_deref()

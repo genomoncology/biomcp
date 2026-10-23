@@ -1,7 +1,7 @@
 """Visible search rows recover metadata once, in one overlapping request wave.
 
-Search scaffolding and successful recovery are synthetic. Missing-metadata
-replies are unmodified upstream captures described beside the fixture bodies.
+Search scaffolding and successful core recovery are synthetic. Missing-metadata
+replies use recorded empty Europe PMC results described beside the fixtures.
 """
 from __future__ import annotations
 
@@ -26,11 +26,11 @@ FIXTURES = ROOT / "tests/fixtures/article/metadata-recovery"
 PMIDS = ["42894377", "42891779"]
 
 
-@pytest.mark.parametrize("covered,europe_failed,pubtator_empty", [
-    (False, False, False), (True, False, False), (False, True, False), (True, False, True),
+@pytest.mark.parametrize("covered,europe_failed", [
+    (False, False), (True, False), (False, True),
 ])
 def test_visible_metadata_recovers_each_row_once_in_one_wave(
-    covered: bool, europe_failed: bool, pubtator_empty: bool, tmp_path: Path,
+    covered: bool, europe_failed: bool, tmp_path: Path,
 ) -> None:
     recovery: list[str] = []
     missed: list[str] = []
@@ -50,13 +50,10 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
                     pmid: {"uid": pmid, "title": f"Synthetic row {pmid}",
                            "pubdate": "2026 Oct 19"} for pmid in PMIDS
                 }}})
-            if target.path == "/publications/export/biocjson":
-                assert params["pmids"][0] in PMIDS
-                if pubtator_empty:
-                    return self.reply({"PubTator3": []})
-                return self.bytes((FIXTURES / "pubtator-missing.body").read_bytes(), 400)
             if target.path == "/search" and params.get("query", [""])[0].startswith("EXT_ID:"):
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
+                if params.get("resultType") != ["core"]:
+                    missed.append("metadata request missing core")
                 recovery.append(pmid)
                 try:
                     barrier.wait(timeout=HANG_TIMEOUT)
@@ -126,13 +123,9 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
     assert overlaps == [True, True], "Recovery requests must overlap before either reply"
     payload = json.loads(result.stdout)
     rows = payload["results"]
-    assert payload["complete"] is False, payload
-    failures = [status for status in payload["_meta"]["source_status"]
-                if status["source"] == "pubtator" and status.get("status") == "degraded"]
-    assert failures, payload["_meta"]["source_status"]
-    failure_cause = "internal failure" if pubtator_empty else "http_status failure (HTTP 400)"
-    assert any("visible article metadata fallback" in status["message"]
-               and failure_cause in status["message"] for status in failures), failures
+    assert payload["complete"] is (not europe_failed), payload
+    assert not any(status["source"] == "pubtator" and status.get("status") == "degraded"
+                   for status in payload.get("_meta", {}).get("source_status", [])), payload
     if europe_failed:
         assert any(status["source"] == "europepmc" and status.get("status") == "degraded"
                    and "decode failure" in status["message"]
@@ -145,4 +138,4 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
         assert "visible article metadata fallback" not in result.stderr
     else:
         assert [row.get("citation_count") for row in rows] == [None, None]
-        assert result.stderr.count("visible article metadata fallback") == 2, result.stderr
+        assert "visible article metadata fallback" not in result.stderr

@@ -8,6 +8,7 @@ use crate::sources::HttpMethod;
 fn params(term: &str) -> PubMedESearchParams {
     PubMedESearchParams {
         term: term.into(),
+        sort: None,
         retstart: 0,
         retmax: 10,
         date_from: None,

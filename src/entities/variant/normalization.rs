@@ -39,7 +39,7 @@ pub enum VariantNormalizationAggregate {
 pub struct CarNormalizationAggregate {
     pub service: String,
     #[serde(flatten)]
-    pub item: CarNormalizationItem,
+    pub item: Box<CarNormalizationItem>,
 }
 
 impl From<VariantNormalizationServiceResult> for VariantNormalizationAggregate {
@@ -66,6 +66,28 @@ pub struct VariantNormalizationServiceResult {
     pub warnings: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+
+impl VariantNormalizationServiceResult {
+    pub(crate) fn display_genomic_coordinates(&self) -> Vec<crate::entities::GenomicCoordinate> {
+        let mut records = self.genomic_descriptions.clone();
+        for value in self
+            .normalized_description
+            .iter()
+            .chain(&self.corrected_description)
+            .filter(|value| value.contains(":g."))
+        {
+            if !records.iter().any(|record| record.coordinate == *value) {
+                records.push(crate::entities::GenomicCoordinate {
+                    coordinate: value.clone(),
+                    genome_build: "unknown".into(),
+                    source: self.service.clone(),
+                    provenance: Some("normalized description without assembly evidence".into()),
+                });
+            }
+        }
+        records
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -143,6 +165,8 @@ pub struct CarNormalizationItem {
     pub caid: Option<String>,
     pub canonical_title: Option<String>,
     pub genomic_aliases: CarAliasCollection,
+    #[serde(default)]
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub transcript_aliases: CarAliasCollection,
     pub protein_aliases: CarAliasCollection,
     pub external_ids: CarAliasCollection,
@@ -285,7 +309,7 @@ pub async fn normalize_variant(
                 })),
                 VariantNormalizationAggregate::Car(CarNormalizationAggregate {
                     service: "car".into(),
-                    item: car.unwrap_or_else(|_| unavailable_car_item(&input)),
+                    item: Box::new(car.unwrap_or_else(|_| unavailable_car_item(&input))),
                 }),
             ],
         });
@@ -309,7 +333,7 @@ pub async fn normalize_variant(
                 results.push(VariantNormalizationAggregate::Car(
                     CarNormalizationAggregate {
                         service: "car".into(),
-                        item: normalize_car(&input).await?,
+                        item: Box::new(normalize_car(&input).await?),
                     },
                 ));
                 continue;
@@ -333,6 +357,7 @@ pub(crate) fn unavailable_car_item(input: &str) -> CarNormalizationItem {
         caid: None,
         canonical_title: None,
         genomic_aliases: CarAliasCollection::default(),
+        genomic_coordinates: Vec::new(),
         transcript_aliases: CarAliasCollection::default(),
         protein_aliases: CarAliasCollection::default(),
         external_ids: CarAliasCollection::default(),

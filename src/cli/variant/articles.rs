@@ -196,6 +196,22 @@ pub(super) async fn handle(
         markdown
     };
     let mut alias_coverage_text = String::new();
+    if !json {
+        let coordinates = &outcome
+            .response
+            .resolution
+            .normalized_aliases
+            .genomic_coordinates;
+        if !coordinates.is_empty() {
+            alias_coverage_text.push_str("\n\n## Genomic aliases\n\n");
+            for coordinate in coordinates {
+                alias_coverage_text.push_str(&format!(
+                    "- {} ({}; {})\n",
+                    coordinate.coordinate, coordinate.genome_build, coordinate.source
+                ));
+            }
+        }
+    }
     if !json && !outcome.response.alias_coverage.is_empty() {
         alias_coverage_text.push_str(
             "\n\n## Alias query coverage\n\nAn attempted query may fail or return no articles.\n\n",

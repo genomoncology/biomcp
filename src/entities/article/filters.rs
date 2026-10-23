@@ -260,13 +260,7 @@ pub(super) fn has_keyword_query(filters: &ArticleSearchFilters) -> bool {
 }
 
 pub(super) fn parse_row_date(value: Option<&str>) -> Option<String> {
-    let value = value.map(str::trim).filter(|v| !v.is_empty())?;
-    let truncated = value.get(0..10).unwrap_or(value);
-    match truncated.len() {
-        4 => Some(format!("{truncated}-01-01")),
-        7 => Some(format!("{truncated}-01")),
-        _ => Some(truncated.to_string()),
-    }
+    crate::transform::article::publication_date_key(value?).map(|date| date.to_string())
 }
 
 fn matches_optional_journal_filter(
