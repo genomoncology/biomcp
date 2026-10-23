@@ -19,7 +19,7 @@ pytestmark = pytest.mark.needs_binary
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations", "single", "no_work"])
+@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations", "single", "no_work", "retracted", "facets"])
 def test_article_publication_dates_precede_merge_bounds_and_pagination(
     mode: str, tmp_path: Path,
 ) -> None:
@@ -38,12 +38,39 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
             target = urlsplit(self.path)
             params = parse_qs(target.query)
             if target.path == "/pubtator/search/":
-                body = {"results": rows, "count": len(rows)}
+                if mode == "retracted":
+                    body = {"results": [], "count": 0}
+                elif mode == "facets":
+                    selected = json.loads(params.get("filters", ["{}"]) [0]).get("year")
+                    if selected:
+                        assert selected == [str(today.year)]
+                        body = {"results": [rows[4]], "count": 1}
+                    else:
+                        body = {"results": [{**row, "date": "2019-01-01"} for row in rows],
+                                "count": 9, "facets": {"facet_fields": {"year": [
+                                    {"name": "2019", "value": 8},
+                                    {"name": str(today.year), "value": 1},
+                                ]}}}
+                else:
+                    body = {"results": rows, "count": len(rows)}
             elif target.path == "/europe/search":
-                body = {"hitCount": 1, "resultList": {"result": [{
+                if mode == "facets":
+                    hits = []
+                elif mode == "retracted":
+                    if "PUB_TYPE:" in params.get("query", [""])[0]:
+                        hits = [{"id": "90009", "pmid": "90009", "title": "Retracted paper",
+                                 "firstPublicationDate": "2000-01-01",
+                                 "pubTypeList": {"pubType": ["retracted publication"]}}]
+                    else:
+                        hits = [{"id": row["pmid"], "pmid": row["pmid"],
+                                 "title": row["title"], "firstPublicationDate": row["date"]}
+                                for row in [rows[0], rows[4]]]
+                else:
+                    hits = [{
                     "id": "90001", "pmid": "90001", "title": rows[0]["title"],
                     "firstPublicationDate": issue, "citedByCount": 0,
-                }]}}
+                }]
+                body = {"hitCount": len(hits), "resultList": {"result": hits}}
             elif target.path.endswith("esearch.fcgi"):
                 body = {"esearchresult": {"count": "0", "idlist": []}}
             elif target.path.endswith("esummary.fcgi"):
@@ -98,6 +125,10 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     args = ["--sort", "citations" if mode == "citations" else "date", "--limit", "50"]
     if mode == "single":
         args += ["--source", "pubtator"]
+    if mode in {"retracted", "facets"}:
+        args = ["--sort", "date", "--limit", "1"]
+    if mode == "facets":
+        args += ["--date-from", str(today)]
     if mode == "bounds":
         args += ["--date-from", str(today - timedelta(days=2)), "--date-to", str(today)]
     if mode == "offset":
@@ -116,6 +147,14 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     assert not misses, misses
     payload = json.loads(result.stdout)
     actual = payload["results"]
+    if mode == "facets":
+        assert not requests, requests
+        assert [row["pmid"] for row in actual] == ["90005"]
+        return
+    if mode == "retracted":
+        assert requests == [["90001"]], requests
+        assert [row["pmid"] for row in actual] == ["90005"]
+        return
     if mode == "no_work":
         assert not requests, requests
         assert actual[0]["pmid"] == "90005"
