@@ -1,4 +1,4 @@
-use crate::sources::fulltext_diagnostics::FulltextRequestExt;
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
 
@@ -82,10 +82,9 @@ impl PmcOaClient {
             MAX_ARCHIVE_ENTRY_BYTES as usize,
             PMC_OA_API,
         )
-        .send_fulltext(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::PMC_OPEN_ACCESS),
-            false,
-        )
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::PMC_OPEN_ACCESS,
+        ))
         .await?;
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body(
@@ -354,10 +353,9 @@ impl PmcOaClient {
             MAX_ARCHIVE_ENTRY_BYTES as usize,
             PMC_OA_API,
         )
-        .send_fulltext(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::PMC_OPEN_ACCESS),
-            false,
-        )
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::PMC_OPEN_ACCESS,
+        ))
         .await?;
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body_with_limit(

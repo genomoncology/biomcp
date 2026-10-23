@@ -1,5 +1,4 @@
 use crate::sources::RequestBuilderSourceContextExt;
-use crate::sources::fulltext_diagnostics::FulltextRequestExt;
 use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::io::{Cursor, Read};
@@ -145,10 +144,9 @@ impl EuropePmcClient {
             MAX_SUPPLEMENTARY_ZIP_BYTES,
             EUROPE_PMC_API,
         )
-        .send_fulltext(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
-            true,
-        )
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::EUROPE_PMC,
+        ))
         .await?;
         let status = resp.status();
         if !supplementary_status_has_package(status).map_err(|error| {
@@ -368,10 +366,9 @@ impl EuropePmcClient {
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let resp = req
             .with_extension(CacheMode::NoStore)
-            .send_fulltext(
-                crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
-                true,
-            )
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::EUROPE_PMC,
+            ))
             .await?;
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body(

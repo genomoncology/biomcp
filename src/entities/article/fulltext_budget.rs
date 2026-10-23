@@ -21,6 +21,7 @@ pub(super) async fn route<T>(
             tokio::time::timeout(ROUTE_TIMEOUT, future),
         )
         .await
+        .map(|result| result.map_err(|error| observation.annotate(error)))
         .unwrap_or_else(|_| {
             Err(BioMcpError::SourceUnavailable {
                 source_name: source.into(),

@@ -1,9 +1,8 @@
 //! Request diagnostics for article retrieval. Never publish provider error bodies.
-use reqwest::{Response, StatusCode, Url};
+use reqwest::{Response, Url};
 use reqwest_middleware::RequestBuilder;
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
-use crate::sources::RequestBuilderSourceContextExt;
 
 const DIAGNOSTIC_API: &str = "article-fulltext-route";
 
@@ -13,27 +12,105 @@ tokio::task_local! {
 
 /// One route owns this observation, including cancellation before send returns.
 #[derive(Clone, Default)]
-pub(crate) struct RequestObservation(std::sync::Arc<std::sync::Mutex<Option<String>>>);
+pub(crate) struct RequestObservation(std::sync::Arc<std::sync::Mutex<Option<RequestDiagnostic>>>);
+
+#[derive(Clone)]
+struct RequestDiagnostic {
+    url: String,
+    status: Option<u16>,
+    context: SourceContext,
+}
 
 impl RequestObservation {
     pub(crate) fn timeout_detail(&self) -> String {
-        let url = self
-            .0
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        url.as_ref()
-            .map(|url| format!(" Request {url}: transport error (timed out)."))
-            .unwrap_or_default()
+        self.snapshot()
+            .map(|request| format!(" Request {}: transport error (timed out).", request.url))
+            .unwrap_or_else(|| " No request URL was observed.".into())
     }
 
-    fn record(url: &str) {
-        let _ = CURRENT_REQUEST.try_with(|observation| {
-            *observation
-                .0
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(url.into());
-        });
+    fn snapshot(&self) -> Option<RequestDiagnostic> {
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
+
+    fn message(&self, error: &BioMcpError) -> Option<(SourceContext, String)> {
+        let request = self.snapshot()?;
+        let failure = error.external_failure(request.context.provider(), "article retrieval");
+        let status = failure.status.or(request.status);
+        let detail = match status {
+            Some(status) if (200..300).contains(&status) => {
+                let class = if failure.class == "internal" {
+                    "decode"
+                } else {
+                    failure.class
+                };
+                format!("HTTP {status}; response error ({class})")
+            }
+            Some(status) => format!("HTTP {status}"),
+            None => format!("transport error ({})", failure.class),
+        };
+        Some((
+            request.context,
+            format!("{detail}; request {}", request.url),
+        ))
+    }
+
+    pub(crate) fn annotate(&self, error: BioMcpError) -> BioMcpError {
+        if is_projected(&error) {
+            return error;
+        }
+        match self.message(&error) {
+            Some((context, message)) => BioMcpError::Api {
+                api: DIAGNOSTIC_API.into(),
+                message,
+            }
+            .with_source_context(context),
+            None => error,
+        }
+    }
+}
+
+pub(crate) fn record_request(request: &RequestBuilder, context: SourceContext) {
+    let _ = CURRENT_REQUEST.try_with(|observation| {
+        let diagnostic = request
+            .try_clone()
+            .and_then(|req| req.build().ok())
+            .map(|request| RequestDiagnostic {
+                url: safe_url(request.url()),
+                status: None,
+                context,
+            });
+        *observation
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = diagnostic;
+    });
+}
+
+pub(crate) fn record_response(response: &Response) {
+    let _ = CURRENT_REQUEST.try_with(|observation| {
+        if let Some(request) = observation
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
+            request.status = Some(response.status().as_u16());
+        }
+    });
+}
+
+pub(crate) fn annotate_current_error(error: BioMcpError) -> BioMcpError {
+    match CURRENT_REQUEST.try_with(Clone::clone) {
+        Ok(observation) => observation.annotate(error),
+        Err(_) => error,
+    }
+}
+
+fn is_projected(error: &BioMcpError) -> bool {
+    matches!(error.underlying(), BioMcpError::Api { api, .. } if api == DIAGNOSTIC_API)
 }
 
 fn safe_url(url: &Url) -> String {
@@ -73,65 +150,24 @@ fn safe_url(url: &Url) -> String {
     safe.to_string()
 }
 
-fn request_error(url: &str, context: SourceContext, detail: String) -> BioMcpError {
-    BioMcpError::Api {
-        api: DIAGNOSTIC_API.into(),
-        message: format!("{detail}; request {url}"),
-    }
-    .with_source_context(context)
-}
-
 /// Only this module's closed projection may be copied into a route warning.
 pub(crate) fn safe_error(error: &BioMcpError) -> String {
-    if let BioMcpError::Api { api, message } = error.underlying()
-        && api == DIAGNOSTIC_API
+    if let BioMcpError::Api { message, .. } = error.underlying()
+        && is_projected(error)
     {
         return message.clone();
     }
-    error
-        .external_failure(SourceProvider::UNKNOWN, "article retrieval")
-        .message
-}
-
-pub(crate) trait FulltextRequestExt {
-    fn send_fulltext(
-        self,
-        context: SourceContext,
-        absence_is_empty: bool,
-    ) -> impl std::future::Future<Output = Result<Response, BioMcpError>> + Send;
-}
-
-impl FulltextRequestExt for RequestBuilder {
-    async fn send_fulltext(
-        self,
-        context: SourceContext,
-        absence_is_empty: bool,
-    ) -> Result<Response, BioMcpError> {
-        let url = self
-            .try_clone()
-            .and_then(|req| req.build().ok())
-            .map(|req| safe_url(req.url()))
-            .unwrap_or_else(|| "unavailable URL".into());
-        RequestObservation::record(&url);
-        let response = self
-            .send_with_source_context(context)
-            .await
-            .map_err(|error| {
-                let failure = error.external_failure(context.provider(), "article retrieval");
-                let detail = match failure.status {
-                    Some(status) => format!("HTTP {status}"),
-                    None => format!("transport error ({})", failure.class),
-                };
-                request_error(&url, context, detail)
-            })?;
-        let status = response.status();
-        let absence =
-            absence_is_empty && matches!(status, StatusCode::NOT_FOUND | StatusCode::NO_CONTENT);
-        if !status.is_success() && !absence {
-            return Err(request_error(&url, context, format!("HTTP {status}")));
-        }
-        Ok(response)
+    if let Ok(Some((_, message))) =
+        CURRENT_REQUEST.try_with(|observation| observation.message(error))
+    {
+        return message;
     }
+    format!(
+        "Request details unavailable; {}",
+        error
+            .external_failure(SourceProvider::UNKNOWN, "article retrieval")
+            .message
+    )
 }
 
 #[cfg(test)]

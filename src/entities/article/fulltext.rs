@@ -1,4 +1,3 @@
-use crate::sources::fulltext_diagnostics::FulltextRequestExt;
 use reqwest::Url;
 use tracing::debug;
 
@@ -11,6 +10,7 @@ use super::{
 };
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
+use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
@@ -66,6 +66,19 @@ enum FulltextStepOutcome<T> {
     Refused(BioMcpError),
 }
 
+impl<T> FulltextStepOutcome<T> {
+    fn with_request_diagnostic(self) -> Self {
+        let project = crate::sources::fulltext_diagnostics::annotate_current_error;
+        match self {
+            Self::Unusable(error) => Self::Unusable(project(error)),
+            Self::BotChallenge(error) => Self::BotChallenge(project(error)),
+            Self::Failed(error) => Self::Failed(project(error)),
+            Self::Refused(error) => Self::Refused(error),
+            other => other,
+        }
+    }
+}
+
 pub(super) enum PdfDiscoveryAttempt {
     Ineligible,
     Data(String),
@@ -90,7 +103,14 @@ impl FulltextAttemptState {
     }
 
     fn record_failure(&mut self, err: BioMcpError) {
-        self.failures.push(err.to_string());
+        let detail = if let BioMcpError::SourceUnavailable { reason, .. } = err.underlying()
+            && reason.starts_with(super::fulltext_budget::FAILURE_PREFIX)
+        {
+            reason.clone()
+        } else {
+            crate::sources::fulltext_diagnostics::safe_error(&err)
+        };
+        self.failures.push(detail);
         if self.failure.is_none() {
             self.failure = Some(err);
         }
@@ -335,7 +355,7 @@ async fn preprint_response(
 ) -> Result<Option<Vec<u8>>, BioMcpError> {
     let context = crate::error::SourceContext::retry(crate::error::SourceProvider::BIORXIV_MEDRXIV);
     let response = crate::sources::apply_cache_mode(client.get(url))
-        .send_fulltext(context, true)
+        .send_with_source_context(context)
         .await?;
     if documented_fulltext_absence(response.status()) {
         return Ok(None);
@@ -481,7 +501,7 @@ fn classify_html_fetch(
         PmcHtmlFetchOutcome::Failed(err) => FulltextStepOutcome::Failed(err),
     };
     HtmlResolution {
-        outcome,
+        outcome: outcome.with_request_diagnostic(),
         cache_state,
     }
 }
@@ -528,16 +548,24 @@ async fn resolve_pdf_url_with_client(
     client: &reqwest_middleware::ClientWithMiddleware,
     url: Url,
 ) -> FulltextStepOutcome<String> {
+    resolve_pdf_response_with_client(client, url)
+        .await
+        .with_request_diagnostic()
+}
+
+async fn resolve_pdf_response_with_client(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    url: Url,
+) -> FulltextStepOutcome<String> {
     let request = crate::sources::apply_no_store(client.get(url.clone()));
     let response = match crate::sources::with_response_body_limit(
         request,
         PDF_MAX_BODY_BYTES,
         ARTICLE_FULLTEXT_API,
     )
-    .send_fulltext(
-        crate::error::SourceContext::retry(crate::error::SourceProvider::SEMANTIC_SCHOLAR),
-        true,
-    )
+    .send_with_source_context(crate::error::SourceContext::retry(
+        crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+    ))
     .await
     {
         Ok(response) => response,

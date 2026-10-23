@@ -405,6 +405,7 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
         self,
         context: SourceContext,
     ) -> Result<reqwest::Response, BioMcpError> {
+        fulltext_diagnostics::record_request(&self, context);
         let observation = literature_retry::applies(context.provider())
             .then(literature_retry::current_observation);
         let request = match observation.as_ref() {
@@ -452,8 +453,9 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
             } else {
                 context
             };
-            error.with_source_context(context)
+            fulltext_diagnostics::annotate_current_error(error.with_source_context(context))
         })?;
+        fulltext_diagnostics::record_response(&response);
         note_stale_cache_serve(&mut response, context.provider().label());
         Ok(response)
     }
