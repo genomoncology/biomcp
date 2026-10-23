@@ -132,9 +132,7 @@ biomcp --json get article --asset-view coverage <id> assets
 
 PMC challenge coverage and blocked downloads both use `pmc_proof_of_work`.
 The older `ncbi_interstitial` condition is accepted as an alias when reading
-JSON coverage and maps to `pmc_proof_of_work`. Blocked rows may carry a stable
-`unavailable-` asset key, but no download `handle`. BioMCP names the file
-without presenting the challenge page as its contents.
+JSON coverage and maps to `pmc_proof_of_work`. Challenge rows carry a stable `unavailable-` asset key and no download `handle`. Other named coverage rows receive an `unavailable-` key when no retrieval route assigned a key. The key identifies the coverage row; it does not promise downloadable bytes. BioMCP names the file without presenting the challenge page as its contents.
 
 A route that answers with a zero-byte body gets the `empty_response`
 outcome: the download fails with an `article_asset_not_retrievable` error
