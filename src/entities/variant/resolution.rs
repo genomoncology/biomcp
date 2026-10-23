@@ -1251,6 +1251,28 @@ pub(crate) struct NormalizedVariantAliases {
     pub rsids: Vec<String>,
 }
 
+
+impl NormalizedVariantAliases {
+    pub(crate) fn retain_source_coordinate(&mut self, source: &SourceVariantIdentity) {
+        if source.genomic_id.trim().is_empty() {
+            return;
+        }
+        let coordinate = crate::entities::GenomicCoordinate {
+            coordinate: source.genomic_id.clone(),
+            genome_build: if source.genome_build.trim().is_empty() {
+                "unknown".into()
+            } else {
+                source.genome_build.clone()
+            },
+            source: "myvariant".into(),
+            provenance: Some("resolved source identity".into()),
+        };
+        if !self.genomic_coordinates.contains(&coordinate) {
+            self.genomic_coordinates.push(coordinate);
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct SourceVariantIdentity {
     pub genomic_id: String,
