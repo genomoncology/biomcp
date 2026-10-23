@@ -28,16 +28,17 @@ fn text_evidence(
     let Some(gene) = requested.gene.as_deref() else {
         return false;
     };
-    let text = normalize_article_search_text(text);
-    if !anchor_matches_text(&text, &gene.to_ascii_lowercase()) {
+    let normalized_text = normalize_article_search_text(text);
+    if !anchor_matches_text(&normalized_text, &gene.to_ascii_lowercase()) {
         return false;
     }
     if aliases
-        .coding_changes
+        .protein_changes
         .iter()
+        .chain(&aliases.coding_changes)
         .chain(&aliases.genomic_ids)
         .chain(&aliases.rsids)
-        .any(|alias| anchor_matches_text(&text, &alias.to_ascii_lowercase()))
+        .any(|alias| anchor_matches_text(&normalized_text, &alias.to_ascii_lowercase()))
     {
         return true;
     }
@@ -48,7 +49,7 @@ fn text_evidence(
         Regex::new(r"(?i)\b[a-z*]+[0-9]+(?:_[a-z*]*[0-9]+)?[a-z0-9*]*")
             .expect("valid protein spelling regex")
     });
-    protein.find_iter(&text).any(|matched| {
+    protein.find_iter(text).any(|matched| {
         crate::entities::variant::normalize_protein_change(matched.as_str()).is_some_and(
             |observed| {
                 aliases.protein_changes.iter().any(|alias| {
