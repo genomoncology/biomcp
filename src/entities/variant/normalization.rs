@@ -68,6 +68,28 @@ pub struct VariantNormalizationServiceResult {
     pub message: Option<String>,
 }
 
+impl VariantNormalizationServiceResult {
+    pub(crate) fn display_genomic_coordinates(&self) -> Vec<crate::entities::GenomicCoordinate> {
+        let mut records = self.genomic_descriptions.clone();
+        for value in self
+            .normalized_description
+            .iter()
+            .chain(&self.corrected_description)
+            .filter(|value| value.contains(":g."))
+        {
+            if !records.iter().any(|record| record.coordinate == *value) {
+                records.push(crate::entities::GenomicCoordinate {
+                    coordinate: value.clone(),
+                    genome_build: "unknown".into(),
+                    source: self.service.clone(),
+                    provenance: Some("normalized description without assembly evidence".into()),
+                });
+            }
+        }
+        records
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VariantNormalizationStatus {

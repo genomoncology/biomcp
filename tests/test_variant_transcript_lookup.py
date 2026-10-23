@@ -72,6 +72,8 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
                         "primary_assembly_loci": {"grch38": {"hgvs_genomic_description": FIXTURE["genomic"]}},
                     }})
                 return self.reply({"message": "Authored unavailable normalizer control"}, 404)
+            if path == "/normalize/NM_000000.0:c.1A>T":
+                return self.reply({"normalized_description": FIXTURE["genomic"]})
             if path.startswith("/normalize/"):
                 return self.reply({"message": "Authored unavailable normalizer control"}, 404)
             if path == "/allele":
@@ -92,6 +94,15 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
                 return self.reply({"total": 1, "hits": [hit]})
             misses.append(self.path)
             self.reply({"error": "Unexpected fixture request"}, 404)
+
+        def do_POST(self) -> None:  # noqa: N802
+            body = self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode()
+            if urlsplit(self.path).path != "/alleles":
+                misses.append(self.path)
+                return self.reply({}, 404)
+            return self.reply([{"@id": "http://reg.genome.network/allele/CA011561",
+                                "genomicAlleles": [{"hgvs": [FIXTURE["genomic"]], "referenceGenome": "GRCh38"}]}
+                               for _ in body.splitlines()])
 
         def log_message(self, *_args: object) -> None:
             pass
@@ -134,6 +145,17 @@ def run_lookup(tmp_path: Path, identifier: str, normalizer: str, case: str) -> N
             assert normalized.returncode == 0, normalized.stdout + normalized.stderr
             aggregate = json.loads(normalized.stdout)
             assert FIXTURE["genomic"] in aggregate["results"]
+            unknown_command = [binary, "--no-cache", "variant", "normalize", "mutalyzer", "NM_000000.0:c.1A>T"]
+            unknown_json = subprocess.run([*unknown_command, "--json"], env=env, cwd=REPO_ROOT,
+                                          capture_output=True, text=True, timeout=HANG_TIMEOUT)
+            assert unknown_json.returncode == 0, unknown_json.stdout + unknown_json.stderr
+            unknown = json.loads(unknown_json.stdout)
+            assert unknown["genomic_coordinates"][0]["genome_build"] == "unknown"
+            assert unknown["services"][0]["genomic_descriptions"] == []
+            unknown_markdown = subprocess.run(unknown_command, env=env, cwd=REPO_ROOT,
+                                              capture_output=True, text=True, timeout=HANG_TIMEOUT)
+            assert unknown_markdown.returncode == 0, unknown_markdown.stdout + unknown_markdown.stderr
+            assert f"Genomic coordinate (unknown): {FIXTURE['genomic']}" in unknown_markdown.stdout
             assert aggregate["genomic_coordinates"] == [{
                 "coordinate": FIXTURE["genomic"], "genome_build": "GRCh38",
                 "source": "VariantValidator", "provenance": "primary_assembly_loci.grch38",

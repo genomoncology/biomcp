@@ -30,26 +30,7 @@ pub(super) fn render(
             }
         }
         if let crate::entities::variant::VariantNormalizationAggregate::Legacy(service) = service {
-            for coordinate in &service.genomic_descriptions {
-                if !genomic_coordinates.contains(coordinate) {
-                    genomic_coordinates.push(coordinate.clone());
-                }
-            }
-            if let Some(value) = service
-                .normalized_description
-                .as_ref()
-                .filter(|value| value.contains(":g."))
-                && !service
-                    .genomic_descriptions
-                    .iter()
-                    .any(|record| record.coordinate == *value)
-            {
-                let coordinate = crate::entities::GenomicCoordinate {
-                    coordinate: value.clone(),
-                    genome_build: "unknown".into(),
-                    source: service.service.clone(),
-                    provenance: Some("normalized description without assembly evidence".into()),
-                };
+            for coordinate in service.display_genomic_coordinates() {
                 if !genomic_coordinates.contains(&coordinate) {
                     genomic_coordinates.push(coordinate);
                 }

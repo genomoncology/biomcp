@@ -455,9 +455,10 @@ pub fn variant_normalization_markdown(result: &VariantNormalizationResponse) -> 
                 if let Some(value) = service.transcript_description.as_deref() {
                     out.push_str(&format!("Transcript description: {value}\n"));
                 }
-                if !service.genomic_descriptions.is_empty() {
+                let coordinates = service.display_genomic_coordinates();
+                if !coordinates.is_empty() {
                     out.push_str("Genomic descriptions:\n");
-                    for value in &service.genomic_descriptions {
+                    for value in &coordinates {
                         let provenance = value
                             .provenance
                             .as_deref()

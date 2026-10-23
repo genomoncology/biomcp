@@ -185,17 +185,6 @@ fn result_from_value(value: &serde_json::Value) -> VariantNormalizationServiceRe
         };
     }
 
-    let genomic_descriptions = normalized_description
-        .iter()
-        .chain(string_field(value, "corrected_description").iter())
-        .filter(|description| description.contains(":g."))
-        .map(|coordinate| crate::entities::GenomicCoordinate {
-            coordinate: coordinate.clone(),
-            genome_build: "unknown".into(),
-            source: "mutalyzer".into(),
-            provenance: Some("normalized description without assembly evidence".into()),
-        })
-        .collect();
     VariantNormalizationServiceResult {
         service: VariantNormalizationService::Mutalyzer.as_str().to_string(),
         status: VariantNormalizationStatus::Success,
@@ -204,7 +193,7 @@ fn result_from_value(value: &serde_json::Value) -> VariantNormalizationServiceRe
         corrected_description: string_field(value, "corrected_description"),
         transcript_description: None,
         protein: value.get("protein").cloned(),
-        genomic_descriptions,
+        genomic_descriptions: Vec::new(),
         warnings,
         message: None,
     }
