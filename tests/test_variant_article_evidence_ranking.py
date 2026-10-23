@@ -69,3 +69,32 @@ def test_variant_article_lexical_evidence_precedes_source_agreement(tmp_path):
             "81004", "81002", "81001", "81003", "81005"]
         assert all(row.get("identity", {}).get("status") != "confirmed"
                    for row in payload["results"])
+
+
+@pytest.mark.parametrize("requested,long_form", [
+    ("EGFR E746_A750del", "p.Glu746_Ala750del"),
+    ("FANCL T367Nfs*13", "p.Thr367AsnfsTer13"),
+])
+def test_complex_variant_title_and_abstract_use_the_same_supported_spellings(
+    tmp_path, requested, long_form,
+):
+    gene = requested.split()[0]
+    rows = [
+        {"pmid": "82001", "title": f"{gene} signaling", "abstract": "General pathways"},
+        {"pmid": "82002", "title": f"{gene} signaling", "abstract": f"{gene} {long_form} response"},
+        {"pmid": "82003", "title": f"{gene} {long_form} response", "abstract": "General pathways"},
+    ]
+    for index, row in enumerate(rows):
+        row["provenance"] = [{"route": "strict", "source": "europepmc", "native_position": index}]
+    with akt1_replay(tmp_path, cache=False, requested=requested,
+                     capture={"pubmed_order": [], "rows": rows}) as replay:
+        result = subprocess.run(
+            [os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
+             "--json", "--no-cache", "variant", "articles", requested, "--limit", "3"],
+            env=replay.env, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert [row["pmid"] for row in payload["results"]] == ["82003", "82002", "82001"]
+        assert all(row.get("identity", {}).get("status") != "confirmed"
+                   for row in payload["results"])
