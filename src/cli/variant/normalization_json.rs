@@ -32,21 +32,19 @@ pub(super) fn render(
                 .normalized_description
                 .as_ref()
                 .filter(|value| value.contains(":g."))
-            {
-                if !service
+                && !service
                     .genomic_descriptions
                     .iter()
                     .any(|record| record.coordinate == *value)
-                {
-                    let coordinate = crate::entities::GenomicCoordinate {
-                        coordinate: value.clone(),
-                        genome_build: "unknown".into(),
-                        source: service.service.clone(),
-                        provenance: Some("normalized description without assembly evidence".into()),
-                    };
-                    if !genomic_coordinates.contains(&coordinate) {
-                        genomic_coordinates.push(coordinate);
-                    }
+            {
+                let coordinate = crate::entities::GenomicCoordinate {
+                    coordinate: value.clone(),
+                    genome_build: "unknown".into(),
+                    source: service.service.clone(),
+                    provenance: Some("normalized description without assembly evidence".into()),
+                };
+                if !genomic_coordinates.contains(&coordinate) {
+                    genomic_coordinates.push(coordinate);
                 }
             }
         }
