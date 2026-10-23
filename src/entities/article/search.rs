@@ -226,7 +226,8 @@ where
     let Some(execution) = execution else {
         return with_federated_source_timeout(source, future).await;
     };
-    let Some(started) = execution.reserve(route) else {
+    let Some(started) = execution.reserve_provider(route, variant_budget_source_name(source))
+    else {
         execution.record_not_attempted(route, variant_budget_source_name(source));
         return FederatedSourceOutcome::Unavailable {
             error: None,

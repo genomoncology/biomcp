@@ -743,7 +743,8 @@ async fn search_page_with_execution(
     let mut exhaustive = false;
     let mut diagnostics = Vec::new();
     while provider_offset < MAX_CANDIDATES {
-        let started = execution.and_then(|execution| execution.reserve("resolution"));
+        let started =
+            execution.and_then(|execution| execution.reserve_provider("resolution", "myvariant"));
         if let Some(execution) = execution
             && started.is_none()
         {
