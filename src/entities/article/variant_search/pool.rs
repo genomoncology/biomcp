@@ -462,10 +462,11 @@ pub(super) async fn execute(
     };
     if loaded.as_ref().is_some_and(StoredPool::complete) {
         let snapshot = existing.as_ref().expect("decoded stored pool");
-        if offset == 0 && continuation.is_none() {
-            if let Err(error) = store.activate(snapshot) {
-                crate::cache::warn_local_http_cache("article-pool-activate", &error);
-            }
+        if offset == 0
+            && continuation.is_none()
+            && let Err(error) = store.activate(snapshot)
+        {
+            crate::cache::warn_local_http_cache("article-pool-activate", &error);
         }
         let pool = loaded.take().expect("complete stored pool");
         let next =
@@ -483,25 +484,22 @@ pub(super) async fn execute(
                 .collect::<Vec<ArticleCandidate>>()
         })
         .unwrap_or_default();
-    if persistent {
-        if let Ok(Some(value)) = store.progress(&acquisition_key, "literal_pubmed") {
-            if let Ok(progress) = serde_json::from_value(value) {
-                execution.set_literal_pubmed_progress(Some(progress));
-            }
-        }
+    if persistent
+        && let Ok(Some(value)) = store.progress(&acquisition_key, "literal_pubmed")
+        && let Ok(progress) = serde_json::from_value(value)
+    {
+        execution.set_literal_pubmed_progress(Some(progress));
     }
-    if persistent {
-        if let Ok(entries) = store.all_progress(&acquisition_key) {
-            let mut progress = BTreeMap::new();
-            for (key, value) in entries {
-                if let Some(provider_key) = key.strip_prefix("provider:") {
-                    if let Ok(value) = serde_json::from_value(value) {
-                        progress.insert(provider_key.to_owned(), value);
-                    }
-                }
+    if persistent && let Ok(entries) = store.all_progress(&acquisition_key) {
+        let mut progress = BTreeMap::new();
+        for (key, value) in entries {
+            if let Some(provider_key) = key.strip_prefix("provider:")
+                && let Ok(value) = serde_json::from_value(value)
+            {
+                progress.insert(provider_key.to_owned(), value);
             }
-            execution.restore_provider_progress(progress);
         }
+        execution.restore_provider_progress(progress);
     }
     let mut acquisition_execution = execution.clone();
     if existing.is_some() {
@@ -520,25 +518,23 @@ pub(super) async fn execute(
         retained,
     )
     .await?;
-    if persistent {
-        if let Some(progress) = execution.literal_pubmed_progress() {
-            if let Ok(value) = serde_json::to_value(progress) {
-                if let Err(error) = store.save_progress(&acquisition_key, "literal_pubmed", value) {
-                    crate::cache::warn_local_http_cache("article-progress-write", &error);
-                }
-            }
-        }
+    if persistent
+        && let Some(progress) = execution.literal_pubmed_progress()
+        && let Ok(value) = serde_json::to_value(progress)
+        && let Err(error) = store.save_progress(&acquisition_key, "literal_pubmed", value)
+    {
+        crate::cache::warn_local_http_cache("article-progress-write", &error);
     }
     if persistent {
         for (provider_key, progress) in execution.all_provider_progress() {
-            if let Ok(value) = serde_json::to_value(progress) {
-                if let Err(error) = store.save_progress(
+            if let Ok(value) = serde_json::to_value(progress)
+                && let Err(error) = store.save_progress(
                     &acquisition_key,
                     &format!("provider:{provider_key}"),
                     value,
-                ) {
-                    crate::cache::warn_local_http_cache("article-provider-progress-write", &error);
-                }
+                )
+            {
+                crate::cache::warn_local_http_cache("article-provider-progress-write", &error);
             }
         }
     }
@@ -565,10 +561,12 @@ pub(super) async fn execute(
         } else {
             (pool, published.then(|| snapshot.id.clone()))
         };
-    if offset == 0 && continuation.is_none() && published {
-        if let Err(error) = store.activate(&snapshot) {
-            crate::cache::warn_local_http_cache("article-pool-activate", &error);
-        }
+    if offset == 0
+        && continuation.is_none()
+        && published
+        && let Err(error) = store.activate(&snapshot)
+    {
+        crate::cache::warn_local_http_cache("article-pool-activate", &error);
     }
     let next = page_offset
         .saturating_add(limit.min(selected_pool.ordered.len().saturating_sub(page_offset)));

@@ -15,7 +15,7 @@ import pytest
 from hang_guard import HANG_TIMEOUT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
+from replay_env import REPO_ROOT, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
@@ -122,8 +122,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     )}
     providers.update({"BIOMCP_MYVARIANT_BASE": origin + "/v1",
                       "BIOMCP_PUBMED_BASE": origin + "/entrez/eutils"})
-    env = (retained_cache_env(tmp_path, providers, origin) if case == "provider_resume"
-           else isolated_command_env(tmp_path, providers, origin))
+    env = retained_cache_env(tmp_path, providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     found: set[str] = set()
     try:
