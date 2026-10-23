@@ -199,7 +199,8 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         assert payload["resolution"]["normalized_aliases"]["genomic_coordinates"] == [{
             "coordinate": hit["_id"], "genome_build": "GRCh38", "source": "requested",
             "provenance": "requested variant identity",
-        }]
+        }, {"coordinate": hit["_id"], "genome_build": "GRCh37", "source": "myvariant",
+            "provenance": "resolved source identity"}]
         assert payload["resolution"]["status"] == "ambiguous"
         return
     assert payload["resolution"]["status"] == "resolved", payload
