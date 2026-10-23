@@ -413,7 +413,7 @@ pub(super) async fn acquire_literal_pubmed(
             candidate_with_provenance(row, LITERAL_PUBMED_ROUTE, "pubmed", vec![query.into()])
         })
         .collect::<Vec<_>>();
-    hydrate_literal_pubmed(&mut candidates, execution).await;
+    hydrate_literal_pubmed(&mut candidates, query, execution).await;
     let events = execution.events();
     let mut status = provider_statuses_for_route(LITERAL_PUBMED_ROUTE, &events);
     if !progress.complete {
@@ -543,9 +543,34 @@ async fn enumerate_literal_pubmed(
 
 async fn hydrate_literal_pubmed(
     candidates: &mut [ArticleCandidate],
+    query: &str,
     execution: &VariantArticleExecutionContext,
 ) {
     if candidates.is_empty() {
+        return;
+    }
+    let query_identity = format!("literal-metadata:{query}");
+    let (key, retained) = retained_provider_progress(
+        Some(execution),
+        LITERAL_PUBMED_ROUTE,
+        "pubmed",
+        &query_identity,
+    );
+    let mut hydrated = retained
+        .restored_rows()
+        .into_iter()
+        .map(|row| (row.pmid.clone(), row))
+        .collect::<BTreeMap<_, _>>();
+    for candidate in candidates.iter_mut() {
+        if let Some(row) = hydrated.get(&candidate.row.pmid) {
+            candidate.row = row.clone();
+        }
+    }
+    let expected_rows = candidates.len();
+    if candidates
+        .iter()
+        .all(|candidate| !candidate.row.title.is_empty())
+    {
         return;
     }
     let (client, mut first_unit) = match super::super::backends::variant_article_client(
@@ -562,8 +587,12 @@ async fn hydrate_literal_pubmed(
     for chunk in candidates.chunks_mut(super::super::PUBMED_PAGE_SIZE) {
         let ids = chunk
             .iter()
+            .filter(|candidate| candidate.row.title.is_empty())
             .map(|candidate| candidate.row.pmid.clone())
             .collect::<Vec<_>>();
+        if ids.is_empty() {
+            continue;
+        }
         execution.add_route_unit(LITERAL_PUBMED_ROUTE, "pubmed");
         let result = super::super::backends::variant_article_request(
             Some(execution),
@@ -582,6 +611,7 @@ async fn hydrate_literal_pubmed(
                 for candidate in chunk {
                     if let Some(mut row) = rows.remove(&candidate.row.pmid) {
                         row.source_local_position = candidate.row.source_local_position;
+                        hydrated.insert(row.pmid.clone(), row.clone());
                         candidate.row = row;
                     }
                 }
@@ -589,6 +619,16 @@ async fn hydrate_literal_pubmed(
             },
         )
         .await;
+        let rows = hydrated.values().cloned().collect::<Vec<_>>();
+        save_provider_progress(
+            Some(execution),
+            &key,
+            &rows,
+            0,
+            None,
+            Some(expected_rows),
+            hydrated.len() >= expected_rows,
+        );
         if !matches!(result, Ok(Some(()))) {
             break;
         }
