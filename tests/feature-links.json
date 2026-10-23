@@ -52,6 +52,9 @@
     "tests/test_article_fulltext_license.py": {
       "feature": "article"
     },
+    "tests/test_article_fulltext_tables.py": {
+      "feature": "article"
+    },
     "tests/test_article_fulltext_quality.py": {
       "feature": "article"
     },
