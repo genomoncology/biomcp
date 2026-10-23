@@ -77,6 +77,7 @@ pub(super) enum PdfDiscoveryAttempt {
 struct FulltextAttemptState {
     healthy_sources: Vec<String>,
     failure: Option<BioMcpError>,
+    failures: Vec<String>,
     best_partial: Option<ArticleFulltextCoverageKind>,
     attempts: Vec<ArticleFulltextAttempt>,
 }
@@ -89,6 +90,7 @@ impl FulltextAttemptState {
     }
 
     fn record_failure(&mut self, err: BioMcpError) {
+        self.failures.push(err.to_string());
         if self.failure.is_none() {
             self.failure = Some(err);
         }
@@ -722,13 +724,15 @@ pub(super) async fn resolve_fulltext(
     if resolved_pmcid.is_none() {
         match NcbiIdConverterClient::new() {
             Ok(ncbi) => {
-                let result = if let Some(pmid) = article.pmid.as_deref() {
+                let result = super::fulltext_budget::route("NCBI ID Converter", async {
+                    if let Some(pmid) = article.pmid.as_deref() {
                     ncbi.pmid_to_pmcid(pmid).await
                 } else if let Some(doi) = article.doi.as_deref() {
                     ncbi.doi_to_pmcid(doi).await
                 } else {
                     Ok(None)
-                };
+                    }
+                }).await;
                 match result {
                     Ok(value) => {
                         identity_bridge_was_healthy = true;
@@ -748,7 +752,8 @@ pub(super) async fn resolve_fulltext(
     for attempt in xml_fulltext_attempts(article, resolved_pmcid.as_deref()) {
         let source = xml_source_metadata(attempt.winner());
         let mut preprint_metadata = None;
-        let fetched = match attempt {
+        let fetched = super::fulltext_budget::route(&source.source, async {
+            match attempt {
             XmlFulltextAttempt::PreprintJats => {
                 fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
                     .await
@@ -809,7 +814,8 @@ pub(super) async fn resolve_fulltext(
                     continue;
                 }
             },
-        };
+            }
+        }).await;
 
         let Some((xml, oa_manifest)) = (match fetched {
             Ok(value) => value,
@@ -964,7 +970,12 @@ pub(super) async fn resolve_fulltext(
 
     if let Some(pmcid) = resolved_pmcid.as_deref() {
         let source = html_source_metadata();
-        let resolution = try_resolve_html(pmcid, requested_id).await;
+        let resolution = super::fulltext_budget::route("PMC HTML", async {
+            Ok(try_resolve_html(pmcid, requested_id).await)
+        }).await.unwrap_or_else(|error| HtmlResolution {
+            outcome: FulltextStepOutcome::Failed(error),
+            cache_state: ArticleFulltextCacheState::Bypass,
+        });
         match resolution.outcome {
             FulltextStepOutcome::Data(classified) => {
                 merge_source_abstract(article, classified.abstract_text.clone());
@@ -1112,7 +1123,9 @@ pub(super) async fn resolve_fulltext(
             );
             state.record_failure(err);
         }
-        PdfDiscoveryAttempt::Data(pdf_url) => match try_resolve_pdf(&pdf_url, requested_id).await {
+        PdfDiscoveryAttempt::Data(pdf_url) => match super::fulltext_budget::route("open PDF", async {
+            Ok(try_resolve_pdf(&pdf_url, requested_id).await)
+        }).await.unwrap_or_else(FulltextStepOutcome::Failed) {
             FulltextStepOutcome::Data(text) => {
                 state.record_attempt(
                     &pdf_source,
@@ -1224,6 +1237,11 @@ pub(super) async fn resolve_fulltext(
                 Some(empty_fulltext_note(&state.healthy_sources))
             }
         });
+    if !state.failures.is_empty() {
+        article.full_text_note.as_mut().expect("failure note").push_str(
+            &format!(" Attempts: {}", state.failures.join("; ")),
+        );
+    }
     article
         .section_outcomes
         .complete("fulltext", final_fulltext_outcome(&state));

@@ -33,7 +33,7 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
                     or (held == "semantic_scholar" and "/graph/" in path)
                     or (held == "fulltext" and path != "/search"
                         and "biocjson" not in path and "/graph/" not in path
-                        and "efetch" not in path)):
+                        and not ("efetch" in path and "db=pubmed" in self.path))):
                 release.wait(60)
                 return
             code, content_type = 200, "application/json"
