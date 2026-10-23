@@ -967,6 +967,10 @@ impl VariantArticleExecutionContext {
             });
     }
 
+    pub(crate) fn record_provider_reuse(&self, route: &str, source: &str) {
+        self.record(route, source, Instant::now(), "ok", 0);
+    }
+
     pub(crate) fn record_error(
         &self,
         route: &str,

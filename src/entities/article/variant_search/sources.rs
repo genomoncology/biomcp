@@ -2,11 +2,53 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::stored::StoredArticleRow;
 use super::*;
 use crate::sources::pubmed::{PubMedClient, PubMedESearchParams, PubMedSearchSort};
 
 const LITERAL_PUBMED_ROUTE: &str = "literal_pubmed";
 const PUBMED_RETRIEVABLE_IDS: usize = 10_000;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub(crate) struct ProviderProgress {
+    pub rows: Vec<StoredArticleRow>,
+    pub offset: usize,
+    pub cursor: Option<String>,
+    pub total: Option<usize>,
+    pub complete: bool,
+}
+
+impl ProviderProgress {
+    pub(crate) fn restored_rows(&self) -> Vec<ArticleSearchResult> {
+        self.rows
+            .iter()
+            .cloned()
+            .map(StoredArticleRow::restore)
+            .collect()
+    }
+
+    pub(crate) fn capture(
+        rows: &[ArticleSearchResult],
+        offset: usize,
+        cursor: Option<String>,
+        total: Option<usize>,
+        complete: bool,
+    ) -> Self {
+        Self {
+            rows: rows.iter().map(StoredArticleRow::capture).collect(),
+            offset,
+            cursor,
+            total,
+            complete,
+        }
+    }
+}
+
+pub(crate) fn provider_progress_key(route: &str, source: &str, query: &str) -> String {
+    // A provider's query semantics, rather than its enclosing union strategy,
+    // bind successful membership and its native continuation.
+    format!("{source}\u{1f}{route}\u{1f}{query}")
+}
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct LiteralPubMedProgress {

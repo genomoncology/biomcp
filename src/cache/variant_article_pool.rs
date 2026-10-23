@@ -165,6 +165,38 @@ impl PoolStore {
         Ok((value.expires_ms > sqlite::now_ms()).then_some(value.payload))
     }
 
+    pub(crate) fn all_progress(
+        &self,
+        query_key: &str,
+    ) -> io::Result<std::collections::BTreeMap<String, Value>> {
+        if crate::sources::cache_is_bypassed() {
+            return Ok(std::collections::BTreeMap::new());
+        }
+        let mut store = sqlite::Store::open(&self.config.cache_root)?;
+        let entries = store.variants(PROGRESS, query_key)?;
+        let mut values = std::collections::BTreeMap::new();
+        let prefix = format!("{query_key}:");
+        for entry in entries {
+            let Some(source) = entry.key.strip_prefix(&prefix) else {
+                continue;
+            };
+            let Some(record) = store.get(PROGRESS, &entry.key)? else {
+                continue;
+            };
+            let value: Snapshot = serde_json::from_slice(&record.body).map_err(io::Error::other)?;
+            if value.schema_version != SCHEMA_VERSION || value.query_key != query_key {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "article source progress version mismatch",
+                ));
+            }
+            if value.expires_ms > sqlite::now_ms() {
+                values.insert(source.to_owned(), value.payload);
+            }
+        }
+        Ok(values)
+    }
+
     pub(crate) fn save_progress(
         &self,
         query_key: &str,

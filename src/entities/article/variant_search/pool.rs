@@ -413,6 +413,13 @@ pub(super) async fn execute(
         return Err(super::page::unavailable());
     }
     let key = key.unwrap_or_default();
+    let acquisition_key = query_key(
+        input,
+        &requested,
+        VariantArticleStrategy::Union,
+        VariantArticleVerificationOptions::default(),
+    )
+    .unwrap_or_default();
     let store = PoolStore::new(crate::cache::resolve_cache_config()?);
     let continuation = page_token
         .map(|token| super::page::Continuation::decode(token, &key, offset))
@@ -471,10 +478,23 @@ pub(super) async fn execute(
         })
         .unwrap_or_default();
     if persistent {
-        if let Ok(Some(value)) = store.progress(&key, "literal_pubmed") {
+        if let Ok(Some(value)) = store.progress(&acquisition_key, "literal_pubmed") {
             if let Ok(progress) = serde_json::from_value(value) {
                 execution.set_literal_pubmed_progress(Some(progress));
             }
+        }
+    }
+    if persistent {
+        if let Ok(entries) = store.all_progress(&acquisition_key) {
+            let mut progress = BTreeMap::new();
+            for (key, value) in entries {
+                if let Some(provider_key) = key.strip_prefix("provider:") {
+                    if let Ok(value) = serde_json::from_value(value) {
+                        progress.insert(provider_key.to_owned(), value);
+                    }
+                }
+            }
+            execution.restore_provider_progress(progress);
         }
     }
     let mut acquisition_execution = execution.clone();
@@ -497,8 +517,21 @@ pub(super) async fn execute(
     if persistent {
         if let Some(progress) = execution.literal_pubmed_progress() {
             if let Ok(value) = serde_json::to_value(progress) {
-                if let Err(error) = store.save_progress(&key, "literal_pubmed", value) {
+                if let Err(error) = store.save_progress(&acquisition_key, "literal_pubmed", value) {
                     crate::cache::warn_local_http_cache("article-progress-write", &error);
+                }
+            }
+        }
+    }
+    if persistent {
+        for (provider_key, progress) in execution.all_provider_progress() {
+            if let Ok(value) = serde_json::to_value(progress) {
+                if let Err(error) = store.save_progress(
+                    &acquisition_key,
+                    &format!("provider:{provider_key}"),
+                    value,
+                ) {
+                    crate::cache::warn_local_http_cache("article-provider-progress-write", &error);
                 }
             }
         }
