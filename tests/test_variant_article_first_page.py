@@ -47,6 +47,10 @@ def test_variant_first_page_attempts_independent_provider_work(name, strategy, t
     overlap = []
     result, _ = execute_case(control, tmp_path, overlap=overlap)
     assert overlap == [True], "strict provider work waited for an independent query"
+    strict_s2 = next(row for row in result["source_status"]
+                     if row["route"] == "strict" and row["source"] == "semanticscholar")
+    assert not any(strict_s2["work"][kind] for kind in
+                   ("degraded", "unavailable", "timed_out")), strict_s2
     assert len(result["results"]) == 50
     assert not [row for row in result["source_status"] if row["work"]["not_attempted"]]
     assert not [row for row in result["source_status"] if "invocation_deadline" in row["reason_codes"]]

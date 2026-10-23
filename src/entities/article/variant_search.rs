@@ -7131,6 +7131,40 @@ mod tests {
         }
     }
 
+    // Concurrency needs this inner boundary: a peer can stop admission while an
+    // already admitted provider response is being committed.
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn stopped_strict_admission_keeps_inflight_rows() {
+        let execution = VariantArticleExecutionContext::single();
+        let stopping_peer = execution.clone();
+        let mut fixture = TestHttpFixture::spawn(move |_| {
+            stopping_peer.stop("strict");
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"total":1,"data":[{"paperId":"admitted-row","externalIds":{"PubMed":"71000030"},"title":"Admitted response survives a peer stopping the route","year":2026}]}"#,
+            ))
+        })
+        .await;
+        let mut env = gene_aliases_disabled_env();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_DISABLE_SOURCES", "mygene-info,pubmed,europe-pmc,pubtator3");
+        let (rows, _, succeeded, _) = planned_candidates(
+            "BRAF p.V600E",
+            &resolved_context(),
+            VariantArticleStrategy::Lexical,
+            &["BRAF p.V600E".into()],
+            &execution,
+        )
+        .await;
+        assert!(execution.route_stopped("strict"));
+        assert!(succeeded, "the admitted response succeeded");
+        assert!(rows.iter().any(|row| row.row.pmid == "71000030"));
+        fixture.finish().unwrap();
+    }
+
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn degraded_strict_leg_partials_mark_the_route_incomplete() {

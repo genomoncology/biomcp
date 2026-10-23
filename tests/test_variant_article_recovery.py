@@ -65,7 +65,7 @@ def execute_case(case, tmp_path, *, markdown=False, overlap=None):
                         second_bulk.set()
                 if first:
                     # Wait for an independent request, with a fixture escape hatch.
-                    overlap.append(second_bulk.wait(timeout=1))
+                    overlap.append(second_bulk.wait(timeout=HANG_TIMEOUT))
             if t.path == "/query":
                 body = {
                     "total": 1,
@@ -355,6 +355,7 @@ def execute_case(case, tmp_path, *, markdown=False, overlap=None):
         )
         elapsed = time.monotonic() - started
     finally:
+        second_bulk.set()
         s.shutdown()
         s.server_close()
         th.join(timeout=HANG_TIMEOUT)
