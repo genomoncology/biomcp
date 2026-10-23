@@ -11,7 +11,7 @@ use super::{VariantArticleCandidateTraceRecord, VariantArticleProvenance, Varian
 use super::super::identity_verification::{VariantArticleIdentity, VariantArticleVerificationOptions};
 
 /// This wrapper retains the fields deliberately omitted by public article JSON.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub(super) struct StoredCandidate {
     row: ArticleSearchResult,
     normalized_title: String,
@@ -98,7 +98,7 @@ pub(super) fn query_key(
 
 /// Identity observations have a compact public serializer. Store their full
 /// internal graph here so restoration cannot discard typed linkage fields.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StoredIdentity {
     #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     status: &'static str,
@@ -113,7 +113,7 @@ struct StoredIdentity {
     incomplete: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StoredObservation {
     #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     source: &'static str,
@@ -173,13 +173,13 @@ impl From<StoredObservation> for super::super::identity_verification::VariantArt
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub(super) struct StoredPool {
     context: StoredContext,
     ordered: Vec<StoredRow>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StoredContext {
     gene_symbol_coverage: super::VariantArticleGeneSymbolCoverage,
     alias_coverage: Vec<super::VariantArticleAliasCoverage>,
@@ -196,7 +196,7 @@ struct StoredContext {
     debug_plan: Option<super::VariantArticleDebugPlan>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StoredRow {
     candidate: StoredCandidate,
     matched_aliases: Vec<String>,
@@ -255,6 +255,7 @@ impl StoredPool {
             let candidate: ArticleCandidate = stored.candidate.into();
             super::VariantArticleRow {
                 article: candidate.row, requested_variant: context.requested_variant.clone(),
+                genomic_coordinates: context.resolution.normalized_aliases.genomic_coordinates.clone(),
                 matched_aliases: stored.matched_aliases, match_reason: stored.match_reason,
                 alias_matches: stored.alias_matches, retrieval_routes: stored.retrieval_routes,
                 sources: stored.sources, rank: stored.rank, provenance: candidate.variant_provenance,
@@ -348,11 +349,9 @@ pub(super) async fn execute(
         let token = Some(super::page::Continuation::encode(&snapshot.id, &key, next));
         return pool.into_response(page_offset, limit, token, debug);
     }
-    let retained = loaded.as_ref().map(|pool| pool.ordered.iter().map(|row| {
-        // The stored DTO is typed and validated before any confirmation is reused.
-        serde_json::from_value::<StoredCandidate>(serde_json::to_value(&row.candidate).expect("stored candidate serializes"))
-            .map(Into::into)
-    }).collect::<Result<Vec<ArticleCandidate>, _>>()).transpose().map_err(|_| super::page::unavailable())?.unwrap_or_default();
+    let retained = loaded.as_ref().map(|pool| pool.ordered.iter()
+        .map(|row| row.candidate.clone().into()).collect::<Vec<ArticleCandidate>>())
+        .unwrap_or_default();
     if persistent {
         if let Ok(Some(value)) = store.progress(&key, "literal_pubmed") {
             if let Ok(progress) = serde_json::from_value(value) {

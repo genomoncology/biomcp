@@ -1,5 +1,7 @@
 //! Rank captured variant evidence without changing identity confirmation.
 
+pub(super) const RANKING_VERSION: u32 = 1;
+
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 

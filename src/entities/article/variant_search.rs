@@ -1,6 +1,5 @@
 //! Variant-specific article route union, provenance, ranking, and pagination.
 
-use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{
     Arc, Mutex,
@@ -10,6 +9,9 @@ use std::time::Instant;
 
 mod merge;
 pub(super) mod sources;
+mod pool;
+mod page;
+mod rank;
 
 // Keep atomic budget updates available on the declared minimum Rust version.
 // AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
@@ -51,7 +53,7 @@ use crate::entities::variant::{
 use crate::error::BioMcpError;
 use clap::ValueEnum;
 use futures::{StreamExt, stream};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::backends::{
     search_europepmc_page_with_context, search_pubmed_page_with_context,
@@ -87,7 +89,7 @@ use super::{
 const MAX_EXACT_ALIASES: usize = 10;
 const LEGACY_DISCOVERY_ALIAS_LIMIT: usize = 16;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VariantArticleStrategy {
     #[default]
@@ -97,7 +99,7 @@ pub enum VariantArticleStrategy {
     Exact,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct VariantArticleProvenance {
     pub route: String,
     pub source: String,
@@ -107,7 +109,7 @@ pub struct VariantArticleProvenance {
     pub native_position: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VariantArticleSourceStatusKind {
     Ok,
@@ -118,7 +120,7 @@ pub enum VariantArticleSourceStatusKind {
     NotAttempted,
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VariantArticleSourceWork {
     pub planned: usize,
     pub ok: usize,
@@ -128,7 +130,7 @@ pub struct VariantArticleSourceWork {
     pub not_attempted: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleSourceStatus {
     pub route: String,
     pub source: String,
@@ -136,6 +138,7 @@ pub struct VariantArticleSourceStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     pub work: VariantArticleSourceWork,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::list")]
     pub reason_codes: Vec<&'static str>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub omitted_aliases: Vec<String>,
@@ -172,14 +175,15 @@ pub struct VariantArticleRow {
     pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleAliasMatch {
     pub alias: String,
     pub source_transcript: Option<String>,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub reason: &'static str,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CanonicalEquivalenceStatus {
     Resolved,
@@ -189,7 +193,7 @@ pub enum CanonicalEquivalenceStatus {
     Unavailable,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub struct CanonicalEquivalenceObservation {
     pub basis: String,
     pub query: String,
@@ -203,7 +207,7 @@ pub struct CanonicalEquivalenceObservation {
     pub provider_response_sha256: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CanonicalEquivalence {
     pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub status: String,
@@ -219,23 +223,29 @@ pub struct CanonicalEquivalence {
 
 /// Whether an alias query was selected and whether provider work actually began.
 /// An attempt does not imply a successful response or an identity match.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleAliasCoverage {
     pub alias: String,
     pub planned: bool,
     pub attempted: bool,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub disposition: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub reason: &'static str,
 }
 
 /// MyGene's recorded alias field and the actual variant-query coverage it enabled.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleGeneSymbolCoverage {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub source: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub source_field: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub status: &'static str,
     pub entrez_id: Option<String>,
     pub recorded_aliases: Vec<String>,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::optional")]
     pub restriction: Option<&'static str>,
     pub aliases: Vec<VariantArticleAliasCoverage>,
 }
@@ -1263,7 +1273,7 @@ fn variant_article_error_is_provider_timeout(error: &BioMcpError) -> bool {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleWork {
     pub limit: usize,
     pub consumed: usize,
@@ -1283,49 +1293,52 @@ impl VariantArticleWork {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleProviderPlan {
     pub source: String,
     pub status: VariantArticleSourceStatusKind,
     pub latency_ms: u64,
     pub calls: usize,
     pub pages: usize,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub cache: &'static str,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleRoutePlan {
     pub route: String,
     pub queries: Vec<String>,
     pub providers: Vec<VariantArticleProviderPlan>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleCountsPlan {
     pub pre_dedup: usize,
     pub post_dedup: usize,
     pub returned: usize,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleRankingPlan {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub method: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::triple")]
     pub inputs: [&'static str; 3],
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleBudgetsPlan {
     pub item: VariantArticleWork,
     pub request: VariantArticleWork,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleWorkAllocationScope {
     pub item: VariantArticleWork,
     pub request: VariantArticleWork,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleIdentityVerificationAllocation {
     pub reserved: usize,
     pub consumed: usize,
@@ -1333,20 +1346,20 @@ pub struct VariantArticleIdentityVerificationAllocation {
     pub request: VariantArticleWork,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleWorkAllocationPlan {
     pub discovery: VariantArticleWork,
     pub exact_lexical: VariantArticleWorkAllocationScope,
     pub identity_verification: VariantArticleIdentityVerificationAllocation,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleNextPlan {
     pub offset: usize,
     pub cursor: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProviderVariantQueryPlan {
     pub provider: String,
     pub route: String,
@@ -1359,7 +1372,7 @@ pub struct ProviderVariantQueryPlan {
     pub query_template_version: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleCandidateTraceRecord {
     pub identifier: String,
     pub route: String,
@@ -1372,8 +1385,9 @@ pub struct VariantArticleCandidateTraceRecord {
     pub pagination_disposition: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleCandidateTrace {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub schema_version: &'static str,
     pub observed_total: usize,
     pub dropped: usize,
@@ -1385,7 +1399,7 @@ pub struct VariantArticleCandidateTrace {
 /// returned for that alias, rows still carrying that alias's provenance
 /// fact after the merged pool settles, and whether the alias's 25-result
 /// fetch cap cut the source's list.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleAliasYield {
     pub route: String,
     pub alias: String,
@@ -1395,7 +1409,7 @@ pub struct VariantArticleAliasYield {
     pub cut_by_cap: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleDebugPlan {
     pub gene_symbol_coverage: VariantArticleGeneSymbolCoverage,
     pub alias_coverage: Vec<VariantArticleAliasCoverage>,
@@ -1417,8 +1431,9 @@ pub struct VariantArticleDebugPlan {
     pub deadline: VariantArticleDeadlinePlan,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleDeadlinePlan {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub scope: &'static str,
     pub limit_ms: u64,
     pub exhausted: bool,
@@ -1456,8 +1471,9 @@ pub struct CompactVariantArticleRow {
     pub metadata_status: Option<ArticleMetadataStatus>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleItemError {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub code: &'static str,
     pub message: String,
 }
@@ -4091,82 +4107,6 @@ async fn fallback_candidates(
     .await
 }
 
-fn route_score(candidate: &ArticleCandidate) -> f64 {
-    let best = candidate.variant_provenance.iter().fold(
-        BTreeMap::<(&str, &str), usize>::new(),
-        |mut best, fact| {
-            best.entry((&fact.route, &fact.source))
-                .and_modify(|position| *position = (*position).min(fact.native_position))
-                .or_insert(fact.native_position);
-            best
-        },
-    );
-    best.values()
-        .map(|position| 1.0 / (60.0 + *position as f64))
-        .sum()
-}
-
-fn rank_candidates(candidates: &mut [ArticleCandidate]) {
-    candidates.sort_by(|left, right| {
-        let left_exact = left
-            .variant_provenance
-            .iter()
-            .any(|fact| fact.route != "best_effort_free_text");
-        let right_exact = right
-            .variant_provenance
-            .iter()
-            .any(|fact| fact.route != "best_effort_free_text");
-        let confirmed = |candidate: &ArticleCandidate| {
-            candidate
-                .identity
-                .as_ref()
-                .is_some_and(|identity| identity.status == "confirmed")
-        };
-        confirmed(right)
-            .cmp(&confirmed(left))
-            .then_with(|| right_exact.cmp(&left_exact))
-            .then_with(|| {
-                route_score(right)
-                    .partial_cmp(&route_score(left))
-                    .unwrap_or(Ordering::Equal)
-            })
-            .then_with(|| {
-                left.variant_provenance
-                    .iter()
-                    .map(|fact| fact.native_position)
-                    .min()
-                    .cmp(
-                        &right
-                            .variant_provenance
-                            .iter()
-                            .map(|fact| fact.native_position)
-                            .min(),
-                    )
-            })
-            .then_with(|| {
-                stable_article_identifier(&left.row).cmp(&stable_article_identifier(&right.row))
-            })
-    });
-}
-
-async fn enrich_candidates(
-    candidates: &mut [ArticleCandidate],
-    execution: &VariantArticleExecutionContext,
-) -> BTreeMap<String, ArticleMetadataStatus> {
-    let mut rows = candidates
-        .iter()
-        .map(|candidate| candidate.row.clone())
-        .collect::<Vec<_>>();
-    let _ =
-        enrich_article_search_rows_with_semantic_scholar_context(&mut rows, Some(execution)).await;
-    let (_, metadata_status) =
-        enrich_visible_article_search_rows_with_article_base_context(&mut rows, Some(execution))
-            .await;
-    for (candidate, row) in candidates.iter_mut().zip(rows) {
-        candidate.row = row;
-    }
-    metadata_status
-}
 
 fn plan_queries(
     input: &str,
@@ -5173,7 +5113,20 @@ pub(crate) async fn search_variant_articles_with_options(
     debug_plan: bool,
     verification: VariantArticleVerificationOptions,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
-    search_variant_articles_with_deadline(
+    search_variant_articles_with_page_token(input, strategy, limit, offset, debug_plan, verification, None).await
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn search_variant_articles_with_page_token(
+    input: &str,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
+    page_token: Option<&str>,
+) -> Result<VariantArticleOutcome, BioMcpError> {
+    search_variant_articles_with_deadline_and_token(
         input,
         strategy,
         limit,
@@ -5181,6 +5134,7 @@ pub(crate) async fn search_variant_articles_with_options(
         debug_plan,
         verification,
         VARIANT_ARTICLE_DEADLINE_LIMIT,
+        page_token,
     )
     .await
 }
@@ -5194,6 +5148,19 @@ async fn search_variant_articles_with_deadline(
     debug_plan: bool,
     verification: VariantArticleVerificationOptions,
     deadline_limit: std::time::Duration,
+) -> Result<VariantArticleOutcome, BioMcpError> {    search_variant_articles_with_deadline_and_token(input, strategy, limit, offset, debug_plan, verification, deadline_limit, None).await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn search_variant_articles_with_deadline_and_token(
+    input: &str,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
+    deadline_limit: std::time::Duration,
+    page_token: Option<&str>,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
     // The exact-name strategy searches the caller's string verbatim: no
     // resolution happens, so the resolver's variant-format refusals do not
@@ -5226,7 +5193,7 @@ async fn search_variant_articles_with_deadline(
     let execution = VariantArticleExecutionContext::single_with_deadline(deadline.clone());
     crate::sources::with_variant_article_deadline(
         deadline,
-        search_variant_articles_identity(
+        pool::execute(
             input,
             requested,
             strategy,
@@ -5235,6 +5202,7 @@ async fn search_variant_articles_with_deadline(
             debug_plan,
             verification,
             execution,
+            page_token,
         ),
     )
     .await
@@ -5422,6 +5390,21 @@ async fn search_variant_articles_identity(
     verification: VariantArticleVerificationOptions,
     execution: VariantArticleExecutionContext,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
+    pool::execute(input, requested, strategy, limit, offset, include_debug_plan, verification, execution, None).await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn acquire_variant_article_pool(
+    input: &str,
+    requested: RequestedVariantIdentity,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    include_debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
+    execution: VariantArticleExecutionContext,
+    retained: Vec<ArticleCandidate>,
+) -> Result<(VariantArticleOutcome, Vec<ArticleCandidate>), BioMcpError> {
     if limit == 0 || limit > 50 {
         return Err(BioMcpError::InvalidArgument(
             "--limit must be between 1 and 50".to_string(),
@@ -5487,7 +5470,7 @@ async fn search_variant_articles_identity(
         );
     }
     if !context.available && literal.candidates.is_empty() {
-        return Ok(resolution_unavailable_outcome(
+        return Ok((resolution_unavailable_outcome(
             context,
             canonical_equivalence,
             strategy,
@@ -5495,7 +5478,7 @@ async fn search_variant_articles_identity(
             offset,
             include_debug_plan,
             &execution,
-        ));
+        ), Vec::new()));
     }
     if verification.verify_identity {
         // Keep one verification unit before discovery. Each discovery page then
@@ -5525,6 +5508,7 @@ async fn search_variant_articles_identity(
     succeeded_routes += usize::from(succeeded);
     failed_routes += usize::from(incomplete);
 
+    candidates.extend(retained);
     let pre_dedup = candidates.len();
     let mut candidates = merge::merge_candidates(candidates);
     // With the merged pool settled, each recorded alias yield can name how
@@ -5535,7 +5519,7 @@ async fn search_variant_articles_identity(
     let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
     if verification.verify_identity {
-        rank_candidates(&mut candidates);
+        rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
         let (verification_start, verification_count) = materialize_identity_verification_plan(
             &candidates,
             &context.requested,
@@ -5675,7 +5659,7 @@ async fn search_variant_articles_identity(
             });
         }
     }
-    rank_candidates(&mut candidates);
+    
     for (index, candidate) in candidates.iter_mut().enumerate() {
         for trace in &mut candidate.candidate_trace {
             trace.rank_position = Some(index.saturating_add(1));
@@ -5695,12 +5679,11 @@ async fn search_variant_articles_identity(
     let total_candidates = candidates.len();
     let _provider_hard_error = succeeded_routes == 0 && failed_routes > 0;
     let has_more = offset.saturating_add(limit) < total_candidates;
-    let mut visible_candidates = candidates
-        .into_iter()
-        .skip(offset)
-        .take(limit)
-        .collect::<Vec<_>>();
-    let mut metadata_status = enrich_candidates(&mut visible_candidates, &execution).await;
+    let mut visible_candidates = candidates;
+    let window_end = offset.saturating_add(limit).min(visible_candidates.len());
+    let window_start = offset.min(window_end);
+    let mut metadata_status = enrich_candidates(&mut visible_candidates[window_start..window_end], &execution).await;
+    let snapshot_candidates = visible_candidates.clone();
     // Rebuild after every identity, enrichment, and LDH unit settles, retaining
     // only zero-work/skipped skeleton rows without real events.
     // Keep each route's specific applicability explanation while the terminal
@@ -5805,7 +5788,7 @@ async fn search_variant_articles_identity(
                 alias_matches,
                 retrieval_routes,
                 sources,
-                rank: offset.saturating_add(index).saturating_add(1),
+                rank: index.saturating_add(1),
                 provenance: candidate.variant_provenance,
                 identity: candidate.identity,
             }
@@ -5863,7 +5846,7 @@ async fn search_variant_articles_identity(
     let outage_message = variant_article_outage_message(&statuses);
     let canonical_equivalence =
         (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
-    Ok(VariantArticleOutcome {
+    Ok((VariantArticleOutcome {
         response: VariantArticleResponse {
             gene_symbol_coverage: gene_symbol_coverage(&execution, &alias_coverage),
             alias_coverage,
@@ -5888,7 +5871,7 @@ async fn search_variant_articles_identity(
             debug_plan,
         },
         hard_error,
-    })
+    }, snapshot_candidates))
 }
 
 /// Providers disagree on how to spell a PMC identifier: Europe PMC and PubTator
@@ -6085,6 +6068,7 @@ pub(crate) fn parse_variant_article_batch(
 }
 
 struct ValidatedBatchItem {
+    page_token: Option<String>,
     request_id: String,
     requested: RequestedVariantIdentity,
     input: String,
@@ -6191,6 +6175,7 @@ fn validate_batch_requests(
         let input = request.display_input(&requested);
         let error = request.validate_identity().err().map(item_error);
         validated.push(ValidatedBatchItem {
+            page_token: request.page_token,
             request_id,
             requested,
             input,
@@ -6268,12 +6253,13 @@ async fn execute_batch_item(
         return empty_item(request, limit, offset, error, debug_plan);
     }
     let fallback = ValidatedBatchItem {
+        page_token: request.page_token.clone(),
         request_id: request.request_id.clone(),
         requested: request.requested.clone(),
         input: request.input.clone(),
         error: None,
     };
-    let outcome = match search_variant_articles_identity(
+    let outcome = match pool::execute(
         &request.input,
         request.requested,
         strategy,
@@ -6282,6 +6268,7 @@ async fn execute_batch_item(
         debug_plan,
         verification,
         execution,
+        request.page_token.as_deref(),
     )
     .await
     {
@@ -9432,7 +9419,7 @@ mod tests {
             lexical_candidate("1", &[1]),
         ];
 
-        rank_candidates(&mut candidates);
+        rank::rank_candidates(&mut candidates, &context.requested, &context.resolution.normalized_aliases);
 
         assert_eq!(
             candidates

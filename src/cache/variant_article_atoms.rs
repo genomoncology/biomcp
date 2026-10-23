@@ -3,6 +3,10 @@ use serde::{Deserialize, Deserializer};
 
 fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
     const ATOMS: &[&str] = &[
+        "incomplete", "citation_count", "http_status", "decode", "local_io", "internal",
+        "invalid_argument", "connect", "network", "tls", "body_limit",
+        "exact route union with deterministic native-position ranking",
+        "PubTator variant annotation recall", "best-effort free-text fallback",
         "absent", "abstract", "alias_limit", "annotation", "annotation-v1", "attempted",
         "available", "best_effort_free_text", "canonical_equivalence", "captured_abstract",
         "civic", "clingen_car", "clingen_ldh", "clingen_ldh_direct", "clingen_ldh_medium",

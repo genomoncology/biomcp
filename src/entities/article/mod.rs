@@ -801,11 +801,15 @@ pub struct ArticleBatchEntitySummary {
     pub mutations: Vec<AnnotationCount>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleMetadataStatus {
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub status: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::list")]
     pub missing_fields: Vec<&'static str>,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub source: &'static str,
+    #[serde(deserialize_with = "crate::cache::variant_article_atoms::atom")]
     pub failure_class: &'static str,
 }
 

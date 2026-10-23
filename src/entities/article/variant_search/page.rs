@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 
-pub(super) const ORDERING_VERSION: u32 = 1;
+pub(super) const ORDERING_VERSION: u32 = super::rank::RANKING_VERSION;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
