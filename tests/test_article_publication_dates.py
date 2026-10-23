@@ -19,18 +19,20 @@ pytestmark = pytest.mark.needs_binary
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations"])
+@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations", "single", "no_work", "expired"])
 def test_article_publication_dates_precede_merge_bounds_and_pagination(
     mode: str, tmp_path: Path,
 ) -> None:
     today = datetime.now(UTC).date()
     yesterday = today - timedelta(days=1)
     future = f"{today.year + 1}-12-31"
-    dates = [future, future, future, future, str(today), "2020-02", "2099-02-30", None]
+    issue = "2019-01-01" if mode == "no_work" else future
+    dates = [issue, issue, issue, issue, str(today), "2020-02", "2099-02-30", None]
     rows = [{"pmid": str(90001 + i), "title": f"BRCA1 article {i}", "date": date}
             for i, date in enumerate(dates)]
     requests: list[list[str]] = []
     misses: list[str] = []
+    release = threading.Event()
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802 - stdlib callback
@@ -39,9 +41,12 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
             if target.path == "/pubtator/search/":
                 body = {"results": rows, "count": len(rows)}
             elif target.path == "/europe/search":
+                if mode == "expired":
+                    release.wait(HANG_TIMEOUT)
+                    return
                 body = {"hitCount": 1, "resultList": {"result": [{
                     "id": "90001", "pmid": "90001", "title": rows[0]["title"],
-                    "firstPublicationDate": f"{today.year + 1}-11-01", "citedByCount": 0,
+                    "firstPublicationDate": issue, "citedByCount": 0,
                 }]}}
             elif target.path.endswith("esearch.fcgi"):
                 body = {"esearchresult": {"count": "0", "idlist": []}}
@@ -49,7 +54,7 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
                 ids = params["id"][0].split(",")
                 requests.append(ids)
                 if mode == "failure":
-                    self.send_error(503)
+                    self.send_error(400)
                     return
                 electronic = {
                     "90001": yesterday.strftime("%Y %b %d"),
@@ -95,6 +100,10 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     }, base)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     args = ["--sort", "citations" if mode == "citations" else "date", "--limit", "50"]
+    if mode == "expired":
+        env["BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS"] = "1000"
+    if mode == "single":
+        args += ["--source", "pubtator"]
     if mode == "bounds":
         args += ["--date-from", str(today - timedelta(days=2)), "--date-to", str(today)]
     if mode == "offset":
@@ -102,10 +111,11 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     try:
         result = subprocess.run(
             [os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp")),
-             "--json", "--no-cache", "search", "article", "-k", "BRCA1", *args],
+             "--json", "--no-cache", "search", "article", "-k", "BRCA1", "--full", *args],
             env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False,
         )
     finally:
+        release.set()
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
@@ -113,6 +123,12 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     assert not misses, misses
     payload = json.loads(result.stdout)
     actual = payload["results"]
+    if mode in {"no_work", "expired"}:
+        assert not requests, requests
+        assert actual[0]["pmid"] == "90005"
+        if mode == "expired":
+            assert payload["complete"] is False
+        return
     if mode == "citations":
         assert not requests, requests
         assert actual[0]["date"] == future
@@ -132,7 +148,8 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
         assert [row["pmid"] for row in actual[:4]] == ["90005", "90001", "90006", "90002"]
         mapped = {row["pmid"]: row for row in actual}
         assert mapped["90001"]["date"] == str(yesterday)
-        assert mapped["90001"]["matched_sources"] == ["pubtator", "europepmc"]
+        sources = ["pubtator"] if mode == "single" else ["pubtator", "europepmc"]
+        assert mapped["90001"]["matched_sources"] == sources
         assert mapped["90006"]["date"] == "2020-02"
         assert mapped["90003"]["date"] == mapped["90004"]["date"] == future
         assert mapped["90007"]["date"] == "2099-02-30"
