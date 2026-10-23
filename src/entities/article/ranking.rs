@@ -184,7 +184,7 @@ pub(super) fn build_anchor_set(filters: &ArticleSearchFilters) -> Vec<String> {
     anchors
 }
 
-fn anchor_matches_text(text: &str, anchor: &str) -> bool {
+pub(super) fn anchor_matches_text(text: &str, anchor: &str) -> bool {
     if anchor.is_empty() || text.is_empty() {
         return false;
     }
