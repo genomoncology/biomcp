@@ -14,12 +14,20 @@ pub(super) async fn route<T>(
     future: impl Future<Output = Result<T, BioMcpError>>,
 ) -> Result<T, BioMcpError> {
     let started = Instant::now();
-    let result = tokio::time::timeout(ROUTE_TIMEOUT, future)
+    let observation = crate::sources::fulltext_diagnostics::RequestObservation::default();
+    let result = crate::sources::fulltext_diagnostics::CURRENT_REQUEST
+        .scope(
+            observation.clone(),
+            tokio::time::timeout(ROUTE_TIMEOUT, future),
+        )
         .await
         .unwrap_or_else(|_| {
             Err(BioMcpError::SourceUnavailable {
                 source_name: source.into(),
-                reason: format!("{FAILURE_PREFIX} {source} timed out."),
+                reason: format!(
+                    "{FAILURE_PREFIX} {source} timed out.{}",
+                    observation.timeout_detail()
+                ),
                 suggestion: "Retry the article request".into(),
             })
         });

@@ -7,6 +7,35 @@ use crate::sources::RequestBuilderSourceContextExt;
 
 const DIAGNOSTIC_API: &str = "article-fulltext-route";
 
+tokio::task_local! {
+    pub(crate) static CURRENT_REQUEST: RequestObservation;
+}
+
+/// One route owns this observation, including cancellation before send returns.
+#[derive(Clone, Default)]
+pub(crate) struct RequestObservation(std::sync::Arc<std::sync::Mutex<Option<String>>>);
+
+impl RequestObservation {
+    pub(crate) fn timeout_detail(&self) -> String {
+        let url = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        url.as_ref()
+            .map(|url| format!(" Request {url}: transport error (timed out)."))
+            .unwrap_or_default()
+    }
+
+    fn record(url: &str) {
+        let _ = CURRENT_REQUEST.try_with(|observation| {
+            *observation
+                .0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(url.into());
+        });
+    }
+}
+
 fn safe_url(url: &Url) -> String {
     let mut safe = url.clone();
     let _ = safe.set_username("");
@@ -83,6 +112,7 @@ impl FulltextRequestExt for RequestBuilder {
             .and_then(|req| req.build().ok())
             .map(|req| safe_url(req.url()))
             .unwrap_or_else(|| "unavailable URL".into());
+        RequestObservation::record(&url);
         let response = self
             .send_with_source_context(context)
             .await
