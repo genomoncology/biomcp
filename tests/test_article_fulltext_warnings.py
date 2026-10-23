@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 import pytest
 
@@ -26,7 +26,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
-            path = urlsplit(self.path).path
+            path = unquote(urlsplit(self.path).path)
             code, content_type = 200, "application/json"
             if path == "/epmc/search":
                 body = json.dumps({"hitCount": 1, "resultList": {"result": [{
@@ -103,8 +103,9 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         thread.join(timeout=HANG_TIMEOUT)
     assert result.returncode == 0, result.stderr + result.stdout
     if failure.startswith("figshare"):
-        warning = next(line for line in result.stderr.splitlines()
-                       if "Figshare sibling search request failed" in line)
+        warning = next((line for line in result.stderr.splitlines()
+                        if "Figshare sibling search request failed" in line), None)
+        assert warning is not None, result.stderr
         assert origin + "/v2/articles/search" in warning, warning
     else:
         warning = next(line for line in result.stderr.splitlines()
