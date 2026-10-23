@@ -301,6 +301,15 @@ pub(super) async fn search_pubmed_page_with_context(
             )));
         }
         if response.idlist.is_empty() {
+            save_provider_progress(
+                execution,
+                &progress_key,
+                &out,
+                batch_start,
+                None,
+                total,
+                total.is_some_and(|value| batch_start >= value),
+            );
             break;
         }
 
