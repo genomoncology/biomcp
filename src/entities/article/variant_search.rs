@@ -3266,7 +3266,6 @@ async fn planned_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let filters = article_filters();
     let plans = provider_variant_query_plan_with_gene_aliases(
         input,
         context,
@@ -3276,11 +3275,11 @@ async fn planned_candidates(
     )
     .into_iter()
     .filter(|plan| matches!(plan.route.as_str(), "strict" | "exact_lexical"));
-    let mut candidates = Vec::new();
-    let mut incomplete = false;
-    let mut succeeded = false;
-
-    for plan in plans {
+    let searches = plans.map(|plan| async move {
+        let filters = article_filters();
+        let mut candidates = Vec::new();
+        let mut incomplete = false;
+        let mut succeeded = false;
         let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
@@ -3291,8 +3290,7 @@ async fn planned_candidates(
         };
         let execution = &scoped;
         if execution.route_stopped(route) {
-            incomplete = true;
-            continue;
+            return (candidates, true, false);
         }
         let stopped_before = execution.route_stopped(route);
         let rows = match plan.provider.as_str() {
@@ -3370,8 +3368,7 @@ async fn planned_candidates(
             }
             "pubtator" => {
                 let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
-                    incomplete = true;
-                    break;
+                    return (candidates, true, false);
                 };
                 let pubtator = crate::sources::pubtator::PubTatorClient::new_with_deadline(
                     execution.deadline(),
@@ -3421,7 +3418,7 @@ async fn planned_candidates(
                     }
                 }
             }
-            _ => continue,
+            _ => return (candidates, false, false),
         };
         match rows {
             Ok((rows, degraded, total)) if !execution.route_stopped(route) || stopped_before => {
@@ -3471,12 +3468,23 @@ async fn planned_candidates(
             }
             Ok(_) | Err(_) if execution.route_stopped(route) => {
                 incomplete = true;
-                continue;
             }
             Ok(_) | Err(_) => {
                 incomplete = true;
             }
         }
+        (candidates, incomplete, succeeded)
+    });
+    // Poll independent plans together while collecting their rows in plan order.
+    // Provider units retain the shared concurrency and source pacing limits.
+    let mut searches = stream::iter(searches).buffered(PROVIDER_CONCURRENCY_LIMIT);
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    while let Some((rows, partial, available)) = searches.next().await {
+        candidates.extend(rows);
+        incomplete |= partial;
+        succeeded |= available;
     }
     let calls = execution.events();
     let mut statuses = provider_statuses_for_route("strict", &calls);
