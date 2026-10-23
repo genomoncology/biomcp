@@ -48,7 +48,7 @@ pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 pub(crate) use self::variant_search::{
     parse_variant_article_batch, search_variant_article_batch,
     search_variant_article_batch_with_options, search_variant_articles_with_options,
-    search_variant_articles_with_plan,
+    search_variant_articles_with_page_token, search_variant_articles_with_plan,
 };
 use crate::entities::section_outcome::SectionOutcomes;
 use crate::entities::source_state_registry::outcome_keys;
@@ -800,12 +800,16 @@ pub struct ArticleBatchEntitySummary {
     pub mutations: Vec<AnnotationCount>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleMetadataStatus {
-    pub status: &'static str,
-    pub missing_fields: Vec<&'static str>,
-    pub source: &'static str,
-    pub failure_class: &'static str,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub status: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
+    pub missing_fields: Vec<crate::entities::article::variant_search::atoms::Atom>,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub source: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub failure_class: crate::entities::article::variant_search::atoms::Atom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -4,17 +4,15 @@ use futures::future::join_all;
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
-use crate::sources::pubtator::PubTatorClient;
 
 use super::{
     ArticleSearchResult, ArticleSource, ArticleSourceAvailability, ArticleSourceStatus,
     article_search_deadline_status, first_europepmc_hit,
     merge_article_search_row_with_article_base, plain_article_search_deadline_elapsed,
-    settle_visible_row_metadata_fallback,
 };
 
 fn deadline_statuses() -> Vec<ArticleSourceStatus> {
-    [ArticleSource::PubTator, ArticleSource::EuropePmc]
+    [ArticleSource::EuropePmc]
         .into_iter()
         .map(|source| article_search_deadline_status(source, "article metadata fallback"))
         .collect()
@@ -55,29 +53,11 @@ pub(super) async fn enrich(
         return deadline_statuses();
     }
     let deadline = crate::sources::current_variant_article_deadline();
-    let pubtator = match match deadline.as_ref() {
-        Some(deadline) => PubTatorClient::new_with_deadline(deadline).await,
-        None => PubTatorClient::new(),
-    } {
-        Ok(client) => client,
-        Err(err) => {
-            crate::error::warn_external_failure(
-                &err,
-                crate::error::SourceProvider::PUBTATOR3,
-                "initialize visible article metadata fallback",
-            );
-            return vec![failure_status(
-                ArticleSource::PubTator,
-                &err,
-                "initialize visible article metadata fallback",
-            )];
-        }
-    };
     let europe = match match deadline.as_ref() {
         Some(deadline) => EuropePmcClient::new_with_deadline(deadline).await,
         None => EuropePmcClient::new(),
     } {
-        Ok(client) => client,
+        Ok(client) => client.with_abstracts(true),
         Err(err) => {
             crate::error::warn_external_failure(
                 &err,
@@ -92,30 +72,9 @@ pub(super) async fn enrich(
         }
     };
 
-    let mut collected = Vec::with_capacity(positions.len());
-    for (index, pmid) in positions {
-        if plain_article_search_deadline_elapsed(None) {
-            break;
-        }
-        let article = pubtator.export_biocjson(pmid).await.and_then(|reply| {
-            reply
-                .documents
-                .into_iter()
-                .next()
-                .map(|doc| crate::transform::article::from_pubtator_document(&doc))
-                .ok_or_else(|| BioMcpError::NotFound {
-                    entity: "article".into(),
-                    id: pmid.to_string(),
-                    suggestion: "Try another article identifier".into(),
-                })
-        });
-        collected.push((index, pmid, article));
-    }
-
-    // Poll all recoveries together, rather than calling a resolver which
-    // already recovered and then repeating that recovery on its error.
-    let mut statuses = Vec::new();
-    let recovered = join_all(collected.iter().map(|(_, pmid, _)| async {
+    // Plain result metadata needs abstracts and citation counts, not annotations.
+    // Core Europe PMC records supply both without an export for unindexed PMIDs.
+    let recovered = join_all(positions.iter().map(|(_, pmid)| async {
         if plain_article_search_deadline_elapsed(None) {
             return Ok(None);
         }
@@ -125,33 +84,19 @@ pub(super) async fn enrich(
             .map(first_europepmc_hit)
     }))
     .await;
-    for ((index, _, article), recovery) in collected.into_iter().zip(recovered) {
-        let hit = match recovery {
-            Ok(hit) => hit,
-            Err(error) => {
-                statuses.push(failure_status(
-                    ArticleSource::EuropePmc,
-                    &error,
-                    "visible article metadata fallback",
-                ));
-                None
-            }
-        };
-        match article {
-            Ok(mut article) => {
-                if let Some(hit) = hit {
-                    crate::transform::article::merge_europepmc_metadata(&mut article, &hit);
-                }
-                merge_article_search_row_with_article_base(&mut rows[index], &article);
-            }
-            Err(error) => {
-                statuses.push(failure_status(
-                    ArticleSource::PubTator,
-                    &error,
-                    "visible article metadata fallback",
-                ));
-                settle_visible_row_metadata_fallback(&mut rows[index], &error, hit.as_ref());
-            }
+    let mut statuses = Vec::new();
+    for ((index, _), recovery) in positions.into_iter().zip(recovered) {
+        match recovery {
+            Ok(Some(hit)) => merge_article_search_row_with_article_base(
+                &mut rows[index],
+                &crate::transform::article::from_europepmc_result(&hit),
+            ),
+            Ok(None) => {}
+            Err(error) => statuses.push(failure_status(
+                ArticleSource::EuropePmc,
+                &error,
+                "visible article metadata fallback",
+            )),
         }
     }
     if plain_article_search_deadline_elapsed(None) {

@@ -330,6 +330,7 @@ pub(super) fn build_pubmed_esearch_params(
 
     Ok(PubMedESearchParams {
         term,
+        sort: None,
         retstart: offset,
         retmax: limit,
         date_from,

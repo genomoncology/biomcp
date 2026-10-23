@@ -270,7 +270,7 @@ where
     let Some(execution) = execution else {
         return Some(future.await);
     };
-    let started = match execution.reserve("enrichment") {
+    let started = match execution.reserve_provider("enrichment", source) {
         Some(started) => started,
         None => {
             execution.record_not_attempted("enrichment", source);

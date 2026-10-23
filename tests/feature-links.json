@@ -61,6 +61,12 @@
     "tests/test_article_preprint_fulltext.py": {
       "feature": "article"
     },
+    "tests/test_article_pubmed_deadline.py": {
+      "feature": "article"
+    },
+    "tests/test_article_publication_dates.py": {
+      "feature": "article"
+    },
     "tests/test_article_pubtator_dates.py": {
       "feature": "article"
     },
@@ -314,6 +320,9 @@
       "feature": "article"
     },
     "tests/test_variant_article_field_scope.py": {
+      "feature": "variant"
+    },
+    "tests/test_variant_article_pubmed_floor.py": {
       "feature": "variant"
     }
   },

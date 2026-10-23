@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
 
 use regex::Regex;
-use serde::Serialize;
 use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -16,8 +16,8 @@ pub(crate) use paper_anchors::verify_paper_anchors;
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v3";
 pub(crate) const PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION: &str =
     "pubtator-export-biocjson-fulltext-v1";
-const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
-const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
+pub(super) const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
+pub(super) const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
 const MAX_ANNOTATION_ID_BYTES: usize = 256;
 const MAX_HGVS_BYTES: usize = 1024;
 const MAX_IDENTIFIER_TOKENS: usize = 16;
@@ -88,7 +88,7 @@ impl Serialize for VariantArticleIdentityObservation {
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind")]
 pub(crate) enum ProviderLinkage {
     #[serde(rename = "pubtator_corresponding_gene")]
@@ -128,29 +128,39 @@ pub(crate) enum ProviderLinkage {
     },
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct LdhProvenance {
-    source: &'static str,
-    request_template_version: &'static str,
-    response_subset_version: &'static str,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    source: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    request_template_version: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    response_subset_version: crate::entities::article::variant_search::atoms::Atom,
     canonical_response_subset_sha256: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 pub(crate) struct ProviderLinkageProvenance {
-    source: &'static str,
-    request_template_version: &'static str,
-    verifier_version: &'static str,
-    response_subset_version: &'static str,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    source: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    request_template_version: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    verifier_version: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    response_subset_version: crate::entities::article::variant_search::atoms::Atom,
     canonical_response_subset_sha256: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct VariantArticleVerificationPlan {
-    pub verifier_version: &'static str,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub verifier_version: crate::entities::article::variant_search::atoms::Atom,
     pub provider_template_version: String,
-    pub response_subset_version: &'static str,
-    pub content_subset_version: &'static str,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub response_subset_version: crate::entities::article::variant_search::atoms::Atom,
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
+    pub content_subset_version: crate::entities::article::variant_search::atoms::Atom,
     pub canonical_response_subset_hash: String,
     pub canonical_content_subset_hash: String,
     pub artifact_id: String,

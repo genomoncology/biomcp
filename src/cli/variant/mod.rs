@@ -136,7 +136,10 @@ See also: biomcp list variant")]
         /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
-        /// Skip the first N results
+        /// Continue an immutable article pool; use tokens for concurrent walks
+        #[arg(long, conflicts_with = "input")]
+        page_token: Option<String>,
+        /// Skip results in the active pool; a missing pool requires offset 0
         #[arg(long, default_value = "0")]
         offset: usize,
     },

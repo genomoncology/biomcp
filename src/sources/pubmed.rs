@@ -25,10 +25,16 @@ pub struct PubMedClient {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PubMedESearchParams {
     pub term: String,
+    pub sort: Option<PubMedSearchSort>,
     pub retstart: usize,
     pub retmax: usize,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PubMedSearchSort {
+    Relevance,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,6 +99,7 @@ pub(crate) struct ESummaryEntry {
     pub title: String,
     pub sortpubdate: Option<String>,
     pub pubdate: Option<String>,
+    pub epubdate: Option<String>,
     pub edat: Option<String>,
     pub lr: Option<String>,
     pub fulljournalname: Option<String>,
@@ -128,6 +135,7 @@ struct ESummaryEntryRaw {
     title: Option<String>,
     sortpubdate: Option<String>,
     pubdate: Option<String>,
+    epubdate: Option<String>,
     #[serde(default)]
     history: Vec<HistoryEntry>,
     fulljournalname: Option<String>,
@@ -330,24 +338,32 @@ impl PubMedClient {
             ("retstart", params.retstart.to_string()),
             ("retmax", params.retmax.to_string()),
         ];
-        if params.date_from.is_some() || params.date_to.is_some() {
-            query_params.push(("datetype", "pdat".to_string()));
+        if let Some(PubMedSearchSort::Relevance) = params.sort {
+            query_params.push(("sort", "relevance".to_string()));
         }
-        if let Some(date_from) = params
+        let date_from = params
             .date_from
             .as_deref()
             .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            query_params.push(("mindate", format_pubmed_date(date_from)));
-        }
-        if let Some(date_to) = params
+            .filter(|value| !value.is_empty());
+        let date_to = params
             .date_to
             .as_deref()
             .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            query_params.push(("maxdate", format_pubmed_date(date_to)));
+            .filter(|value| !value.is_empty());
+        if date_from.is_some() || date_to.is_some() {
+            // ESearch ignores a one-sided range. Supply the other endpoint
+            // across the full four-digit calendar instead of paging history.
+            // https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch
+            query_params.push(("datetype", "pdat".to_string()));
+            query_params.push((
+                "mindate",
+                format_pubmed_date(date_from.unwrap_or("0001-01-01")),
+            ));
+            query_params.push((
+                "maxdate",
+                format_pubmed_date(date_to.unwrap_or("9999-12-31")),
+            ));
         }
         if let Some(key) = clean_api_key(api_key) {
             query_params.push(("api_key", key.to_string()));
@@ -563,6 +579,7 @@ impl PubMedClient {
                 title: raw.title.unwrap_or_default(),
                 sortpubdate: raw.sortpubdate,
                 pubdate: raw.pubdate,
+                epubdate: raw.epubdate,
                 edat,
                 lr,
                 fulljournalname: raw.fulljournalname,

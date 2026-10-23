@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 FIXTURES = REPO_ROOT / "tests/fixtures/article/paper-anchors"
@@ -29,7 +29,7 @@ PAPER = REPO_ROOT / (
 
 @pytest.mark.parametrize("case", [
     "same_allele", "different_allele", "unresolved_anchor", "missing_typed_gene",
-    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor",
+    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor", "stored_pool",
 ])
 def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     case: str, tmp_path: Path,
@@ -108,11 +108,20 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             elif path in ("/entity/autocomplete/", "/variant/autocomplete/"):
                 return self.reply([])
             elif path == "/search/":
+                if case == "stored_pool":
+                    return self.reply({"results": [{
+                        "_id": str(pmid), "pmid": pmid, "title": document["passages"][0]["text"], "score": 1,
+                    } for pmid in (32272925, 32272926)], "count": 2, "total_pages": 1, "current": 1, "page_size": 25})
                 return self.reply({"results": [{
                     "_id": "32272925", "pmid": 32272925, "pmcid": "PMC7146901",
                     "title": document["passages"][0]["text"], "score": 1,
                 }], "count": 1, "total_pages": 1, "current": 1, "page_size": 25})
             elif path == "/publications/export/biocjson":
+                if case == "stored_pool":
+                    cloned = copy.deepcopy(paper)
+                    for doc in cloned["PubTator3"]:
+                        doc["pmid"] = int(query["pmids"][0])
+                    return self.reply(cloned)
                 return self.reply(paper)
             elif path.endswith("/esearch.fcgi"):
                 return self.reply({"esearchresult": {"idlist": [], "count": "0"}})
@@ -146,7 +155,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     )}
     providers["BIOMCP_MYVARIANT_BASE"] = origin + "/v1"
     providers["BIOMCP_PUBMED_BASE"] = origin + "/entrez/eutils"
-    env = isolated_command_env(tmp_path / "isolated", providers, origin)
+    env = (retained_cache_env if case == "stored_pool" else isolated_command_env)(tmp_path / "isolated", providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     input_path = tmp_path / "input.json"
     input_path.write_text(json.dumps([{
@@ -155,6 +164,10 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
     command = [binary, "--json", "--no-cache", "variant", "articles", "--input",
                str(input_path), "--verify-identity", "--debug-plan", "--limit", "5"]
+    if case == "stored_pool":
+        command.remove("--no-cache")
+        command[-1] = "1"
+        command.append("--confirmed-only")
     try:
         result = subprocess.run(command, env=env, cwd=REPO_ROOT,
                                 capture_output=True, text=True, timeout=HANG_TIMEOUT)
@@ -212,6 +225,25 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             if case == "unresolved_anchor":
                 assert filtered["error"]["code"] == "source_unavailable"
             assert not misses, misses
+        if case == "stored_pool":
+            assert result.returncode == 0, result.stdout + result.stderr
+            cold = json.loads(result.stdout)["items"][0]
+            token = cold["pagination"]["next_page_token"]
+            assert cold["pagination"]["total"] == 2, cold
+            assert cold["results"][0]["identity"]["status"] == "confirmed"
+            request = json.loads(input_path.read_text())
+            request[0]["page_token"] = token
+            input_path.write_text(json.dumps(request))
+            warm = subprocess.run(command, env=env, cwd=REPO_ROOT, capture_output=True,
+                                  text=True, timeout=HANG_TIMEOUT)
+            assert warm.returncode == 0, warm.stdout + warm.stderr
+            item = json.loads(warm.stdout)["items"][0]
+            assert item["pagination"]["offset"] == 1
+            assert item["results"][0]["identity"]["status"] == "confirmed"
+            assert item["results"][0]["identity"]["observations"]
+            assert item["results"][0]["identity"]["contradictions"] == []
+            assert item["results"][0]["routes"] == cold["results"][0]["routes"]
+            return
     finally:
         server.shutdown()
         server.server_close()

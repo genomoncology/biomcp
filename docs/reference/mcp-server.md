@@ -129,7 +129,7 @@ Prefer the typed tools when possible:
 
 `variant_articles` shares one 60-second provider-work deadline across its
 ordered 1-10 items and returns committed partial rows. Its tool result is an
-MCP error only when every item is an error. The raw `biomcp variant articles`
+MCP error only when every item is an error. Each structured item accepts an optional `page_token` from its previous `pagination.next_page_token`. Tokens preserve pool membership across retries and concurrent sessions; an expired or unavailable continuation requires a new offset-0 request. The raw `biomcp variant articles`
 surface uses the same narrow rule without reclassifying other nonzero CLI
 outcomes.
 

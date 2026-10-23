@@ -747,6 +747,8 @@ fn normalize_protein_range_deletion(value: &str) -> Option<String> {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct VariantArticleRequest {
+    /// Bound continuation returned for this item by variant_articles.
+    pub page_token: Option<String>,
     pub request_id: Option<String>,
     pub gene: Option<String>,
     pub protein: Option<String>,
@@ -1134,6 +1136,18 @@ impl RequestedVariantIdentity {
                 .collect(),
             coding_changes: self.coding_change.clone().into_iter().collect(),
             genomic_ids: genomic_alias(self).into_iter().collect(),
+            genomic_coordinates: genomic_alias(self)
+                .map(|coordinate| crate::entities::GenomicCoordinate {
+                    coordinate,
+                    genome_build: self
+                        .genome_build
+                        .clone()
+                        .unwrap_or_else(|| "unknown".into()),
+                    source: "requested".into(),
+                    provenance: Some("requested variant identity".into()),
+                })
+                .into_iter()
+                .collect(),
             rsids: self
                 .rsid
                 .as_deref()
@@ -1237,7 +1251,30 @@ pub(crate) struct NormalizedVariantAliases {
     pub protein_changes: Vec<String>,
     pub coding_changes: Vec<String>,
     pub genomic_ids: Vec<String>,
+    #[serde(default)]
+    pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub rsids: Vec<String>,
+}
+
+impl NormalizedVariantAliases {
+    pub(crate) fn retain_source_coordinate(&mut self, source: &SourceVariantIdentity) {
+        if source.genomic_id.trim().is_empty() {
+            return;
+        }
+        let coordinate = crate::entities::GenomicCoordinate {
+            coordinate: source.genomic_id.clone(),
+            genome_build: if source.genome_build.trim().is_empty() {
+                "unknown".into()
+            } else {
+                source.genome_build.clone()
+            },
+            source: "myvariant".into(),
+            provenance: Some("resolved source identity".into()),
+        };
+        if !self.genomic_coordinates.contains(&coordinate) {
+            self.genomic_coordinates.push(coordinate);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

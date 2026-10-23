@@ -226,7 +226,8 @@ where
     let Some(execution) = execution else {
         return with_federated_source_timeout(source, future).await;
     };
-    let Some(started) = execution.reserve(route) else {
+    let Some(started) = execution.reserve_provider(route, variant_budget_source_name(source))
+    else {
         execution.record_not_attempted(route, variant_budget_source_name(source));
         return FederatedSourceOutcome::Unavailable {
             error: None,
@@ -1033,6 +1034,9 @@ async fn search_page_dispatch(
         if plan == BackendPlan::SemanticScholarOnly {
             return search_semantic_scholar_page(filters, limit, offset, enrichment_sources).await;
         }
+        return search_relevance_page(filters, limit, offset, plan, enrichment_sources).await;
+    }
+    if filters.sort == ArticleSort::Date && plan != BackendPlan::Both {
         return search_relevance_page(filters, limit, offset, plan, enrichment_sources).await;
     }
     match plan {
