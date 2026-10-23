@@ -120,8 +120,9 @@ incomplete, inspect `complete`, `truncated`, `pagination.total`, and
 `source_status` rather than treating an empty page as a complete miss.
 The command applies one 60-second monotonic provider-work deadline to the
 entire invocation, including all items in a batch. Work completed before the
-deadline is retained. Incomplete responses use an unknown total and
-`has_more: true`; a zero-row incomplete item carries `deadline_exceeded` or
+deadline is retained. Incomplete responses use an unknown total.
+`pagination.has_more` reports whether another page contains retained rows, even
+when source coverage is incomplete. A zero-row incomplete item carries `deadline_exceeded` or
 `source_unavailable`, while a healthy empty search keeps `error: null`.
 
 Default union searches group additional compatible aliases into bounded provider
