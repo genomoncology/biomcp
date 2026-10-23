@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 
 use crate::error::BioMcpError;
 
+pub(crate) const FAILURE_PREFIX: &str = "Article full-text retrieval:";
+
 const ROUTE_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(super) async fn route<T>(
@@ -17,7 +19,7 @@ pub(super) async fn route<T>(
         .unwrap_or_else(|_| {
             Err(BioMcpError::SourceUnavailable {
                 source_name: source.into(),
-                reason: "full-text route timed out".into(),
+                reason: format!("{FAILURE_PREFIX} {source} timed out."),
                 suggestion: "Retry the article request".into(),
             })
         });

@@ -873,7 +873,10 @@ async fn get_fulltext_base(
             .await;
             fallback.map_err(|error| BioMcpError::SourceUnavailable {
                 source_name: "article metadata".into(),
-                reason: format!("{initial_error}; {error}"),
+                reason: format!(
+                    "{} {initial_error}; {error}",
+                    super::ARTICLE_FULLTEXT_FAILURE_PREFIX
+                ),
                 suggestion: "Retry the article request".into(),
             })
         }

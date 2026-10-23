@@ -709,6 +709,16 @@ impl BioMcpError {
     }
 
     pub fn public_projection(&self) -> PublicErrorProjection<'_> {
+        // This route summary contains only local labels and projected errors.
+        if let Self::SourceUnavailable { reason, .. } = self.underlying()
+            && reason.starts_with(crate::entities::article::ARTICLE_FULLTEXT_FAILURE_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: reason.clone(),
+                source: None,
+                recovery: Some("Retry the article request."),
+            };
+        }
         // A source the operator disabled names the setting that turned it
         // off; the generic source-down wording would hide the one fact the
         // caller can act on.

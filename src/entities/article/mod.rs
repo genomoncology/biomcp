@@ -9,6 +9,7 @@ mod enrichment;
 pub(crate) mod filters;
 mod fulltext;
 mod fulltext_budget;
+pub(crate) use fulltext_budget::FAILURE_PREFIX as ARTICLE_FULLTEXT_FAILURE_PREFIX;
 mod fulltext_saved;
 pub(crate) use fulltext_saved::saved_fulltext_path;
 pub(crate) mod graph;
