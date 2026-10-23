@@ -38,6 +38,7 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "pubmed_query_length_limit",
         "europepmc_query_length_limit",
         "connection",
+        "configuration",
         "alias",
         "alias_limit",
         "annotation",
@@ -135,6 +136,11 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         .copied()
         .chain(std::iter::once(super::rank::METHOD))
         .chain(super::rank::INPUTS)
+        .chain([400, 401, 403, 404, 429, 502, 503, 500].map(|status| {
+            crate::sources::literature_retry::response_class(
+                reqwest::StatusCode::from_u16(status).expect("valid status"),
+            )
+        }))
         .find(|atom| *atom == value)
         .ok_or_else(|| E::custom("unknown label in article pool"))
 }

@@ -189,7 +189,7 @@ fn remaining(deadline: &super::VariantArticleDeadline) -> Duration {
         .min(deadline.remaining())
 }
 
-fn response_class(status: StatusCode) -> &'static str {
+pub(crate) fn response_class(status: StatusCode) -> &'static str {
     match status.as_u16() {
         400 => "http_400",
         401 => "http_401",

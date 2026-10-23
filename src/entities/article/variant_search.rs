@@ -5822,11 +5822,12 @@ async fn acquire_variant_article_pool(
                 matched_aliases,
                 match_reason: if alias_only {
                     "unverified_alias_match"
-                } else if candidate
-                    .variant_provenance
-                    .iter()
-                    .any(|fact| fact.route != "best_effort_free_text")
-                {
+                } else if candidate.variant_provenance.iter().any(|fact| {
+                    !matches!(
+                        fact.route.as_str(),
+                        "best_effort_free_text" | "literal_pubmed"
+                    )
+                }) {
                     "exact_variant"
                 } else {
                     "best_effort_free_text"
