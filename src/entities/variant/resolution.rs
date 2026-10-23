@@ -1137,7 +1137,10 @@ impl RequestedVariantIdentity {
             genomic_coordinates: genomic_alias(self)
                 .map(|coordinate| crate::entities::GenomicCoordinate {
                     coordinate,
-                    genome_build: self.genome_build.clone().unwrap_or_else(|| "unknown".into()),
+                    genome_build: self
+                        .genome_build
+                        .clone()
+                        .unwrap_or_else(|| "unknown".into()),
                     source: "requested".into(),
                     provenance: Some("requested variant identity".into()),
                 })
@@ -1250,7 +1253,6 @@ pub(crate) struct NormalizedVariantAliases {
     pub genomic_coordinates: Vec<crate::entities::GenomicCoordinate>,
     pub rsids: Vec<String>,
 }
-
 
 impl NormalizedVariantAliases {
     pub(crate) fn retain_source_coordinate(&mut self, source: &SourceVariantIdentity) {

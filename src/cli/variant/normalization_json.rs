@@ -28,8 +28,16 @@ pub(super) fn render(
                     genomic_coordinates.push(coordinate.clone());
                 }
             }
-            if let Some(value) = service.normalized_description.as_ref().filter(|value| value.contains(":g.")) {
-                if !service.genomic_descriptions.iter().any(|record| record.coordinate == *value) {
+            if let Some(value) = service
+                .normalized_description
+                .as_ref()
+                .filter(|value| value.contains(":g."))
+            {
+                if !service
+                    .genomic_descriptions
+                    .iter()
+                    .any(|record| record.coordinate == *value)
+                {
                     let coordinate = crate::entities::GenomicCoordinate {
                         coordinate: value.clone(),
                         genome_build: "unknown".into(),

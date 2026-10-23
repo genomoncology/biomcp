@@ -214,7 +214,11 @@ pub(super) async fn handle(
     };
     let mut alias_coverage_text = String::new();
     if !json {
-        let coordinates = &outcome.response.resolution.normalized_aliases.genomic_coordinates;
+        let coordinates = &outcome
+            .response
+            .resolution
+            .normalized_aliases
+            .genomic_coordinates;
         if !coordinates.is_empty() {
             alias_coverage_text.push_str("\n\n## Genomic aliases\n\n");
             for coordinate in coordinates {
