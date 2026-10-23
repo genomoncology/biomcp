@@ -25,7 +25,7 @@ pytestmark = pytest.mark.needs_binary
 
 @pytest.fixture
 def article_pool_replay(tmp_path):
-    state = {"requests": []}
+    state = {"requests": [], "late": False, "ready": False}
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802
@@ -43,7 +43,17 @@ def article_pool_replay(tmp_path):
             elif path == "/search/":
                 body = {"results": [], "count": 0, "total_pages": 0, "current": 1}
             elif path.endswith("/search/bulk"):
-                body = {"total": 0, "data": []}
+                if state["late"] and not state["ready"]:
+                    self.send_error(503, "authored unfinished source")
+                    return
+                if state["late"]:
+                    body = {"total": 1, "data": [{
+                        "paperId": "late-paper", "externalIds": {"PubMed": "104"},
+                        "title": "BRAF V600E late paper", "abstract": "BRAF V600E evidence",
+                        "citationCount": 1, "influentialCitationCount": 1,
+                    }]}
+                else:
+                    body = {"total": 0, "data": []}
             else:
                 self.send_error(404)
                 return
@@ -82,6 +92,7 @@ def article_pool_replay(tmp_path):
 
 def test_article_tokens_bind_the_pool_and_request_configuration(article_pool_replay):
     env, _state = article_pool_replay
+    env["BIOMCP_TEST_RETRY_SLEEP_OFF"] = "1"
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
 
     def invoke(*args, command_env=None):
@@ -196,3 +207,39 @@ def test_article_continuation_refuses_invalid_stored_pool(article_pool_replay, c
     assert refused.returncode != 0
     assert "offset 0" in refused.stdout + refused.stderr
     assert len(state["requests"]) == before, "invalid continuations must not rebuild a pool"
+
+
+def test_late_source_publishes_successor_without_switching_bound_or_active_pool(article_pool_replay):
+    env, state = article_pool_replay
+    state["late"] = True
+    binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
+
+    def page(*arguments):
+        process = subprocess.run(
+            [binary, "--json", "variant", "articles", "BRAF V600E", "--strategy", "exact",
+             "--limit", "1", *arguments], env=env, capture_output=True, text=True,
+            timeout=HANG_TIMEOUT,
+        )
+        assert process.returncode == 0, process.stdout + process.stderr
+        return json.loads(process.stdout)
+
+    initial = page()
+    assert initial["complete"] is False
+    assert initial["pagination"]["total"] == 3
+    token = initial["pagination"]["next_page_token"]
+    state["ready"] = True
+    pinned = page("--page-token", token)
+    assert pinned["pagination"]["total"] == 3
+    assert pinned["complete"] is False
+    legacy = page("--offset", "1")
+    assert legacy["pagination"]["total"] == 3
+    assert legacy["results"][0]["pmid"] == pinned["results"][0]["pmid"]
+    successor = page()
+    assert successor["pagination"]["total"] == 4
+    assert successor["complete"] is True
+    assert successor["pagination"]["next_page_token"] != token
+    old = page("--page-token", token)
+    assert old["pagination"]["total"] == 3
+    assert old["results"][0]["pmid"] == pinned["results"][0]["pmid"]
+    switched = page("--offset", "1")
+    assert switched["pagination"]["total"] == 4

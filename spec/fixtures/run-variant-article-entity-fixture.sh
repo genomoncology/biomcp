@@ -700,9 +700,11 @@ case "$scenario" in
          and (.counts.pre_dedup | type) == "number"
          and (.counts.post_dedup | type) == "number"
          and (.counts.returned | type) == "number"
-         and ([.ranking.inputs[]] | index("exactness") != null)
-         and ([.ranking.inputs[]] | index("route_source_position") != null)
-         and ([.ranking.inputs[]] | index("stable_identifier") != null)
+         and .ranking.version == 1
+         and (.ranking.method | startswith("descending lexicographic variant evidence"))
+         and (.ranking.inputs | length) == 6
+         and .ranking.inputs[0] == "title_gene_and_supported_variant"
+         and .ranking.inputs[-1] == "stable_identifier"
          and (.budgets.item | budget_consistent)
          and (.budgets.request | budget_consistent)
          and (.truncated | type) == "boolean"
