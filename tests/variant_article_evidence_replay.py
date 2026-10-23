@@ -16,7 +16,8 @@ CAPTURE = REPO_ROOT / "tests/fixtures/article/evidence-ranking/akt1-e17k.json"
 
 
 @contextmanager
-def akt1_replay(tmp_path, cache=True, *, capture=None):
+def akt1_replay(tmp_path, cache=True, *, capture=None, requested="AKT1 E17K"):
+    gene, protein = requested.split(maxsplit=1)
     capture = json.loads(CAPTURE.read_text()) if capture is None else capture
     rows = {row["pmid"]: row for row in capture["rows"]}
     for pmid in capture["pubmed_order"]:
@@ -33,7 +34,7 @@ def akt1_replay(tmp_path, cache=True, *, capture=None):
     requests = []
     misses = []
     hit = {"_id": "chr14:g.105246551C>T", "dbnsfp": {
-        "genename": "AKT1", "hgvsp": "p.Glu17Lys", "hgvsc": "c.49G>A",
+        "genename": gene, "hgvsp": protein, "hgvsc": "c.49G>A",
         "rsid": "rs121434592"}}
 
     class Handler(BaseHTTPRequestHandler):
@@ -56,7 +57,7 @@ def akt1_replay(tmp_path, cache=True, *, capture=None):
                 body = {"results": [], "count": 0, "total_pages": 0, "current": 1}
             elif path.endswith("/esearch.fcgi"):
                 term = query.get("term", [""])[0]
-                ids = capture["pubmed_order"] if term == "AKT1 E17K" else native["pubmed"]
+                ids = capture["pubmed_order"] if term == requested else native["pubmed"]
                 offset = int(query.get("retstart", [0])[0])
                 limit = int(query.get("retmax", [len(ids)])[0])
                 body = {"esearchresult": {"count": str(len(ids)),
