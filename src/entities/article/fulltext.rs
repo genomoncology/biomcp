@@ -753,7 +753,14 @@ pub(super) async fn resolve_fulltext(
     for attempt in xml_fulltext_attempts(article, resolved_pmcid.as_deref()) {
         let source = xml_source_metadata(attempt.winner());
         let mut preprint_metadata = None;
-        let fetched = super::fulltext_budget::route(&source.source, async {
+        let route_name = match attempt {
+            XmlFulltextAttempt::EuropePmcPmc => "Europe PMC PMC XML",
+            XmlFulltextAttempt::EuropePmcMed => "Europe PMC MED XML",
+            XmlFulltextAttempt::NcbiEfetchPmc => "NCBI EFetch PMC XML",
+            XmlFulltextAttempt::PmcOaArchive => "PMC Open Access archive",
+            XmlFulltextAttempt::PreprintJats => "preprint JATS XML",
+        };
+        let fetched = super::fulltext_budget::route(route_name, async {
             match attempt {
                 XmlFulltextAttempt::PreprintJats => {
                     fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))

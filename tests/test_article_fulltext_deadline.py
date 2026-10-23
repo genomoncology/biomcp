@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("held", ["pubtator", "semantic_scholar", "fulltext"])
+@pytest.mark.parametrize("held", ["pubtator", "semantic_scholar", "assets", "fulltext"])
 def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> None:
     """Feature: article. Stalled routes cannot hide available full text."""
     release = threading.Event()
@@ -31,7 +31,8 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
             requests.append((path, time.monotonic() - started))
             if ((held == "pubtator" and "biocjson" in path)
                     or (held == "semantic_scholar" and "/graph/" in path)
-                    or (held == "fulltext" and path != "/search"
+                    or (held in {"assets", "fulltext"} and path != "/search"
+                        and not (held == "assets" and path.endswith("fullTextXML"))
                         and "biocjson" not in path and "/graph/" not in path
                         and not ("efetch" in path and "db=pubmed" in self.path))):
                 release.wait(60)
@@ -91,8 +92,9 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
         assert len(attempts) >= 4, (attempts, requests)
         assert all(attempt["reason"] == "source_unavailable" for attempt in attempts), attempts
         assert "timed out" in payload["full_text_note"], payload
-        assert "Europe PMC" in payload["full_text_note"], payload
-        assert "PMC" in payload["full_text_note"], payload
+        for route in ("Europe PMC PMC XML", "Europe PMC MED XML", "NCBI EFetch PMC XML",
+                      "PMC Open Access archive", "PMC HTML"):
+            assert route in payload["full_text_note"], payload
     else:
         assert payload["full_text_coverage"]["coverage"] == "full_text", payload
         assert "Available Europe PMC body" in Path(payload["full_text_path"]).read_text()
