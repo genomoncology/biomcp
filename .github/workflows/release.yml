@@ -864,6 +864,12 @@ jobs:
     # formula's tarball URLs are installable.
     needs: [build, pypi-publish, container-publish, docs-live]
     if: github.event_name == 'push'
+    # Hold one cross-version exclusion from the public-release query through
+    # draft publication. Retain waiting publishers without cancelling them.
+    concurrency:
+      group: release-publication
+      queue: max
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     permissions:
       contents: write

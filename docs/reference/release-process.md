@@ -118,7 +118,7 @@ Package versions are committed metadata, not values stamped from tags. `scripts/
 
 ## Permissions and concurrency
 
-The workflow defaults to no token permissions. Each job receives only its declared permission; PyPI alone receives `id-token: write`, container publication receives `packages: write`, and draft/asset publication receives `contents: write`. Release runs share a tag- or candidate-keyed concurrency group, so a dispatch cannot race a tag push. Third-party actions are pinned where the repository has an admitted immutable revision; the PyPI publisher remains isolated in the protected `pypi` environment.
+The workflow defaults to no token permissions. Each job receives only its declared permission; PyPI alone receives `id-token: write`, container publication receives `packages: write`, and draft/asset publication receives `contents: write`. Release runs share a tag- or candidate-keyed concurrency group, so a dispatch cannot race a tag push. The `publish-release` job also holds the shared `release-publication` group across the public-release query, version decision, container latest move and draft publication. Its queue retains waiting publishers without cancelling them, and builds proceed in parallel across versions. The version comparison keeps a later-running older release from replacing a newer release. Container-only dispatch publishes versioned images and cannot move latest. Third-party actions are pinned where the repository has an admitted immutable revision; the PyPI publisher remains isolated in the protected `pypi` environment.
 
 ## Separate manual directory actions
 

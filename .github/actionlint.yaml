@@ -1,0 +1,6 @@
+# GitHub supports concurrency queues; actionlint 1.7.12 predates the queue key.
+# The release workflow contract checks its value and cancellation policy.
+paths:
+  .github/workflows/release.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section\. expected one of "cancel-in-progress", "group"$'
