@@ -89,16 +89,18 @@ pub(crate) fn record_request(request: &RequestBuilder, context: SourceContext) {
     });
 }
 
-pub(crate) fn record_response(response: &Response) {
+pub(crate) fn record_response(response: &Response, context: SourceContext) {
     let _ = CURRENT_REQUEST.try_with(|observation| {
-        if let Some(request) = observation
+        // Replace the whole snapshot from this response. Do not combine one
+        // concurrent request's status with a different request's URL.
+        *observation
             .0
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .as_mut()
-        {
-            request.status = Some(response.status().as_u16());
-        }
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(RequestDiagnostic {
+            url: safe_url(response.url()),
+            status: Some(response.status().as_u16()),
+            context,
+        });
     });
 }
 
@@ -216,12 +218,11 @@ mod tests {
                                 .get(format!("https://example.org/{path}?token=SYNTHETIC_SECRET")),
                             SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS),
                         );
-                        let response: Response = http::Response::builder()
-                            .status(status)
-                            .body("")
-                            .unwrap()
-                            .into();
-                        record_response(&response);
+                        CURRENT_REQUEST.with(|observation| {
+                            let mut diagnostic = observation.snapshot().unwrap();
+                            diagnostic.status = Some(status);
+                            *observation.0.lock().unwrap() = Some(diagnostic);
+                        });
                         barrier.wait().await;
                         safe_error(&BioMcpError::Api {
                             api: "provider".into(),

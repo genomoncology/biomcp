@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("failure", ["manifest_http", "manifest_transport", "manifest_decode", "xml_http", "figshare_http", "figshare_decode"])
+@pytest.mark.parametrize("failure", ["manifest_http", "manifest_transport", "manifest_decode", "manifest_redirect", "xml_http", "xml_decode", "figshare_http", "figshare_decode"])
 def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure: str) -> None:
     """Feature: article. Failed full-text routes name safe URLs and failure details."""
     sentinel = "SYNTHETIC_CREDENTIAL_SENTINEL"
@@ -33,7 +33,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
                     "id": "33766116", "pmid": "33766116", "source": "MED",
                     "title": "Route warning control", "pmcid": "PMC8010000",
                 }]}}).encode()
-            elif path.endswith("fullTextXML") and failure != "xml_http":
+            elif path.endswith("fullTextXML") and failure not in {"xml_http", "xml_decode"}:
                 content_type = "application/xml"
                 body = ("<article><body><sec><title>Results</title>"
                         + "<p>Available body.</p>" * 30 + "</sec></body></article>").encode()
@@ -42,11 +42,20 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
                                    "openAccessPdf": {"url": "https://figshare.com/articles/journal_contribution/control/123"}}).encode()
             elif path == "/v2/articles/123" and failure.startswith("figshare"):
                 body = json.dumps({"id": 123, "title": "Route warning control", "files": []}).encode()
+            elif failure == "manifest_redirect" and "list-type=" in self.path:
+                self.send_response(302)
+                self.send_header("Location", origin + "/redirected?token=" + sentinel)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            elif path == "/redirected":
+                code, body = 503, (unsafe_body + sentinel).encode()
             elif "list-type=" in self.path or ("efetch" in path and "db=pmc" in self.path) or path.endswith("fullTextXML"):
                 if failure == "manifest_transport" and "list-type=" in self.path:
                     self.close_connection = True
                     return
-                code = 200 if failure == "manifest_decode" and "list-type=" in self.path else 503
+                code = 200 if ((failure == "manifest_decode" and "list-type=" in self.path)
+                               or (failure == "xml_decode" and path.endswith("fullTextXML"))) else 503
                 body = (unsafe_body + sentinel).encode()
             else:
                 code, body = 404, b"{}"
@@ -84,7 +93,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     try:
         args = [binary, "--json", "--no-cache", "get", "article", "33766116", "fulltext"]
-        if failure != "xml_http":
+        if failure not in {"xml_http", "xml_decode"}:
             args += ["--lines", "15:22"]
         result = subprocess.run(args,
                                 env=env, capture_output=True, text=True, timeout=40)
@@ -100,10 +109,13 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
     else:
         warning = next(line for line in result.stderr.splitlines()
                        if "PMC OA manifest request failed" in line)
-        assert origin + "/oa" in warning, warning
-        assert "prefix=PMC8010000" in warning, warning
+        if failure == "manifest_redirect":
+            assert origin + "/redirected?token=REDACTED" in warning, warning
+        else:
+            assert origin + "/oa" in warning, warning
+            assert "prefix=PMC8010000" in warning, warning
     expected = ("transport error" if failure == "manifest_transport" else
-                "HTTP 200; response error (decode)" if failure.endswith("decode") else "HTTP 503")
+                "HTTP 200; response error (decode)" if failure in {"manifest_decode", "figshare_decode"} else "HTTP 503")
     assert expected in warning, warning
     assert sentinel not in result.stdout + result.stderr
     assert unsafe_body not in result.stdout + result.stderr
@@ -112,3 +124,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         note = json.loads(result.stdout)["full_text_note"]
         assert origin + "/pubmed/efetch.fcgi?db=pmc&id=8010000&rettype=xml&api_key=REDACTED" in note
         assert "HTTP 503" in note
+
+    if failure == "xml_decode":
+        note = json.loads(result.stdout)["full_text_note"]
+        assert "HTTP 200; response error (decode); request " + origin + "/epmc/PMC8010000/fullTextXML" in note

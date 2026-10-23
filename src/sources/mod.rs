@@ -453,9 +453,9 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
             } else {
                 context
             };
-            fulltext_diagnostics::annotate_current_error(error.with_source_context(context))
+            error.with_source_context(context)
         })?;
-        fulltext_diagnostics::record_response(&response);
+        fulltext_diagnostics::record_response(&response, context);
         note_stale_cache_serve(&mut response, context.provider().label());
         Ok(response)
     }

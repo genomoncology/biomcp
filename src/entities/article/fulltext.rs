@@ -789,58 +789,67 @@ pub(super) async fn resolve_fulltext(
             XmlFulltextAttempt::PmcOaArchive => "PMC Open Access archive",
             XmlFulltextAttempt::PreprintJats => "preprint JATS XML",
         };
-        let fetched = super::fulltext_budget::route(route_name, async {
-            match attempt {
-                XmlFulltextAttempt::PreprintJats => {
-                    fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
-                        .await
-                        .map(|value| {
-                            value.map(|(xml, metadata)| {
-                                preprint_metadata = Some(metadata);
-                                (xml, None)
+        let request_observation =
+            crate::sources::fulltext_diagnostics::RequestObservation::default();
+        let fetched = super::fulltext_budget::observed_route(
+            route_name,
+            async {
+                match attempt {
+                    XmlFulltextAttempt::PreprintJats => {
+                        fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
+                            .await
+                            .map(|value| {
+                                value.map(|(xml, metadata)| {
+                                    preprint_metadata = Some(metadata);
+                                    (xml, None)
+                                })
                             })
-                        })
+                    }
+                    XmlFulltextAttempt::EuropePmcPmc => match europe.as_ref() {
+                        Some(client) => client
+                            .get_full_text_xml(
+                                "PMC",
+                                resolved_pmcid.as_deref().expect("PMC attempt"),
+                            )
+                            .await
+                            .map(|value| value.map(|xml| (xml, None))),
+                        None => Err(BioMcpError::SourceUnavailable {
+                            source_name: "Europe PMC".into(),
+                            reason: "client unavailable".into(),
+                            suggestion: "Retry the article request".into(),
+                        }),
+                    },
+                    XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
+                        Ok(client) => client
+                            .get_full_text_xml(resolved_pmcid.as_deref().expect("PMC attempt"))
+                            .await
+                            .map(|value| value.map(|xml| (xml, None))),
+                        Err(err) => Err(err),
+                    },
+                    XmlFulltextAttempt::PmcOaArchive => match PmcOaClient::new() {
+                        Ok(client) => client
+                            .get_full_text_xml_with_manifest(
+                                resolved_pmcid.as_deref().expect("PMC attempt"),
+                            )
+                            .await
+                            .map(|value| value.map(|(xml, manifest)| (xml, Some(manifest)))),
+                        Err(err) => Err(err),
+                    },
+                    XmlFulltextAttempt::EuropePmcMed => match europe.as_ref() {
+                        Some(client) => client
+                            .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
+                            .await
+                            .map(|value| value.map(|xml| (xml, None))),
+                        None => Err(BioMcpError::SourceUnavailable {
+                            source_name: "Europe PMC".into(),
+                            reason: "client unavailable".into(),
+                            suggestion: "Retry the article request".into(),
+                        }),
+                    },
                 }
-                XmlFulltextAttempt::EuropePmcPmc => match europe.as_ref() {
-                    Some(client) => client
-                        .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
-                        .await
-                        .map(|value| value.map(|xml| (xml, None))),
-                    None => Err(BioMcpError::SourceUnavailable {
-                        source_name: "Europe PMC".into(),
-                        reason: "client unavailable".into(),
-                        suggestion: "Retry the article request".into(),
-                    }),
-                },
-                XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
-                    Ok(client) => client
-                        .get_full_text_xml(resolved_pmcid.as_deref().expect("PMC attempt"))
-                        .await
-                        .map(|value| value.map(|xml| (xml, None))),
-                    Err(err) => Err(err),
-                },
-                XmlFulltextAttempt::PmcOaArchive => match PmcOaClient::new() {
-                    Ok(client) => client
-                        .get_full_text_xml_with_manifest(
-                            resolved_pmcid.as_deref().expect("PMC attempt"),
-                        )
-                        .await
-                        .map(|value| value.map(|(xml, manifest)| (xml, Some(manifest)))),
-                    Err(err) => Err(err),
-                },
-                XmlFulltextAttempt::EuropePmcMed => match europe.as_ref() {
-                    Some(client) => client
-                        .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
-                        .await
-                        .map(|value| value.map(|xml| (xml, None))),
-                    None => Err(BioMcpError::SourceUnavailable {
-                        source_name: "Europe PMC".into(),
-                        reason: "client unavailable".into(),
-                        suggestion: "Retry the article request".into(),
-                    }),
-                },
-            }
-        })
+            },
+            request_observation.clone(),
+        )
         .await;
 
         let Some((xml, oa_manifest)) = (match fetched {
@@ -880,7 +889,7 @@ pub(super) async fn resolve_fulltext(
                     ArticleFulltextCacheState::Bypass,
                     ArticleFulltextAttemptReason::UnusableContent,
                 );
-                state.record_failure(err);
+                state.record_failure(request_observation.annotate(err));
                 continue;
             }
         };

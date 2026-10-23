@@ -13,8 +13,20 @@ pub(super) async fn route<T>(
     source: &str,
     future: impl Future<Output = Result<T, BioMcpError>>,
 ) -> Result<T, BioMcpError> {
+    observed_route(
+        source,
+        future,
+        crate::sources::fulltext_diagnostics::RequestObservation::default(),
+    )
+    .await
+}
+
+pub(super) async fn observed_route<T>(
+    source: &str,
+    future: impl Future<Output = Result<T, BioMcpError>>,
+    observation: crate::sources::fulltext_diagnostics::RequestObservation,
+) -> Result<T, BioMcpError> {
     let started = Instant::now();
-    let observation = crate::sources::fulltext_diagnostics::RequestObservation::default();
     let result = crate::sources::fulltext_diagnostics::CURRENT_REQUEST
         .scope(
             observation.clone(),
