@@ -16,8 +16,8 @@ CAPTURE = REPO_ROOT / "tests/fixtures/article/evidence-ranking/akt1-e17k.json"
 
 
 @contextmanager
-def akt1_replay(tmp_path, cache=True):
-    capture = json.loads(CAPTURE.read_text())
+def akt1_replay(tmp_path, cache=True, *, capture=None):
+    capture = json.loads(CAPTURE.read_text()) if capture is None else capture
     rows = {row["pmid"]: row for row in capture["rows"]}
     for pmid in capture["pubmed_order"]:
         rows.setdefault(pmid, {"pmid": pmid, "title": "", "provenance": []})
