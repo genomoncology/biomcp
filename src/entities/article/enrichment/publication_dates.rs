@@ -12,7 +12,7 @@ use super::{
     article_search_deadline_status, plain_article_search_deadline_elapsed,
 };
 use crate::entities::article::PUBMED_PAGE_SIZE;
-use crate::entities::article::filters::parse_row_date;
+use crate::transform::article::publication_date_key;
 
 tokio::task_local! {
     static TODAY: NaiveDate;
@@ -29,7 +29,7 @@ pub(super) async fn with_today<T>(future: impl Future<Output = T>) -> T {
 }
 
 fn date_key(value: Option<&str>) -> Option<NaiveDate> {
-    NaiveDate::parse_from_str(&parse_row_date(value)?, "%Y-%m-%d").ok()
+    publication_date_key(value?)
 }
 
 fn failed(error: &crate::error::BioMcpError) -> ArticleSourceStatus {
@@ -125,5 +125,36 @@ fn retain_published_date(
     };
     if dates.get(pmid).is_none_or(|(existing, _)| key < *existing) {
         dates.insert(pmid.to_string(), (key, value.unwrap().to_string()));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // This admission boundary cannot be forced through a provider replay:
+    // HTTP sends reserve budget and normally finish before invocation expiry.
+    #[tokio::test]
+    async fn expired_date_recovery_retains_rows_without_starting_provider_work() {
+        let date = Utc::now().date_naive().succ_opt().unwrap().to_string();
+        let mut rows = vec![crate::entities::article::test_support::row_with(
+            "123",
+            ArticleSource::PubTator,
+            Some(&date),
+            None,
+            None,
+        )];
+        let deadline = crate::sources::VariantArticleDeadline::from_now(std::time::Duration::ZERO);
+        let statuses =
+            crate::sources::with_variant_article_deadline(deadline, enrich(&mut rows)).await;
+        assert_eq!(rows[0].date.as_deref(), Some(date.as_str()));
+        assert_eq!(statuses.len(), 1);
+        assert!(
+            statuses[0]
+                .message
+                .as_deref()
+                .unwrap()
+                .contains("deadline elapsed")
+        );
     }
 }

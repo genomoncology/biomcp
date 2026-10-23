@@ -14,6 +14,7 @@ pub use self::anchors::{
 };
 pub(crate) use self::annotations::gene_ids_needing_official_symbols;
 pub use self::annotations::{extract_annotations, extract_annotations_with_official_symbols};
+pub(crate) use self::federation::publication_date_key;
 pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
     from_pubtator_document, from_pubtator_search_result, merge_europepmc_metadata,

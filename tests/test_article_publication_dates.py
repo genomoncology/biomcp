@@ -19,7 +19,7 @@ pytestmark = pytest.mark.needs_binary
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations", "single", "no_work", "expired"])
+@pytest.mark.parametrize("mode", ["dates", "bounds", "offset", "failure", "citations", "single", "no_work"])
 def test_article_publication_dates_precede_merge_bounds_and_pagination(
     mode: str, tmp_path: Path,
 ) -> None:
@@ -32,7 +32,6 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
             for i, date in enumerate(dates)]
     requests: list[list[str]] = []
     misses: list[str] = []
-    release = threading.Event()
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802 - stdlib callback
@@ -41,9 +40,6 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
             if target.path == "/pubtator/search/":
                 body = {"results": rows, "count": len(rows)}
             elif target.path == "/europe/search":
-                if mode == "expired":
-                    release.wait(HANG_TIMEOUT)
-                    return
                 body = {"hitCount": 1, "resultList": {"result": [{
                     "id": "90001", "pmid": "90001", "title": rows[0]["title"],
                     "firstPublicationDate": issue, "citedByCount": 0,
@@ -100,8 +96,6 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     }, base)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     args = ["--sort", "citations" if mode == "citations" else "date", "--limit", "50"]
-    if mode == "expired":
-        env["BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS"] = "1000"
     if mode == "single":
         args += ["--source", "pubtator"]
     if mode == "bounds":
@@ -115,7 +109,6 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
             env=env, capture_output=True, text=True, timeout=HANG_TIMEOUT, check=False,
         )
     finally:
-        release.set()
         server.shutdown()
         server.server_close()
         thread.join(timeout=HANG_TIMEOUT)
@@ -123,11 +116,9 @@ def test_article_publication_dates_precede_merge_bounds_and_pagination(
     assert not misses, misses
     payload = json.loads(result.stdout)
     actual = payload["results"]
-    if mode in {"no_work", "expired"}:
+    if mode == "no_work":
         assert not requests, requests
         assert actual[0]["pmid"] == "90005"
-        if mode == "expired":
-            assert payload["complete"] is False
         return
     if mode == "citations":
         assert not requests, requests

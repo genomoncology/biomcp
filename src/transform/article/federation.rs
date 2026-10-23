@@ -463,11 +463,22 @@ fn pubmed_month_number(value: &str) -> Option<&'static str> {
 
 fn parse_pubdate(value: &str) -> Option<String> {
     let mut parts = value.split_whitespace();
-    let year = parts.next()?.parse::<i32>().ok()?;
+    let year_token = parts.next()?;
+    if year_token.len() != 4 || !year_token.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let year = year_token.parse::<i32>().ok()?;
     let Some(month_token) = parts.next() else {
         NaiveDate::from_ymd_opt(year, 1, 1)?;
         return Some(format!("{year:04}"));
     };
+    if matches!(
+        month_token.to_ascii_lowercase().as_str(),
+        "spring" | "summer" | "fall" | "autumn" | "winter"
+    ) {
+        NaiveDate::from_ymd_opt(year, 1, 1)?;
+        return Some(year_token.to_string());
+    }
     let month = pubmed_month_number(month_token)?.parse::<u32>().ok()?;
     let Some(day_token) = parts.next() else {
         NaiveDate::from_ymd_opt(year, month, 1)?;
@@ -477,7 +488,9 @@ fn parse_pubdate(value: &str) -> Option<String> {
     NaiveDate::from_ymd_opt(year, month, day).map(|date| date.to_string())
 }
 
-fn publication_date_key(value: &str) -> Option<NaiveDate> {
+pub(crate) fn publication_date_key(value: &str) -> Option<NaiveDate> {
+    let value = value.trim();
+    let value = value.get(..10).unwrap_or(value);
     let normalized = match value.len() {
         4 => format!("{value}-01-01"),
         7 => format!("{value}-01"),
