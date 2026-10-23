@@ -142,9 +142,9 @@ pub struct VariantArticleSourceStatus {
     pub work: VariantArticleSourceWork,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
     pub reason_codes: Vec<crate::entities::article::variant_search::atoms::Atom>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub omitted_aliases: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub truncated_aliases: Vec<String>,
 }
 
@@ -1372,10 +1372,11 @@ pub struct VariantArticleCountsPlan {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantArticleRankingPlan {
+    pub version: u32,
     #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::atom")]
     pub method: crate::entities::article::variant_search::atoms::Atom,
-    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::triple")]
-    pub inputs: [crate::entities::article::variant_search::atoms::Atom; 3],
+    #[serde(deserialize_with = "crate::entities::article::variant_search::atoms::list")]
+    pub inputs: Vec<crate::entities::article::variant_search::atoms::Atom>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1416,7 +1417,7 @@ pub struct ProviderVariantQueryPlan {
     pub provider: String,
     pub route: String,
     pub query_alias: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub query_aliases: Vec<String>,
     #[serde(skip)]
     coverage_aliases: Vec<String>,
@@ -1475,7 +1476,7 @@ pub struct VariantArticleDebugPlan {
     pub truncated: bool,
     pub stopped_routes: Vec<String>,
     pub next: VariantArticleNextPlan,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub alias_yields: Vec<VariantArticleAliasYield>,
     pub candidate_trace: VariantArticleCandidateTrace,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -5142,10 +5143,7 @@ fn build_debug_plan(
         provider_queries,
         routes,
         counts: state.counts,
-        ranking: VariantArticleRankingPlan {
-            method: "exact route union with deterministic native-position ranking",
-            inputs: ["exactness", "route_source_position", "stable_identifier"],
-        },
+        ranking: rank::descriptor(),
         budgets: VariantArticleBudgetsPlan {
             item: item_work,
             request: request_work,
@@ -6157,10 +6155,7 @@ fn empty_debug_plan(
             post_dedup: 0,
             returned: 0,
         },
-        ranking: VariantArticleRankingPlan {
-            method: "exact route union with deterministic native-position ranking",
-            inputs: ["exactness", "route_source_position", "stable_identifier"],
-        },
+        ranking: rank::descriptor(),
         budgets: VariantArticleBudgetsPlan {
             item: item_work,
             request: VariantArticleWork::new(DISCOVERY_WORK_LIMIT, 0),

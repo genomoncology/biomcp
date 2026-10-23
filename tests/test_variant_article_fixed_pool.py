@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import base64
+import hashlib
+import sqlite3
 import os
 from pathlib import Path
 import subprocess
@@ -22,8 +25,11 @@ pytestmark = pytest.mark.needs_binary
 
 @pytest.fixture
 def article_pool_replay(tmp_path):
+    state = {"requests": []}
+
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802
+            state["requests"].append(self.path)
             path = urlsplit(self.path).path
             if path == "/search":
                 query = parse_qs(urlsplit(self.path).query).get("query", [""])[0]
@@ -67,7 +73,7 @@ def article_pool_replay(tmp_path):
         name: origin for name in ("BIOMCP_EUROPEPMC_BASE", "BIOMCP_PUBMED_BASE",
                                  "BIOMCP_PUBTATOR_BASE", "BIOMCP_S2_BASE")}, origin)
     try:
-        yield env
+        yield env, state
     finally:
         server.shutdown()
         server.server_close()
@@ -75,7 +81,7 @@ def article_pool_replay(tmp_path):
 
 
 def test_article_tokens_bind_the_pool_and_request_configuration(article_pool_replay):
-    env = article_pool_replay
+    env, _state = article_pool_replay
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
 
     def invoke(*args, command_env=None):
@@ -106,6 +112,10 @@ def test_article_tokens_bind_the_pool_and_request_configuration(article_pool_rep
     conflict = invoke("--page-token", token, "--verify-identity")
     assert conflict.returncode != 0
     assert "conflict" in (conflict.stdout + conflict.stderr).lower()
+    changed_config = invoke("--page-token", token,
+                            command_env=dict(env, BIOMCP_DEFAULT_ASSEMBLY="GRCh37"))
+    assert changed_config.returncode != 0
+    assert "conflict" in changed_config.stdout + changed_config.stderr
     bypass = dict(env, BIOMCP_CACHE_MODE="off")
     expired = invoke("--page-token", token, command_env=bypass)
     assert expired.returncode != 0
@@ -118,7 +128,7 @@ def test_article_tokens_bind_the_pool_and_request_configuration(article_pool_rep
 def test_typed_article_items_continue_distinct_pools(article_pool_replay):
     from test_mcp_stdio_guidance import StdioMcp, _initialize
 
-    client = StdioMcp(article_pool_replay)
+    client = StdioMcp(article_pool_replay[0])
     sequence = 0
 
     def articles(items):
@@ -150,3 +160,39 @@ def test_typed_article_items_continue_distinct_pools(article_pool_replay):
         assert following[0]["results"][0]["pmid"] != following[1]["results"][0]["pmid"]
     finally:
         client.close()
+
+
+@pytest.mark.parametrize("corruption", ["expired", "version", "atom"])
+def test_article_continuation_refuses_invalid_stored_pool(article_pool_replay, corruption):
+    env, state = article_pool_replay
+    binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
+    command = [binary, "--json", "variant", "articles", "BRAF V600E",
+               "--strategy", "exact", "--limit", "1"]
+    first = subprocess.run(command, env=env, capture_output=True, text=True,
+                           timeout=HANG_TIMEOUT)
+    assert first.returncode == 0, first.stdout + first.stderr
+    token = json.loads(first.stdout)["pagination"]["next_page_token"]
+    binding = json.loads(base64.urlsafe_b64decode(token + "=" * (-len(token) % 4)))
+    with sqlite3.connect(Path(env["BIOMCP_CACHE_DIR"]) / "biomcp.db") as database:
+        body, = database.execute(
+            "SELECT body FROM entries WHERE namespace='variant-pool' AND key=?",
+            (binding["snapshot"],),
+        ).fetchone()
+        snapshot = json.loads(body)
+        if corruption == "expired":
+            snapshot["expires_ms"] = 0
+        elif corruption == "version":
+            snapshot["schema_version"] = 999
+        else:
+            snapshot["payload"]["context"]["retrieval_path"] = "unknown-pool-label"
+        encoded = json.dumps(snapshot, separators=(",", ":")).encode()
+        database.execute(
+            "UPDATE entries SET body=?, body_hash=? WHERE namespace='variant-pool' AND key=?",
+            (encoded, hashlib.sha256(encoded).hexdigest(), binding["snapshot"]),
+        )
+    before = len(state["requests"])
+    refused = subprocess.run([*command, "--page-token", token], env=env,
+                             capture_output=True, text=True, timeout=HANG_TIMEOUT)
+    assert refused.returncode != 0
+    assert "offset 0" in refused.stdout + refused.stderr
+    assert len(state["requests"]) == before, "invalid continuations must not rebuild a pool"

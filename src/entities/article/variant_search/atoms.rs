@@ -25,11 +25,11 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "network",
         "tls",
         "body_limit",
-        "exact route union with deterministic native-position ranking",
         "PubTator variant annotation recall",
         "best-effort free-text fallback",
         "absent",
         "abstract",
+        "alias",
         "alias_limit",
         "annotation",
         "annotation-v1",
@@ -56,7 +56,6 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "exact_lexical",
         "exact_name",
         "exact_variant",
-        "exactness",
         "federated",
         "filtered_confirmed_only",
         "fulltext",
@@ -99,7 +98,6 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "resolution",
         "resolution_unavailable",
         "retry_attempted",
-        "route_source_position",
         "semantic-scholar",
         "semanticscholar",
         "semanticscholar_alias_limit",
@@ -126,6 +124,8 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
     ATOMS
         .iter()
         .copied()
+        .chain(std::iter::once(super::rank::METHOD))
+        .chain(super::rank::INPUTS)
         .find(|atom| *atom == value)
         .ok_or_else(|| E::custom("unknown label in article pool"))
 }
@@ -141,12 +141,4 @@ pub(crate) fn list<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<&'static str>
         .into_iter()
         .map(checked)
         .collect()
-}
-pub(crate) fn triple<'de, D: Deserializer<'de>>(de: D) -> Result<[&'static str; 3], D::Error> {
-    let values = <[String; 3]>::deserialize(de)?;
-    Ok([
-        checked(values[0].clone())?,
-        checked(values[1].clone())?,
-        checked(values[2].clone())?,
-    ])
 }
