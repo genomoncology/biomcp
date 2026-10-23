@@ -22,6 +22,4 @@ The upstream fix is https://github.com/tokio-rs/tokio/pull/8587. The scanner ide
 
 Keep the advisory policy and reviewed exceptions unchanged. Preserve existing public behavior and the full-text deadline repair. Add the release changelog bullet and correct the file claim to the actual diff.
 
-## Proof
-
-The existing cargo-deny advisory stage is the failing check on current main; retain j6391 and j6394 as RED evidence. Show that same stage passes with the dependency repair, then run one routine landing gate on the reviewed-ready branch through pm job. Use existing CLI and MCP tests; add a regression only if an actual compatibility defect needs one. Final source qualification and the complete untagged rehearsal remain with 2330 after landing.
+- Proof: The existing cargo-deny advisory stage is the failing check on current main; retain j6391 and j6394 as RED evidence. Show that same stage passes with the dependency repair, then run one routine landing gate on the reviewed-ready branch through pm job. Use existing CLI and MCP tests; add a regression only if an actual compatibility defect needs one. Final source qualification and the complete untagged rehearsal remain with 2330 after landing.
