@@ -121,6 +121,10 @@ fn min_source_local_position(source_positions: &[ArticleSourcePosition]) -> Opti
 fn article_rows_overlap(left: &ArticleSearchResult, right: &ArticleSearchResult) -> bool {
     let left_pmid = normalize_row_identifier(Some(&left.pmid));
     let right_pmid = normalize_row_identifier(Some(&right.pmid));
+    // A secondary identifier cannot erase a distinct PubMed membership.
+    if let (Some(left), Some(right)) = (&left_pmid, &right_pmid) {
+        return left == right;
+    }
     let left_pmcid = normalize_row_identifier(left.pmcid.as_deref());
     let right_pmcid = normalize_row_identifier(right.pmcid.as_deref());
     let left_doi = normalize_row_identifier(left.doi.as_deref());
@@ -130,8 +134,7 @@ fn article_rows_overlap(left: &ArticleSearchResult, right: &ArticleSearchResult)
     let left_semantic_scholar = normalize_row_identifier(left.semantic_scholar_id.as_deref());
     let right_semantic_scholar = normalize_row_identifier(right.semantic_scholar_id.as_deref());
 
-    left_pmid.is_some() && left_pmid == right_pmid
-        || left_pmcid.is_some() && left_pmcid == right_pmcid
+    left_pmcid.is_some() && left_pmcid == right_pmcid
         || left_doi.is_some() && left_doi == right_doi
         || left_arxiv.is_some() && left_arxiv == right_arxiv
         || left_semantic_scholar.is_some() && left_semantic_scholar == right_semantic_scholar
@@ -235,13 +238,23 @@ pub(super) fn merge_article_candidate_pool(
     let mut merged: Vec<ArticleCandidate> = Vec::with_capacity(candidates.len());
 
     for row in candidates {
-        let matches = merged
+        let mut matches = merged
             .iter()
             .enumerate()
             .filter_map(|(idx, existing)| {
                 article_rows_overlap(&existing.row, &row.row).then_some(idx)
             })
             .collect::<Vec<_>>();
+
+        // A PMID-less row can overlap several identified papers. Keep that
+        // ambiguous row separate rather than joining their memberships through it.
+        let identified_matches = matches
+            .iter()
+            .filter_map(|idx| normalize_row_identifier(Some(&merged[*idx].row.pmid)))
+            .collect::<std::collections::BTreeSet<_>>();
+        if identified_matches.len() > 1 {
+            matches.retain(|idx| merged[*idx].row.pmid.trim().is_empty());
+        }
 
         if matches.is_empty() {
             merged.push(row);
