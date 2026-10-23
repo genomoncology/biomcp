@@ -90,9 +90,12 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
         assert payload["full_text_coverage"]["coverage"] == "unavailable", payload
         attempts = payload["full_text_coverage"]["attempts"]
         assert len(attempts) >= 4, (attempts, requests)
-        assert all(attempt["reason"] == "source_unavailable" for attempt in attempts), attempts
+        failures = [attempt for attempt in attempts if attempt["reason"] == "source_unavailable"]
+        assert len(failures) == 4, (attempts, requests)
+        # The MED fallback has no fullTextXML resource and makes no network request.
+        assert sum(attempt["reason"] == "no_content" for attempt in attempts) == 1, attempts
         assert "timed out" in payload["full_text_note"], payload
-        for route in ("Europe PMC PMC XML", "Europe PMC MED XML", "NCBI EFetch PMC XML",
+        for route in ("Europe PMC PMC XML", "NCBI EFetch PMC XML",
                       "PMC Open Access archive", "PMC HTML"):
             assert route in payload["full_text_note"], payload
     else:
