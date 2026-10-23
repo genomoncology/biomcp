@@ -73,6 +73,7 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
         "BIOMCP_PUBMED_BASE",
     )}, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
+    env.pop("RUST_LOG", None)
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     try:
         result = subprocess.run([binary, "--json", "--no-cache", "get", "article",
