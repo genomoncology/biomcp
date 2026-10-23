@@ -149,7 +149,7 @@ def akt1_replay(tmp_path, cache=True, *, capture=None):
     env = (retained_cache_env if cache else isolated_command_env)(tmp_path, providers, origin)
     env["BIOMCP_DISABLE_SOURCES"] = "pubtator3,litvar2,mygene-info"
     try:
-        yield SimpleNamespace(env=env, requests=requests, capture=capture)
+        yield SimpleNamespace(env=env, requests=requests, capture=capture, native=native)
     finally:
         server.shutdown()
         server.server_close()
