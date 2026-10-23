@@ -20,7 +20,7 @@ import pytest
 from hang_guard import HANG_TIMEOUT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 
@@ -89,6 +89,7 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(payload)
 
@@ -111,20 +112,49 @@ def test_union_pages_keep_component_pmids(scenario: str, tmp_path: Path) -> None
         "annotation", "lexical", "exact", "union",
     )
     pages: dict[str, list[dict]] = {strategy: [] for strategy in strategies}
+
+    def execute(strategy: str, offset: int, limit: int) -> dict:
+        if scenario == "changing_support":
+            env = retained_cache_env(tmp_path / strategy, providers, origin)
+            cache_args = []
+        else:
+            env = isolated_command_env(tmp_path / strategy, providers, origin)
+            cache_args = ["--no-cache"]
+        env["BIOMCP_DISABLE_SOURCES"] = "mygene-info,pubmed,pubtator3"
+        result = subprocess.run(
+            [binary, *cache_args, "--json", "variant", "articles", "ABCC8 R1437Q",
+             "--strategy", strategy, "--limit", str(limit),
+             "--offset", str(offset), "--debug-plan"],
+            env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        return json.loads(result.stdout)
+
     try:
         for strategy in pages:
-            for offset in ((0, 1) if scenario == "changing_support" else (0,)):
-                phase["support"] = strategy == "union" and offset == 0
-                env = isolated_command_env(tmp_path / f"{strategy}-{offset}", providers, origin)
-                env["BIOMCP_DISABLE_SOURCES"] = "mygene-info,pubmed,pubtator3"
-                result = subprocess.run(
-                    [binary, "--no-cache", "--json", "variant", "articles", "ABCC8 R1437Q",
-                     "--strategy", strategy, "--limit", "1" if scenario == "changing_support" else "50",
-                     "--offset", str(offset), "--debug-plan"],
-                    env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
-                )
-                assert result.returncode == 0, result.stdout + result.stderr
-                pages[strategy].append(json.loads(result.stdout))
+            if scenario != "changing_support" or strategy != "union":
+                pages[strategy].append(execute(strategy, 0, 50))
+                continue
+            walks = []
+            for walk, limit in enumerate((1, 2)):
+                ordered_pmids: list[str] = []
+                offset = 0
+                for _ in range(3):  # The authored pool has exactly two members.
+                    phase["support"] = walk == 0 and offset == 0
+                    page = execute(strategy, offset, limit)
+                    pages[strategy].append(page)
+                    assert page["debug_plan"]["counts"]["post_dedup"] == 2, page
+                    ordered_pmids.extend(row["pmid"] for row in page["results"])
+                    offset += len(page["results"])
+                    if not page["pagination"]["has_more"]:
+                        break
+                assert len(ordered_pmids) == len(set(ordered_pmids)) == 2, pages
+                phase["support"] = False
+                empty = execute(strategy, offset, limit)
+                assert not empty["results"] and not empty["pagination"]["has_more"], empty
+                assert empty["debug_plan"]["counts"]["post_dedup"] == 2, empty
+                walks.append(ordered_pmids)
+            assert walks[0] == walks[1], walks
     finally:
         server.shutdown()
         server.server_close()
