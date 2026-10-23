@@ -871,8 +871,10 @@ fn validate_paper_id(id: &str) -> Result<&str, BioMcpError> {
     Ok(id)
 }
 
+pub(crate) const SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX: usize = 100;
+
 fn validate_limit(limit: usize) -> Result<usize, BioMcpError> {
-    if limit == 0 || limit > 100 {
+    if limit == 0 || limit > SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX {
         return Err(BioMcpError::InvalidArgument(
             "Semantic Scholar --limit must be between 1 and 100".into(),
         ));

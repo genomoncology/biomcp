@@ -771,6 +771,7 @@ pub(super) async fn search_semantic_scholar_candidates(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
+    let limit = limit.min(crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX);
     let (client, mut first_unit) =
         variant_article_client(execution, route, "semanticscholar", async {
             match execution {
