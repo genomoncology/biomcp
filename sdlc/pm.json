@@ -1,4 +1,12 @@
 {
+  "inertPaths": [
+    "sdlc/plan.md",
+    "sdlc/planning/*.md",
+    "sdlc/tickets/*.md",
+    "sdlc/decisions/*.md",
+    "sdlc/records/*.md",
+    "sdlc/ideas/*.md"
+  ],
   "statusMappings": {
     "resolved": "closed"
   },
