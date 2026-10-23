@@ -9,7 +9,7 @@ const LITERAL_PUBMED_ROUTE: &str = "literal_pubmed";
 const PUBMED_RETRIEVABLE_IDS: usize = 10_000;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(super) struct LiteralPubMedProgress {
+pub(crate) struct LiteralPubMedProgress {
     pub query: String,
     pub total: Option<u64>,
     pub next_offset: usize,
@@ -260,7 +260,7 @@ pub(super) async fn acquire_literal_pubmed(
         unfinished.reason_codes = vec![if progress.hard_limit {
             "query_result_cap"
         } else {
-            "not_attempted"
+            "logical_work_cap"
         }];
         status.push(unfinished);
     }
@@ -275,7 +275,14 @@ async fn enumerate_literal_pubmed(
     progress: &mut LiteralPubMedProgress,
     execution: &VariantArticleExecutionContext,
 ) {
-    let client = match PubMedClient::new_with_deadline(execution.deadline()).await {
+    let (client, mut first_unit) = match super::super::backends::variant_article_client(
+        Some(execution),
+        LITERAL_PUBMED_ROUTE,
+        "pubmed",
+        PubMedClient::new_with_deadline(execution.deadline()),
+    )
+    .await
+    {
         Ok(client) => client,
         Err(_) => return,
     };
@@ -283,7 +290,6 @@ async fn enumerate_literal_pubmed(
     while !progress.complete && !progress.hard_limit {
         let previous_offset = progress.next_offset;
         execution.add_route_unit(LITERAL_PUBMED_ROUTE, "pubmed");
-        let mut first_unit = None;
         let result = super::super::backends::variant_article_request(
             Some(execution),
             LITERAL_PUBMED_ROUTE,
@@ -327,7 +333,17 @@ async fn hydrate_literal_pubmed(
     candidates: &mut [ArticleCandidate],
     execution: &VariantArticleExecutionContext,
 ) {
-    let client = match PubMedClient::new_with_deadline(execution.deadline()).await {
+    if candidates.is_empty() {
+        return;
+    }
+    let (client, mut first_unit) = match super::super::backends::variant_article_client(
+        Some(execution),
+        LITERAL_PUBMED_ROUTE,
+        "pubmed",
+        PubMedClient::new_with_deadline(execution.deadline()),
+    )
+    .await
+    {
         Ok(client) => client,
         Err(_) => return,
     };
@@ -337,7 +353,6 @@ async fn hydrate_literal_pubmed(
             .map(|candidate| candidate.row.pmid.clone())
             .collect::<Vec<_>>();
         execution.add_route_unit(LITERAL_PUBMED_ROUTE, "pubmed");
-        let mut first_unit = None;
         let result = super::super::backends::variant_article_request(
             Some(execution),
             LITERAL_PUBMED_ROUTE,

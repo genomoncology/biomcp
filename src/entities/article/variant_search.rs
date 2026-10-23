@@ -57,10 +57,9 @@ use super::backends::{
     search_europepmc_page_with_context, search_pubmed_page_with_context,
     search_pubtator_page_with_context, search_semantic_scholar_candidates,
 };
-use super::candidates::{
-    ArticleCandidate, article_candidate_from_row, merge_article_candidate_pool,
-    stable_article_identifier,
-};
+#[cfg(test)]
+use super::candidates::merge_article_candidate_pool;
+use super::candidates::{ArticleCandidate, article_candidate_from_row, stable_article_identifier};
 use super::enrichment::{
     enrich_article_search_rows_with_semantic_scholar_context,
     enrich_visible_article_search_rows_with_article_base_context,
