@@ -23,7 +23,7 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/coding-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene", "requested38", "unknown", "mcp"])
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "batch", "disabled", "disabled-markdown", "cap", "complete", "reported", "lexical", "gene", "requested38", "unknown", "mcp", "exact-unknown"])
 def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     control = json.loads(FIXTURE.read_text())
     hit = control["hit"]
@@ -118,6 +118,9 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
     if surface not in ("markdown", "disabled-markdown"):
         command.append("--json")
     command += ["variant", "articles", "ABCC8 R1437Q", "--limit", "5"]
+    if surface == "exact-unknown":
+        command[command.index("ABCC8 R1437Q")] = hit["_id"]
+        command += ["--strategy", "exact", "--debug-plan"]
     if surface in ("complete", "lexical"):
         command += ["--strategy", "lexical"]
     if surface in ("batch", "requested38", "unknown"):
@@ -185,6 +188,13 @@ def test_resolved_coding_forms_recover_papers_and_disclose_limits(surface: str, 
         payload = json.loads(result.stdout)
     if surface in ("batch", "requested38", "unknown"):
         payload = payload["items"][0]
+    if surface == "exact-unknown":
+        coordinates = [{"coordinate": hit["_id"], "genome_build": "unknown",
+                        "source": "requested", "provenance": "requested variant identity"}]
+        assert payload["resolution"]["normalized_aliases"]["genomic_coordinates"] == coordinates
+        assert payload["debug_plan"]["normalized_aliases"]["genomic_coordinates"] == coordinates
+        assert not any(path.startswith("/v1/") or path == "/allele" for path, _ in requests)
+        return
     assert payload["resolution"]["status"] == "resolved", payload
     coordinates = payload["resolution"]["normalized_aliases"]["genomic_coordinates"]
     build = "GRCh38" if surface == "requested38" else "GRCh37"
