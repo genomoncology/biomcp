@@ -44,13 +44,13 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
                 self.end_headers()
                 return
             elif path == "/redirected":
-                code, body = 503, (unsafe_body + sentinel).encode()
+                code, body = 403, (unsafe_body + sentinel).encode()
             elif "list-type=" in self.path or ("efetch" in path and "db=pmc" in self.path) or path.endswith("fullTextXML"):
                 if failure == "manifest_transport" and "list-type=" in self.path:
                     self.close_connection = True
                     return
                 code = 200 if ((failure == "manifest_decode" and "list-type=" in self.path)
-                               or (failure == "xml_decode" and path.endswith("fullTextXML"))) else 503
+                               or (failure == "xml_decode" and path.endswith("fullTextXML"))) else 403
                 body = (unsafe_body + sentinel).encode()
             else:
                 code, body = 404, b"{}"
@@ -96,7 +96,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
         assert origin + "/oa" in warning, warning
         assert "prefix=PMC8010000" in warning, warning
     expected = ("transport error" if failure == "manifest_transport" else
-                "HTTP 200; response error (decode)" if failure == "manifest_decode" else "HTTP 503")
+                "HTTP 200; response error (decode)" if failure == "manifest_decode" else "HTTP 403")
     assert expected in warning, warning
     assert sentinel not in result.stdout + result.stderr
     assert unsafe_body not in result.stdout + result.stderr
@@ -104,7 +104,7 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure:
     if failure == "xml_http":
         note = json.loads(result.stdout)["full_text_note"]
         assert origin + "/pubmed/efetch.fcgi?db=pmc&id=8010000&rettype=xml&api_key=REDACTED" in note
-        assert "HTTP 503" in note
+        assert "HTTP 403" in note
 
     if failure == "xml_decode":
         note = json.loads(result.stdout)["full_text_note"]
