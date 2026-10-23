@@ -942,15 +942,14 @@ pub async fn get(
 
     if section_flags.include_fulltext {
         fulltext::resolve_fulltext(&mut article, id, pdf_discovery).await?;
-        if options.include_asset_summary {
-            if let Err(error) = super::fulltext_budget::route("article asset summary", async {
+        if options.include_asset_summary
+            && let Err(error) = super::fulltext_budget::route("article asset summary", async {
                 super::assets::attach_not_included(&mut article, id).await;
                 Ok(())
             })
             .await
-            {
-                tracing::warn!("Article asset summary unavailable: {error}");
-            }
+        {
+            tracing::warn!("Article asset summary unavailable: {error}");
         }
     }
 
