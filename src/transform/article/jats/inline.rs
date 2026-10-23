@@ -29,7 +29,7 @@ struct InlineBuffer {
 }
 
 impl InlineBuffer {
-    pub(super) fn push_word_separated(&mut self, text: &str) {
+    fn push_word_separated(&mut self, text: &str) {
         if self.attach_next {
             self.attach_next = false;
             self.text.push_str(text);
@@ -101,7 +101,7 @@ fn append_inline_text(text: &str, buffer: &mut InlineBuffer) {
 /// markers such as `*`, `^`, `~`, and `[` keep attached runs attached, and the
 /// word-joining styling elements route through `InlineBuffer` so fragments of
 /// one word never take this space.
-fn push_word_separated(out: &mut String, text: &str) {
+pub(super) fn push_word_separated(out: &mut String, text: &str) {
     if text.starts_with(char::is_alphanumeric) && out.ends_with(char::is_alphanumeric) {
         out.push(' ');
     }
