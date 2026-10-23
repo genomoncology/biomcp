@@ -1,7 +1,7 @@
 //! JATS full-text extraction and markdown rendering helpers.
 use std::collections::HashSet;
 
-use roxmltree::{Node, NodeType};
+use roxmltree::{Node, NodeId, NodeType};
 
 use crate::entities::article::ArticleFulltextQuality;
 use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
@@ -145,6 +145,7 @@ fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
     convert_front(root, &mut blocks);
     convert_body(root, &mut blocks, &mut state);
     convert_floats_group(root, &mut blocks, &mut state);
+    convert_remaining_tables(root, &mut blocks, &mut state);
     if let Some(references) = render_references(root) {
         blocks.push(references);
     }
@@ -156,14 +157,18 @@ fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
 #[derive(Default)]
 struct RenderState {
     rendered_float_ids: HashSet<String>,
+    rendered_float_nodes: HashSet<NodeId>,
 }
 
 fn should_skip_rendered_float(node: Node<'_, '_>, state: &RenderState) -> bool {
-    node.attribute("id")
-        .is_some_and(|id| state.rendered_float_ids.contains(id))
+    state.rendered_float_nodes.contains(&node.id())
+        || node
+            .attribute("id")
+            .is_some_and(|id| state.rendered_float_ids.contains(id))
 }
 
 fn remember_float_id(node: Node<'_, '_>, state: &mut RenderState) {
+    state.rendered_float_nodes.insert(node.id());
     if let Some(id) = node.attribute("id").filter(|id| !id.is_empty()) {
         state.rendered_float_ids.insert(id.to_string());
     }
@@ -232,6 +237,21 @@ fn convert_floats_group(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mu
                 }
             }
             _ => {}
+        }
+    }
+}
+
+// Tables can appear in back matter or nested containers outside the body walk.
+// Retain their source order without repeating tables already rendered in place.
+fn convert_remaining_tables(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mut RenderState) {
+    for table in root.descendants().filter(|node| node.has_tag_name("table-wrap")) {
+        if should_skip_rendered_float(table, state) {
+            continue;
+        }
+        let table_blocks = convert_table_wrap(table);
+        if !table_blocks.is_empty() {
+            remember_float_id(table, state);
+            blocks.extend(table_blocks);
         }
     }
 }
