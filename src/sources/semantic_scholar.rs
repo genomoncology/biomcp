@@ -621,7 +621,20 @@ impl SemanticScholarClient {
         limit: usize,
         year_filter: Option<&str>,
     ) -> Result<SemanticScholarSearchResponse, BioMcpError> {
-        let plan = Self::paper_search_plan(query, limit, year_filter, self.api_key.as_deref())?;
+        self.paper_search_page(query, limit, year_filter, 0).await
+    }
+
+    pub(crate) async fn paper_search_page(
+        &self,
+        query: &str,
+        limit: usize,
+        year_filter: Option<&str>,
+        offset: usize,
+    ) -> Result<SemanticScholarSearchResponse, BioMcpError> {
+        let mut plan = Self::paper_search_plan(query, limit, year_filter, self.api_key.as_deref())?;
+        if offset > 0 {
+            plan = plan.query("offset", offset.to_string());
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.send_json(req).await
     }
@@ -641,7 +654,19 @@ impl SemanticScholarClient {
         query: &str,
         limit: usize,
     ) -> Result<SemanticScholarSearchResponse, BioMcpError> {
-        let plan = Self::paper_search_bulk_plan(query, limit, self.api_key.as_deref())?;
+        self.paper_search_bulk_page(query, limit, None).await
+    }
+
+    pub(crate) async fn paper_search_bulk_page(
+        &self,
+        query: &str,
+        limit: usize,
+        token: Option<&str>,
+    ) -> Result<SemanticScholarSearchResponse, BioMcpError> {
+        let mut plan = Self::paper_search_bulk_plan(query, limit, self.api_key.as_deref())?;
+        if let Some(token) = token {
+            plan = plan.query("token", token);
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.send_json(req).await
     }
@@ -986,6 +1011,10 @@ pub struct SemanticScholarPaper {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SemanticScholarSearchResponse {
     pub total: Option<u64>,
+    #[serde(default)]
+    pub next: Option<usize>,
+    #[serde(default)]
+    pub token: Option<String>,
     #[serde(default, deserialize_with = "deserialize_vec_or_default")]
     pub data: Vec<SemanticScholarPaper>,
 }

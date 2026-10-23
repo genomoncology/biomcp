@@ -22,6 +22,7 @@ use super::query::{
     build_search_query, pubtator_sort,
 };
 use super::search::is_search_deadline_error;
+use super::variant_search::sources::{retained_provider_progress, save_provider_progress};
 use super::{
     ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
     ArticleSourceAvailability, ArticleSourceStatus, EUROPE_PMC_PAGE_SIZE,
@@ -213,20 +214,37 @@ pub(super) async fn search_pubmed_page_with_context(
         None => build_pubmed_search_term(filters)?,
     };
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
-    let (client, mut first_unit) = variant_article_client(execution, route, "pubmed", async {
+
+    let (progress_key, retained) = retained_provider_progress(execution, route, "pubmed", &term);
+    if retained.complete {
+        return Ok(PartialSearchPage::complete(SearchPage::offset(
+            retained.restored_rows(),
+            retained.total,
+        )));
+    }
+    let client_result = variant_article_client(execution, route, "pubmed", async {
         match execution {
             Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
             None => pubmed_client_for_current_deadline().await,
         }
     })
-    .await?;
-
-    let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
-    let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
-    let mut total: Option<usize> = None;
-    let mut batch_start = 0usize;
+    .await;
+    let (client, mut first_unit) = match client_result {
+        Ok(client) => client,
+        Err(error) if retained.rows.is_empty() => return Err(error),
+        Err(error) => {
+            return Ok(PartialSearchPage {
+                page: SearchPage::offset(retained.restored_rows(), retained.total),
+                degradation: Some(truncated_source_status(ArticleSource::PubMed, &error)),
+            });
+        }
+    };
+    let mut out = retained.restored_rows();
+    let mut seen_pmids: HashSet<String> = out.iter().map(|row| row.pmid.clone()).collect();
+    let mut total = retained.total;
+    let mut batch_start = retained.offset;
     let mut visible_skipped = 0usize;
-    let mut source_position = 0usize;
+    let mut source_position = out.len();
     let mut fetched_pages = 0usize;
     let mut degradation = None;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
@@ -332,6 +350,15 @@ pub(super) async fn search_pubmed_page_with_context(
         }
 
         batch_start = batch_start.saturating_add(batch_len);
+        save_provider_progress(
+            execution,
+            &progress_key,
+            &out,
+            batch_start,
+            None,
+            total,
+            total.is_some_and(|value| batch_start >= value),
+        );
         if total.is_some_and(|value| batch_start >= value) {
             break;
         }
@@ -405,14 +432,6 @@ pub(super) async fn search_europepmc_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<PartialSearchPage, BioMcpError> {
-    let (europe, mut first_unit) = variant_article_client(execution, route, "europepmc", async {
-        match execution {
-            Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
-            None => europepmc_client_for_current_deadline().await,
-        }
-    })
-    .await?;
-    let europe = europe.with_abstracts(filters.include_abstracts);
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -420,17 +439,43 @@ pub(super) async fn search_europepmc_page_with_context(
     let europepmc_sort = filters.sort.as_europepmc_sort();
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
 
-    let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
-    let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
-    let mut total: Option<usize> = None;
+    let (progress_key, retained) =
+        retained_provider_progress(execution, route, "europepmc", &query);
+    if retained.complete {
+        return Ok(PartialSearchPage::complete(SearchPage::offset(
+            retained.restored_rows(),
+            retained.total,
+        )));
+    }
+    let client_result = variant_article_client(execution, route, "europepmc", async {
+        match execution {
+            Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
+            None => europepmc_client_for_current_deadline().await,
+        }
+    })
+    .await;
+    let (europe, mut first_unit) = match client_result {
+        Ok(client) => client,
+        Err(error) if retained.rows.is_empty() => return Err(error),
+        Err(error) => {
+            return Ok(PartialSearchPage {
+                page: SearchPage::offset(retained.restored_rows(), retained.total),
+                degradation: Some(truncated_source_status(ArticleSource::EuropePmc, &error)),
+            });
+        }
+    };
+    let europe = europe.with_abstracts(filters.include_abstracts);
+    let mut out = retained.restored_rows();
+    let mut seen_pmids: HashSet<String> = out.iter().map(|row| row.pmid.clone()).collect();
+    let mut total = retained.total;
     // Europe PMC ignores the `page` parameter, so paging is cursorMark-based:
     // start at `*`, follow `nextCursorMark`, and serve `offset` by walking and
     // discarding rows inside the fetched pages (bounded by MAX_PAGE_FETCHES).
-    let mut cursor: String = "*".to_string();
+    let mut cursor = retained.cursor.unwrap_or_else(|| "*".to_string());
     let mut next_cursor: Option<String> = None;
     let mut local_skip = offset;
-    let mut fetched_rows: usize = 0;
-    let mut source_position = 0usize;
+    let mut fetched_rows = retained.offset;
+    let mut source_position = out.len();
     let mut fetched_pages = 0usize;
     let mut degradation = None;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
@@ -506,6 +551,20 @@ pub(super) async fn search_europepmc_page_with_context(
         let Some((offset_beyond_total, empty)) = outcome else {
             break;
         };
+        let continuation = next_cursor.clone().filter(|next| *next != cursor);
+        let source_complete = empty
+            || offset_beyond_total
+            || continuation.is_none()
+            || total.is_some_and(|value| fetched_rows >= value);
+        save_provider_progress(
+            execution,
+            &progress_key,
+            &out,
+            fetched_rows,
+            continuation,
+            total,
+            source_complete,
+        );
         if offset_beyond_total {
             return Ok(PartialSearchPage::complete(SearchPage::offset(
                 Vec::new(),
@@ -602,13 +661,32 @@ pub(super) async fn search_pubtator_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<PartialSearchPage, BioMcpError> {
-    let (pubtator, mut first_unit) = variant_article_client(execution, route, "pubtator", async {
+    let query_identity = format!("{filters:?}:{strict_query:?}");
+    let (progress_key, retained) =
+        retained_provider_progress(execution, route, "pubtator", &query_identity);
+    if retained.complete {
+        return Ok(PartialSearchPage::complete(SearchPage::offset(
+            retained.restored_rows(),
+            retained.total,
+        )));
+    }
+    let client_result = variant_article_client(execution, route, "pubtator", async {
         match execution {
             Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
             None => pubtator_client_for_current_deadline().await,
         }
     })
-    .await?;
+    .await;
+    let (pubtator, mut first_unit) = match client_result {
+        Ok(client) => client,
+        Err(error) if retained.rows.is_empty() => return Err(error),
+        Err(error) => {
+            return Ok(PartialSearchPage {
+                page: SearchPage::offset(retained.restored_rows(), retained.total),
+                degradation: Some(truncated_source_status(ArticleSource::PubTator, &error)),
+            });
+        }
+    };
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_pubtator_query(filters, &pubtator).await?,
@@ -616,12 +694,12 @@ pub(super) async fn search_pubtator_page_with_context(
     let sort = pubtator_sort(filters.sort);
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
 
-    let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
-    let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
-    let mut total: Option<usize> = None;
-    let mut page: usize = (offset / PUBTATOR_PAGE_SIZE) + 1;
+    let mut out = retained.restored_rows();
+    let mut seen_pmids: HashSet<String> = out.iter().map(|row| row.pmid.clone()).collect();
+    let mut total = retained.total;
+    let mut page = retained.offset.max((offset / PUBTATOR_PAGE_SIZE) + 1);
     let mut local_skip = offset % PUBTATOR_PAGE_SIZE;
-    let mut source_position = 0usize;
+    let mut source_position = out.len();
     let mut fetched_pages = 0usize;
     let mut degradation = None;
     let mut year_filter: Option<Vec<String>> = None;
@@ -735,6 +813,18 @@ pub(super) async fn search_pubtator_page_with_context(
                 continue;
             }
         }
+        let page_complete = empty
+            || offset_beyond_total
+            || total.is_some_and(|value| page.saturating_mul(PUBTATOR_PAGE_SIZE) >= value);
+        save_provider_progress(
+            execution,
+            &progress_key,
+            &out,
+            page + 1,
+            None,
+            total,
+            page_complete,
+        );
         if offset_beyond_total {
             return Ok(PartialSearchPage::complete(SearchPage::offset(
                 Vec::new(),
@@ -771,7 +861,25 @@ pub(super) async fn search_semantic_scholar_candidates(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
-    let limit = limit.min(crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX);
+    let page_limit = limit.min(crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX);
+    let query = strict_query
+        .map(str::to_string)
+        .unwrap_or_else(|| build_free_text_article_query(filters));
+    let query_identity = format!("{filters:?}:{strict_query:?}");
+    let (progress_key, retained) =
+        retained_provider_progress(execution, route, "semanticscholar", &query_identity);
+    if retained.complete {
+        return Ok(SemanticScholarCandidateOutcome {
+            rows: retained.restored_rows(),
+            status: ArticleSourceStatus {
+                source: ArticleSource::SemanticScholar,
+                enabled: true,
+                auth_mode: None,
+                status: Some(ArticleSourceAvailability::Ok),
+                message: Some("reused retained provider acquisition".into()),
+            },
+        });
+    }
     let (client, mut first_unit) =
         variant_article_client(execution, route, "semanticscholar", async {
             match execution {
@@ -797,9 +905,6 @@ pub(super) async fn search_semantic_scholar_candidates(
             }
         };
 
-    let query = strict_query
-        .map(str::to_string)
-        .unwrap_or_else(|| build_free_text_article_query(filters));
     if query.trim().is_empty() {
         return Ok(SemanticScholarCandidateOutcome {
             rows: Vec::new(),
@@ -812,67 +917,121 @@ pub(super) async fn search_semantic_scholar_candidates(
         normalized_date_to.as_deref(),
     );
 
-    let response = if strict_query.is_some() {
-        variant_article_request(
-            execution,
-            route,
-            "semanticscholar",
-            &mut first_unit,
-            client.paper_search_bulk(&query, limit),
-            |response| {
-                Ok(semantic_scholar_rows_from_response(
-                    filters,
-                    normalized_date_from.as_deref(),
-                    normalized_date_to.as_deref(),
-                    response,
-                ))
-            },
-        )
-        .await
-    } else {
-        variant_article_request(
-            execution,
-            route,
-            "semanticscholar",
-            &mut first_unit,
-            client.paper_search(&query, limit, year_filter.as_deref()),
-            |response| {
-                Ok(semantic_scholar_rows_from_response(
-                    filters,
-                    normalized_date_from.as_deref(),
-                    normalized_date_to.as_deref(),
-                    response,
-                ))
-            },
-        )
-        .await
-    };
-    let response = match response {
-        Ok(Some(response)) => response,
-        Ok(None) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
-        Err(error) => {
-            crate::error::warn_external_failure(
-                &error,
-                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
-                "article search",
-            );
-            let mut outcome = semantic_scholar_unavailable_outcome(auth_mode);
-            if let Some(failure) = crate::sources::literature_retry::failure(&error) {
-                let hint = if failure.class == "rate_limited" {
-                    crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX
-                } else {
-                    ""
-                };
-                outcome.status.message = Some(format!(
-                    "Semantic Scholar search unavailable: {failure} {hint}"
-                ));
-            }
-            return Ok(outcome);
+    let mut rows = retained.restored_rows();
+    let mut native_offset = retained.offset;
+    let mut cursor = retained.cursor;
+    let mut total = retained.total;
+    let mut complete = false;
+    let mut status = status;
+    let mut seen = rows
+        .iter()
+        .map(super::candidates::stable_article_identifier)
+        .collect::<HashSet<_>>();
+    for _ in 0..MAX_PAGE_FETCHES {
+        if rows.len() >= limit {
+            break;
         }
-    };
-
-    let mut rows = response;
-    filter_semantic_disease_rows(&mut rows, disease_terms.as_ref());
+        let response = if strict_query.is_some() {
+            variant_article_request(
+                execution,
+                route,
+                "semanticscholar",
+                &mut first_unit,
+                client.paper_search_bulk_page(&query, page_limit, cursor.as_deref()),
+                Ok,
+            )
+            .await
+        } else {
+            variant_article_request(
+                execution,
+                route,
+                "semanticscholar",
+                &mut first_unit,
+                client.paper_search_page(&query, page_limit, year_filter.as_deref(), native_offset),
+                Ok,
+            )
+            .await
+        };
+        let response = match response {
+            Ok(Some(response)) => response,
+            Ok(None) => {
+                status.status = Some(ArticleSourceAvailability::Degraded);
+                break;
+            }
+            Err(error) => {
+                crate::error::warn_external_failure(
+                    &error,
+                    crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                    "article search",
+                );
+                if rows.is_empty() {
+                    return Ok(semantic_scholar_unavailable_outcome(auth_mode));
+                }
+                status.status = Some(ArticleSourceAvailability::Degraded);
+                status.message = Some(format!("Semantic Scholar acquisition unfinished: {error}"));
+                break;
+            }
+        };
+        let received = response.data.len();
+        total = response.total.map(|total| total as usize);
+        let next_offset = response.next;
+        let next_cursor = response.token.clone();
+        complete = received == 0
+            || if strict_query.is_some() {
+                next_cursor.is_none()
+            } else {
+                next_offset.is_none()
+            };
+        let source_position = native_offset;
+        native_offset = next_offset.unwrap_or(native_offset.saturating_add(received));
+        let mut page = semantic_scholar_rows_from_response(
+            filters,
+            normalized_date_from.as_deref(),
+            normalized_date_to.as_deref(),
+            response,
+        );
+        filter_semantic_disease_rows(&mut page, disease_terms.as_ref());
+        for mut row in page {
+            row.source_local_position += source_position;
+            if seen.insert(super::candidates::stable_article_identifier(&row)) {
+                rows.push(row);
+            }
+        }
+        if !complete && (next_cursor == cursor && strict_query.is_some()) {
+            break;
+        }
+        cursor = next_cursor;
+        save_provider_progress(
+            execution,
+            &progress_key,
+            &rows,
+            native_offset,
+            cursor.clone(),
+            total,
+            complete,
+        );
+        if complete || execution.is_none() {
+            break;
+        }
+        if let Some(execution) = execution {
+            execution.add_route_unit(route, "semanticscholar");
+        }
+    }
+    if !complete && execution.is_some() {
+        status.status = Some(ArticleSourceAvailability::Degraded);
+        status
+            .message
+            .get_or_insert_with(|| "Semantic Scholar acquisition is unfinished".into());
+    }
+    save_provider_progress(
+        execution,
+        &progress_key,
+        &rows,
+        native_offset,
+        cursor,
+        total,
+        complete,
+    );
     Ok(SemanticScholarCandidateOutcome { rows, status })
 }
 

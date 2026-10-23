@@ -3196,7 +3196,8 @@ async fn shared_pubtator_candidates(
     } else {
         route
     };
-    let mut result = requested_pubtator_candidates(input, context, execution, producer).await;
+    let mut result =
+        sources::requested_pubtator_candidates(input, context, execution, producer).await;
     // The originating provider events retain typed failures. Reuse their
     // terminal outcome without constructing a replacement error or retrying.
     let cached = result
@@ -3806,7 +3807,7 @@ async fn litvar_route_outcome(
         strategy,
         VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
     ) {
-        return match litvar_candidates(input, context, execution).await {
+        return match sources::litvar_candidates(input, context, execution).await {
             Ok((rows, incomplete, succeeded)) => {
                 candidates.extend(rows);
                 let calls = execution.events();

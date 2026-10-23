@@ -391,6 +391,8 @@ fn semantic_scholar_candidates_keep_unknown_retraction_rows() {
         None,
         None,
         SemanticScholarSearchResponse {
+            next: None,
+            token: None,
             total: Some(1),
             data: vec![SemanticScholarPaper {
                 paper_id: Some("paper-1".into()),
