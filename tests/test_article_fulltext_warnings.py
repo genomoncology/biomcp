@@ -18,8 +18,8 @@ pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("transport", [False, True])
-def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, transport: bool) -> None:
+@pytest.mark.parametrize("failure", ["manifest_http", "manifest_transport", "xml_http"])
+def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, failure: str) -> None:
     """Feature: article. Failed full-text routes name safe URLs and failure details."""
     sentinel = "SYNTHETIC_CREDENTIAL_SENTINEL"
     unsafe_body = "SYNTHETIC_PROVIDER_BODY_SENTINEL"
@@ -33,12 +33,12 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, transpor
                     "id": "33766116", "pmid": "33766116", "source": "MED",
                     "title": "Route warning control", "pmcid": "PMC8010000",
                 }]}}).encode()
-            elif path.endswith("fullTextXML"):
+            elif path.endswith("fullTextXML") and failure != "xml_http":
                 content_type = "application/xml"
                 body = ("<article><body><sec><title>Results</title>"
                         + "<p>Available body.</p>" * 30 + "</sec></body></article>").encode()
-            elif "list-type=" in self.path or "efetch" in path:
-                if transport and "list-type=" in self.path:
+            elif "list-type=" in self.path or "efetch" in path or path.endswith("fullTextXML"):
+                if failure == "manifest_transport" and "list-type=" in self.path:
                     self.close_connection = True
                     return
                 code, body = 503, (unsafe_body + sentinel).encode()
@@ -66,8 +66,10 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, transpor
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     try:
-        result = subprocess.run([binary, "--json", "--no-cache", "get", "article",
-                                 "33766116", "fulltext", "--lines", "15:22"],
+        args = [binary, "--json", "--no-cache", "get", "article", "33766116", "fulltext"]
+        if failure != "xml_http":
+            args += ["--lines", "15:22"]
+        result = subprocess.run(args,
                                 env=env, capture_output=True, text=True, timeout=40)
     finally:
         server.shutdown()
@@ -78,6 +80,11 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, transpor
                    if "PMC OA manifest request failed" in line)
     assert origin in warning, warning
     assert "prefix=PMC8010000" in warning, warning
-    assert ("transport error" if transport else "HTTP 503") in warning, warning
+    assert ("transport error" if failure == "manifest_transport" else "HTTP 503") in warning, warning
     assert sentinel not in result.stdout + result.stderr
     assert unsafe_body not in result.stdout + result.stderr
+
+    if failure == "xml_http":
+        note = json.loads(result.stdout)["full_text_note"]
+        assert origin + "/efetch.fcgi?db=pmc&id=8010000&rettype=xml&api_key=REDACTED" in note
+        assert "HTTP 503" in note
