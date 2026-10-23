@@ -134,8 +134,7 @@ fn article_rows_overlap(left: &ArticleSearchResult, right: &ArticleSearchResult)
     let left_semantic_scholar = normalize_row_identifier(left.semantic_scholar_id.as_deref());
     let right_semantic_scholar = normalize_row_identifier(right.semantic_scholar_id.as_deref());
 
-    left_pmid.is_some() && left_pmid == right_pmid
-        || left_pmcid.is_some() && left_pmcid == right_pmcid
+    left_pmcid.is_some() && left_pmcid == right_pmcid
         || left_doi.is_some() && left_doi == right_doi
         || left_arxiv.is_some() && left_arxiv == right_arxiv
         || left_semantic_scholar.is_some() && left_semantic_scholar == right_semantic_scholar
