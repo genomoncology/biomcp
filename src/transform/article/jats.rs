@@ -1,7 +1,7 @@
 //! JATS full-text extraction and markdown rendering helpers.
 use std::collections::HashSet;
 
-use roxmltree::{Node, NodeType};
+use roxmltree::{Node, NodeId};
 
 use crate::entities::article::ArticleFulltextQuality;
 use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
@@ -11,9 +11,11 @@ use super::{
     collapse_whitespace,
 };
 
+mod inline;
 mod refs;
 mod supplements;
 mod tables;
+use self::inline::{inline_text, push_word_separated};
 use self::refs::render_references;
 pub(crate) use self::refs::{
     JatsCitationExtraction, JatsCitationTargetIds, extract_citation_evidence,
@@ -142,9 +144,10 @@ fn body_has_meaningful_content(body: Node<'_, '_>) -> bool {
 fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
     let mut blocks = Vec::new();
     let mut state = RenderState::default();
-    convert_front(root, &mut blocks);
+    convert_front(root, &mut blocks, &mut state);
     convert_body(root, &mut blocks, &mut state);
     convert_floats_group(root, &mut blocks, &mut state);
+    convert_remaining_tables(root, &mut blocks, &mut state);
     if let Some(references) = render_references(root) {
         blocks.push(references);
     }
@@ -156,20 +159,24 @@ fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
 #[derive(Default)]
 struct RenderState {
     rendered_float_ids: HashSet<String>,
+    rendered_float_nodes: HashSet<NodeId>,
 }
 
 fn should_skip_rendered_float(node: Node<'_, '_>, state: &RenderState) -> bool {
-    node.attribute("id")
-        .is_some_and(|id| state.rendered_float_ids.contains(id))
+    state.rendered_float_nodes.contains(&node.id())
+        || node
+            .attribute("id")
+            .is_some_and(|id| state.rendered_float_ids.contains(id))
 }
 
 fn remember_float_id(node: Node<'_, '_>, state: &mut RenderState) {
+    state.rendered_float_nodes.insert(node.id());
     if let Some(id) = node.attribute("id").filter(|id| !id.is_empty()) {
         state.rendered_float_ids.insert(id.to_string());
     }
 }
 
-fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>) {
+fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mut RenderState) {
     let Some(front) = find_child(root, "front") else {
         return;
     };
@@ -188,8 +195,7 @@ fn convert_front(root: Node<'_, '_>, blocks: &mut Vec<String>) {
         .find(|node| node.is_element() && node.has_tag_name("abstract"))
     {
         blocks.push("## Abstract".into());
-        let mut state = RenderState::default();
-        append_content_blocks(abstract_node, 2, blocks, &mut state);
+        append_content_blocks(abstract_node, 2, blocks, state);
     }
 }
 
@@ -232,6 +238,24 @@ fn convert_floats_group(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mu
                 }
             }
             _ => {}
+        }
+    }
+}
+
+// Tables can appear in back matter or nested containers outside the body walk.
+// Retain their source order without repeating tables already rendered in place.
+fn convert_remaining_tables(root: Node<'_, '_>, blocks: &mut Vec<String>, state: &mut RenderState) {
+    for table in root
+        .descendants()
+        .filter(|node| node.has_tag_name("table-wrap"))
+    {
+        if should_skip_rendered_float(table, state) {
+            continue;
+        }
+        let table_blocks = convert_table_wrap(table);
+        if !table_blocks.is_empty() {
+            remember_float_id(table, state);
+            blocks.extend(table_blocks);
         }
     }
 }
@@ -506,176 +530,6 @@ fn caption_text(node: Node<'_, '_>) -> Option<String> {
         None
     } else {
         Some(joined)
-    }
-}
-
-fn inline_text(node: Node<'_, '_>) -> String {
-    let mut buffer = InlineBuffer::default();
-    match node.node_type() {
-        NodeType::Text => buffer.text.push_str(node.text().unwrap_or_default()),
-        _ => {
-            for child in node.children() {
-                append_inline_node(child, &mut buffer);
-            }
-        }
-    }
-    collapse_whitespace(&buffer.text)
-}
-
-/// Inline walk state: the rendered text plus whether the next word
-/// character must attach to it. Word-joining styling elements (small caps,
-/// styled content, monospace, footnote markers) set the flag at their
-/// boundaries so fragments of one word stay one word instead of taking the
-/// separating space distinct words get.
-#[derive(Default)]
-struct InlineBuffer {
-    text: String,
-    attach_next: bool,
-}
-
-impl InlineBuffer {
-    fn push_word_separated(&mut self, text: &str) {
-        if self.attach_next {
-            self.attach_next = false;
-            self.text.push_str(text);
-            return;
-        }
-        push_word_separated(&mut self.text, text);
-    }
-}
-
-fn append_inline_node(node: Node<'_, '_>, buffer: &mut InlineBuffer) {
-    match node.node_type() {
-        NodeType::Root => {
-            for child in node.children() {
-                append_inline_node(child, buffer);
-            }
-        }
-        NodeType::Element => {
-            match node.tag_name().name() {
-                "italic" => return append_wrapped_inline(node, "*", buffer),
-                "bold" => return append_wrapped_inline(node, "**", buffer),
-                "sup" => return append_wrapped_inline(node, "^", buffer),
-                "sub" => return append_wrapped_inline(node, "~", buffer),
-                "xref" => return append_xref(node, buffer),
-                "ext-link" => return append_ext_link(node, buffer),
-                "sc" | "styled-content" | "monospace" | "fn" => {
-                    return append_word_joining_inline(node, buffer);
-                }
-                _ => {}
-            }
-
-            for child in node.children() {
-                append_inline_node(child, buffer);
-            }
-        }
-        NodeType::Text => append_inline_text(node.text().unwrap_or_default(), buffer),
-        _ => {}
-    }
-}
-
-/// Inline styling that wraps fragments of one word — small caps
-/// (`T<sc>able</sc>`), styled content, monospace, and footnote markers
-/// (`PD<sc>L1</sc>`). Both boundaries attach: the renderer must not split
-/// these words the way it separates `surname`/`given-names` runs.
-fn append_word_joining_inline(node: Node<'_, '_>, buffer: &mut InlineBuffer) {
-    buffer.attach_next = true;
-    for child in node.children() {
-        append_inline_node(child, buffer);
-    }
-    buffer.attach_next |= buffer.text.ends_with(char::is_alphanumeric);
-}
-
-fn append_inline_text(text: &str, buffer: &mut InlineBuffer) {
-    if (buffer.text.ends_with('^') || buffer.text.ends_with('~'))
-        && let Some(rest) = text.strip_prefix('.')
-        && rest.chars().next().is_some_and(char::is_alphanumeric)
-    {
-        buffer.attach_next = false;
-        buffer.text.push_str(". ");
-        buffer.text.push_str(rest);
-        return;
-    }
-    buffer.push_word_separated(text);
-}
-
-/// Joins inline content at word boundaries: when the pending output and the new
-/// text both touch the boundary with word characters, the rendered words need a
-/// separating space even though the source kept the elements adjacent (for
-/// example `<surname>Jemal</surname><given-names>A</given-names>`). Markup
-/// markers such as `*`, `^`, `~`, and `[` keep attached runs attached, and the
-/// word-joining styling elements route through `InlineBuffer` so fragments of
-/// one word never take this space.
-fn push_word_separated(out: &mut String, text: &str) {
-    if text.starts_with(char::is_alphanumeric) && out.ends_with(char::is_alphanumeric) {
-        out.push(' ');
-    }
-    out.push_str(text);
-}
-
-fn append_wrapped_inline(node: Node<'_, '_>, marker: &str, buffer: &mut InlineBuffer) {
-    let text = inline_text(node);
-    if text.is_empty() {
-        return;
-    }
-    buffer.attach_next = false;
-    buffer.text.push_str(marker);
-    buffer.text.push_str(&text);
-    buffer.text.push_str(marker);
-}
-
-fn append_xref(node: Node<'_, '_>, buffer: &mut InlineBuffer) {
-    let text = inline_text(node);
-    if text.is_empty() {
-        return;
-    }
-    match node.attribute("ref-type") {
-        Some("bibr") => {
-            buffer.text.push('[');
-            buffer.text.push_str(&text);
-            buffer.text.push(']');
-        }
-        Some("fig") | Some("table") if xref_has_source_parentheses(node, &buffer.text) => {
-            buffer.text.push_str(&text);
-        }
-        Some("fig") | Some("table") => {
-            buffer.text.push('(');
-            buffer.text.push_str(&text);
-            buffer.text.push(')');
-        }
-        _ => buffer.push_word_separated(&text),
-    }
-}
-
-fn xref_has_source_parentheses(node: Node<'_, '_>, out: &str) -> bool {
-    out.ends_with('(')
-        && node
-            .next_sibling()
-            .and_then(|sibling| sibling.text())
-            .is_some_and(|text| text.starts_with(')'))
-}
-
-fn append_ext_link(node: Node<'_, '_>, buffer: &mut InlineBuffer) {
-    const XLINK_NS: &str = "http://www.w3.org/1999/xlink";
-
-    let text = inline_text(node);
-    let url = node
-        .attribute((XLINK_NS, "href"))
-        .or_else(|| node.attribute("href"))
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-
-    match (text.is_empty(), url) {
-        (false, Some(url)) => {
-            buffer.text.push('[');
-            buffer.text.push_str(&text);
-            buffer.text.push_str("](");
-            buffer.text.push_str(url);
-            buffer.text.push(')');
-        }
-        (false, None) => buffer.push_word_separated(&text),
-        (true, Some(url)) => buffer.push_word_separated(url),
-        (true, None) => {}
     }
 }
 
