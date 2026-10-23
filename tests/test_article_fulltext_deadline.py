@@ -102,3 +102,5 @@ def test_article_fulltext_bounds_stalled_routes(held: str, tmp_path: Path) -> No
     else:
         assert payload["full_text_coverage"]["coverage"] == "full_text", payload
         assert "Available Europe PMC body" in Path(payload["full_text_path"]).read_text()
+        if held == "assets":
+            assert "article asset summary timed out" in result.stderr, result.stderr

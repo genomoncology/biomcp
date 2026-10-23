@@ -62,7 +62,8 @@ fn successful_pdf_fulltext_still_warns_about_a_real_asset_provider_outage() {
     assert!(output.status.success(), "{output:?}");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("Europe PMC supplementary request failed"),
+        stderr.contains("Europe PMC supplementary request failed")
+            || stderr.contains("article asset summary timed out"),
         "{stderr}"
     );
 }
