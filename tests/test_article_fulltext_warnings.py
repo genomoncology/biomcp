@@ -35,7 +35,8 @@ def test_fulltext_route_warnings_identify_safe_requests(tmp_path: Path, transpor
                 }]}}).encode()
             elif path.endswith("fullTextXML"):
                 content_type = "application/xml"
-                body = b"<article><body><sec><title>Results</title><p>Available body.</p></sec></body></article>"
+                body = ("<article><body><sec><title>Results</title>"
+                        + "<p>Available body.</p>" * 30 + "</sec></body></article>").encode()
             elif "list-type=" in self.path or "efetch" in path:
                 if transport and "list-type=" in self.path:
                     self.close_connection = True
