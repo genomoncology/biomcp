@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, retained_cache_env  # noqa: E402
 
 CAPTURE = REPO_ROOT / "tests/fixtures/article/evidence-ranking/akt1-e17k.json"
 
@@ -119,6 +119,17 @@ def akt1_replay(tmp_path, cache=True):
         def do_POST(self):  # noqa: N802
             length = int(self.headers.get("Content-Length", 0))
             content = self.rfile.read(length).decode()
+            if urlsplit(self.path).path == "/graph/v1/paper/batch":
+                ids = json.loads(content)["ids"]
+                requests.append(("/graph/v1/paper/batch", {"ids": ids}))
+                body = []
+                for lookup in ids:
+                    row = rows.get(lookup.removeprefix("PMID:"))
+                    body.append({"paperId": "recorded-" + row["pmid"],
+                                 "title": row["title"], "abstract": row.get("abstract")}
+                                if row else None)
+                self.reply(json.dumps(body).encode(), "application/json")
+                return
             self.path += ("&" if "?" in self.path else "?") + content
             self.do_GET()
 
@@ -135,10 +146,8 @@ def akt1_replay(tmp_path, cache=True):
     )}
     providers.update(BIOMCP_MYVARIANT_BASE=origin + "/v1",
                      BIOMCP_PUBMED_BASE=origin + "/entrez/eutils")
-    env = isolated_command_env(tmp_path, providers, origin)
+    env = (retained_cache_env if cache else isolated_command_env)(tmp_path, providers, origin)
     env["BIOMCP_DISABLE_SOURCES"] = "pubtator3,litvar2,mygene-info"
-    if cache:
-        env["BIOMCP_CACHE_ENABLED"] = "true"
     try:
         yield SimpleNamespace(env=env, requests=requests, capture=capture)
     finally:
