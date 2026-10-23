@@ -233,7 +233,8 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
         commands / "make": 'echo "make $*" >> "$CALLS"; if [ "$*" = "$FAILURE" ]; then exit 19; fi',
         commands / "cargo": 'echo "cargo $*" >> "$CALLS"',
         tmp_path / "tools/with-build-identity": 'exec "$@"',
-        scripts / "regenerate-alphagenome-proto": 'echo "proto $*" >> "$CALLS"',
+        tmp_path / "tools/bootstrap-lint-tools": 'mkdir -p "$PWD/pinned"; printf "#!/bin/sh\\necho libprotoc 28.3\\n" > "$PWD/pinned/protoc"; chmod +x "$PWD/pinned/protoc"; echo "$PWD/pinned"',
+        scripts / "regenerate-alphagenome-proto": 'protoc --version >> "$CALLS"; echo "proto $*" >> "$CALLS"',
     }.items():
         path.write_text('#!/bin/sh\n' + body + '\n')
         path.chmod(0o755)
@@ -246,7 +247,7 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
         "make stress", "make test-long",
         "cargo build --release --locked",
         "cargo nextest run --release --lib rmcp_stdio_recovers_from_tool_panic",
-        "proto --check",
+        "libprotoc 28.3", "proto --check",
         "make repo-audit", "make full-feature-check", "make installed-wheel-smoke",
         "make feature-coverage",
     ]
