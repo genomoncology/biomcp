@@ -13,6 +13,7 @@ mod page;
 mod pool;
 mod rank;
 pub(super) mod sources;
+pub(crate) mod stored;
 
 // Keep atomic budget updates available on the declared minimum Rust version.
 // AtomicUsize::try_update requires Rust 1.95; this uses the same CAS loop.
@@ -397,6 +398,7 @@ pub(crate) struct VariantArticleExecutionContext {
     ldh_direct: Arc<AtomicUsize>,
     provider_work: Arc<Mutex<BTreeMap<(String, String), usize>>>,
     literal_pubmed_progress: Arc<Mutex<Option<sources::LiteralPubMedProgress>>>,
+    provider_progress: Arc<Mutex<BTreeMap<String, sources::ProviderProgress>>>,
 }
 
 impl VariantArticleExecutionContext {
@@ -455,6 +457,7 @@ impl VariantArticleExecutionContext {
             ldh_direct: Arc::new(AtomicUsize::new(0)),
             provider_work: Arc::new(Mutex::new(BTreeMap::new())),
             literal_pubmed_progress: Arc::new(Mutex::new(None)),
+            provider_progress: Arc::new(Mutex::new(BTreeMap::new())),
         }
     }
 
@@ -778,6 +781,35 @@ impl VariantArticleExecutionContext {
             .literal_pubmed_progress
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = progress;
+    }
+
+    pub(crate) fn provider_progress(&self, key: &str) -> Option<sources::ProviderProgress> {
+        self.provider_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(key)
+            .cloned()
+    }
+
+    pub(crate) fn set_provider_progress(&self, key: String, progress: sources::ProviderProgress) {
+        self.provider_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(key, progress);
+    }
+
+    fn all_provider_progress(&self) -> BTreeMap<String, sources::ProviderProgress> {
+        self.provider_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+
+    fn restore_provider_progress(&self, progress: BTreeMap<String, sources::ProviderProgress>) {
+        self.provider_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend(progress);
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {

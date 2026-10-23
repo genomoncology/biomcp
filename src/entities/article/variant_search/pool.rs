@@ -7,19 +7,16 @@ use sha2::{Digest, Sha256};
 use super::super::identity_verification::{
     VariantArticleIdentity, VariantArticleVerificationOptions,
 };
+use super::stored::StoredArticleRow;
 use super::{VariantArticleCandidateTraceRecord, VariantArticleProvenance, VariantArticleStrategy};
+use crate::entities::article::ArticleSource;
 use crate::entities::article::candidates::{ArticleCandidate, ArticleSourcePosition};
-use crate::entities::article::{ArticleSearchResult, ArticleSource};
 use crate::entities::variant::RequestedVariantIdentity;
 
 /// This wrapper retains the fields deliberately omitted by public article JSON.
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct StoredCandidate {
-    row: ArticleSearchResult,
-    normalized_title: String,
-    normalized_abstract: String,
-    publication_type: Option<String>,
-    source_local_position: usize,
+    row: StoredArticleRow,
     source_positions: Vec<(ArticleSource, usize)>,
     semantic_signal: Option<f64>,
     provenance: Vec<VariantArticleProvenance>,
@@ -30,11 +27,7 @@ pub(super) struct StoredCandidate {
 impl From<ArticleCandidate> for StoredCandidate {
     fn from(value: ArticleCandidate) -> Self {
         Self {
-            normalized_title: value.row.normalized_title.clone(),
-            normalized_abstract: value.row.normalized_abstract.clone(),
-            publication_type: value.row.publication_type.clone(),
-            source_local_position: value.row.source_local_position,
-            row: value.row,
+            row: StoredArticleRow::capture(&value.row),
             source_positions: value
                 .source_positions
                 .into_iter()
@@ -49,11 +42,7 @@ impl From<ArticleCandidate> for StoredCandidate {
 }
 impl From<StoredCandidate> for ArticleCandidate {
     fn from(value: StoredCandidate) -> Self {
-        let mut row = value.row;
-        row.normalized_title = value.normalized_title;
-        row.normalized_abstract = value.normalized_abstract;
-        row.publication_type = value.publication_type;
-        row.source_local_position = value.source_local_position;
+        let row = value.row.restore();
         Self {
             row,
             source_positions: value
@@ -316,7 +305,8 @@ impl StoredPool {
     ) -> Result<super::VariantArticleOutcome, crate::error::BioMcpError> {
         let mut identifiers = std::collections::BTreeSet::new();
         for (index, stored) in self.ordered.iter().enumerate() {
-            let id = super::super::candidates::stable_article_identifier(&stored.candidate.row);
+            let id =
+                super::super::candidates::stable_article_identifier(stored.candidate.row.article());
             if stored.rank != index + 1 || id.is_empty() || !identifiers.insert(id) {
                 return Err(crate::error::BioMcpError::InvalidArgument(
                     "Invalid stored article pool; restart at offset 0 without a token".into(),
