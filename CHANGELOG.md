@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Update Tokio to fix AsyncFd I/O safety and retain existing CLI and MCP behavior. (2361)
+
 - Bound article full-text provider waits, recover stalled metadata through Europe PMC, and report failed retrieval routes. Limit optional asset-summary work so available text returns promptly. (2360)
 
 - Explain the Windows forced skill-repair limitation and the manual backup, folder removal, fresh installation and unrelated-file restoration procedure. Keep refused repairs from changing existing files. (2358)

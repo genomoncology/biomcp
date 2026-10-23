@@ -6,7 +6,7 @@ Milestone: 0.9.4
 
 Priority: 1
 
-- Changes: `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`.
+- Changes: `Cargo.lock`, `CHANGELOG.md`.
 
 ## Outcome
 
