@@ -90,7 +90,6 @@ EXAMPLES:
   biomcp variant trials rs113488022 --limit 5
 
 Note: Searches ClinicalTrials.gov mutation-related free-text fields, including eligibility, title, summary, and keywords. Results depend on source document wording.
-Paging: Offset 0 without a token activates a pool. Later offsets require that active pool. Another caller can replace it with a newer offset-0 session; concurrent callers should use --page-token. Cache bypass (--no-cache) supports offset 0 only and returns no persisted continuation. For --input, set page_token on each JSON item.
 See also: biomcp list variant")]
     Trials {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
@@ -114,6 +113,7 @@ EXAMPLES:
   cat variants.json | biomcp --json variant articles --input -
 
 Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Structured JSON input accepts 1-10 items and requires --json. Use annotation or lexical only for route diagnosis. Exact searches one caller-supplied name with no resolution or alias expansion. Unresolved input is labeled as best-effort free text.
+Paging: Offset 0 without a token activates a pool. Later offsets require that active pool. Another caller can replace it with a newer offset-0 session; concurrent callers should use --page-token. Cache bypass (--no-cache) supports offset 0 only and returns no persisted continuation. For --input, set page_token on each JSON item.
 See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
