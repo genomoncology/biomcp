@@ -167,9 +167,10 @@ async fn enumerate_litvar(
             .map(|gene| format!("{gene} {matched_alias}"))
             .unwrap_or(matched_alias);
         match litvar_publications(&variant_id, &alias, execution).await {
-            Ok(rows) => {
+            Ok((rows, complete)) => {
                 candidates.extend(rows);
                 succeeded = true;
+                incomplete |= !complete;
             }
             Err(_) => {
                 incomplete = true;
@@ -237,12 +238,15 @@ async fn litvar_publications(
     variant_id: &str,
     alias: &str,
     execution: &VariantArticleExecutionContext,
-) -> Result<Vec<ArticleCandidate>, BioMcpError> {
+) -> Result<(Vec<ArticleCandidate>, bool), BioMcpError> {
     let query = format!("publications:{variant_id}");
     let (key, progress) =
         retained_provider_progress(Some(execution), "litvar_variant", "litvar", &query);
     if progress.complete {
-        return Ok(retained_candidates(&progress, "litvar_variant", "litvar"));
+        return Ok((
+            retained_candidates(&progress, "litvar_variant", "litvar"),
+            true,
+        ));
     }
     let (client, mut first_unit) = super::super::backends::variant_article_client(
         Some(execution),
@@ -258,21 +262,28 @@ async fn litvar_publications(
         &mut first_unit,
         client.publications(variant_id),
         |publications| {
-            let candidates = publications
-                .pmids
-                .into_iter()
-                .enumerate()
-                .map(|(position, pmid)| {
-                    candidate_with_provenance(
-                        pubmed_membership_seed(pmid.to_string(), position),
-                        "litvar_variant",
-                        "litvar",
-                        vec![alias.into()],
-                    )
-                })
-                .collect::<Vec<_>>();
-            save_candidates(execution, key, &candidates, true);
-            Ok(candidates)
+            let complete = publications
+                .pmids_count
+                .is_none_or(|count| count <= publications.pmids.len() as u64);
+            let mut candidates = retained_candidates(&progress, "litvar_variant", "litvar");
+            candidates.extend(
+                publications
+                    .pmids
+                    .into_iter()
+                    .enumerate()
+                    .map(|(position, pmid)| {
+                        candidate_with_provenance(
+                            pubmed_membership_seed(pmid.to_string(), position),
+                            "litvar_variant",
+                            "litvar",
+                            vec![alias.into()],
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
+            let candidates = super::merge::merge_candidates(candidates);
+            save_candidates(execution, key, &candidates, complete);
+            Ok((candidates, complete))
         },
     )
     .await?;
