@@ -56,7 +56,14 @@ def test_variant_article_markdown_uses_json_source_plan_and_states(
                 env["BIOMCP_DISABLE_SOURCES"] += ",myvariant-info"
             if authenticated:
                 env["S2_API_KEY"] = "fixture-only-key"
-            command = [binary, "--no-cache"]
+            if scenario == "empty_page":
+                env["BIOMCP_CACHE_MODE"] = "default"
+                warm = subprocess.run(
+                    [binary, "--json", "variant", "articles", "BRCA1 F1761I", "--verify-identity", "--limit", "10"],
+                    env=env, cwd=REPO_ROOT, capture_output=True, text=True, timeout=HANG_TIMEOUT,
+                )
+                assert warm.returncode == 0, warm.stdout + warm.stderr
+            command = [binary, *([] if scenario == "empty_page" else ["--no-cache"])]
             if surface == "json":
                 command.append("--json")
             command += ["variant", "articles", "BRCA1 F1761I", "--verify-identity",

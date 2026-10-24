@@ -250,6 +250,9 @@ pub(super) async fn handle(
         }
     }
     text.push_str(&alias_coverage_text);
+    if !json && let Some(token) = &outcome.response.pagination.next_page_token {
+        text.push_str(&format!("\n\nPage token: `{token}`"));
+    }
     if !json && settled_empty_page {
         text.push_str("\n\n");
         text.push_str(&crate::render::markdown::variant_article_sources_markdown(

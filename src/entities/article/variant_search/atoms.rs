@@ -26,16 +26,14 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "network",
         "tls",
         "body_limit",
-        "PubTator variant annotation recall",
-        "best-effort free-text fallback",
         "absent",
         "abstract",
-        "source transcript not stated by the provider",
-        "source transcript stated by the provider",
-        "current-spelling-only: MyGene aliases disabled",
-        "current-spelling-only: MyGene aliases unavailable within the invocation budget",
-        "current-spelling-only: MyGene has no aliases for one unambiguous Entrez-backed gene",
-        "current-spelling-only: MyGene aliases unavailable or disabled",
+        super::UNSTATED_TRANSCRIPT_REASON,
+        super::STATED_TRANSCRIPT_REASON,
+        super::GENE_ALIAS_DISABLED_REASON,
+        super::GENE_ALIAS_BUDGET_REASON,
+        super::GENE_ALIAS_ABSENT_REASON,
+        super::GENE_ALIAS_UNAVAILABLE_REASON,
         "pubmed_query_length_limit",
         "europepmc_query_length_limit",
         "connection",
@@ -128,15 +126,19 @@ fn checked<E: serde::de::Error>(value: String) -> Result<&'static str, E> {
         "unverified_alias_match",
         "visible",
         "variant-article-candidate-trace-v2",
-        "exact-name phrase search",
-        "resolved exact-alias article search",
-        "resolved exact-variant route union",
     ];
     ATOMS
         .iter()
         .copied()
         .chain(std::iter::once(super::rank::METHOD))
         .chain(super::rank::INPUTS)
+        .chain([
+            super::variant_article_retrieval_path(super::VariantArticleStrategy::Exact, true),
+            super::variant_article_retrieval_path(super::VariantArticleStrategy::Union, true),
+            super::variant_article_retrieval_path(super::VariantArticleStrategy::Lexical, true),
+            super::VARIANT_ENTITY_RETRIEVAL_PATH,
+            super::VARIANT_FALLBACK_RETRIEVAL_PATH,
+        ])
         .chain([400, 401, 403, 404, 429, 502, 503, 500].map(|status| {
             crate::sources::literature_retry::response_class(
                 reqwest::StatusCode::from_u16(status).expect("valid status"),

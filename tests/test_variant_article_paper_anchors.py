@@ -88,6 +88,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             body = value if isinstance(value, bytes) else json.dumps(value).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -176,6 +177,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     providers["BIOMCP_PUBMED_BASE"] = origin + "/entrez/eutils"
     env = (retained_cache_env if stored_case else isolated_command_env)(tmp_path / "isolated", providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
+    env["BIOMCP_TEST_RETRY_SLEEP_OFF"] = "1"
     input_path = tmp_path / "input.json"
     input_path.write_text(json.dumps([{
         "gene": "BRCA1", "transcript": "NM_007297.4", "coding": coding,

@@ -322,7 +322,12 @@ impl StoredPool {
         requested: &RequestedVariantIdentity,
         strategy: VariantArticleStrategy,
     ) -> bool {
-        if self.context.requested_variant != *requested || self.context.strategy != strategy {
+        if self.context.requested_variant != *requested
+            || self.context.strategy != strategy
+            || self.context.error.as_ref().is_some_and(|error| {
+                !matches!(error.code, "deadline_exceeded" | "source_unavailable")
+            })
+        {
             return false;
         }
         let expected = super::verify_captured_abstract(requested, "");
@@ -571,6 +576,11 @@ pub(super) async fn execute(
         acquisition_execution.deadline =
             execution.deadline.capped(std::time::Duration::from_secs(2));
     }
+    let acquisition_verification = if existing.is_some() && !verification.confirmed_only {
+        VariantArticleVerificationOptions::default()
+    } else {
+        verification
+    };
     let (acquired, candidates) = super::acquire_variant_article_pool(
         input,
         requested,
@@ -578,9 +588,10 @@ pub(super) async fn execute(
         limit,
         page_offset,
         true,
-        verification,
+        acquisition_verification,
         acquisition_execution,
         retained,
+        existing.is_none(),
     )
     .await?;
     if persistent

@@ -238,7 +238,10 @@ printf '[{"request_id":"real-tp53-anchor","gene":"TP53","transcript":"NM_000546.
 real_anchor="$("$binary" --json variant articles --input "$fixture_root/real-anchor.json" --verify-identity --debug-plan --limit 5)"
 real_markdown="$("$binary" variant articles "TP53 c.215C>G" --verify-identity --limit 5)"
 printf 'trace-overflow\n' >"$mode"
+export BIOMCP_CACHE_MODE=default
+"$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 >/dev/null
 trace_overflow="$("$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 --offset 1)"
+export BIOMCP_CACHE_MODE=off
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 printf '%s' "$all" >"$fixture_root/all.json"

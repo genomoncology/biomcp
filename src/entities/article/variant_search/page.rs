@@ -152,6 +152,14 @@ pub(super) async fn enrich_visible(
     for (row, candidate) in outcome.response.results.iter_mut().zip(candidates) {
         row.article = candidate.row;
         row.identity = candidate.identity;
+        if row.match_reason == "unverified_alias_match"
+            && row
+                .identity
+                .as_ref()
+                .is_some_and(|identity| identity.status == "confirmed")
+        {
+            row.match_reason = "exact_variant";
+        }
         row.metadata_status = statuses.remove(&row.article.pmid);
     }
     outcome

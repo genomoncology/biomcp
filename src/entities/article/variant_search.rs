@@ -88,6 +88,16 @@ use super::{
     MAX_FEDERATED_FETCH_RESULTS,
 };
 
+const UNSTATED_TRANSCRIPT_REASON: &str = "source transcript not stated by the provider";
+const STATED_TRANSCRIPT_REASON: &str = "source transcript stated by the provider";
+const GENE_ALIAS_DISABLED_REASON: &str = "current-spelling-only: MyGene aliases disabled";
+const GENE_ALIAS_BUDGET_REASON: &str =
+    "current-spelling-only: MyGene aliases unavailable within the invocation budget";
+const GENE_ALIAS_ABSENT_REASON: &str =
+    "current-spelling-only: MyGene has no aliases for one unambiguous Entrez-backed gene";
+const GENE_ALIAS_UNAVAILABLE_REASON: &str =
+    "current-spelling-only: MyGene aliases unavailable or disabled";
+
 const MAX_EXACT_ALIASES: usize = 10;
 const LEGACY_DISCOVERY_ALIAS_LIMIT: usize = 16;
 
@@ -2449,7 +2459,7 @@ async fn expand_gene_symbol_aliases(
     let mut coverage = VariantArticleGeneSymbolCoverage::default();
     if crate::sources::disable::is_disabled("mygene-info") {
         coverage.status = "disabled";
-        coverage.restriction = Some("current-spelling-only: MyGene aliases disabled");
+        coverage.restriction = Some(GENE_ALIAS_DISABLED_REASON);
         *execution
             .gene_symbol_coverage
             .lock()
@@ -2484,8 +2494,7 @@ async fn expand_gene_symbol_aliases(
         }
     } else {
         coverage.status = "unavailable";
-        coverage.restriction =
-            Some("current-spelling-only: MyGene aliases unavailable within the invocation budget");
+        coverage.restriction = Some(GENE_ALIAS_BUDGET_REASON);
         *execution
             .gene_symbol_coverage
             .lock()
@@ -2512,9 +2521,7 @@ async fn expand_gene_symbol_aliases(
         }
         Ok(_) => {
             coverage.status = "absent";
-            coverage.restriction = Some(
-                "current-spelling-only: MyGene has no aliases for one unambiguous Entrez-backed gene",
-            );
+            coverage.restriction = Some(GENE_ALIAS_ABSENT_REASON);
         }
         Err(error) => {
             coverage.status =
@@ -2523,8 +2530,7 @@ async fn expand_gene_symbol_aliases(
                 } else {
                     "unavailable"
                 };
-            coverage.restriction =
-                Some("current-spelling-only: MyGene aliases unavailable or disabled");
+            coverage.restriction = Some(GENE_ALIAS_UNAVAILABLE_REASON);
         }
     }
     if coverage.status == "available" {
@@ -3148,7 +3154,7 @@ fn article_alias_matches(
                 vec![VariantArticleAliasMatch {
                     alias: alias.clone(),
                     source_transcript: None,
-                    reason: "source transcript not stated by the provider",
+                    reason: UNSTATED_TRANSCRIPT_REASON,
                 }]
             } else {
                 transcripts
@@ -3156,7 +3162,7 @@ fn article_alias_matches(
                     .map(|transcript| VariantArticleAliasMatch {
                         alias: alias.clone(),
                         source_transcript: Some(transcript),
-                        reason: "source transcript stated by the provider",
+                        reason: STATED_TRANSCRIPT_REASON,
                     })
                     .collect()
             }
@@ -5525,6 +5531,7 @@ async fn acquire_variant_article_pool(
     verification: VariantArticleVerificationOptions,
     execution: VariantArticleExecutionContext,
     retained: Vec<ArticleCandidate>,
+    enrich_visible: bool,
 ) -> Result<(VariantArticleOutcome, Vec<ArticleCandidate>), BioMcpError> {
     if limit == 0 || limit > 50 {
         return Err(BioMcpError::InvalidArgument(
@@ -5722,7 +5729,11 @@ async fn acquire_variant_article_pool(
     let _provider_hard_error = succeeded_routes == 0 && failed_routes > 0;
     let has_more = offset.saturating_add(limit) < total_candidates;
     let mut visible_candidates = candidates;
-    let window_end = offset.saturating_add(limit).min(visible_candidates.len());
+    let window_end = if enrich_visible {
+        offset.saturating_add(limit).min(visible_candidates.len())
+    } else {
+        0
+    };
     let window_start = offset.min(window_end);
     let mut metadata_status = enrich_candidates(
         &mut visible_candidates[window_start..window_end],

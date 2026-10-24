@@ -432,6 +432,7 @@ case "$scenario" in
     jq -r '.results[] | select(.pmid == "24534189") | .pmid' <<<"$json_out"
     ;;
   union-json)
+    export BIOMCP_CACHE_MODE=default
     full="$("$binary" --json variant articles "BRAF p.V600E" --limit 50)"
     page="$("$binary" --json variant articles "BRAF p.V600E" --limit 2 --offset 2)"
     jq -n \
@@ -510,6 +511,8 @@ case "$scenario" in
         }'
     ;;
   offset-beyond-total-markdown)
+    export BIOMCP_CACHE_MODE=default
+    "$binary" --json variant articles "BRAF p.V600E" --limit 3 >/dev/null
     "$binary" variant articles "BRAF p.V600E" --limit 3 --offset 999
     ;;
   batch-compact-json)
