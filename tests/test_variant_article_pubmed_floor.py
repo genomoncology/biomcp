@@ -38,6 +38,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     provider_tails: list[str] = []
     literal_offsets: list[int] = []
     litvar_calls: list[str] = []
+    pubtator_lookups: list[str] = []
+    pubtator_empty_queries: list[str] = []
     source_case = case in ("provider_resume", "semantic_resume", "pubtator_resume", "litvar_resume")
     strict_metadata = case in ("strict_missing_summary", "strict_failed_summary")
     pubtator_pmids = [str(99999001 + index) for index in range(1251)]
@@ -104,6 +106,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 return self.reply({"error": "Authored absent identity"}, 404)
             if path in ("/entity/autocomplete/", "/variant/autocomplete/"):
                 if case == "pubtator_resume" and path == "/entity/autocomplete/":
+                    pubtator_lookups.append(self.path)
                     return self.reply([{"_id": "@VARIANT_p.E17K_AKT1_human", "biotype": "variant", "name": "E17K"}])
                 if case == "litvar_resume" and path == "/variant/autocomplete/":
                     litvar_calls.append(path)
@@ -129,6 +132,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                                                     "title": "Authored retained provider row"} for pmid in ids],
                                        "count": len(pubtator_pmids), "total_pages": 51,
                                        "current": page, "page_size": 25})
+                if case == "pubtator_resume":
+                    pubtator_empty_queries.append(self.path)
                 return self.reply({"results": [], "count": 0, "total_pages": 0, "current": 1})
             if path == "/search":
                 if case == "slow_provider":
@@ -212,9 +217,15 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 if case == "pubtator_resume":
                     assert set(pubtator_pmids[:50]) <= found
                     # Autocomplete and the empty fallback search share the
-                    # existing51-unit PubTator allowance with49nativepages.
+                    # existing 51-unit PubTator allowance with 49 native pages.
                     assert provider_tails == [str(page) for page in range(2, 50)]
                     assert not result["complete"]
+                    provider_statuses = [status for status in result["source_status"]
+                                         if status["source"] == "pubtator"]
+                    assert len(pubtator_lookups) == 1, pubtator_lookups
+                    assert len(pubtator_empty_queries) == 1, pubtator_empty_queries
+                    assert all(status["work"]["timed_out"] == 0 for status in provider_statuses), provider_statuses
+                    assert any(status["work"]["not_attempted"] > 0 for status in provider_statuses), provider_statuses
                 elif case == "litvar_resume":
                     assert {"99998001", "99998002"} <= found
                     assert "99998003" not in found
