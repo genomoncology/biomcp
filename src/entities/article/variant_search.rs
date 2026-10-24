@@ -714,7 +714,7 @@ impl VariantArticleExecutionContext {
             self.record_not_attempted(route, source);
             return None;
         };
-        match self.deadline.acquire_provider().await {
+        match self.deadline.for_provider(source).acquire_provider().await {
             Ok(permit) => Some(super::backends::VariantArticleProviderUnit::new(
                 self, route, source, started, permit,
             )),
@@ -3256,6 +3256,7 @@ async fn requested_pubtator_candidates(
     execution: &VariantArticleExecutionContext,
     route: &str,
 ) -> Result<RequestedPubTatorResult, BioMcpError> {
+    let execution = &execution.for_provider("pubtator");
     let Some(unit) = execution.begin_provider_unit(route, "pubtator").await else {
         return Ok((Vec::new(), true, false, true));
     };
@@ -3499,7 +3500,7 @@ async fn planned_candidates(
         let mut candidates = Vec::new();
         let mut incomplete = false;
         let mut succeeded = false;
-        let execution = &execution.for_provider("pubtator");
+        let execution = &execution.for_provider(&plan.provider);
         let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
@@ -6480,6 +6481,51 @@ mod tests {
         let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_DISABLE_SOURCES", "mygene-info");
         env
+    }
+
+    #[tokio::test]
+    async fn queued_provider_plans_leave_admission_for_a_fast_peer() {
+        let execution = VariantArticleExecutionContext::single();
+        let release = Arc::new(tokio::sync::Semaphore::new(0));
+        let (queued, mut queued_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (admitted, mut admitted_rx) = tokio::sync::mpsc::unbounded_channel();
+        let mut tasks = Vec::new();
+        for _ in 0..12 {
+            let execution = execution.clone();
+            let release = release.clone();
+            let queued = queued.clone();
+            let admitted = admitted.clone();
+            tasks.push(tokio::spawn(async move {
+                queued.send(()).unwrap();
+                let unit = execution
+                    .begin_provider_unit("strict", "pubmed")
+                    .await
+                    .unwrap();
+                admitted.send(()).unwrap();
+                let _release = release.acquire().await.unwrap();
+                unit.record("ok", 1);
+            }));
+        }
+        tokio::time::timeout(crate::test_support::hang_timeout(), async {
+            for _ in 0..12 {
+                queued_rx.recv().await.unwrap();
+            }
+            for _ in 0..2 {
+                admitted_rx.recv().await.unwrap();
+            }
+            let peer = execution
+                .begin_provider_unit("strict", "europepmc")
+                .await
+                .unwrap();
+            assert!(admitted_rx.try_recv().is_err());
+            peer.record("ok", 1);
+            release.add_permits(12);
+            for task in tasks {
+                task.await.unwrap();
+            }
+        })
+        .await
+        .expect("provider admission stalled");
     }
 
     #[serial_test::serial(source_env)]

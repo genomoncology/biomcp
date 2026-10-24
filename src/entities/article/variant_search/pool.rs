@@ -581,17 +581,21 @@ pub(super) async fn execute(
     } else {
         verification
     };
-    let (acquired, candidates) = super::acquire_variant_article_pool(
-        input,
-        requested,
-        strategy,
-        limit,
-        page_offset,
-        true,
-        acquisition_verification,
-        acquisition_execution,
-        retained,
-        existing.is_none(),
+    let acquisition_deadline = acquisition_execution.deadline().clone();
+    let (acquired, candidates) = crate::sources::with_variant_article_deadline(
+        acquisition_deadline,
+        super::acquire_variant_article_pool(
+            input,
+            requested,
+            strategy,
+            limit,
+            page_offset,
+            true,
+            acquisition_verification,
+            acquisition_execution,
+            retained,
+            existing.is_none(),
+        ),
     )
     .await?;
     if persistent
