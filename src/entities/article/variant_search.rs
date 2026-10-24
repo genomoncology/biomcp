@@ -3579,7 +3579,6 @@ async fn planned_candidates(
                         (
                             candidates
                                 .into_iter()
-                                .take(MAX_FEDERATED_FETCH_RESULTS)
                                 .map(|candidate| candidate.row)
                                 .collect(),
                             incomplete,
@@ -5519,12 +5518,12 @@ async fn acquire_variant_article_pool(
         Ok::<_, BioMcpError>((context, canonical, aliases, aliases_truncated, components))
     };
     let (resolution, literal) = tokio::join!(
-        dependent,
-        sources::acquire_literal_pubmed(
+        Box::pin(dependent),
+        Box::pin(sources::acquire_literal_pubmed(
             literal_query.as_deref(),
             execution.literal_pubmed_progress(),
             &execution
-        ),
+        )),
     );
     let (
         context,

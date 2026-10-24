@@ -439,7 +439,13 @@ pub(super) async fn acquire_components(
         }
     };
     let (planned, lexical, annotation, citations, litvar, fallback, exact) = tokio::join!(
-        planned, lexical, annotation, citations, litvar, fallback, exact
+        Box::pin(planned),
+        Box::pin(lexical),
+        Box::pin(annotation),
+        Box::pin(citations),
+        Box::pin(litvar),
+        Box::pin(fallback),
+        Box::pin(exact)
     );
     let mut acquired = unused_component();
     for (rows, incomplete, succeeded, statuses) in [
