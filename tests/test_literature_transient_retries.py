@@ -126,6 +126,8 @@ def test_literature_search_retries_one_transient_leg(
     env.pop("BIOMCP_TEST_RETRY_SLEEP_OFF", None)
     if not str(failure).startswith("shared429"):
         env["S2_API_KEY"] = "fixture-only-key"
+    env.pop("BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS", None)
+    env.pop("BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS", None)
     # Only deliberate stalled replies need shortened deadlines. HTTP retry
     # cases keep the product budgets for cache and provider work on shared hosts.
     if failure == "timeout":
