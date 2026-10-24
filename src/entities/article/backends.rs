@@ -889,16 +889,29 @@ pub(super) async fn search_semantic_scholar_candidates(
             },
         });
     }
-    let (client, mut first_unit) =
-        variant_article_client(execution, route, "semanticscholar", async {
-            match execution {
-                Some(execution) => {
-                    SemanticScholarClient::new_with_deadline(execution.deadline()).await
-                }
-                None => semantic_scholar_client_for_current_deadline().await,
-            }
-        })
-        .await?;
+    let client_result = variant_article_client(execution, route, "semanticscholar", async {
+        match execution {
+            Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
+            None => semantic_scholar_client_for_current_deadline().await,
+        }
+    })
+    .await;
+    let (client, mut first_unit) = match client_result {
+        Ok(client) => client,
+        Err(error) if retained.rows.is_empty() => return Err(error),
+        Err(error) => {
+            return Ok(SemanticScholarCandidateOutcome {
+                rows: retained.restored_rows(),
+                status: ArticleSourceStatus {
+                    source: ArticleSource::SemanticScholar,
+                    enabled: true,
+                    auth_mode: None,
+                    status: Some(ArticleSourceAvailability::Degraded),
+                    message: Some(error.to_string()),
+                },
+            });
+        }
+    };
     let auth_mode = client.auth_mode();
     let status = semantic_scholar_status(auth_mode);
 
@@ -938,6 +951,18 @@ pub(super) async fn search_semantic_scholar_candidates(
         .collect::<HashSet<_>>();
     for _ in 0..MAX_PAGE_FETCHES {
         if rows.len() >= limit {
+            break;
+        }
+        if strict_query.is_none()
+            && native_offset
+                >= crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RELEVANCE_MAX_RESULTS
+        {
+            complete = false;
+            status.status = Some(ArticleSourceAvailability::Degraded);
+            status.message = Some(
+                "Semantic Scholar relevance retrieval reached its 1000-result provider limit"
+                    .into(),
+            );
             break;
         }
         let response = if strict_query.is_some() {
