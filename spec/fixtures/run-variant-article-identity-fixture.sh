@@ -286,7 +286,7 @@ jq -n --arg real_markdown "$real_markdown" --slurpfile all "$fixture_root/all.js
     collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all[0].items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
-    outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
+    outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38") | .pagination.total == .debug_plan.counts.post_dedup)),
     canonical_equivalence_is_additive: all(["atm-grch38", "palb2-grch38"][];
       . as $request_id | item($request_id) |
       .canonical_equivalence.caid as $caid |

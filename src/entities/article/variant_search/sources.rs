@@ -554,11 +554,11 @@ pub(super) async fn acquire_literal_pubmed(
     prior: Option<LiteralPubMedProgress>,
     execution: &VariantArticleExecutionContext,
 ) -> SourceAcquisition {
-    let provider_execution = execution.for_provider("pubmed");
-    let execution = &provider_execution;
     let Some(query) = query else {
         return SourceAcquisition::empty();
     };
+    let provider_execution = execution.for_provider("pubmed");
+    let execution = &provider_execution;
     let mut progress = prior
         .filter(|prior| prior.query == query)
         .unwrap_or_else(|| LiteralPubMedProgress {
