@@ -193,6 +193,8 @@ pub(super) async fn search_pubmed_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<PartialSearchPage, BioMcpError> {
+    let provider_execution = execution.map(|execution| execution.for_provider("pubmed"));
+    let execution = provider_execution.as_ref();
     if limit == 0 || limit > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
             "--limit must be between 1 and {MAX_FEDERATED_FETCH_RESULTS}"
@@ -482,6 +484,8 @@ pub(super) async fn search_europepmc_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<PartialSearchPage, BioMcpError> {
+    let provider_execution = execution.map(|execution| execution.for_provider("europepmc"));
+    let execution = provider_execution.as_ref();
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -720,6 +724,8 @@ pub(super) async fn search_pubtator_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<PartialSearchPage, BioMcpError> {
+    let provider_execution = execution.map(|execution| execution.for_provider("pubtator"));
+    let execution = provider_execution.as_ref();
     let query_identity = format!("{filters:?}:{strict_query:?}");
     let (progress_key, retained) =
         retained_provider_progress(execution, route, "pubtator", &query_identity);
@@ -941,6 +947,8 @@ pub(super) async fn search_semantic_scholar_candidates(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
+    let provider_execution = execution.map(|execution| execution.for_provider("semanticscholar"));
+    let execution = provider_execution.as_ref();
     let page_limit = limit.min(crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX);
     let query = strict_query
         .map(str::to_string)

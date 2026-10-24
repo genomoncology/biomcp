@@ -105,6 +105,8 @@ pub(super) async fn requested_pubtator_candidates(
     execution: &VariantArticleExecutionContext,
     route: &str,
 ) -> Result<RequestedPubTatorResult, BioMcpError> {
+    let provider_execution = execution.for_provider("pubtator");
+    let execution = &provider_execution;
     let query = format!("requested-entity:{input}");
     let (key, progress) = retained_provider_progress(Some(execution), route, "pubtator", &query);
     let mut retained = retained_candidates(&progress, route, "pubtator");
@@ -128,6 +130,8 @@ pub(super) async fn litvar_candidates(
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
 ) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
+    let provider_execution = execution.for_provider("litvar");
+    let execution = &provider_execution;
     let (key, progress) =
         retained_provider_progress(Some(execution), "litvar_variant", "litvar", input);
     let mut retained = retained_candidates(&progress, "litvar_variant", "litvar");
@@ -548,6 +552,8 @@ pub(super) async fn acquire_literal_pubmed(
     prior: Option<LiteralPubMedProgress>,
     execution: &VariantArticleExecutionContext,
 ) -> SourceAcquisition {
+    let provider_execution = execution.for_provider("pubmed");
+    let execution = &provider_execution;
     let Some(query) = query else {
         return SourceAcquisition::empty();
     };
