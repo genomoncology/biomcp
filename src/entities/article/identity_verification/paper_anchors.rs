@@ -196,7 +196,7 @@ pub(crate) async fn verify_paper_anchors(
                 });
                 identity.observations.push(observation);
                 identity.status = status_for(&identity.observations, &identity.contradictions);
-                identity.basis = "paper_transcript_anchor";
+                identity.basis = super::PAPER_TRANSCRIPT_ANCHOR_BASIS;
                 identity.reason = None;
             }
         });

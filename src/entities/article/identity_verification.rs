@@ -13,6 +13,8 @@ mod paper_anchors;
 
 pub(crate) use paper_anchors::verify_paper_anchors;
 
+pub(super) const PAPER_TRANSCRIPT_ANCHOR_BASIS: &str = "paper_transcript_anchor";
+
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v3";
 pub(crate) const PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION: &str =
     "pubtator-export-biocjson-fulltext-v1";

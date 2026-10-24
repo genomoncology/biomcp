@@ -29,12 +29,12 @@ PAPER = REPO_ROOT / (
 
 @pytest.mark.parametrize("case", [
     "same_allele", "different_allele", "unresolved_anchor", "missing_typed_gene",
-    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor", "stored_pool", "stored_page_verify", "stored_page_ldh_failure",
+    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor", "stored_pool", "stored_page_verify", "stored_page_ldh_failure", "stored_page_ldh_linkage",
 ])
 def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     case: str, tmp_path: Path,
 ) -> None:
-    stored_case = case in ("stored_pool", "stored_page_verify", "stored_page_ldh_failure")
+    stored_case = case in ("stored_pool", "stored_page_verify", "stored_page_ldh_failure", "stored_page_ldh_linkage")
     phase = {"warm": False}
     # Discovery is deliberately synthetic. Paper text and CAR responses are recorded.
     paper = json.loads(PAPER.read_bytes())
@@ -134,7 +134,22 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             elif path.startswith("/ldh/Variant/id/"):
                 if case == "stored_page_ldh_failure" and phase["warm"]:
                     return self.reply({"error": "authored warm LDH failure"}, 503)
+                if case == "stored_page_ldh_linkage" and phase["warm"]:
+                    return self.reply({"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": [{
+                        "entId": "PMC7146901", "entDisposition": "external", "entType": "VariantsInLiterature",
+                        "entIri": origin + "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7146901/data",
+                    }]}})
                 return self.reply({"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": []}})
+            elif path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7146901/data":
+                # Authored transport control uses the recorded CAR dbSNP alias.
+                return self.reply({"annotations": [{
+                    "id": "authored-cache-annotation", "publicationId": "PMC7146901",
+                    "articleData": {"articleIDs": {"PMCID": "PMC7146901"}}, "variantMatch": "rs28897686",
+                    "body": {"items": [{"type": "TextualBody", "value": "CA002402"},
+                                       {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["BRCA1"]}]},
+                    "target": {"items": [{"source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7146901",
+                                          "selector": [{"type": "TextQuoteSelector", "exact": "rs28897686"}]}]},
+                }]})
             misses.append(self.path)
             self.reply({"error": "No recorded response"}, 404)
 
@@ -187,7 +202,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
                           "identity": row["identity"], "car_requests": [query for path, query in requests if path == "/allele"]}))
         assert not misses, misses
         assert row["identity"]["status"] == (
-            "confirmed" if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure") else "unverified"
+            "confirmed" if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure", "stored_page_ldh_linkage") else "unverified"
         )
         paper_queries = [query["hgvs"][0] for path, query in requests if path == "/allele"]
         anchor_query = "NM_007294.3:c.3748G>T"
@@ -200,7 +215,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             assert anchor_query in paper_queries
         else:
             assert anchor_query not in paper_queries
-        if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure"):
+        if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure", "stored_page_ldh_linkage"):
             observation = row["identity"]["observations"][0]
             linkage = observation["provider_linkage"]
             assert linkage["kind"] == "pubtator_transcript_anchor"
@@ -220,7 +235,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             assert source["status"] == "unavailable"
             assert source["work"]["planned"] == 1
             assert source["work"]["unavailable"] == 1
-        if case not in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure"):
+        if case not in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure", "stored_page_ldh_linkage"):
             confirmed = subprocess.run(command + ["--confirmed-only"], env=env,
                                        cwd=REPO_ROOT, capture_output=True, text=True,
                                        timeout=HANG_TIMEOUT)
@@ -251,6 +266,12 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             assert item["results"][0]["identity"]["observations"]
             assert item["results"][0]["identity"]["contradictions"] == []
             assert item["results"][0]["routes"] == cold["results"][0]["routes"]
+            if case == "stored_page_ldh_linkage":
+                ldh = next(observation for observation in item["results"][0]["identity"]["observations"]
+                           if observation["source"] == "clingen_ldh")
+                assert ldh["provider_linkage"]["kind"] == "clingen_ldh_annotation"
+                assert ldh["provider_linkage"]["selector_value"] == "rs28897686"
+                assert item["results"][0]["identity"]["incomplete"] is False
             if case == "stored_page_ldh_failure":
                 assert item["complete"] is False
                 status = next(row for row in item["source_status"] if row["route"] == "clingen_ldh_medium")

@@ -341,7 +341,7 @@ impl StoredPool {
                                 !identity.observations.is_empty(),
                                 !identity.contradictions.is_empty(),
                             )
-                        && matches!(identity.basis, "none" | "structured_annotation")
+                        && (matches!(identity.basis, "none" | "structured_annotation") || identity.basis == super::super::identity_verification::PAPER_TRANSCRIPT_ANCHOR_BASIS)
                 })
         })
     }

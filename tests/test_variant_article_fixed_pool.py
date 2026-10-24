@@ -173,7 +173,7 @@ def test_typed_article_items_continue_distinct_pools(article_pool_replay):
         client.close()
 
 
-@pytest.mark.parametrize("corruption", ["expired", "version", "atom"])
+@pytest.mark.parametrize("corruption", ["expired", "version", "atom", "identity_state"])
 def test_article_continuation_refuses_invalid_stored_pool(article_pool_replay, corruption):
     env, state = article_pool_replay
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
@@ -194,8 +194,14 @@ def test_article_continuation_refuses_invalid_stored_pool(article_pool_replay, c
             snapshot["expires_ms"] = 0
         elif corruption == "version":
             snapshot["schema_version"] = 999
-        else:
+        elif corruption == "atom":
             snapshot["payload"]["context"]["retrieval_path"] = "unknown-pool-label"
+        else:
+            snapshot["payload"]["ordered"][0]["candidate"]["identity"] = {
+                "status": "pubmed", "basis": "none", "reason": None,
+                "requested_gene": "BRAF", "requested_allele": "V600E",
+                "observations": [], "contradictions": [], "incomplete": False,
+            }
         encoded = json.dumps(snapshot, separators=(",", ":")).encode()
         database.execute(
             "UPDATE entries SET body=?, body_hash=? WHERE namespace='variant-pool' AND key=?",
