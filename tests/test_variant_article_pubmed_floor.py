@@ -211,7 +211,9 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 initial_starts = len(provider_starts)
                 if case == "pubtator_resume":
                     assert set(pubtator_pmids[:50]) <= found
-                    assert provider_tails == [str(page) for page in range(2, 51)]
+                    # Autocomplete and the empty fallback search share the
+                    # existing51-unit PubTator allowance with49nativepages.
+                    assert provider_tails == [str(page) for page in range(2, 50)]
                     assert not result["complete"]
                 elif case == "litvar_resume":
                     assert {"99998001", "99998002"} <= found
