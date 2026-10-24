@@ -31,8 +31,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     peer_started = threading.Event()
     wait_failures: list[str] = []
     allow_tail = threading.Event()
-    europe_starts: list[str] = []
-    europe_tails: list[str] = []
+    provider_starts: list[str] = []
+    provider_tails: list[str] = []
     literal_offsets: list[int] = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -90,11 +90,11 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 if case == "provider_resume" and "TITLE_ABS" in term:
                     cursor = query.get("cursorMark", ["*"])[0]
                     if cursor == "*":
-                        europe_starts.append(term)
+                        provider_starts.append(term)
                         pmid = "99999991"
                         continuation = {"nextCursorMark": "tail"}
                     else:
-                        europe_tails.append(term)
+                        provider_tails.append(term)
                         if not allow_tail.is_set():
                             return self.reply({"error": "Authored unavailable tail"}, 503)
                         pmid = "99999992"
@@ -107,13 +107,13 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 if case == "semantic_resume" and path.endswith("/bulk"):
                     term = query.get("query", [""])[0]
                     if query.get("token") == ["tail"]:
-                        europe_tails.append(term)
+                        provider_tails.append(term)
                         if not allow_tail.is_set():
                             return self.reply({"error": "Authored unavailable semantic tail"}, 503)
                         pmid = "99999992"
                         continuation = {}
                     else:
-                        europe_starts.append(term)
+                        provider_starts.append(term)
                         pmid = "99999991"
                         continuation = {"token": "tail"}
                     return self.reply({"total": 2, **continuation, "data": [{
@@ -159,7 +159,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert not result["complete"]
                 allow_tail.set()
             if case in ("provider_resume", "semantic_resume") and invocation == 1:
-                initial_starts = len(europe_starts)
+                initial_starts = len(provider_starts)
                 assert initial_starts > 0
                 assert "99999991" in found
                 assert "99999992" not in found
@@ -181,8 +181,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
         if case in ("provider_resume", "semantic_resume"):
             assert {"99999991", "99999992"} <= {row["pmid"] for row in result["results"]}
             assert {"99999991", "99999992"} <= found
-            assert len(europe_starts) == initial_starts, europe_starts
-            assert europe_tails
+            assert len(provider_starts) == initial_starts, provider_starts
+            assert provider_tails
             return
         assert not wait_failures, wait_failures
         if case == "slow_literal":
