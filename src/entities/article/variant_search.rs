@@ -588,6 +588,18 @@ impl VariantArticleExecutionContext {
         );
     }
 
+    fn ensure_route_unit_plans(&self, routes: impl Iterator<Item = (&'static str, &'static str)>) {
+        let mut plans = self
+            .route_unit_plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        for (route, source) in routes {
+            plans
+                .entry((route.into(), source.into()))
+                .or_insert(RouteUnitPlan::Pending);
+        }
+    }
+
     pub(crate) fn set_route_unit_plan(&self, route: &str, source: &str, units: Option<usize>) {
         let mut plans = self
             .route_unit_plans
@@ -3701,96 +3713,13 @@ async fn planned_candidates(
 /// attributed to the litvar source. A LitVar2 failure degrades this source
 /// only: the error lands on the litvar row and the search keeps its other
 /// routes.
+#[cfg(test)]
 async fn litvar_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
 ) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
-    let Some(unit) = execution
-        .begin_provider_unit("litvar_variant", "litvar")
-        .await
-    else {
-        return Ok((Vec::new(), true, false));
-    };
-    let client =
-        match crate::sources::litvar::LitVarClient::new_with_deadline(execution.deadline()).await {
-            Ok(client) => client,
-            Err(error) => {
-                unit.record_error(&error);
-                return Err(error);
-            }
-        };
-    let entries = match client.autocomplete(input).await {
-        Ok(entries) => unit.commit("ok", 1, || entries),
-        Err(error) => {
-            unit.record_error(&error);
-            return Err(error);
-        }
-    };
-    let matched = entries
-        .into_iter()
-        .filter_map(|entry| {
-            let identity = entry.source_identity()?;
-            match crate::entities::variant::compare_variant_identity(&context.requested, &identity)
-            {
-                crate::entities::variant::VariantIdentityComparison::Compatible {
-                    matched_alias,
-                } => Some((identity.genomic_id.clone(), matched_alias)),
-                _ => None,
-            }
-        })
-        .collect::<Vec<_>>();
-    if matched.is_empty() {
-        // An answered autocomplete with no exactly-matching entry is a
-        // complete zero-row answer, not a failure.
-        return Ok((Vec::new(), false, true));
-    }
-    for _ in &matched {
-        execution.add_route_unit("litvar_variant", "litvar");
-    }
-    let mut candidates = Vec::new();
-    let mut incomplete = false;
-    let mut succeeded = false;
-    for (variant_id, matched_alias) in matched {
-        let query_alias = context
-            .requested
-            .gene
-            .as_deref()
-            .filter(|_| !matched_alias.to_ascii_lowercase().starts_with("rs"))
-            .map(|gene| format!("{gene} {matched_alias}"))
-            .unwrap_or(matched_alias);
-        let Some(unit) = execution
-            .begin_provider_unit("litvar_variant", "litvar")
-            .await
-        else {
-            incomplete = true;
-            break;
-        };
-        match client.publications(&variant_id).await {
-            Ok(publications) => {
-                unit.record("ok", 1);
-                succeeded = true;
-                for (position, pmid) in publications.pmids.into_iter().enumerate() {
-                    if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                        return Ok((candidates, true, succeeded));
-                    }
-                    let mut row = pmid_seed(pmid.to_string());
-                    row.source_local_position = position;
-                    candidates.push(candidate_with_provenance(
-                        row,
-                        "litvar_variant",
-                        "litvar",
-                        vec![query_alias.clone()],
-                    ));
-                }
-            }
-            Err(error) => {
-                unit.record_error(&error);
-                incomplete = true;
-            }
-        }
-    }
-    Ok((candidates, incomplete, succeeded))
+    sources::litvar_candidates(input, context, execution).await
 }
 
 /// One LitVar2 route pass: the route's rows, its interim statuses, and

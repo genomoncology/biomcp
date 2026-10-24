@@ -83,6 +83,16 @@ pub(super) async fn enrich_visible(
                 .is_none_or(|identity| identity.incomplete)
         })
     {
+        let routes = [
+            "identity_verification",
+            "clingen_ldh_medium",
+            "clingen_ldh_direct",
+        ];
+        execution.ensure_route_unit_plans(
+            super::strategy_route_skeleton(outcome.response.strategy, true)
+                .into_iter()
+                .filter(|(route, _)| routes.contains(route)),
+        );
         let canonical = outcome
             .response
             .canonical_equivalence
@@ -108,11 +118,6 @@ pub(super) async fn enrich_visible(
             outcome.response.complete = false;
             outcome.response.truncated = true;
         }
-        let routes = [
-            "identity_verification",
-            "clingen_ldh_medium",
-            "clingen_ldh_direct",
-        ];
         let statuses = super::terminal_reconciled_statuses(execution, &execution.events());
         outcome
             .response
