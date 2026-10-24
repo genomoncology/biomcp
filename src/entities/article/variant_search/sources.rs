@@ -614,41 +614,6 @@ pub(super) async fn acquire_literal_pubmed(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Atomic resource admission needs direct boundary coverage in addition to
-    // the caller-facing provider replay.
-    #[test]
-    fn provider_reservations_respect_both_shared_ceilings_without_leaking_units() {
-        for item_full in [true, false] {
-            let execution = VariantArticleExecutionContext::single();
-            let (full, unchanged) = if item_full {
-                (&execution.item, &execution.request)
-            } else {
-                (&execution.request, &execution.item)
-            };
-            full.consumed.store(full.limit, AtomicOrdering::SeqCst);
-            assert!(
-                execution
-                    .reserve_provider("literal_pubmed", "pubmed")
-                    .is_none()
-            );
-            assert_eq!(full.consumed.load(AtomicOrdering::SeqCst), full.limit);
-            assert_eq!(unchanged.consumed.load(AtomicOrdering::SeqCst), 0);
-            assert!(
-                execution
-                    .provider_work
-                    .lock()
-                    .unwrap()
-                    .values()
-                    .all(|count| *count == 0)
-            );
-        }
-    }
-}
-
 async fn enumerate_literal_pubmed(
     progress: &mut LiteralPubMedProgress,
     execution: &VariantArticleExecutionContext,
@@ -797,6 +762,41 @@ async fn hydrate_literal_pubmed(
         );
         if !matches!(result, Ok(Some(()))) {
             break;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Atomic resource admission needs direct boundary coverage in addition to
+    // the caller-facing provider replay.
+    #[test]
+    fn provider_reservations_respect_both_shared_ceilings_without_leaking_units() {
+        for item_full in [true, false] {
+            let execution = VariantArticleExecutionContext::single();
+            let (full, unchanged) = if item_full {
+                (&execution.item, &execution.request)
+            } else {
+                (&execution.request, &execution.item)
+            };
+            full.consumed.store(full.limit, AtomicOrdering::SeqCst);
+            assert!(
+                execution
+                    .reserve_provider("literal_pubmed", "pubmed")
+                    .is_none()
+            );
+            assert_eq!(full.consumed.load(AtomicOrdering::SeqCst), full.limit);
+            assert_eq!(unchanged.consumed.load(AtomicOrdering::SeqCst), 0);
+            assert!(
+                execution
+                    .provider_work
+                    .lock()
+                    .unwrap()
+                    .values()
+                    .all(|count| *count == 0)
+            );
         }
     }
 }
