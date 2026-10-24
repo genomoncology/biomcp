@@ -616,7 +616,7 @@ pub(super) async fn execute(
     let acquisition_deadline = acquisition_execution.deadline().clone();
     let (acquired, candidates) = crate::sources::with_variant_article_deadline(
         acquisition_deadline,
-        super::acquire_variant_article_pool(
+        Box::pin(super::acquire_variant_article_pool(
             input,
             requested,
             strategy,
@@ -627,7 +627,7 @@ pub(super) async fn execute(
             acquisition_execution,
             retained,
             existing.is_none(),
-        ),
+        )),
     )
     .await?;
     if persistent
