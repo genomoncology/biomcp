@@ -18,6 +18,8 @@ pub(crate) struct ProviderProgress {
     pub complete: bool,
     #[serde(default)]
     pub aliases: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    pub lookup: Option<Vec<(String, String)>>,
 }
 
 impl ProviderProgress {
@@ -43,8 +45,15 @@ impl ProviderProgress {
             total,
             complete,
             aliases: BTreeMap::new(),
+            lookup: None,
         }
     }
+}
+
+pub(crate) fn pubmed_membership_seed(pmid: String, native_position: usize) -> ArticleSearchResult {
+    let mut row = pmid_seed(pmid);
+    row.source_local_position = native_position;
+    row
 }
 
 fn retained_candidates(
@@ -125,16 +134,153 @@ pub(super) async fn litvar_candidates(
     if progress.complete {
         return Ok((retained, false, true));
     }
-    let (rows, incomplete, succeeded) =
-        match super::litvar_candidates(input, context, execution).await {
-            Ok(result) => result,
-            Err(error) if retained.is_empty() => return Err(error),
-            Err(_) => (Vec::new(), true, false),
-        };
+    let (rows, incomplete, succeeded) = match enumerate_litvar(input, context, execution).await {
+        Ok(result) => result,
+        Err(error) if retained.is_empty() => return Err(error),
+        Err(_) => (Vec::new(), true, false),
+    };
     retained.extend(rows);
     let retained = super::merge::merge_candidates(retained);
     save_candidates(execution, key, &retained, succeeded && !incomplete);
     Ok((retained, incomplete, succeeded))
+}
+
+async fn enumerate_litvar(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
+    let matched = litvar_lookup(input, &context.requested, execution).await?;
+    if matched.is_empty() {
+        return Ok((Vec::new(), false, true));
+    }
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    for (variant_id, matched_alias) in matched {
+        execution.add_route_unit("litvar_variant", "litvar");
+        let alias = context
+            .requested
+            .gene
+            .as_deref()
+            .filter(|_| !matched_alias.to_ascii_lowercase().starts_with("rs"))
+            .map(|gene| format!("{gene} {matched_alias}"))
+            .unwrap_or(matched_alias);
+        match litvar_publications(&variant_id, &alias, execution).await {
+            Ok(rows) => {
+                candidates.extend(rows);
+                succeeded = true;
+            }
+            Err(_) => {
+                incomplete = true;
+            }
+        }
+    }
+    Ok((candidates, incomplete, succeeded))
+}
+
+async fn litvar_lookup(
+    input: &str,
+    requested: &RequestedVariantIdentity,
+    execution: &VariantArticleExecutionContext,
+) -> Result<Vec<(String, String)>, BioMcpError> {
+    let query = format!("autocomplete:{input}");
+    let (key, progress) =
+        retained_provider_progress(Some(execution), "litvar_variant", "litvar", &query);
+    if progress.complete
+        && let Some(matched) = progress.lookup
+    {
+        return Ok(matched);
+    }
+    let (client, mut first_unit) = super::super::backends::variant_article_client(
+        Some(execution),
+        "litvar_variant",
+        "litvar",
+        crate::sources::litvar::LitVarClient::new_with_deadline(execution.deadline()),
+    )
+    .await?;
+    let result = super::super::backends::variant_article_request(
+        Some(execution),
+        "litvar_variant",
+        "litvar",
+        &mut first_unit,
+        client.autocomplete(input),
+        |entries| {
+            let matched = entries
+                .into_iter()
+                .filter_map(|entry| {
+                    let identity = entry.source_identity()?;
+                    match crate::entities::variant::compare_variant_identity(requested, &identity) {
+                        crate::entities::variant::VariantIdentityComparison::Compatible {
+                            matched_alias,
+                        } => Some((identity.genomic_id.clone(), matched_alias)),
+                        _ => None,
+                    }
+                })
+                .collect::<Vec<_>>();
+            let mut progress = ProviderProgress::default();
+            progress.complete = true;
+            progress.lookup = Some(matched.clone());
+            execution.set_provider_progress(key, progress);
+            Ok(matched)
+        },
+    )
+    .await?;
+    result.ok_or_else(|| BioMcpError::SourceUnavailable {
+        source_name: "LitVar2".into(),
+        reason: "LitVar lookup was not admitted".into(),
+        suggestion: "Retry the variant article request".into(),
+    })
+}
+
+async fn litvar_publications(
+    variant_id: &str,
+    alias: &str,
+    execution: &VariantArticleExecutionContext,
+) -> Result<Vec<ArticleCandidate>, BioMcpError> {
+    let query = format!("publications:{variant_id}");
+    let (key, progress) =
+        retained_provider_progress(Some(execution), "litvar_variant", "litvar", &query);
+    if progress.complete {
+        return Ok(retained_candidates(&progress, "litvar_variant", "litvar"));
+    }
+    let (client, mut first_unit) = super::super::backends::variant_article_client(
+        Some(execution),
+        "litvar_variant",
+        "litvar",
+        crate::sources::litvar::LitVarClient::new_with_deadline(execution.deadline()),
+    )
+    .await?;
+    let result = super::super::backends::variant_article_request(
+        Some(execution),
+        "litvar_variant",
+        "litvar",
+        &mut first_unit,
+        client.publications(variant_id),
+        |publications| {
+            let candidates = publications
+                .pmids
+                .into_iter()
+                .enumerate()
+                .map(|(position, pmid)| {
+                    candidate_with_provenance(
+                        pubmed_membership_seed(pmid.to_string(), position),
+                        "litvar_variant",
+                        "litvar",
+                        vec![alias.into()],
+                    )
+                })
+                .collect::<Vec<_>>();
+            save_candidates(execution, key, &candidates, true);
+            Ok(candidates)
+        },
+    )
+    .await?;
+    result.ok_or_else(|| BioMcpError::SourceUnavailable {
+        source_name: "LitVar2".into(),
+        reason: "LitVar publications were not admitted".into(),
+        suggestion: "Retry the variant article request".into(),
+    })
 }
 
 pub(crate) fn provider_progress_key(_route: &str, source: &str, query: &str) -> String {

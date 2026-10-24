@@ -269,7 +269,11 @@ pub(super) async fn search_pubmed_page_with_context(
                 term: term.clone(),
                 sort: None,
                 retstart: batch_start,
-                retmax: PUBMED_PAGE_SIZE,
+                retmax: if execution.is_some() {
+                    PUBMED_PAGE_SIZE.min(limit.saturating_sub(out.len()).max(1))
+                } else {
+                    PUBMED_PAGE_SIZE
+                },
                 date_from: normalized_date_from.clone(),
                 date_to: normalized_date_to.clone(),
             }),
@@ -314,6 +318,28 @@ pub(super) async fn search_pubmed_page_with_context(
         }
 
         let batch_len = response.idlist.len();
+        // Variant discovery owns PMID membership independently of optional
+        // summaries. Checkpoint identifiers before the second network leg.
+        if execution.is_some() && offset == 0 {
+            for (position, pmid) in response.idlist.iter().enumerate() {
+                if seen_pmids.insert(pmid.clone()) {
+                    out.push(super::variant_search::sources::pubmed_membership_seed(
+                        pmid.clone(),
+                        batch_start.saturating_add(position),
+                    ));
+                }
+            }
+            source_position = source_position.max(batch_start.saturating_add(batch_len));
+            save_provider_progress(
+                execution,
+                &progress_key,
+                &out,
+                batch_start.saturating_add(batch_len),
+                None,
+                total,
+                total.is_some_and(|value| batch_start.saturating_add(batch_len) >= value),
+            );
+        }
         if let Some(execution) = execution {
             execution.add_route_unit(route, "pubmed");
         }
@@ -405,6 +431,15 @@ fn append_pubmed_entries(
                 ),
             }
         })?;
+        if let Some(seed) = state
+            .out
+            .iter_mut()
+            .find(|seed| seed.pmid == row.pmid && seed.title.is_empty())
+        {
+            row.source_local_position = seed.source_local_position;
+            *seed = row;
+            continue;
+        }
         if !matches_result_filters(&row, filters, normalized_date_from, normalized_date_to) {
             continue;
         }
@@ -856,6 +891,18 @@ pub(super) async fn search_pubtator_page_with_context(
         // gives the total after exact day filtering.
         total =
             (source_exhausted && degradation.is_none() && out.len() < limit).then_some(out.len());
+    }
+    if let Some(execution) = execution
+        && !execution
+            .provider_progress(&progress_key)
+            .is_some_and(|progress| progress.complete)
+        && degradation.is_none()
+    {
+        degradation = Some(ArticleSourceStatus {
+            source: ArticleSource::PubTator, enabled: true, auth_mode: None,
+            status: Some(ArticleSourceAvailability::Degraded),
+            message: Some("PubTator acquisition is unfinished; retained rows and its native continuation remain available".into()),
+        });
     }
     Ok(PartialSearchPage {
         page: SearchPage::offset(out, total),
