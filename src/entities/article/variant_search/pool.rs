@@ -488,7 +488,39 @@ impl StoredPool {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(super) async fn execute(
+pub(super) fn execute<'a>(
+    input: &'a str,
+    requested: RequestedVariantIdentity,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug: bool,
+    verification: VariantArticleVerificationOptions,
+    execution: super::VariantArticleExecutionContext,
+    page_token: Option<&'a str>,
+) -> std::pin::Pin<
+    Box<
+        dyn std::future::Future<
+                Output = Result<super::VariantArticleOutcome, crate::error::BioMcpError>,
+            > + Send
+            + 'a,
+    >,
+> {
+    Box::pin(execute_inner(
+        input,
+        requested,
+        strategy,
+        limit,
+        offset,
+        debug,
+        verification,
+        execution,
+        page_token,
+    ))
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn execute_inner(
     input: &str,
     requested: RequestedVariantIdentity,
     strategy: VariantArticleStrategy,
@@ -575,7 +607,12 @@ pub(super) async fn execute(
             page_offset.saturating_add(limit.min(pool.ordered.len().saturating_sub(page_offset)));
         let token = Some(super::page::Continuation::encode(&snapshot.id, &key, next));
         let outcome = pool.into_response(page_offset, limit, token, debug)?;
-        return Ok(super::page::enrich_visible(outcome, &execution, verification).await);
+        return Ok(Box::pin(super::page::enrich_visible(
+            outcome,
+            &execution,
+            verification,
+        ))
+        .await);
     }
     let retained = loaded
         .as_ref()
@@ -685,7 +722,12 @@ pub(super) async fn execute(
     let token = selected_id.map(|id| super::page::Continuation::encode(&id, &key, next));
     let outcome = selected_pool.into_response(page_offset, limit, token, debug)?;
     if existing.is_some() {
-        Ok(super::page::enrich_visible(outcome, &execution, verification).await)
+        Ok(Box::pin(super::page::enrich_visible(
+            outcome,
+            &execution,
+            verification,
+        ))
+        .await)
     } else {
         Ok(outcome)
     }
