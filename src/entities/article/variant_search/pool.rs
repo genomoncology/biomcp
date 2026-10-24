@@ -382,6 +382,38 @@ impl StoredPool {
             }
         }
 
+        if let Some(plan) = context.debug_plan.as_mut() {
+            let visible = self
+                .ordered
+                .iter()
+                .skip(offset)
+                .take(limit)
+                .flat_map(|row| row.candidate.trace.iter().cloned())
+                .map(|mut trace| {
+                    trace.pagination_disposition = "visible".into();
+                    trace
+                })
+                .collect::<Vec<_>>();
+            let identifiers = visible
+                .iter()
+                .map(|trace| trace.identifier.clone())
+                .collect::<std::collections::BTreeSet<_>>();
+            let observed_total = plan.candidate_trace.observed_total;
+            let records = visible
+                .into_iter()
+                .chain(
+                    std::mem::take(&mut plan.candidate_trace.candidates)
+                        .into_iter()
+                        .filter(|trace| !identifiers.contains(&trace.identifier))
+                        .map(|mut trace| {
+                            trace.pagination_disposition = "not_visible".into();
+                            trace
+                        }),
+                )
+                .collect();
+            plan.candidate_trace = super::bound_candidate_trace(records, observed_total);
+        }
+
         let results = self
             .ordered
             .into_iter()

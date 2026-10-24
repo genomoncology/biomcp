@@ -4911,6 +4911,47 @@ struct VariantArticleDebugPlanState {
     candidate_trace: Vec<VariantArticleCandidateTraceRecord>,
 }
 
+fn bound_candidate_trace(
+    records: Vec<VariantArticleCandidateTraceRecord>,
+    observed_total: usize,
+) -> VariantArticleCandidateTrace {
+    let candidates = {
+        let mut visible_identifiers = BTreeSet::new();
+        let selected_indices = records
+            .iter()
+            .enumerate()
+            .filter(|(_, record)| {
+                record.received
+                    && record.after_union
+                    && record.after_dedup
+                    && record.pagination_disposition == "visible"
+                    && visible_identifiers.insert(&record.identifier)
+            })
+            .take(ITEM_WORK_LIMIT)
+            .map(|(index, _)| index)
+            .collect::<BTreeSet<_>>();
+        let (selected, remaining): (Vec<_>, Vec<_>) = records
+            .into_iter()
+            .enumerate()
+            .partition(|(index, _)| selected_indices.contains(index));
+
+        selected
+            .into_iter()
+            .chain(remaining)
+            .map(|(_, record)| record)
+            .take(ITEM_WORK_LIMIT)
+            .collect::<Vec<_>>()
+    };
+    let dropped = observed_total.saturating_sub(candidates.len());
+    VariantArticleCandidateTrace {
+        schema_version: "variant-article-candidate-trace-v2",
+        observed_total,
+        dropped,
+        bounded: dropped > 0,
+        candidates,
+    }
+}
+
 fn build_debug_plan(
     input: &str,
     context: &VariantArticleResolutionContext,
@@ -5048,36 +5089,7 @@ fn build_debug_plan(
         }
     }
     let observed_total = state.candidate_trace.len();
-    let candidates = {
-        let mut visible_identifiers = BTreeSet::new();
-        let selected_indices = state
-            .candidate_trace
-            .iter()
-            .enumerate()
-            .filter(|(_, record)| {
-                record.received
-                    && record.after_union
-                    && record.after_dedup
-                    && record.pagination_disposition == "visible"
-                    && visible_identifiers.insert(&record.identifier)
-            })
-            .take(ITEM_WORK_LIMIT)
-            .map(|(index, _)| index)
-            .collect::<BTreeSet<_>>();
-        let (selected, remaining): (Vec<_>, Vec<_>) = state
-            .candidate_trace
-            .into_iter()
-            .enumerate()
-            .partition(|(index, _)| selected_indices.contains(index));
-
-        selected
-            .into_iter()
-            .chain(remaining)
-            .map(|(_, record)| record)
-            .take(ITEM_WORK_LIMIT)
-            .collect::<Vec<_>>()
-    };
-    let dropped = observed_total - candidates.len();
+    let candidate_trace = bound_candidate_trace(state.candidate_trace, observed_total);
     VariantArticleDebugPlan {
         gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
         alias_coverage: Vec::new(),
@@ -5095,13 +5107,7 @@ fn build_debug_plan(
         stopped_routes: execution.stopped_routes(),
         next: state.next,
         alias_yields: execution.alias_yields(),
-        candidate_trace: VariantArticleCandidateTrace {
-            schema_version: "variant-article-candidate-trace-v2",
-            observed_total,
-            dropped,
-            bounded: dropped > 0,
-            candidates,
-        },
+        candidate_trace,
         verification: None,
         deadline: execution.deadline_plan(),
     }

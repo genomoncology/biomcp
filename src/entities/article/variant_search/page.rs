@@ -298,9 +298,17 @@ pub(super) async fn verify_candidates(
         .map(|index| candidates[*index].clone())
         .collect::<Vec<_>>();
     if !pending_candidates.is_empty() {
-        verification_incomplete |=
+        let ldh_incomplete =
             super::add_ldh_observations(&mut pending_candidates, requested, canonical, execution)
                 .await;
+        verification_incomplete |= ldh_incomplete;
+        if ldh_incomplete {
+            for candidate in &mut pending_candidates {
+                if let Some(identity) = candidate.identity.as_mut() {
+                    identity.incomplete = true;
+                }
+            }
+        }
         for (index, candidate) in pending.into_iter().zip(pending_candidates) {
             candidates[index] = candidate;
         }
