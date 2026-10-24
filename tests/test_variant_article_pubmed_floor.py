@@ -102,7 +102,10 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.startswith("/variant/get/") and case == "litvar_resume":
                 litvar_calls.append(path)
                 index = int(path.split("authored-")[1].split("/")[0])
-                return self.reply({"pmids": [99998000 + index]})
+                pmids = [99998000 + index]
+                if index == 1 and allow_tail.is_set():
+                    pmids.append(99998004)
+                return self.reply({"pmids": pmids, "pmids_count": 2 if index == 1 else 1})
             if path == "/search/":
                 if case == "pubtator_resume" and query.get("text", [""])[0].startswith("@VARIANT_"):
                     page = int(query.get("page", ["1"])[0])
@@ -225,13 +228,13 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             return
         if source_case:
             wanted = (set(pubtator_pmids) if case == "pubtator_resume" else (
-                {"99998001", "99998002", "99998003"} if case == "litvar_resume" else {"99999991", "99999992"}))
+                {"99998001", "99998002", "99998003", "99998004"} if case == "litvar_resume" else {"99999991", "99999992"}))
             assert wanted <= {row["pmid"] for row in result["results"]}
             assert len(provider_starts) == initial_starts, provider_starts
             if case == "litvar_resume":
                 assert litvar_calls.count("/variant/autocomplete/") == 1
                 for index in range(1, 4):
-                    assert litvar_calls.count(f"/variant/get/authored-{index}/publications") == 1
+                    assert litvar_calls.count(f"/variant/get/authored-{index}/publications") == (2 if index == 1 else 1)
             else:
                 assert provider_tails
             return
