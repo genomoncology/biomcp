@@ -74,7 +74,15 @@ pub(super) async fn enrich_visible(
             candidate
         })
         .collect::<Vec<_>>();
-    if verification.verify_identity && !verification.confirmed_only {
+    if verification.verify_identity
+        && !verification.confirmed_only
+        && candidates.iter().any(|candidate| {
+            candidate
+                .identity
+                .as_ref()
+                .is_none_or(|identity| identity.incomplete)
+        })
+    {
         let canonical = outcome
             .response
             .canonical_equivalence
@@ -100,17 +108,45 @@ pub(super) async fn enrich_visible(
             outcome.response.complete = false;
             outcome.response.truncated = true;
         }
+        let routes = [
+            "identity_verification",
+            "clingen_ldh_medium",
+            "clingen_ldh_direct",
+        ];
+        let statuses = super::terminal_reconciled_statuses(execution, &execution.events());
         outcome
             .response
             .source_status
-            .retain(|status| status.route != "identity_verification");
-        outcome
-            .response
-            .source_status
-            .extend(super::provider_statuses_for_route(
-                "identity_verification",
-                &execution.events(),
+            .retain(|status| !routes.contains(&status.route.as_str()));
+        outcome.response.source_status.extend(
+            statuses
+                .into_iter()
+                .filter(|status| routes.contains(&status.route.as_str())),
+        );
+        if let Some(plan) = outcome.response.debug_plan.as_mut() {
+            for candidate in &candidates {
+                let identifier =
+                    super::super::candidates::stable_article_identifier(&candidate.row);
+                for trace in plan
+                    .candidate_trace
+                    .candidates
+                    .iter_mut()
+                    .filter(|trace| trace.identifier == identifier)
+                {
+                    trace.verification_disposition = candidate
+                        .identity
+                        .as_ref()
+                        .map_or("unverified", |identity| identity.status)
+                        .into();
+                }
+            }
+            plan.verification = Some(super::verification_plan(
+                &outcome.response.requested_variant,
+                super::PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
+                &verified.responses,
+                &verified.contents,
             ));
+        }
     }
     let mut statuses = super::enrich_candidates(&mut candidates, execution).await;
     for (row, candidate) in outcome.response.results.iter_mut().zip(candidates) {
@@ -137,6 +173,17 @@ pub(super) async fn verify_candidates(
         canonical_content_subset, canonical_response_subset, combine_identities,
         verify_captured_abstract, verify_paper_anchors, verify_pubtator,
     };
+    let pending = candidates
+        .iter()
+        .enumerate()
+        .filter_map(|(index, candidate)| {
+            candidate
+                .identity
+                .as_ref()
+                .is_none_or(|identity| identity.incomplete)
+                .then_some(index)
+        })
+        .collect::<Vec<_>>();
     let mut verification_incomplete = false;
     let mut verification_response_subsets = Vec::new();
     let mut verification_content_subsets = Vec::new();
@@ -233,8 +280,18 @@ pub(super) async fn verify_candidates(
         }
     }
 
-    verification_incomplete |=
-        super::add_ldh_observations(candidates, requested, canonical, execution).await;
+    let mut pending_candidates = pending
+        .iter()
+        .map(|index| candidates[*index].clone())
+        .collect::<Vec<_>>();
+    if !pending_candidates.is_empty() {
+        verification_incomplete |=
+            super::add_ldh_observations(&mut pending_candidates, requested, canonical, execution)
+                .await;
+        for (index, candidate) in pending.into_iter().zip(pending_candidates) {
+            candidates[index] = candidate;
+        }
+    }
     VerificationCapture {
         incomplete: verification_incomplete,
         responses: verification_response_subsets,

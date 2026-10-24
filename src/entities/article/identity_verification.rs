@@ -832,14 +832,15 @@ fn status_for(
     observations: &[VariantArticleIdentityObservation],
     contradictions: &[VariantArticleIdentityObservation],
 ) -> &'static str {
-    if !observations.is_empty() && !contradictions.is_empty() {
-        "conflicting"
-    } else if !contradictions.is_empty() {
-        "contradictory"
-    } else if !observations.is_empty() {
-        "confirmed"
-    } else {
-        "unverified"
+    status_for_presence(!observations.is_empty(), !contradictions.is_empty())
+}
+
+pub(super) fn status_for_presence(observed: bool, contradicted: bool) -> &'static str {
+    match (observed, contradicted) {
+        (true, true) => "conflicting",
+        (false, true) => "contradictory",
+        (true, false) => "confirmed",
+        (false, false) => "unverified",
     }
 }
 

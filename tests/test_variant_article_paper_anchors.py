@@ -29,11 +29,13 @@ PAPER = REPO_ROOT / (
 
 @pytest.mark.parametrize("case", [
     "same_allele", "different_allele", "unresolved_anchor", "missing_typed_gene",
-    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor", "stored_pool",
+    "wrong_variant_span", "unversioned_anchor", "wrong_pmid", "split_document_linkage", "oversized_anchor", "stored_pool", "stored_page_verify", "stored_page_ldh_failure",
 ])
 def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     case: str, tmp_path: Path,
 ) -> None:
+    stored_case = case in ("stored_pool", "stored_page_verify", "stored_page_ldh_failure")
+    phase = {"warm": False}
     # Discovery is deliberately synthetic. Paper text and CAR responses are recorded.
     paper = json.loads(PAPER.read_bytes())
     document = paper["PubTator3"][0]
@@ -108,16 +110,16 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             elif path in ("/entity/autocomplete/", "/variant/autocomplete/"):
                 return self.reply([])
             elif path == "/search/":
-                if case == "stored_pool":
+                if stored_case:
                     return self.reply({"results": [{
-                        "_id": str(pmid), "pmid": pmid, "title": document["passages"][0]["text"], "score": 1,
+                        "_id": str(pmid), "pmid": pmid, "pmcid": "PMC7146901", "title": document["passages"][0]["text"], "score": 1,
                     } for pmid in (32272925, 32272926)], "count": 2, "total_pages": 1, "current": 1, "page_size": 25})
                 return self.reply({"results": [{
                     "_id": "32272925", "pmid": 32272925, "pmcid": "PMC7146901",
                     "title": document["passages"][0]["text"], "score": 1,
                 }], "count": 1, "total_pages": 1, "current": 1, "page_size": 25})
             elif path == "/publications/export/biocjson":
-                if case == "stored_pool":
+                if stored_case:
                     cloned = copy.deepcopy(paper)
                     for doc in cloned["PubTator3"]:
                         doc["pmid"] = int(query["pmids"][0])
@@ -130,6 +132,8 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             elif path in ("/graph/v1/paper/search", "/graph/v1/paper/search/bulk"):
                 return self.reply({"total": 0, "data": []})
             elif path.startswith("/ldh/Variant/id/"):
+                if case == "stored_page_ldh_failure" and phase["warm"]:
+                    return self.reply({"error": "authored warm LDH failure"}, 503)
                 return self.reply({"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": []}})
             misses.append(self.path)
             self.reply({"error": "No recorded response"}, 404)
@@ -155,7 +159,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     )}
     providers["BIOMCP_MYVARIANT_BASE"] = origin + "/v1"
     providers["BIOMCP_PUBMED_BASE"] = origin + "/entrez/eutils"
-    env = (retained_cache_env if case == "stored_pool" else isolated_command_env)(tmp_path / "isolated", providers, origin)
+    env = (retained_cache_env if stored_case else isolated_command_env)(tmp_path / "isolated", providers, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     input_path = tmp_path / "input.json"
     input_path.write_text(json.dumps([{
@@ -164,10 +168,11 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
     binary = os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
     command = [binary, "--json", "--no-cache", "variant", "articles", "--input",
                str(input_path), "--verify-identity", "--debug-plan", "--limit", "5"]
-    if case == "stored_pool":
+    if stored_case:
         command.remove("--no-cache")
         command[-1] = "1"
-        command.append("--confirmed-only")
+        if case == "stored_pool":
+            command.append("--confirmed-only")
     try:
         result = subprocess.run(command, env=env, cwd=REPO_ROOT,
                                 capture_output=True, text=True, timeout=HANG_TIMEOUT)
@@ -182,18 +187,20 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
                           "identity": row["identity"], "car_requests": [query for path, query in requests if path == "/allele"]}))
         assert not misses, misses
         assert row["identity"]["status"] == (
-            "confirmed" if case == "same_allele" else "unverified"
+            "confirmed" if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure") else "unverified"
         )
         paper_queries = [query["hgvs"][0] for path, query in requests if path == "/allele"]
         anchor_query = "NM_007294.3:c.3748G>T"
         if case in ("same_allele", "different_allele"):
             assert paper_queries.count(anchor_query) == 1
+        elif stored_case:
+            assert anchor_query in paper_queries
         elif case == "unresolved_anchor":
             # The shared provider client retries HTTP failures within one logical unit.
             assert anchor_query in paper_queries
         else:
             assert anchor_query not in paper_queries
-        if case == "same_allele":
+        if case in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure"):
             observation = row["identity"]["observations"][0]
             linkage = observation["provider_linkage"]
             assert linkage["kind"] == "pubtator_transcript_anchor"
@@ -213,7 +220,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             assert source["status"] == "unavailable"
             assert source["work"]["planned"] == 1
             assert source["work"]["unavailable"] == 1
-        if case != "same_allele":
+        if case not in ("same_allele", "stored_pool", "stored_page_verify", "stored_page_ldh_failure"):
             confirmed = subprocess.run(command + ["--confirmed-only"], env=env,
                                        cwd=REPO_ROOT, capture_output=True, text=True,
                                        timeout=HANG_TIMEOUT)
@@ -225,7 +232,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             if case == "unresolved_anchor":
                 assert filtered["error"]["code"] == "source_unavailable"
             assert not misses, misses
-        if case == "stored_pool":
+        if stored_case:
             assert result.returncode == 0, result.stdout + result.stderr
             cold = json.loads(result.stdout)["items"][0]
             token = cold["pagination"]["next_page_token"]
@@ -234,6 +241,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             request = json.loads(input_path.read_text())
             request[0]["page_token"] = token
             input_path.write_text(json.dumps(request))
+            phase["warm"] = True
             warm = subprocess.run(command, env=env, cwd=REPO_ROOT, capture_output=True,
                                   text=True, timeout=HANG_TIMEOUT)
             assert warm.returncode == 0, warm.stdout + warm.stderr
@@ -243,6 +251,10 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
             assert item["results"][0]["identity"]["observations"]
             assert item["results"][0]["identity"]["contradictions"] == []
             assert item["results"][0]["routes"] == cold["results"][0]["routes"]
+            if case == "stored_page_ldh_failure":
+                assert item["complete"] is False
+                status = next(row for row in item["source_status"] if row["route"] == "clingen_ldh_medium")
+                assert status["status"] in ("unavailable", "timed_out"), status
             return
     finally:
         server.shutdown()

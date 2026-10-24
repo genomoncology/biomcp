@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume"])
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "semantic_resume", "literal_resume"])
 def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
@@ -31,8 +31,9 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     peer_started = threading.Event()
     wait_failures: list[str] = []
     allow_tail = threading.Event()
-    europe_starts: list[str] = []
-    europe_tails: list[str] = []
+    provider_starts: list[str] = []
+    provider_tails: list[str] = []
+    literal_offsets: list[int] = []
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, value: object, status: int = 200) -> None:
@@ -51,7 +52,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.endswith("/esearch.fcgi"):
                 term = query["term"][0]
                 requests.append(term)
-                ids = expected if term == "AKT1 E17K" and case != "provider_resume" else []
+                ids = expected if term == "AKT1 E17K" and case not in ("provider_resume", "semantic_resume") else []
                 if "[Title/Abstract]" in term:
                     peer_started.set()
                 if ids and case == "slow_literal" and not peer_started.wait(HANG_TIMEOUT):
@@ -60,6 +61,10 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                     assert query.get("sort") == ["relevance"]
                 start = int(query.get("retstart", ["0"])[0])
                 size = int(query.get("retmax", ["25"])[0])
+                if ids:
+                    literal_offsets.append(start)
+                    if case == "literal_resume" and start > 0 and not allow_tail.is_set():
+                        return self.reply({"error": "Authored unavailable literal tail"}, 503)
                 return self.reply({"esearchresult": {
                     "count": str(10001 if ids and case == "hard_limit" else len(ids)),
                     "idlist": ids[start:start + size],
@@ -85,11 +90,11 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 if case == "provider_resume" and "TITLE_ABS" in term:
                     cursor = query.get("cursorMark", ["*"])[0]
                     if cursor == "*":
-                        europe_starts.append(term)
+                        provider_starts.append(term)
                         pmid = "99999991"
                         continuation = {"nextCursorMark": "tail"}
                     else:
-                        europe_tails.append(term)
+                        provider_tails.append(term)
                         if not allow_tail.is_set():
                             return self.reply({"error": "Authored unavailable tail"}, 503)
                         pmid = "99999992"
@@ -99,6 +104,21 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                                                                   "source": "MED", "title": "Authored retained provider row"}]}})
                 return self.reply({"hitCount": 0, "resultList": {"result": []}})
             if path.startswith("/graph/v1/paper/search"):
+                if case == "semantic_resume" and path.endswith("/bulk"):
+                    term = query.get("query", [""])[0]
+                    if query.get("token") == ["tail"]:
+                        provider_tails.append(term)
+                        if not allow_tail.is_set():
+                            return self.reply({"error": "Authored unavailable semantic tail"}, 503)
+                        pmid = "99999992"
+                        continuation = {}
+                    else:
+                        provider_starts.append(term)
+                        pmid = "99999991"
+                        continuation = {"token": "tail"}
+                    return self.reply({"total": 2, **continuation, "data": [{
+                        "paperId": pmid, "externalIds": {"PubMed": pmid},
+                        "title": "Authored retained provider row"}]})
                 return self.reply({"total": 0, "data": []})
             if path == "/publications/export/biocjson":
                 return self.reply({"PubTator3": []})
@@ -127,11 +147,19 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     found: set[str] = set()
     try:
         initial_starts = 0
-        offsets = [0, 0] if case == "provider_resume" else (
-            [0] if case == "hard_limit" else range(0, len(expected), 50))
+        offsets = ([0, 0, 50, 100, 150] if case == "literal_resume" else (
+            [0, 0] if case in ("provider_resume", "semantic_resume") else (
+                [0] if case == "hard_limit" else range(0, len(expected), 50))))
         for invocation, offset in enumerate(offsets):
-            if case == "provider_resume" and invocation == 1:
-                initial_starts = len(europe_starts)
+            if case == "literal_resume" and invocation == 1:
+                assert found
+                literal_status = next(status for status in result["source_status"]
+                                      if status["route"] == "literal_pubmed")
+                assert literal_status["status"] == "degraded"
+                assert not result["complete"]
+                allow_tail.set()
+            if case in ("provider_resume", "semantic_resume") and invocation == 1:
+                initial_starts = len(provider_starts)
                 assert initial_starts > 0
                 assert "99999991" in found
                 assert "99999992" not in found
@@ -148,10 +176,13 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert row["identity"]["status"] == "unverified"
                 if case == "missing_summary" and row["pmid"] == "33123537":
                     assert row["metadata_status"]["status"] != "available"
-        if case == "provider_resume":
+        if case == "literal_resume":
+            assert literal_offsets.count(0) == 1, literal_offsets
+        if case in ("provider_resume", "semantic_resume"):
+            assert {"99999991", "99999992"} <= {row["pmid"] for row in result["results"]}
             assert {"99999991", "99999992"} <= found
-            assert len(europe_starts) == initial_starts, europe_starts
-            assert europe_tails
+            assert len(provider_starts) == initial_starts, provider_starts
+            assert provider_tails
             return
         assert not wait_failures, wait_failures
         if case == "slow_literal":

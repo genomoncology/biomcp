@@ -234,6 +234,8 @@ struct StoredContext {
     requested_variant: RequestedVariantIdentity,
     resolution: crate::entities::variant::VariantArticleResolution,
     canonical_equivalence: Option<super::CanonicalEquivalence>,
+    canonical_aliases: Vec<String>,
+    debug_coverage_aliases: Vec<Vec<String>>,
     strategy: VariantArticleStrategy,
     complete: bool,
     truncated: bool,
@@ -262,12 +264,29 @@ impl StoredPool {
         response: super::VariantArticleResponse,
         candidates: Vec<ArticleCandidate>,
     ) -> Self {
+        let canonical_aliases = response
+            .canonical_equivalence
+            .as_ref()
+            .map(|value| value.aliases.clone())
+            .unwrap_or_default();
+        let debug_coverage_aliases = response
+            .debug_plan
+            .as_ref()
+            .map(|plan| {
+                plan.provider_queries
+                    .iter()
+                    .map(|query| query.coverage_aliases.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
         let context = StoredContext {
             gene_symbol_coverage: response.gene_symbol_coverage,
             alias_coverage: response.alias_coverage,
             requested_variant: response.requested_variant,
             resolution: response.resolution,
             canonical_equivalence: response.canonical_equivalence,
+            canonical_aliases,
+            debug_coverage_aliases,
             strategy: response.strategy,
             complete: response.complete,
             truncated: response.truncated,
@@ -298,6 +317,35 @@ impl StoredPool {
         Self { context, ordered }
     }
 
+    fn validate(
+        &self,
+        requested: &RequestedVariantIdentity,
+        strategy: VariantArticleStrategy,
+    ) -> bool {
+        if self.context.requested_variant != *requested || self.context.strategy != strategy {
+            return false;
+        }
+        let expected = super::verify_captured_abstract(requested, "");
+        let mut identifiers = std::collections::BTreeSet::new();
+        self.ordered.iter().enumerate().all(|(index, stored)| {
+            let id =
+                super::super::candidates::stable_article_identifier(stored.candidate.row.article());
+            stored.rank == index + 1
+                && !id.is_empty()
+                && identifiers.insert(id)
+                && stored.candidate.identity.as_ref().is_none_or(|identity| {
+                    identity.requested_gene == expected.requested_gene
+                        && identity.requested_allele == expected.requested_allele
+                        && identity.status
+                            == super::super::identity_verification::status_for_presence(
+                                !identity.observations.is_empty(),
+                                !identity.contradictions.is_empty(),
+                            )
+                        && matches!(identity.basis, "none" | "structured_annotation")
+                })
+        })
+    }
+
     pub(super) fn complete(&self) -> bool {
         self.context.complete
     }
@@ -309,18 +357,26 @@ impl StoredPool {
         token: Option<String>,
         debug: bool,
     ) -> Result<super::VariantArticleOutcome, crate::error::BioMcpError> {
-        let mut identifiers = std::collections::BTreeSet::new();
-        for (index, stored) in self.ordered.iter().enumerate() {
-            let id =
-                super::super::candidates::stable_article_identifier(stored.candidate.row.article());
-            if stored.rank != index + 1 || id.is_empty() || !identifiers.insert(id) {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "Invalid stored article pool; restart at offset 0 without a token".into(),
-                ));
-            }
+        if !self.validate(&self.context.requested_variant, self.context.strategy) {
+            return Err(crate::error::BioMcpError::InvalidArgument(
+                "Invalid stored article pool; restart at offset 0 without a token".into(),
+            ));
         }
         let total = self.ordered.len();
         let mut context = self.context;
+        if let Some(canonical) = context.canonical_equivalence.as_mut() {
+            canonical.aliases = context.canonical_aliases;
+        }
+        if let Some(plan) = context.debug_plan.as_mut() {
+            for (query, aliases) in plan
+                .provider_queries
+                .iter_mut()
+                .zip(context.debug_coverage_aliases)
+            {
+                query.coverage_aliases = aliases;
+            }
+        }
+
         let results = self
             .ordered
             .into_iter()
@@ -460,6 +516,15 @@ pub(super) async fn execute(
         Err(_) if continuation.is_some() || offset != 0 => return Err(super::page::unavailable()),
         Err(_) => None,
     };
+    if loaded
+        .as_ref()
+        .is_some_and(|pool| !pool.validate(&requested, strategy))
+    {
+        if continuation.is_some() || offset != 0 {
+            return Err(super::page::unavailable());
+        }
+        loaded = None;
+    }
     if loaded.as_ref().is_some_and(StoredPool::complete) {
         let snapshot = existing.as_ref().expect("decoded stored pool");
         if offset == 0
