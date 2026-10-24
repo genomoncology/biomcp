@@ -156,6 +156,7 @@ pub(crate) fn retained_provider_progress(
     if progress.complete
         && let Some(execution) = execution
     {
+        execution.record_alias_query_attempt(route, source);
         execution.record(route, source, Instant::now(), "ok", 0);
     }
     (key, progress)
