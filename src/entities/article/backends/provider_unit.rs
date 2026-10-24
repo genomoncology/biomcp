@@ -15,7 +15,7 @@ pub(crate) struct VariantArticleProviderUnit<'a> {
     route: String,
     source: String,
     started: Instant,
-    _permit: tokio::sync::OwnedSemaphorePermit,
+    _permit: Vec<tokio::sync::OwnedSemaphorePermit>,
     completed: bool,
     // The federated leg owns this state outside its timeout future.
     observation: crate::sources::literature_retry::Observation,
@@ -27,7 +27,7 @@ impl<'a> VariantArticleProviderUnit<'a> {
         route: &str,
         source: &str,
         started: Instant,
-        permit: tokio::sync::OwnedSemaphorePermit,
+        permit: Vec<tokio::sync::OwnedSemaphorePermit>,
     ) -> Self {
         Self {
             execution,

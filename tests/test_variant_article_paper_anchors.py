@@ -138,7 +138,7 @@ def test_literal_paper_transcript_anchor_requires_resolved_same_allele(
                 if case == "stored_page_ldh_linkage" and phase["warm"]:
                     return self.reply({"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": [{
                         "entId": "PMC7146901", "entDisposition": "external", "entType": "VariantsInLiterature",
-                        "entIri": origin + "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7146901/data",
+                        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7146901/data",
                     }]}})
                 return self.reply({"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": []}})
             elif path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7146901/data":

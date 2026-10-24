@@ -29,6 +29,14 @@ struct VariantArticleDeadlineInner {
     at: tokio::time::Instant,
     limit: Duration,
     providers: std::sync::Arc<tokio::sync::Semaphore>,
+    provider_scope: Option<std::sync::Arc<tokio::sync::Semaphore>>,
+    scopes: std::sync::Arc<std::sync::Mutex<std::collections::BTreeMap<String, ProviderScope>>>,
+}
+
+#[derive(Debug, Clone)]
+struct ProviderScope {
+    at: tokio::time::Instant,
+    permits: std::sync::Arc<tokio::sync::Semaphore>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -77,6 +85,8 @@ impl VariantArticleDeadline {
                 at: tokio::time::Instant::now() + limit,
                 limit,
                 providers: self.inner.providers.clone(),
+                provider_scope: self.inner.provider_scope.clone(),
+                scopes: self.inner.scopes.clone(),
             }),
         }
     }
@@ -87,6 +97,34 @@ impl VariantArticleDeadline {
                 at: tokio::time::Instant::now() + limit,
                 limit,
                 providers: std::sync::Arc::new(tokio::sync::Semaphore::new(10)),
+                provider_scope: None,
+                scopes: Default::default(),
+            }),
+        }
+    }
+
+    /// Limit each provider before it acquires the invocation's shared slots.
+    /// Repeated scopes reuse their first deadline and their admission gate.
+    pub(crate) fn for_provider(&self, source: &str) -> Self {
+        let limit = Duration::from_secs(30).min(self.remaining());
+        let scope = self
+            .inner
+            .scopes
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .entry(source.to_string())
+            .or_insert_with(|| ProviderScope {
+                at: tokio::time::Instant::now() + limit,
+                permits: std::sync::Arc::new(tokio::sync::Semaphore::new(2)),
+            })
+            .clone();
+        Self {
+            inner: std::sync::Arc::new(VariantArticleDeadlineInner {
+                at: scope.at.min(self.inner.at),
+                limit: self.inner.limit.min(Duration::from_secs(30)),
+                providers: self.inner.providers.clone(),
+                provider_scope: Some(scope.permits),
+                scopes: self.inner.scopes.clone(),
             }),
         }
     }
@@ -145,11 +183,21 @@ impl VariantArticleDeadline {
 
     pub(crate) async fn acquire_provider(
         &self,
-    ) -> Result<tokio::sync::OwnedSemaphorePermit, VariantArticleDeadlineElapsed> {
-        let acquire = self.inner.providers.clone().acquire_owned();
-        self.run(acquire)
-            .await?
-            .map_err(|_| VariantArticleDeadlineElapsed)
+    ) -> Result<Vec<tokio::sync::OwnedSemaphorePermit>, VariantArticleDeadlineElapsed> {
+        let mut permits = Vec::with_capacity(2);
+        if let Some(scope) = &self.inner.provider_scope {
+            permits.push(
+                self.run(scope.clone().acquire_owned())
+                    .await?
+                    .map_err(|_| VariantArticleDeadlineElapsed)?,
+            );
+        }
+        permits.push(
+            self.run(self.inner.providers.clone().acquire_owned())
+                .await?
+                .map_err(|_| VariantArticleDeadlineElapsed)?,
+        );
+        Ok(permits)
     }
 }
 

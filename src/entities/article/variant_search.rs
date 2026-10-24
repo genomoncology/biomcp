@@ -654,6 +654,12 @@ impl VariantArticleExecutionContext {
             .unwrap_or_else(|| fallback_aliases(input, context))
     }
 
+    pub(crate) fn for_provider(&self, source: &str) -> Self {
+        let mut scoped = self.clone();
+        scoped.deadline = self.deadline.for_provider(source);
+        scoped
+    }
+
     pub(super) fn for_alias(&self, alias: &str) -> Self {
         let mut scoped = self.clone();
         scoped.query_aliases = vec![alias.to_string()];
@@ -3330,9 +3336,6 @@ async fn requested_pubtator_candidates(
         };
         succeeded = true;
         for row in page.results {
-            if candidates.len() >= fetch_limit {
-                return Ok((candidates, true, succeeded, false));
-            }
             candidates.push(candidate_with_provenance(
                 row,
                 route,
@@ -3496,6 +3499,7 @@ async fn planned_candidates(
         let mut candidates = Vec::new();
         let mut incomplete = false;
         let mut succeeded = false;
+        let execution = &execution.for_provider("pubtator");
         let route = plan.route.as_str();
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
