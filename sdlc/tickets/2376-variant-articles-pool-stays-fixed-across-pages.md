@@ -27,3 +27,13 @@ Approved: an optional `--page-token` CLI argument and a matching typed MCP input
 Successor sessions: a call at offset 0 without a token starts a session. It selects the newest snapshot for its query identity, building or resuming one if needed, and makes that snapshot the active one for legacy offsets. Nothing else switches the active snapshot. Retries and late rows publish successors but never change the active snapshot by themselves.
 
 Legacy offsets: a nonzero offset without a token reads the active snapshot. If none exists or it expired, it fails explicitly and asks for a restart at offset 0; it never rebuilds at a nonzero offset. Two legacy walkers of the same query share the active snapshot, so a second walker's offset-0 call can switch the first walker's pool when a successor exists. The help and docs say so and point concurrent callers to the token. Every response carries a token, so MCP clients and agents get the stable path by default.
+
+## Changes
+
+The shared article path now acquires, merges and ranks candidates before it publishes a versioned immutable pool in the existing cache. It retains native provider progress separately and publishes late results as successors. Only an offset-zero call without a token activates a pool for legacy offsets. Nonzero offsets and bound continuations fail explicitly when their pool is unavailable; they never rediscover a replacement.
+
+CLI `--page-token` and each typed MCP batch item's `page_token` use the same continuation implementation. The token binds query identity, source configuration, genome assembly, verification options and ordering version. Cache bypass still supports offset zero; it cannot issue a persisted continuation or serve later offsets. The help and variant/MCP guides explain this boundary and the shared active pool for concurrent legacy walkers.
+
+The private stored representation preserves captured article fields omitted from public JSON, full identity observations and linkage, canonical aliases, provenance and original debug construction facts. Cache decoding rejects unknown versions, atoms and invalid identity state. Page verification can annotate newly visible rows without changing frozen order. Provider admission has separate clocks and permits under the existing invocation ceiling; retained rows do not consume the next invocation's native acquisition allowance.
+
+Outside-in cases cover token and legacy walks, per-item MCP pools, successors, refused option changes, expiry and corrupt stored state, retained source tails, and identity/provenance round trips. Existing source-status and spec continuations now establish a retained offset-zero session before requesting later offsets.
