@@ -897,6 +897,9 @@ fn validate_paper_id(id: &str) -> Result<&str, BioMcpError> {
 }
 
 pub(crate) const SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX: usize = 100;
+// The relevance endpoint supports only its first 1000 results. Bulk retrieval
+// uses an opaque continuation instead: https://api.semanticscholar.org/api-docs/
+pub(crate) const SEMANTIC_SCHOLAR_RELEVANCE_MAX_RESULTS: usize = 1_000;
 
 fn validate_limit(limit: usize) -> Result<usize, BioMcpError> {
     if limit == 0 || limit > SEMANTIC_SCHOLAR_SEARCH_PAGE_MAX {
