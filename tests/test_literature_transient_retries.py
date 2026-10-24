@@ -126,8 +126,11 @@ def test_literature_search_retries_one_transient_leg(
     env.pop("BIOMCP_TEST_RETRY_SLEEP_OFF", None)
     if not str(failure).startswith("shared429"):
         env["S2_API_KEY"] = "fixture-only-key"
-    env["BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS"] = "3000"
-    env["BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS"] = "2000"
+    # Only deliberate stalled replies need shortened deadlines. HTTP retry
+    # cases keep the product budgets for cache and provider work on shared hosts.
+    if failure == "timeout":
+        env["BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS"] = "3000"
+        env["BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS"] = "2000"
     command = [os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
                "--no-cache", "--json", "search", "article", "--keyword", "BRAF V600E",
                "--limit", "1"]
