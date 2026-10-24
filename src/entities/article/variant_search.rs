@@ -3398,10 +3398,9 @@ async fn federated_alias_candidates(
             );
         succeeded |= alias_succeeded;
         alias_failed |= !alias_succeeded;
-        // Record the alias's yield per source before the route pool cap can
-        // drop rows, so received counts name what each source returned for
-        // this alias and the cut flag names the 25-result cap or a truncated
-        // page.
+        // Record each source's acquisition yield before shared deduplication.
+        // Backend work limits bound new acquisition; retained membership must
+        // survive every route wrapper.
         let mut received_by_source = BTreeMap::<&str, usize>::new();
         for row in &federated.rows {
             let sources = if row.matched_sources.is_empty() {
@@ -3432,9 +3431,6 @@ async fn federated_alias_candidates(
             );
         }
         for row in federated.rows {
-            if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                break;
-            }
             let sources = if row.matched_sources.is_empty() {
                 vec![row.source]
             } else {
