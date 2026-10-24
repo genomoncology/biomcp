@@ -3288,11 +3288,7 @@ async fn requested_pubtator_candidates(
     } else {
         tokens
     };
-    let fetch_limit = if route == "strict" && !resolved {
-        MAX_FEDERATED_FETCH_RESULTS
-    } else {
-        MAX_FEDERATED_FETCH_RESULTS
-    };
+    let fetch_limit = MAX_FEDERATED_FETCH_RESULTS;
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;

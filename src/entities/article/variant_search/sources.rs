@@ -223,9 +223,11 @@ async fn litvar_lookup(
                     }
                 })
                 .collect::<Vec<_>>();
-            let mut progress = ProviderProgress::default();
-            progress.complete = true;
-            progress.lookup = Some(matched.clone());
+            let progress = ProviderProgress {
+                complete: true,
+                lookup: Some(matched.clone()),
+                ..ProviderProgress::default()
+            };
             execution.set_provider_progress(key, progress);
             Ok(matched)
         },
