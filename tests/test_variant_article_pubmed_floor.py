@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "semantic_resume", "literal_resume"])
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "semantic_resume", "literal_resume", "strict_missing_summary", "strict_failed_summary", "pubtator_resume", "litvar_resume"])
 def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
@@ -34,6 +34,10 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     provider_starts: list[str] = []
     provider_tails: list[str] = []
     literal_offsets: list[int] = []
+    litvar_calls: list[str] = []
+    source_case = case in ("provider_resume", "semantic_resume", "pubtator_resume", "litvar_resume")
+    strict_metadata = case in ("strict_missing_summary", "strict_failed_summary")
+    pubtator_pmids = [str(99999001 + index) for index in range(26)]
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, value: object, status: int = 200) -> None:
@@ -52,12 +56,14 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.endswith("/esearch.fcgi"):
                 term = query["term"][0]
                 requests.append(term)
-                ids = expected if term == "AKT1 E17K" and case not in ("provider_resume", "semantic_resume") else []
+                ids = expected if term == "AKT1 E17K" and not source_case and not strict_metadata else []
+                if strict_metadata and "[Title/Abstract]" in term:
+                    ids = ["99999991"]
                 if "[Title/Abstract]" in term:
                     peer_started.set()
                 if ids and case == "slow_literal" and not peer_started.wait(HANG_TIMEOUT):
                     wait_failures.append("resolution-dependent PubMed worker did not start")
-                if ids:
+                if ids and term == "AKT1 E17K":
                     assert query.get("sort") == ["relevance"]
                 start = int(query.get("retstart", ["0"])[0])
                 size = int(query.get("retmax", ["25"])[0])
@@ -70,8 +76,12 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                     "idlist": ids[start:start + size],
                 }})
             if path.endswith("/esummary.fcgi"):
+                if case == "strict_failed_summary":
+                    return self.reply({"error": "Authored missing summary service"}, 503)
                 ids = [pmid for pmid in query["id"][0].split(",")
                        if not (case == "missing_summary" and pmid == "33123537")]
+                if case == "strict_missing_summary":
+                    ids = []
                 return self.reply({"result": {"uids": ids, **{
                     pmid: {"uid": pmid, "title": "Authored metadata control",
                            "pubdate": "2020", "articleids": []}
@@ -82,8 +92,31 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.startswith("/v1/variant/") or path == "/allele":
                 return self.reply({"error": "Authored absent identity"}, 404)
             if path in ("/entity/autocomplete/", "/variant/autocomplete/"):
+                if case == "pubtator_resume" and path == "/entity/autocomplete/":
+                    return self.reply([{"_id": "@VARIANT_p.E17K_AKT1_human", "biotype": "variant", "name": "E17K"}])
+                if case == "litvar_resume" and path == "/variant/autocomplete/":
+                    litvar_calls.append(path)
+                    return self.reply([{"_id": f"authored-{index}", "gene": ["AKT1"], "name": "E17K"}
+                                       for index in range(1, 4)])
                 return self.reply([])
+            if path.startswith("/variant/get/") and case == "litvar_resume":
+                litvar_calls.append(path)
+                index = int(path.split("authored-")[1].split("/")[0])
+                return self.reply({"pmids": [99998000 + index]})
             if path == "/search/":
+                if case == "pubtator_resume" and query.get("text", [""])[0].startswith("@VARIANT_"):
+                    page = int(query.get("page", ["1"])[0])
+                    if page == 1:
+                        provider_starts.append("pubtator")
+                        ids = pubtator_pmids[:25]
+                    else:
+                        provider_tails.append("pubtator")
+                        if not allow_tail.is_set():
+                            return self.reply({"error": "Authored unavailable PubTator tail"}, 503)
+                        ids = pubtator_pmids[25:]
+                    return self.reply({"results": [{"_id": pmid, "pmid": int(pmid),
+                                                    "title": "Authored retained provider row"} for pmid in ids],
+                                       "count": 26, "total_pages": 2, "current": page, "page_size": 25})
                 return self.reply({"results": [], "count": 0, "total_pages": 0, "current": 1})
             if path == "/search":
                 term = query.get("query", [""])[0]
@@ -148,8 +181,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     try:
         initial_starts = 0
         offsets = ([0, 0, 50, 100, 150] if case == "literal_resume" else (
-            [0, 0] if case in ("provider_resume", "semantic_resume") else (
-                [0] if case == "hard_limit" else range(0, len(expected), 50))))
+            [0, 0] if source_case else (
+                [0] if case == "hard_limit" or strict_metadata else range(0, len(expected), 50))))
         for invocation, offset in enumerate(offsets):
             if case == "literal_resume" and invocation == 1:
                 assert found
@@ -158,11 +191,18 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert literal_status["status"] == "degraded"
                 assert not result["complete"]
                 allow_tail.set()
-            if case in ("provider_resume", "semantic_resume") and invocation == 1:
+            if source_case and invocation == 1:
                 initial_starts = len(provider_starts)
-                assert initial_starts > 0
-                assert "99999991" in found
-                assert "99999992" not in found
+                if case == "pubtator_resume":
+                    assert set(pubtator_pmids[:25]) <= found
+                    assert pubtator_pmids[25] not in found
+                elif case == "litvar_resume":
+                    assert {"99998001", "99998002"} <= found
+                    assert "99998003" not in found
+                else:
+                    assert initial_starts > 0
+                    assert "99999991" in found
+                    assert "99999992" not in found
                 allow_tail.set()
             process = subprocess.run([
                 os.environ.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")),
@@ -178,11 +218,22 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                     assert row["metadata_status"]["status"] != "available"
         if case == "literal_resume":
             assert literal_offsets.count(0) == 1, literal_offsets
-        if case in ("provider_resume", "semantic_resume"):
-            assert {"99999991", "99999992"} <= {row["pmid"] for row in result["results"]}
-            assert {"99999991", "99999992"} <= found
+        if strict_metadata:
+            row = next(row for row in result["results"] if row["pmid"] == "99999991")
+            assert row["identity"]["status"] == "unverified"
+            assert row["metadata_status"]["status"] != "available"
+            return
+        if source_case:
+            wanted = (set(pubtator_pmids) if case == "pubtator_resume" else (
+                {"99998001", "99998002", "99998003"} if case == "litvar_resume" else {"99999991", "99999992"}))
+            assert wanted <= {row["pmid"] for row in result["results"]}
             assert len(provider_starts) == initial_starts, provider_starts
-            assert provider_tails
+            if case == "litvar_resume":
+                assert litvar_calls.count("/variant/autocomplete/") == 1
+                for index in range(1, 4):
+                    assert litvar_calls.count(f"/variant/get/authored-{index}/publications") == 1
+            else:
+                assert provider_tails
             return
         assert not wait_failures, wait_failures
         if case == "slow_literal":
