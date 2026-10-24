@@ -98,7 +98,10 @@ where
         return Ok(None);
     };
     execution.record_alias_query_attempt(route, source);
-    let result = future.await.and_then(commit);
+    let result =
+        crate::sources::with_variant_article_deadline(execution.deadline().clone(), future)
+            .await
+            .and_then(commit);
     match &result {
         Ok(_) => unit.record("ok", 1),
         Err(error) => unit.record_error(error),

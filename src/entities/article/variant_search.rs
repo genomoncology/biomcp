@@ -3270,7 +3270,12 @@ async fn requested_pubtator_candidates(
                 return Ok((Vec::new(), true, false, true));
             }
         };
-    let tokens = match resolve_variant_entity_tokens(&pubtator, input, &context.requested).await {
+    let tokens = match crate::sources::with_variant_article_deadline(
+        execution.deadline().clone(),
+        resolve_variant_entity_tokens(&pubtator, input, &context.requested),
+    )
+    .await
+    {
         Ok(tokens) => unit.commit("ok", 1, || tokens),
         Err(error) => {
             unit.record_error(&error);
