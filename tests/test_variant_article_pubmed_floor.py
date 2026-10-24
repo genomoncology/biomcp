@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "semantic_resume", "literal_resume", "strict_missing_summary", "strict_failed_summary", "pubtator_resume", "litvar_resume"])
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "slow_provider", "provider_resume", "semantic_resume", "literal_resume", "strict_missing_summary", "strict_failed_summary", "pubtator_resume", "litvar_resume"])
 def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
@@ -29,6 +29,9 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     expected = recorded["esearchresult"]["idlist"]
     requests: list[str] = []
     peer_started = threading.Event()
+    slow_provider_ready = threading.Event()
+    slow_provider_requests = 0
+    slow_provider_lock = threading.Lock()
     wait_failures: list[str] = []
     allow_tail = threading.Event()
     provider_starts: list[str] = []
@@ -50,12 +53,20 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             self.wfile.write(body)
 
         def do_GET(self) -> None:  # noqa: N802
+            nonlocal slow_provider_requests
             target = urlsplit(self.path)
             query = parse_qs(target.query)
             path = target.path
             if path.endswith("/esearch.fcgi"):
                 term = query["term"][0]
                 requests.append(term)
+                if case == "slow_provider":
+                    with slow_provider_lock:
+                        slow_provider_requests += 1
+                        if slow_provider_requests >= 2:
+                            slow_provider_ready.set()
+                    if not peer_started.wait(HANG_TIMEOUT):
+                        wait_failures.append("fast Europe PMC worker did not start while PubMed plans were blocked")
                 ids = expected if term == "AKT1 E17K" and not source_case and not strict_metadata else []
                 if strict_metadata and "[Title/Abstract]" in term:
                     ids = ["99999991"]
@@ -120,6 +131,10 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                                        "current": page, "page_size": 25})
                 return self.reply({"results": [], "count": 0, "total_pages": 0, "current": 1})
             if path == "/search":
+                if case == "slow_provider":
+                    if not slow_provider_ready.wait(HANG_TIMEOUT):
+                        wait_failures.append("two PubMed workers were not admitted")
+                    peer_started.set()
                 term = query.get("query", [""])[0]
                 if case == "provider_resume" and "TITLE_ABS" in term:
                     cursor = query.get("cursorMark", ["*"])[0]
@@ -240,8 +255,10 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert provider_tails
             return
         assert not wait_failures, wait_failures
-        if case == "slow_literal":
+        if case in ("slow_literal", "slow_provider"):
             assert peer_started.is_set()
+        if case == "slow_provider":
+            assert slow_provider_requests > 2
         if case == "hard_limit":
             assert found
             assert not result["complete"]
