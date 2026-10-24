@@ -23,8 +23,8 @@ def test_recorded_variant_warm_page_reuses_completed_literal_discovery(tmp_path,
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     capture = None
     if scenario == "complete-control":
-        # Membership uses the recorded public literal list. All metadata here
-        # is authored so successful hydration cannot hide an unfinished source.
+        # The exact-strategy control uses the recorded public identifier list.
+        # Its metadata is authored; annotation identity is not exercised.
         pmids = json.loads(CAPTURE.read_text())["pubmed_order"]
         capture = {"pubmed_order": pmids, "rows": [
             {"pmid": pmid, "title": "Authored warm page control",
@@ -33,10 +33,16 @@ def test_recorded_variant_warm_page_reuses_completed_literal_discovery(tmp_path,
             for pmid in pmids
         ]}
     with akt1_replay(tmp_path, cache=True, capture=capture) as replay:
+        strategy = []
+        if scenario == "complete-control":
+            replay.native["pubmed"][:] = capture["pubmed_order"]
+            replay.env.pop("BIOMCP_DISABLE_SOURCES", None)
+            strategy = ["--strategy", "exact"]
+
         def page(offset):
             before = len(replay.requests)
             command = [binary, "--json", "variant", "articles", "AKT1 E17K",
-                       "--limit", "50", "--offset", str(offset), "--debug-plan"]
+                       "--limit", "50", "--offset", str(offset), "--debug-plan", *strategy]
             started = time.monotonic()
             process = subprocess.run(command, env=replay.env, cwd=ROOT,
                                      capture_output=True, text=True, timeout=HANG_TIMEOUT)
