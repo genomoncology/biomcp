@@ -37,7 +37,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     litvar_calls: list[str] = []
     source_case = case in ("provider_resume", "semantic_resume", "pubtator_resume", "litvar_resume")
     strict_metadata = case in ("strict_missing_summary", "strict_failed_summary")
-    pubtator_pmids = [str(99999001 + index) for index in range(26)]
+    pubtator_pmids = [str(99999001 + index) for index in range(1251)]
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, value: object, status: int = 200) -> None:
@@ -111,15 +111,13 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                     page = int(query.get("page", ["1"])[0])
                     if page == 1:
                         provider_starts.append("pubtator")
-                        ids = pubtator_pmids[:25]
                     else:
-                        provider_tails.append("pubtator")
-                        if not allow_tail.is_set():
-                            return self.reply({"error": "Authored unavailable PubTator tail"}, 503)
-                        ids = pubtator_pmids[25:]
+                        provider_tails.append(str(page))
+                    ids = pubtator_pmids[(page - 1) * 25:page * 25]
                     return self.reply({"results": [{"_id": pmid, "pmid": int(pmid),
                                                     "title": "Authored retained provider row"} for pmid in ids],
-                                       "count": 26, "total_pages": 2, "current": page, "page_size": 25})
+                                       "count": len(pubtator_pmids), "total_pages": 51,
+                                       "current": page, "page_size": 25})
                 return self.reply({"results": [], "count": 0, "total_pages": 0, "current": 1})
             if path == "/search":
                 term = query.get("query", [""])[0]
@@ -184,8 +182,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     try:
         initial_starts = 0
         offsets = ([0, 0, 50, 100, 150] if case == "literal_resume" else (
-            [0, 0] if source_case else (
-                [0] if case == "hard_limit" or strict_metadata else range(0, len(expected), 50))))
+            [0, 0, 1250] if case == "pubtator_resume" else ([0, 0] if source_case else (
+                [0] if case == "hard_limit" or strict_metadata else range(0, len(expected), 50)))))
         for invocation, offset in enumerate(offsets):
             if case == "literal_resume" and invocation == 1:
                 assert found
@@ -197,8 +195,9 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if source_case and invocation == 1:
                 initial_starts = len(provider_starts)
                 if case == "pubtator_resume":
-                    assert set(pubtator_pmids[:25]) <= found
-                    assert pubtator_pmids[25] not in found
+                    assert set(pubtator_pmids[:50]) <= found
+                    assert provider_tails == [str(page) for page in range(2, 51)]
+                    assert not result["complete"]
                 elif case == "litvar_resume":
                     assert {"99998001", "99998002"} <= found
                     assert "99998003" not in found
@@ -227,7 +226,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             assert row["metadata_status"]["status"] != "available"
             return
         if source_case:
-            wanted = (set(pubtator_pmids) if case == "pubtator_resume" else (
+            wanted = ({pubtator_pmids[-1]} if case == "pubtator_resume" else (
                 {"99998001", "99998002", "99998003", "99998004"} if case == "litvar_resume" else {"99999991", "99999992"}))
             assert wanted <= {row["pmid"] for row in result["results"]}
             assert len(provider_starts) == initial_starts, provider_starts
@@ -235,6 +234,8 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert litvar_calls.count("/variant/autocomplete/") == 1
                 for index in range(1, 4):
                     assert litvar_calls.count(f"/variant/get/authored-{index}/publications") == (2 if index == 1 else 1)
+            elif case == "pubtator_resume":
+                assert provider_tails == [str(page) for page in range(2, 52)]
             else:
                 assert provider_tails
             return
