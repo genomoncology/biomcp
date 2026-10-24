@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/pubmed-floor/akt1-e17k-esearch.json"
 
 
-@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "literal_resume"])
+@pytest.mark.parametrize("case", ["normal", "missing_summary", "hard_limit", "slow_literal", "provider_resume", "semantic_resume", "literal_resume"])
 def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Path, case: str) -> None:
     # Only ESearch is recorded. All other replies are authored empty or metadata
     # controls. In particular, no annotation establishes gene/variant identity.
@@ -52,7 +52,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
             if path.endswith("/esearch.fcgi"):
                 term = query["term"][0]
                 requests.append(term)
-                ids = expected if term == "AKT1 E17K" and case != "provider_resume" else []
+                ids = expected if term == "AKT1 E17K" and case not in ("provider_resume", "semantic_resume") else []
                 if "[Title/Abstract]" in term:
                     peer_started.set()
                 if ids and case == "slow_literal" and not peer_started.wait(HANG_TIMEOUT):
@@ -104,6 +104,21 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                                                                   "source": "MED", "title": "Authored retained provider row"}]}})
                 return self.reply({"hitCount": 0, "resultList": {"result": []}})
             if path.startswith("/graph/v1/paper/search"):
+                if case == "semantic_resume" and path.endswith("/bulk"):
+                    term = query.get("query", [""])[0]
+                    if query.get("token") == ["tail"]:
+                        europe_tails.append(term)
+                        if not allow_tail.is_set():
+                            return self.reply({"error": "Authored unavailable semantic tail"}, 503)
+                        pmid = "99999992"
+                        continuation = {}
+                    else:
+                        europe_starts.append(term)
+                        pmid = "99999991"
+                        continuation = {"token": "tail"}
+                    return self.reply({"total": 2, **continuation, "data": [{
+                        "paperId": pmid, "externalIds": {"PubMed": pmid},
+                        "title": "Authored retained provider row"}]})
                 return self.reply({"total": 0, "data": []})
             if path == "/publications/export/biocjson":
                 return self.reply({"PubTator3": []})
@@ -133,7 +148,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
     try:
         initial_starts = 0
         offsets = ([0, 0, 50, 100, 150] if case == "literal_resume" else (
-            [0, 0] if case == "provider_resume" else (
+            [0, 0] if case in ("provider_resume", "semantic_resume") else (
                 [0] if case == "hard_limit" else range(0, len(expected), 50))))
         for invocation, offset in enumerate(offsets):
             if case == "literal_resume" and invocation == 1:
@@ -143,7 +158,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                 assert literal_status["status"] == "degraded"
                 assert not result["complete"]
                 allow_tail.set()
-            if case == "provider_resume" and invocation == 1:
+            if case in ("provider_resume", "semantic_resume") and invocation == 1:
                 initial_starts = len(europe_starts)
                 assert initial_starts > 0
                 assert "99999991" in found
@@ -163,7 +178,7 @@ def test_default_variant_articles_preserves_every_plain_pubmed_pmid(tmp_path: Pa
                     assert row["metadata_status"]["status"] != "available"
         if case == "literal_resume":
             assert literal_offsets.count(0) == 1, literal_offsets
-        if case == "provider_resume":
+        if case in ("provider_resume", "semantic_resume"):
             assert {"99999991", "99999992"} <= {row["pmid"] for row in result["results"]}
             assert {"99999991", "99999992"} <= found
             assert len(europe_starts) == initial_starts, europe_starts
