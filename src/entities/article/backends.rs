@@ -222,6 +222,12 @@ pub(super) async fn search_pubmed_page_with_context(
             retained.total,
         )));
     }
+    // Retained membership does not spend this invocation's row allowance.
+    let limit = if execution.is_some() {
+        limit.saturating_add(retained.rows.len())
+    } else {
+        limit
+    };
     let client_result = variant_article_client(execution, route, "pubmed", async {
         match execution {
             Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
@@ -491,6 +497,12 @@ pub(super) async fn search_europepmc_page_with_context(
             retained.total,
         )));
     }
+    // Retained membership does not spend this invocation's row allowance.
+    let limit = if execution.is_some() {
+        limit.saturating_add(retained.rows.len())
+    } else {
+        limit
+    };
     let client_result = variant_article_client(execution, route, "europepmc", async {
         match execution {
             Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
@@ -574,7 +586,10 @@ pub(super) async fn search_europepmc_page_with_context(
                     row.source_local_position = source_position;
                     source_position = source_position.saturating_add(1);
                     out.push(row);
-                    if out.len() >= limit && filters.sort != ArticleSort::Date {
+                    if execution.is_none()
+                        && out.len() >= limit
+                        && filters.sort != ArticleSort::Date
+                    {
                         break;
                     }
                 }
@@ -714,6 +729,12 @@ pub(super) async fn search_pubtator_page_with_context(
             retained.total,
         )));
     }
+    // Retained membership does not spend this invocation's row allowance.
+    let limit = if execution.is_some() {
+        limit.saturating_add(retained.rows.len())
+    } else {
+        limit
+    };
     let client_result = variant_article_client(execution, route, "pubtator", async {
         match execution {
             Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
@@ -813,7 +834,10 @@ pub(super) async fn search_pubtator_page_with_context(
                     row.source_local_position = source_position;
                     source_position = source_position.saturating_add(1);
                     out.push(row);
-                    if out.len() >= limit && filters.sort != ArticleSort::Date {
+                    if execution.is_none()
+                        && out.len() >= limit
+                        && filters.sort != ArticleSort::Date
+                    {
                         break;
                     }
                 }
@@ -936,6 +960,12 @@ pub(super) async fn search_semantic_scholar_candidates(
             },
         });
     }
+    // Retained membership does not spend this invocation's row allowance.
+    let limit = if execution.is_some() {
+        limit.saturating_add(retained.rows.len())
+    } else {
+        limit
+    };
     let client_result = variant_article_client(execution, route, "semanticscholar", async {
         match execution {
             Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
@@ -1065,6 +1095,18 @@ pub(super) async fn search_semantic_scholar_candidates(
             };
         let source_position = native_offset;
         native_offset = next_offset.unwrap_or(native_offset.saturating_add(received));
+        if strict_query.is_none()
+            && native_offset
+                >= crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_RELEVANCE_MAX_RESULTS
+            && total.is_some_and(|total| native_offset < total)
+        {
+            complete = false;
+            status.status = Some(ArticleSourceAvailability::Degraded);
+            status.message = Some(
+                "Semantic Scholar relevance retrieval reached its 1000-result provider limit"
+                    .into(),
+            );
+        }
         let mut page = semantic_scholar_rows_from_response(
             filters,
             normalized_date_from.as_deref(),
