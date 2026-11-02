@@ -4,7 +4,7 @@ priority: 1
 
 # 2330 — Qualify the expanded 0.9.4 candidate
 
-Status: OPEN.
+Status: OPEN. PM m3815 requires fresh qualification and a complete untagged rehearsal after the2360 source repair. Prior b56138d proof remains historical. Reopen the existing release qualification outcome for the new landed source; publication remains unauthorized.
 Landed: 871136be46202cb9c64d189edaea165b351f40e7
 
 Milestone: 0.9.4

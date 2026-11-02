@@ -1,6 +1,6 @@
 # 2381 — keep-licensed-results-out-of-shared-memos
 
-Status: WITHDRAWN.
+Status: WITHDRAWN. Hosted-server work moved to the 1.0 rebuild repo, which owns 1.0
 
 Milestone: 1.0
 
