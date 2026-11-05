@@ -11,10 +11,6 @@
     "resolved": "closed"
   },
   "ticketsGate": "make landing-gate",
-  "mailroom": {
-    "repo": "agents",
-    "name": "biomcp"
-  },
   "milestones": {
     "file": "planning/milestones.md"
   },
